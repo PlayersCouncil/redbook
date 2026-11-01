@@ -7,7 +7,7 @@ services:
     volumes:
       - ..:/workspace:cached
     environment:
-      DATABASE_URL: mysql://app:${DB_PASSWORD:-apppassword}@db:3306/${DB_NAME:-thronesdb}?serverVersion=8.4.0
+      DATABASE_URL: mysql://app:${DB_PASSWORD:-apppassword}@db:3306/${DB_NAME:-thronesdb}?serverVersion=11.4.0-MariaDB
     depends_on:
       db:
         condition: service_healthy
@@ -15,16 +15,16 @@ services:
       - app-network
   
   db:
-    image: mysql:8.4
+    image: mariadb:11.4
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
-      MYSQL_DATABASE: ${DB_NAME:-thronesdb}
-      MYSQL_USER: app
-      MYSQL_PASSWORD: ${DB_PASSWORD:-apppassword}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MARIADB_DATABASE: ${DB_NAME:-thronesdb}
+      MARIADB_USER: app
+      MARIADB_PASSWORD: ${DB_PASSWORD:-apppassword}
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD:-rootpassword}"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
       retries: 5

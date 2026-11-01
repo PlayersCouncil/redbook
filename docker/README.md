@@ -5,7 +5,7 @@ One image runs everything. `docker-compose.yml` starts the app and its database:
 | Service | Container | What it does |
 |---|---|---|
 | `app` | `<project>` | Apache + PHP serving the site on `127.0.0.1:${APP_PORT}`, plus the scheduled jobs from `crontab` (run by supercronic alongside Apache; if either stops, the container restarts) |
-| `db` | `<project>_db` | MySQL 8.4, data in `data/mysql/` |
+| `db` | `<project>_db` | MariaDB 11.4, data in `data/mariadb/` |
 | `init` | (one-off, same image) | First-time setup: schema, default data, cards, restricted lists, admin account |
 
 `<project>` is `COMPOSE_PROJECT_NAME` from `.env` (default `thronesdb`). All commands below run from this `docker/` folder.
@@ -88,12 +88,12 @@ docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build
 | Path | Contents |
 |---|---|
 | `.env`, `app.env` | settings and secrets (never commit) |
-| `data/mysql/` | the database's data directory |
+| `data/mariadb/` | the database's data directory |
 | `data/sessions/` | PHP sessions |
 | `data/carddata/` | the card data repository used by `init` |
 | `data/oauth/` | the OAuth2 signing key pair, created on first start |
 
-Back up `data/mysql/` (or a `mysqldump` from the `db` container), `data/oauth/` and the two settings files.
+Back up `data/mariadb/` (or a `mariadb-dump` from the `db` container), `data/oauth/` and the two settings files.
 
 ## OAuth2 clients
 

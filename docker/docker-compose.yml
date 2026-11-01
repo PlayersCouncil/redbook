@@ -21,7 +21,7 @@ x-app: &app
   image: ${COMPOSE_PROJECT_NAME:-thronesdb}_app
   env_file: app.env
   environment:
-    DATABASE_URL: "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}?serverVersion=8.4.0"
+    DATABASE_URL: "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}?serverVersion=11.4.0-MariaDB"
     # Requests reach the app through the host's reverse proxy via Docker's
     # network, so trust X-Forwarded-* from private addresses.
     TRUSTED_PROXIES: "127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
@@ -49,7 +49,7 @@ services:
     restart: "no"
     command: ["init"]
     environment:
-      DATABASE_URL: "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}?serverVersion=8.4.0"
+      DATABASE_URL: "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}?serverVersion=11.4.0-MariaDB"
       CARD_DATA_REPO: ${CARD_DATA_REPO:-https://github.com/throneteki/throneteki-json-data.git}
       CARD_DATA_DIR: /srv/carddata
     volumes:
@@ -57,24 +57,26 @@ services:
       - ./data/oauth:/var/www/html/var/oauth
 
   db:
-    image: mysql:8.4
+    image: mariadb:11.4
     container_name: ${COMPOSE_PROJECT_NAME:-thronesdb}_db
     restart: unless-stopped
     # Time to flush and shut down cleanly before Docker kills it (default 10s)
     stop_grace_period: 1m
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MYSQL_DATABASE}
+      MARIADB_USER: ${MYSQL_USER}
+      MARIADB_PASSWORD: ${MYSQL_PASSWORD}
+      # Upgrade the system tables on start after a MariaDB version bump
+      MARIADB_AUTO_UPGRADE: "1"
     ports:
       - "127.0.0.1:${DB_PORT:-3307}:3306"   # for a DB client on the host (or over an SSH tunnel)
     volumes:
-      - ./data/mysql:/var/lib/mysql
+      - ./data/mariadb:/var/lib/mysql
     healthcheck:
-      # Over TCP, so it only passes once the real server is up (the first-start
-      # setup server listens on the socket only).
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      # The image's own check. --connect only passes once the real server is
+      # up (the first-start setup server has networking off).
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s
       timeout: 5s
       retries: 30

@@ -9,7 +9,7 @@ The `docker/` folder has an image and compose setup that runs the site, its sche
 
 # Very quick guide on how to install a local copy
 
-This guide assumes you know how to use the command-line and that your machine has PHP 8.4, MySQL 8.4 and Node.js 22 installed.
+This guide assumes you know how to use the command-line and that your machine has PHP 8.4, MariaDB 11.4 and Node.js 22 installed.
 
 - install [composer](https://getcomposer.org/download/)
 - install [npm](https://www.npmjs.com/get-npm) 
