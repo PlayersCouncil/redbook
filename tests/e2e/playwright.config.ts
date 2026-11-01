@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 // The stack must already be running (see README.md). These are the URLs the
 // tests use; override them to point at another stack.
-export const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:8000';
+export const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:1300';
 export const mailpitURL = process.env.E2E_MAILPIT_URL ?? 'http://localhost:8025';
 
 // Only for environments where the browser must reach the public CDNs the site

@@ -1,5 +1,5 @@
 {
-  "name": "ThronesDB",
+  "name": "Red Book",
   "dockerComposeFile": "docker-compose.yml",
   "service": "app",
   "workspaceFolder": "/workspace",

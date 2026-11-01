@@ -1,4 +1,4 @@
-# Running ThronesDB with Docker
+# Running Red Book with Docker
 
 One image runs everything. `docker-compose.yml` starts the app and its database:
 
@@ -8,7 +8,7 @@ One image runs everything. `docker-compose.yml` starts the app and its database:
 | `db` | `<project>_db` | MariaDB 11.4, data in `data/mariadb/` |
 | `init` | (one-off, same image) | First-time setup: schema, default data, cards, restricted lists, admin account |
 
-`<project>` is `COMPOSE_PROJECT_NAME` from `.env` (default `thronesdb`). All commands below run from this `docker/` folder.
+`<project>` is `COMPOSE_PROJECT_NAME` from `.env` (default `redbook`). All commands below run from this `docker/` folder.
 
 ## First run
 
@@ -62,7 +62,7 @@ server {
     # listen 443 ssl; ssl_certificate ...;
 
     location / {
-        proxy_pass http://127.0.0.1:8000;
+        proxy_pass http://127.0.0.1:1300;
         proxy_set_header Host              $host;
         proxy_set_header X-Real-IP         $remote_addr;
         proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
@@ -127,6 +127,6 @@ docker/check.sh --no-build  # same checks, reusing the images from the last run
 `make check` does the same. It uses the Dockerfile's `test` stage (the app plus its dev dependencies). To run only PHPUnit:
 
 ```bash
-docker build -f docker/Dockerfile --target test -t thronesdb_check:test ..
-docker run --rm thronesdb_check:test
+docker build -f docker/Dockerfile --target test -t redbook_check:test ..
+docker run --rm redbook_check:test
 ```

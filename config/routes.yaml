@@ -30,8 +30,3 @@ oauth2:
     resource: '@LeagueOAuth2ServerBundle/config/routes.php'
     type: php
     prefix: /oauth/v2
-
-# The authorize path FOSOAuthServerBundle used, kept for existing clients
-oauth2_authorize_legacy:
-    path: /oauth/v2/auth
-    controller: league.oauth2_server.controller.authorization::indexAction

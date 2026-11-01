@@ -7,13 +7,13 @@ import { loadUsers, storageFor } from '../helpers/users';
 // protected API with it.
 //
 // Registering the client needs the console, so this runs `docker exec` on
-// the app container (E2E_APP_CONTAINER, default "thronesdb"); it is skipped
+// the app container (E2E_APP_CONTAINER, default "redbook"); it is skipped
 // when that container isn't reachable.
 
 test.describe.configure({ mode: 'serial' });
 test.use({ storageState: storageFor('author') });
 
-const container = process.env.E2E_APP_CONTAINER ?? 'thronesdb';
+const container = process.env.E2E_APP_CONTAINER ?? 'redbook';
 const clientId = `e2e${runId}`;
 const clientSecret = `e2e-secret-${runId}`;
 const redirectUri = 'http://localhost/e2e-oauth-callback';
@@ -81,7 +81,7 @@ test('the API refuses requests without a valid token', async ({ request }) => {
 });
 
 test('denying the request sends the user back with access_denied', async ({ page }) => {
-  await page.goto(`/oauth/v2/auth?${new URLSearchParams({
+  await page.goto(`/oauth/v2/authorize?${new URLSearchParams({
     response_type: 'code', client_id: clientId, redirect_uri: redirectUri, scope: 'read_deck', state: runId,
   })}`);
   const callback = page.waitForRequest((r) => r.url().startsWith(redirectUri));

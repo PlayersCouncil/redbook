@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# ThronesDB image: Apache + mod_php serving public/, with the PHP dependencies
+# Red Book image: Apache + mod_php serving public/, with the PHP dependencies
 # and the built frontend assets baked in. One image runs two roles, chosen by
 # the command (see entrypoint.sh): the web app with its scheduled jobs
 # (default) and first-time setup ("init").
@@ -55,8 +55,8 @@ RUN set -eux; \
 
 # ---------------------------------------------------------------------------
 # test: the vendor stage plus dev dependencies, for running PHPUnit:
-#   docker build -f docker/Dockerfile --target test -t thronesdb_test .
-#   docker run --rm thronesdb_test
+#   docker build -f docker/Dockerfile --target test -t redbook_check:test .
+#   docker run --rm redbook_check:test
 # ---------------------------------------------------------------------------
 FROM vendor AS test
 

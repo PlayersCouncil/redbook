@@ -37,7 +37,7 @@ Every run keeps a full record, passing or not, in its own folder under `reports/
 
 Each run registers two fresh accounts (`e2e_author_<id>`, `e2e_voter_<id>`) through the real registration form and confirmation email, then uses them for everything else, so runs don't depend on each other or on existing data. They do leave their decks, decklists and comments behind: run against a disposable database, not production.
 
-Point the tests at a different stack with `E2E_BASE_URL` (default `http://localhost:8000`) and `E2E_MAILPIT_URL` (default `http://localhost:8025`). The Spanish test needs a hostname, not an IP address, since Spanish is served from `es.<hostname>`.
+Point the tests at a different stack with `E2E_BASE_URL` (default `http://localhost:1300`) and `E2E_MAILPIT_URL` (default `http://localhost:8025`). The Spanish test needs a hostname, not an IP address, since Spanish is served from `es.<hostname>`.
 
 ## Screenshot comparisons
 

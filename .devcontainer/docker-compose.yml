@@ -7,7 +7,7 @@ services:
     volumes:
       - ..:/workspace:cached
     environment:
-      DATABASE_URL: mysql://app:${DB_PASSWORD:-apppassword}@db:3306/${DB_NAME:-thronesdb}?serverVersion=11.4.0-MariaDB
+      DATABASE_URL: mysql://app:${DB_PASSWORD:-apppassword}@db:3306/${DB_NAME:-redbook}?serverVersion=11.4.0-MariaDB
     depends_on:
       db:
         condition: service_healthy
@@ -18,11 +18,11 @@ services:
     image: mariadb:11.4
     environment:
       MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
-      MARIADB_DATABASE: ${DB_NAME:-thronesdb}
+      MARIADB_DATABASE: ${DB_NAME:-redbook}
       MARIADB_USER: app
       MARIADB_PASSWORD: ${DB_PASSWORD:-apppassword}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - db_data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
@@ -33,7 +33,7 @@ services:
       - app-network
 
 volumes:
-  mysql_data:
+  db_data:
 
 networks:
   app-network:

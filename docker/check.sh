@@ -8,7 +8,7 @@
 #   docker/check.sh             build the images, then run everything
 #   docker/check.sh --no-build  reuse the images from the last run
 #
-# Images are tagged thronesdb_check:test and thronesdb_check:app, so repeated
+# Images are tagged redbook_check:test and redbook_check:app, so repeated
 # runs replace them rather than piling up.
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -18,8 +18,8 @@ if [ "${1:-}" = "--no-build" ]; then
     build=0
 fi
 
-test_image=thronesdb_check:test
-app_image=thronesdb_check:app
+test_image=redbook_check:test
+app_image=redbook_check:app
 
 step() { printf '\n== %s\n' "$*"; }
 
