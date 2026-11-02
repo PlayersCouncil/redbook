@@ -752,3 +752,11 @@ decklist.publish.format_unknown: "Not known yet: choose the format for its era"
 nav.pc_errata: PC errata
 nav.wiki: The PC wiki
 nav.gemp: Play on Gemp
+decklist.source.format_guessed: "The original didn't say which format; Red Book guessed %format%:"
+decklist.source.format_alternatives: "Also possible:"
+deck.suggest_format: Suggest a format
+deck.suggest_none: "No format fits these cards."
+deck.suggest_pick: Use this
+deck.suggest_legal: legal in Gemp
+deck.suggest_problems: "%count% problems in Gemp"
+decks.import.guess_format: "Guess from the cards"

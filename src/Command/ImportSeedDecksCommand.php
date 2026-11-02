@@ -46,8 +46,8 @@ class ImportSeedDecksCommand extends Command
         foreach ($report['problems'] as $problem) {
             $io->warning($problem);
         }
-        $io->success(sprintf('%s%d decklists created, %d updated, %d skipped',
-            $input->getOption('dry-run') ? '(dry run) ' : '', $report['created'], $report['updated'], $report['skipped']));
+        $io->success(sprintf('%s%d decklists created, %d updated, %d skipped; %d formats guessed',
+            $input->getOption('dry-run') ? '(dry run) ' : '', $report['created'], $report['updated'], $report['skipped'], $report['guessed']));
         return Command::SUCCESS;
     }
 }

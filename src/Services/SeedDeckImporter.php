@@ -39,11 +39,12 @@ class SeedDeckImporter
         private readonly DeckManager $deckManager,
         private readonly DeckValidator $validator,
         private readonly Texts $texts,
+        private readonly FormatGuesser $guesser,
     ) {
     }
 
     /**
-     * @return array{created: int, updated: int, skipped: int, problems: string[]}
+     * @return array{created: int, updated: int, skipped: int, guessed: int, problems: string[]}
      */
     public function import(array $batch, bool $validate = true, bool $dryRun = false): array
     {
@@ -54,7 +55,7 @@ class SeedDeckImporter
             $this->formats[$format->getCode()] = true;
         }
 
-        $report = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'problems' => []];
+        $report = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'guessed' => 0, 'problems' => []];
         foreach ($batch['decks'] as $i => $deck) {
             $missing = array_diff(['sourceId', 'sourceUrl', 'title', 'legacyAuthor', 'postedDate', 'drawDeck', 'rawDecklist'], array_keys($deck));
             if ($missing) {
@@ -125,6 +126,25 @@ class SeedDeckImporter
         if ($format !== null && !isset($this->formats[$format])) {
             $report['problems'][] = sprintf('%s: unknown format "%s", left unset', $deck['sourceId'], $format);
             $format = null;
+        }
+
+        // no format from the scraper: guess one from the deck's date, sites and sets
+        $source->setFormatGuess(null);
+        if ($format === null && $content) {
+            $guess = $this->guesser->guess(
+                $this->guesser->slotsFromContent($content),
+                self::partialDate($deck['effectiveDate'] ?? null) ?? self::partialDate($deck['postedDate'])
+            );
+            $top = $guess['candidates'][0] ?? null;
+            if ($top !== null) {
+                $format = $top['format']->getCode();
+                $report['guessed']++;
+                $source->setFormatGuess([
+                    'format' => $format,
+                    'reasons' => $top['reasons'],
+                    'alternatives' => array_map(fn ($c) => $c['format']->getCode(), array_slice($guess['candidates'], 1, 4)),
+                ]);
+            }
         }
 
         $name = mb_substr(trim((string) $deck['title']) ?: 'Untitled', 0, 60);

@@ -239,6 +239,26 @@
             app.deck.changed();
         });
 
+        $('#btn-suggest-format').on('click', function () {
+            var button = $(this).prop('disabled', true);
+            $.ajax(Routing.generate('deck_suggest_format'), {
+                type: 'POST',
+                data: {content: app.deck.get_json(), effective_date: $('#deck-effective-date').val()},
+                dataType: 'json',
+                success: ui.show_format_suggestions,
+                complete: function () { button.prop('disabled', false); }
+            });
+        });
+        $('#format-suggestions').on('click', 'a[data-format]', function (event) {
+            event.preventDefault();
+            var code = $(this).data('format');
+            if(!$('#deck-format option[value="' + code + '"]').length) {
+                $('#deck-format').append($('<option>').val(code).text($(this).data('name')));
+            }
+            $('#deck-format').val(code).trigger('change');
+            $('#format-suggestions').empty();
+        });
+
         $('#btn-convert-pc').on('click', function () {
             var button = $(this).prop('disabled', true);
             $.ajax(Routing.generate('deck_convert'), {
@@ -263,6 +283,23 @@
         });
 
         app.markdown && app.markdown.setup('textarea[name=description_]', '#description-preview');
+    };
+
+    /** The ranked guesses, with their reasons and (for the first few) Gemp's verdict */
+    ui.show_format_suggestions = function show_format_suggestions(response)
+    {
+        if(!response.suggestions.length) {
+            $('#format-suggestions').html('<p class="text-muted">' + Translator.trans('deck.suggest_none') + '</p>');
+            return;
+        }
+        var html = '<ol class="format-suggestions">' + _.map(response.suggestions, function (s) {
+            var gemp = s.gemp === null ? '' : ' <span class="label label-' + (s.gemp.valid ? 'success">' + Translator.trans('deck.suggest_legal')
+                : 'warning">' + Translator.trans('deck.suggest_problems', {count: s.gemp.problems})) + '</span>';
+            return '<li><strong>' + _.escape(s.name) + '</strong>' + gemp
+                + ' <a href="#" data-format="' + s.code + '" data-name="' + _.escape(s.name) + '">' + Translator.trans('deck.suggest_pick') + '</a>'
+                + '<br><span class="text-muted">' + _.map(s.reasons, _.escape).join('; ') + '</span></li>';
+        }).join('') + '</ol>';
+        $('#format-suggestions').html(html);
     };
 
     ui.on_submit_form = function on_submit_form()

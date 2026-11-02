@@ -23,8 +23,9 @@ Free Peoples
                     <div class="form-group">
                         <label for="target_format">{{ 'deck.target_format' | trans }}</label>
                         <select class="form-control" id="target_format" name="target_format">
+                            <option value="" selected>{{ 'decks.import.guess_format' | trans }}</option>
                             {% for format in formats %}
-                                <option value="{{ format.code }}"{% if format.code == default_format %} selected{% endif %}>{{ format.name }}</option>
+                                <option value="{{ format.code }}">{{ format.name }}</option>
                             {% endfor %}
                         </select>
                     </div>

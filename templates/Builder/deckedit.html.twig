@@ -44,6 +44,8 @@
                                 {% endfor %}
                                 {% if not listed %}<option value="{{ deck.targetFormat }}" selected>{{ format ? format.name : deck.targetFormat }}</option>{% endif %}
                             </select>
+                            <button type="button" class="btn btn-link btn-xs" id="btn-suggest-format">{{ 'deck.suggest_format' | trans }}</button>
+                            <div id="format-suggestions" class="small"></div>
                         </div>
                         <div class="col-sm-5 form-group">
                             <label for="deck-effective-date" title="{{ 'deck.effective_date_hint' | trans }}">{{ 'deck.effective_date' | trans }}</label>

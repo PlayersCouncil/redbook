@@ -11,6 +11,11 @@
             {% if source.postedDateText %}&middot; {{ 'decklist.source.posted' | trans({'%date%': source.postedDateText}) }}{% endif %}
             {% if source.formatAsWritten %}&middot; {{ 'decklist.source.format' | trans({'%format%': source.formatAsWritten}) }}{% endif %}
         </p>
+        {% if source.formatGuess %}
+            <p class="small text-muted">{{ 'decklist.source.format_guessed' | trans({'%format%': decklist.targetFormat}) }}
+                {{ source.formatGuess.reasons | join('; ') }}.
+                {% if source.formatGuess.alternatives %}{{ 'decklist.source.format_alternatives' | trans }} {{ source.formatGuess.alternatives | join(', ') }}.{% endif %}</p>
+        {% endif %}
         {% if source.ratings %}
             <p class="small">{{ 'decklist.source.ratings' | trans({'%score%': source.ratings.score ?? '?', '%votes%': source.ratings.votes ?? '?', '%scale%': source.ratings.scale ?? ''}) }}</p>
         {% endif %}

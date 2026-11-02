@@ -11,10 +11,12 @@ test.use({ storageState: storageFor('author') });
 
 const fixture = (name: string) => fs.readFileSync(path.join(__dirname, '..', 'fixtures', name), 'utf8');
 
-async function pick(page, filter: string, control: string) {
+/** Filters the card pool, clicks a control on the row for the card, and waits for the deck to show it */
+async function pick(page, filter: string, card: string, control: string) {
   await page.fill('#filter-text', filter);
-  await expect(page.locator('#collection-table tr').first()).toBeVisible();
-  await page.locator(`#collection-table tr:first-child ${control}`).first().click();
+  const row = page.locator('#collection-table tr', { hasText: card }).first();
+  await row.locator(control).first().click();
+  await expect(page.locator('#deck')).toContainText(card);
 }
 
 test('build a deck: target format, Gemp checklist, convert to PC, save, delete', async ({ page }) => {
@@ -33,15 +35,20 @@ test('build a deck: target format, Gemp checklist, convert to PC, save, delete',
   await expect(checklist).toContainText("Deck doesn't have a Ring-bearer");
   await expect(checklist).toContainText("Deck doesn't have a One Ring");
 
-  await pick(page, '"Frodo, Son of Drogo"', '.btn-ring-bearer');
+  await pick(page, 'frodo', 'Frodo, Son of Drogo', '.btn-ring-bearer');
   await expect(checklist).not.toContainText("Ring-bearer", { timeout: 15_000 });
-  await pick(page, 't:the_one_ring "Ruling Ring"', '.btn-toggle-card');
-  await pick(page, '"Bag End"', '.btn-toggle-card');
-  await pick(page, '"Legolas, Greenleaf" i:card', 'label:has-text("2")');
+  await pick(page, 'ruling', 'The One Ring, The Ruling Ring', '.btn-toggle-card');
+  await pick(page, 'bag', 'Bag End', '.btn-toggle-card');
+  await pick(page, 'legolas', 'Legolas, Greenleaf', 'label:has-text("2")');
   await expect(page.locator('#deck')).toContainText('2x');
   await expect(page.locator('#deck')).toContainText('Legolas, Greenleaf');
   await expect(checklist).toContainText('below minimum number of cards: 2<60');
   await snap(page, 'deck in progress with the checklist');
+
+  // Suggest a format: Fellowship sites and set 1 cards
+  await page.click('#btn-suggest-format');
+  await expect(page.locator('#format-suggestions li').first()).toContainText('Fellowship sites');
+  await snap(page, 'format suggestions');
 
   // Convert to PC errata: Legolas 1_50 becomes 51_50
   await page.click('#btn-convert-pc');

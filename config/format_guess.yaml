@@ -1,0 +1,53 @@
+# Guessing a deck's format (FormatGuesser): used when importing seed decks and
+# text imports without a format, and by the deckbuilder's "Suggest a format".
+# Ketura's tuning knobs; the logic is in src/Services/FormatGuesser.php.
+
+# Earliest date a deck could have been built for each format. A deck dated
+# before it (a published or played date) rules the format out. Formats not
+# listed have no date limit; PC formats (PC errata or V-sets) start at the
+# first Players Council errata batch unless listed here.
+introduced:
+  fotr_block: 2001-11-06        # set 1
+  ttt_block: 2002-11-06         # set 4
+  towers_standard: 2002-11-06   # Towers sites, from set 4
+  ts_reflections: 2004-05-12    # needs Reflections (set 9)
+  king_block: 2003-11-05        # set 7
+  rotk_sta: 2003-11-05          # King Standard, from set 7
+  movie: 2004-07-14             # sets 1-10, so after Mount Doom
+  war_block: 2004-11-03         # set 11
+  war_standard: 2004-11-03
+  standard: 2004-11-03          # Shadows-onward Standard
+  expanded: 2004-11-03
+  hunter_block: 2006-06-09      # set 15
+  pre-hunters_expanded: 2006-06-09
+
+# How likely a deck is to be for each format, all else equal. Higher wins;
+# unlisted formats count as 1. Ketura's order for King-path decks: Movie Block,
+# then PC Movie, King Standard, King Block.
+popularity:
+  movie: 100
+  pc_movie: 90
+  rotk_sta: 60
+  king_block: 50
+  pc_fotr_block: 70
+  fotr_block: 65
+  towers_standard: 60
+  ttt_block: 40
+  ts_reflections: 25
+  pc_expanded: 70
+  standard: 60
+  expanded: 50
+  war_block: 30
+  war_standard: 30
+  hunter_block: 30
+  pre-hunters_expanded: 20
+  multipath: 20
+  open: 15
+  french: 5
+  movie_czech: 3
+  expanded_czech: 3
+  rev_tow_sta: 1    # Anything Goes
+  hobbit: 0
+
+# Never suggested
+excluded: [hobbit, rev_tow_sta]

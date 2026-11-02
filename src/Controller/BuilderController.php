@@ -16,6 +16,7 @@ use App\Services\DeckImportService;
 use App\Services\DeckManager;
 use App\Services\DeckValidator;
 use App\Services\Diff;
+use App\Services\FormatGuesser;
 use App\Services\Gemp\GempClient;
 use App\Services\Gemp\GempRejectedException;
 use App\Services\Gemp\GempUnavailableException;
@@ -99,6 +100,7 @@ class BuilderController extends AbstractController
         DeckImportService $deckImportService,
         DeckManager $deckManager,
         TranslatorInterface $translator,
+        FormatGuesser $guesser,
     ): Response {
         $user = $this->requireUser();
         $text = (string) $request->request->get('content');
@@ -124,7 +126,10 @@ class BuilderController extends AbstractController
 
         $last = null;
         foreach ($parsed['decks'] as $data) {
-            $last = $deckManager->create($user, $data['name'], $format?->getCode() ?? (string) $deckManager->getDefaultFormat(), $data['content']);
+            $code = $format?->getCode()
+                ?? $guesser->guessContent($data['content'])?->getCode()
+                ?? (string) $deckManager->getDefaultFormat();
+            $last = $deckManager->create($user, $data['name'], $code, $data['content']);
             foreach ($data['warnings'] as $warning) {
                 $this->addFlash('warning', $data['name'] . ': ' . $warning);
             }
@@ -279,6 +284,35 @@ class BuilderController extends AbstractController
             'success' => true,
             'content' => DeckContent::fromGempString((string) $converted['deckContents']),
         ]);
+    }
+
+    /**
+     * "Suggest a format": FormatGuesser's ranked formats for the content as the
+     * browser holds it, each checked by Gemp (the top few) so the reasons can be
+     * compared with Gemp's verdict.
+     */
+    #[Route(path: '/deck/suggest-format', name: 'deck_suggest_format', methods: ['POST'])]
+    public function suggestFormatAction(Request $request, FormatGuesser $guesser, DeckValidator $validator, DeckManager $deckManager): JsonResponse
+    {
+        $this->requireUser();
+        $content = json_decode((string) $request->get('content'), true);
+        if (!is_array($content)) {
+            throw new BadRequestHttpException('content is required');
+        }
+        $content = $deckManager->normalizeContent($content);
+        $date = \DateTime::createFromFormat('!Y-m-d', (string) $request->get('effective_date')) ?: null;
+        $guess = $guesser->guess($guesser->slotsFromContent($content), $date);
+        $suggestions = [];
+        foreach (array_slice($guess['candidates'], 0, 5) as $i => $candidate) {
+            $format = $candidate['format'];
+            $row = ['code' => $format->getCode(), 'name' => $format->getName(), 'reasons' => $candidate['reasons'], 'gemp' => null];
+            if ($i < 3) {
+                $validation = $validator->validateContent($content, $format->getCode());
+                $row['gemp'] = $validation === null ? null : ['valid' => $validation->isValid(), 'problems' => count($validation->getRelevantProblems())];
+            }
+            $suggestions[] = $row;
+        }
+        return new JsonResponse(['path' => $guess['path'], 'sets' => $guess['sets'], 'suggestions' => $suggestions]);
     }
 
     #[Route(path: '/deck/delete', name: 'deck_delete', methods: ['POST'])]

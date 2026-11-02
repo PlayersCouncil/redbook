@@ -62,6 +62,10 @@ class DecklistSource
     #[ORM\Column(name: 'comments', type: 'json', nullable: false)]
     protected array $comments = [];
 
+    /** When the batch gave no format: Red Book's guess (FormatGuesser): {format, reasons, alternatives} */
+    #[ORM\Column(name: 'format_guess', type: 'json', nullable: true)]
+    protected ?array $formatGuess = null;
+
     /** The batch's generator line, for tracing a bad import */
     #[ORM\Column(name: 'batch', type: 'string', length: 255, nullable: true)]
     protected ?string $batch = null;
@@ -96,6 +100,8 @@ class DecklistSource
     public function setRatings(?array $ratings): void { $this->ratings = $ratings; }
     public function getComments(): array { return $this->comments; }
     public function setComments(array $comments): void { $this->comments = $comments; }
+    public function getFormatGuess(): ?array { return $this->formatGuess; }
+    public function setFormatGuess(?array $guess): void { $this->formatGuess = $guess; }
     public function getBatch(): ?string { return $this->batch; }
     public function setBatch(?string $batch): void { $this->batch = $batch; }
 }
