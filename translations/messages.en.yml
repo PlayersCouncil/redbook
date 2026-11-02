@@ -20,6 +20,7 @@ nav:
   faq: F.A.Q.
   draft: Draft F.A.Q.
   restrictions: Restricted and Banned Cards
+  formats: Formats
   tournamentregulations: Tournament Regulations
   advancedsearch: Advanced Search
   cardsearch: Card Search
@@ -598,3 +599,31 @@ tournamentLegality:
   title: Tournament Legality
   joust: Joust
   melee: Melee
+
+formats:
+  description: "The Lord of the Rings TCG formats, as played on Gemp"
+  intro: "These are the formats Gemp offers in its game hall. Every deck on Red Book targets one of them, and Gemp checks the deck against it."
+  none: "No formats yet: Red Book hasn't been able to reach Gemp."
+  source: "Copied from Gemp, last updated %date% UTC."
+  name: Format
+  sets: Sets
+  sites: Sites
+  numbered_sites: "one site per number, 1 to 9"
+  deck_size: Draw deck
+  max_same_name: Copies per card title
+  maps: Maps
+  uses_maps: "A map may be included"
+  lists: Card lists
+  pc_errata: PC errata
+  playtest: Playtest
+  retired: No longer on Gemp
+  no_lists: "No banned or restricted cards."
+  printing: "printing %code%"
+  unknown_card: "(not in Red Book's card data)"
+  list:
+    banned: Banned
+    restricted: Restricted (1 copy)
+    limit2: Limited to 2 copies
+    limit3: Limited to 3 copies
+    valid: Also legal
+    restricted_names: Restricted by name

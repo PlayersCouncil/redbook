@@ -1,0 +1,58 @@
+{# One Gemp format: settings, legal sets and card lists (phase3/04) #}
+{% extends 'base.html.twig' %}
+{% block body %}
+    <div class="main white container">
+        {% include 'alerts.html.twig' %}
+        <p><a href="{{ path('formats') }}">&larr; {{ 'nav.formats' | trans }}</a></p>
+        <h1>{{ format.name }}
+            {% if format.pcErrata %} <span class="label label-info">{{ 'formats.pc_errata' | trans }}</span>{% endif %}
+            {% if format.playtest %} <span class="label label-warning">{{ 'formats.playtest' | trans }}</span>{% endif %}
+            {% if format.retired %} <span class="label label-default">{{ 'formats.retired' | trans }}</span>{% endif %}
+        </h1>
+        {% if format.description %}<p>{{ format.description }}</p>{% endif %}
+        <div class="row">
+            <div class="col-md-4">
+                <dl class="format-settings">
+                    <dt>{{ 'formats.sites' | trans }}</dt>
+                    <dd>{{ format.sites }}{% if format.hasNumberedSites %} ({{ 'formats.numbered_sites' | trans }}){% endif %}</dd>
+                    <dt>{{ 'formats.deck_size' | trans }}</dt>
+                    <dd>{{ format.minimumDeckSize }}+</dd>
+                    <dt>{{ 'formats.max_same_name' | trans }}</dt>
+                    <dd>{{ format.maximumSameName }}</dd>
+                    {% if format.usesMaps %}<dt>{{ 'formats.maps' | trans }}</dt><dd>{{ 'formats.uses_maps' | trans }}</dd>{% endif %}
+                    <dt>{{ 'formats.sets' | trans }}</dt>
+                    <dd>{{ format.setSummary }}</dd>
+                </dl>
+                <ul class="list-unstyled format-sets">
+                    {% for pack in packs %}
+                        <li><a href="{{ path('cards_list', {pack_code: pack.code}) }}">{{ pack.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-8">
+                {% for name in ['banned', 'restricted', 'limit2', 'limit3', 'valid'] %}
+                    {% if lists[name] is defined or lists[name ~ '_unknown'] is defined %}
+                    <h3>{{ ('formats.list.' ~ name) | trans }}</h3>
+                    <ul class="list-unstyled format-list format-list-{{ name }}">
+                        {% for card in lists[name] ?? [] %}
+                            <li><a href="{{ card.url }}" class="card-tip" data-code="{{ card.code }}">{% if card.is_unique %}&bull;{% endif %}{{ card.label }}</a>
+                                <span class="text-muted small">{{ card.pack_name }}{% if card.as %} &middot; {{ 'formats.printing' | trans({'%code%': card.as}) }}{% endif %}</span></li>
+                        {% endfor %}
+                        {% for code in lists[name ~ '_unknown'] ?? [] %}
+                            <li>{{ code }} <span class="text-muted small">{{ 'formats.unknown_card' | trans }}</span></li>
+                        {% endfor %}
+                    </ul>
+                    {% endif %}
+                {% endfor %}
+                {% if format.list('restrictedNames') %}
+                    <h3>{{ 'formats.list.restricted_names' | trans }}</h3>
+                    <ul class="list-unstyled">{% for name in format.list('restrictedNames') %}<li>{{ name }}</li>{% endfor %}</ul>
+                {% endif %}
+                {% if lists is empty and not format.list('restrictedNames') %}
+                    <p class="text-muted">{{ 'formats.no_lists' | trans }}</p>
+                {% endif %}
+            </div>
+        </div>
+        <p class="small text-muted">{{ 'formats.source' | trans({'%date%': format.dateUpdate | date('Y-m-d H:i')}) }}</p>
+    </div>
+{% endblock %}

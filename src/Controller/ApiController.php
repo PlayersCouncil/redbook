@@ -8,6 +8,7 @@ use App\Entity\Card;
 use App\Entity\CardInterface;
 use App\Entity\Cycle;
 use App\Entity\Decklist;
+use App\Entity\Format;
 use App\Entity\Pack;
 use App\Entity\PackInterface;
 use App\Entity\Restriction;
@@ -120,6 +121,25 @@ class ApiController extends AbstractController
      * @param int $cacheExpiration
      * @return Response
      */
+    /**
+     * All the formats
+     *
+     * Gemp's formats as Red Book last copied them: settings, legal sets and card
+     * lists by blueprint ID. Retired formats (gone from Gemp) are included and flagged.
+     */
+    #[Route(path: '/api/public/formats/', name: 'api_formats', methods: ['GET'])]
+    #[OA\Tag(name: 'Public')]
+    #[OA\Response(response: 200, description: 'Returned when successful')]
+    public function listFormatsAction(int $cacheExpiration): Response
+    {
+        $formats = $this->managerRegistry->getRepository(Format::class)->findBy([], ['position' => 'ASC', 'name' => 'ASC']);
+        $response = $this->json(array_map(fn (Format $format) => $format->serialize(), $formats));
+        $response->setPublic();
+        $response->setMaxAge($cacheExpiration);
+        $response->headers->add(['Access-Control-Allow-Origin' => '*']);
+        return $response;
+    }
+
     #[Route(path: '/api/public/cycles/', name: 'api_cycles', methods: ['GET'])]
     #[OA\Tag(name: 'Public')]
     #[OA\Parameter(name: 'jsonp', in: 'query', description: 'JSONP callback', required: false, schema: new OA\Schema(type: 'string'))]

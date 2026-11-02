@@ -4,13 +4,15 @@
 {
 
     var cards_zoom_regexp = /card\/(\d+_\d+)$/,
-            mode = 'text',
+            // Card images from the CDN, as on the wiki and Gemp (Ketura, 2026-11-01). The
+            // text tooltip is only the fallback for a card without an image.
+            mode = 'image',
             hide_event = 'mouseout';
 
     function display_card_on_element(card, element, event)
     {
         var content;
-        if(mode === 'text') {
+        if(mode === 'text' || !card.image_url) {
             var image = card.image_url ? '<div class="card-thumbnail card-thumbnail-' + (card.type_code === 'site' ? 4 : 3) + 'x card-thumbnail-' + card.type_code + '" style="background-image:url(' + card.image_url + ')" data-code="' +  card.code +'"></div>' : "";
             var info = '<h4 class="card-name">' + app.format.name(card) + '</h4>';
             if (card.work_in_progress) {
@@ -33,7 +35,7 @@
             }
             content = image + info;
         } else {
-            content = card.image_url ? '<img src="' + card.image_url + '">' : "";
+            content = '<img class="card-tip-image" src="' + card.image_url + '" alt="' + (card.label || card.name).replace(/"/g, '&quot;') + '">';
         }
 
         var qtip = {
@@ -41,11 +43,11 @@
                 text: content
             },
             style: {
-                classes: 'card-content qtip-bootstrap qtip-thronesdb qtip-thronesdb-' + mode
+                classes: 'card-content qtip-bootstrap qtip-thronesdb qtip-thronesdb-' + (mode === 'image' && card.image_url ? 'image' : 'text')
             },
             position: {
-                my: mode === 'text' ? 'center left' : 'top left',
-                at: mode === 'text' ? 'center right' : 'bottom right',
+                my: 'center left',
+                at: 'center right',
                 viewport: $(window)
             },
             show: {

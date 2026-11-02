@@ -1,0 +1,45 @@
+{# Gemp's hall formats (phase3/04) #}
+{% extends 'base.html.twig' %}
+{% block body %}
+    <div class="main white container">
+        {% include 'alerts.html.twig' %}
+        <h1>{{ 'nav.formats' | trans }}</h1>
+        <p>{{ 'formats.intro' | trans }}</p>
+        {% if formats is empty %}
+            <p class="text-muted">{{ 'formats.none' | trans }}</p>
+        {% else %}
+            <table class="table table-condensed formats-table">
+                <thead>
+                <tr>
+                    <th>{{ 'formats.name' | trans }}</th>
+                    <th>{{ 'formats.sets' | trans }}</th>
+                    <th>{{ 'formats.sites' | trans }}</th>
+                    <th>{{ 'formats.deck_size' | trans }}</th>
+                    <th>{{ 'formats.lists' | trans }}</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for format in formats %}
+                    <tr>
+                        <td>
+                            <a href="{{ path('format', {code: format.code}) }}">{{ format.name }}</a>
+                            {% if format.pcErrata %} <span class="label label-info">{{ 'formats.pc_errata' | trans }}</span>{% endif %}
+                            {% if format.playtest %} <span class="label label-warning">{{ 'formats.playtest' | trans }}</span>{% endif %}
+                        </td>
+                        <td>{{ format.setSummary }}</td>
+                        <td>{{ format.sites }}</td>
+                        <td>{{ format.minimumDeckSize }}+</td>
+                        <td>
+                            {% for name in ['banned', 'restricted', 'limit2', 'limit3'] %}
+                                {% set n = format.list(name) | length %}
+                                {% if n %}<span class="format-list-count">{{ ('formats.list.' ~ name) | trans }}: {{ n }}</span> {% endif %}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            <p class="small text-muted">{{ 'formats.source' | trans({'%date%': formats[0].dateUpdate | date('Y-m-d H:i')}) }}</p>
+        {% endif %}
+    </div>
+{% endblock %}

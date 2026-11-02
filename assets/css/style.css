@@ -281,7 +281,9 @@ div#description-preview img {
 /************** QTIP ****************/
 .qtip-thronesdb{border-radius:2px;max-width:400px}
 .qtip-thronesdb-text{font-size:15px}
-.qtip-thronesdb-image{}
+.qtip-thronesdb-image{max-width:none;padding:0;border:0;background:transparent;box-shadow:none}
+.qtip-thronesdb-image .qtip-content{padding:0}
+.card-tip-image{display:block;max-width:300px;max-height:420px;border-radius:12px}
 
 /***************** THUMBNAIL CARD IMAGE **************/
 

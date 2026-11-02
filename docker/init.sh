@@ -54,6 +54,9 @@ fi
 echo "== Importing cards"
 console app:import:cards "$data_dir" --no-interaction
 
+echo "== Formats from Gemp"
+console app:formats:refresh --no-interaction || echo "(Gemp unavailable; the hourly job will try again)"
+
 if [ -n "${ADMIN_USERNAME:-}" ]; then
     echo "== Admin account ${ADMIN_USERNAME}"
     if php /usr/local/lib/app/dbcheck.php has-user "${ADMIN_USERNAME}"; then
