@@ -5,6 +5,9 @@
 # last copy stays in use.
 23 * * * * php /var/www/html/bin/console app:formats:refresh --no-interaction
 
+# Validate decklists published while Gemp was unreachable
+41 * * * * php /var/www/html/bin/console app:decklists:revalidate --no-interaction
+
 # Delete accounts that never confirmed their email address, 48 hours after registering.
 17 3 * * * php /var/www/html/bin/console app:delete-inactive-users --no-interaction
 
