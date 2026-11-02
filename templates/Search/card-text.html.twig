@@ -1,6 +1,3 @@
-<div class="card-text border-{{ card.faction_code }}">
+<div class="card-text border-culture-{{ card.culture_code ?? 'none' }}">
     {{ card.text|raw }}
-    {% if card.designer is not empty %}
-        <p class="card-designer">{{ card.designer }}</p>
-    {% endif %}
 </div>

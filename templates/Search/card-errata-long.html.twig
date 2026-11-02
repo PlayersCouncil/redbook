@@ -1,3 +1,19 @@
-<p class="card-errata-long">
-    {{ "card.info.errataed_long" | trans({"%url%":  path("faq", {"_fragment": "Card_Errata"})}) | raw }}
-</p>
+{# The card's revisions, from the wiki (decision 0021) #}
+{% if card.versions is defined and card.versions|length > 1 %}
+    <div class="card-versions">
+        <h4>{{ 'card.versions.title' | trans }}</h4>
+        <ol class="list-unstyled">
+            {% for version in card.versions %}
+                <li>
+                    {% if version.revision == 0 %}
+                        {{ 'card.versions.printed' | trans }}
+                    {% else %}
+                        {% if version.batch %}{{ version.batch }}{% else %}{{ version.issuer }}{% if version.release_date %}, {{ version.release_date }}{% endif %}{% endif %}
+                    {% endif %}
+                    {% if version.image %}&middot; <a href="{{ version.image }}" target="_blank" rel="noopener">{{ 'card.versions.image' | trans }}</a>{% endif %}
+                    {% if version.text %}<div class="small text-muted">{{ version.text }}</div>{% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    </div>
+{% endif %}

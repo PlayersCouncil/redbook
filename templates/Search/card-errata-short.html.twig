@@ -1,3 +1,10 @@
+{# On an errata blueprint: which card it errata; on a card: that a PC erratum exists #}
 <div class="card-errata-short">
-    {{ "card.info.errataed_short" | trans }}
+    {% if card.kind == 'errata' and card.errata_of_code is defined %}
+        {{ 'card.info.errata_of' | trans }}
+        <a href="{{ path('cards_zoom', {card_code: card.errata_of_code}) }}">{{ card.errata_of_name }}</a>
+    {% elseif card.errata_card is defined and card.errata_card %}
+        {{ 'card.info.has_pc_errata' | trans }}
+        <a href="{{ path('cards_zoom', {card_code: card.errata_card.code}) }}">{{ card.errata_card.code }}</a>
+    {% endif %}
 </div>

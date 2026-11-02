@@ -22,7 +22,7 @@ docker compose up -d --build
 docker compose --profile init run --rm init
 ```
 
-`init` clones the card data repository (`CARD_DATA_REPO`) into `data/carddata/` and imports it. It refuses to run over a database that already has cards, because loading the default data empties the database; set `INIT_FORCE=1` to wipe and reload on purpose.
+`init` fetches the card data ([lotrtcg-card-data](https://github.com/PlayersCouncil/lotrtcg-card-data), `CARD_DATA_REPO` at `CARD_DATA_REF`) into `data/carddata/` and imports it. The default data (which empties the database) is only loaded when there are no cards yet; set `INIT_FORCE=1` to wipe and reload on purpose. The card import runs every time and is safe to repeat, so to update the cards, change `CARD_DATA_REF` and run `init` again.
 
 The site is then at `http://localhost:${APP_PORT}` if `APP_WEBSITE_URL` is `localhost`. In production the app redirects every other hostname to `APP_WEBSITE_URL`, so set it to the public hostname (and note that Spanish is served from `es.<hostname>`). It is only bound to localhost: put a reverse proxy in front for the public hostname (below).
 

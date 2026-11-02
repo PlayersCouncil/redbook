@@ -1,5 +1,10 @@
-<div class="card-faction">
-    <span class="icon-{{ card.faction_code }} fg-{{ card.faction_code }}"></span>
-    <span class="card-faction">{{ card.faction_name }}</span>.
-    {% if card.faction_code != 'neutral' %}{% if card.is_loyal %} {{ 'card.info.loyal' | trans }}.{% else %} {{ 'card.info.nonloyal' | trans }}.{% endif %}{% endif %}
+{# Culture and side (file name kept from ThronesDB's faction line) #}
+<div class="card-culture">
+    {% if card.culture_code is defined and card.culture_code %}
+        <span class="culture-symbol culture-{{ card.culture_code }}"></span>
+        <span class="card-culture-name">{{ card.culture_name }}</span>.
+    {% endif %}
+    {% if card.side %}
+        <span class="card-side">{{ ('side.' ~ card.side) | trans }}</span>.
+    {% endif %}
 </div>

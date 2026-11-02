@@ -2,11 +2,12 @@
 {
 
     /**
+     * Subtypes (race / class / keywords line)
      * @memberOf format
      */
     format.traits = function traits(card)
     {
-        return card.traits || '';
+        return card.subtypes || '';
     };
 
     /**
@@ -14,60 +15,57 @@
      */
     format.name = function name(card)
     {
-        return (card.is_unique ? '<span class="icon-unique"></span> ' : "") + card.name;
-    }
+        return (card.is_unique ? '<span class="card-unique">&bull;</span>' : "") + (card.label || card.name);
+    };
 
+    /**
+     * Culture and side
+     * @memberOf format
+     */
     format.faction = function faction(card)
     {
-        var text = '<span class="fg-' + card.faction_code + ' icon-' + card.faction_code + '"></span> ' + card.faction_name + '. ';
-        if(card.faction_code != 'neutral') {
-            if(card.is_loyal)
-                text += Translator.trans('card.info.loyal') + '. ';
-            else
-                text += Translator.trans('card.info.nonloyal') + '. ';
+        var text = '';
+        if(card.culture_code) {
+            text += '<span class="culture-symbol culture-' + card.culture_code + '"></span> ' + card.culture_name + '. ';
+        }
+        if(card.side) {
+            text += Translator.trans('side.' + card.side) + '. ';
         }
         return text;
-    }
+    };
 
     /**
      * @memberOf format
      */
     format.pack = function pack(card)
     {
-        var text = card.pack_name + ' #' + card.position + '. ';
-        return text;
+        return card.pack_name + ' #' + card.position + (card.coll_info ? ' (' + card.coll_info + ')' : '') + '. ';
+    };
+
+    function stat(key, value)
+    {
+        return value === null || value === undefined || value === '' ? '' : Translator.trans('card.info.' + key) + ': ' + value + '. ';
     }
 
     /**
+     * Type and the stats that apply to it; mirrors templates/Search/card-props.html.twig
      * @memberOf format
      */
     format.info = function info(card)
     {
         var text = '<span class="card-type">' + card.type_name + '. </span>';
-        switch(card.type_code) {
-            case 'character':
-                text += Translator.trans('card.info.cost') + ': ' + card.cost + '. ';
-                text += Translator.trans('card.info.str') + ': ' + (card.strength != null ? card.strength : 'X') + '. '
-                if(card.is_military)
-                    text += '<span class="color-military icon-military" title="' + Translator.trans('challenges.military') + '"></span> ';
-                if(card.is_intrigue)
-                    text += '<span class="color-intrigue icon-intrigue" title="' + Translator.trans('challenges.intrigue') + '"></span> ';
-                if(card.is_power)
-                    text += '<span class="color-power icon-power" title="' + Translator.trans('challenges.power') + '"></span> ';
-                break;
-            case 'attachment':
-            case 'location':
-            case 'event':
-                text += Translator.trans('card.info.cost') + ': ' + card.cost + '. ';
-                break;
-            case 'plot':
-                text += Translator.trans('card.info.income') + ': ' + card.income + '. ';
-                text += Translator.trans('card.info.initiative') + ': ' + card.initiative + '. ';
-                text += Translator.trans('card.info.claim') + ': ' + card.claim + '. ';
-                text += Translator.trans('card.info.reserve') + ': ' + card.reserve + '. ';
-                text += Translator.trans('card.info.plotlimit') + ': ' + card.deck_limit + '. ';
-                break;
+        if(card.type_code !== 'site') {
+            text += stat('twilight', card.twilight);
         }
+        text += stat('strength', card.strength) + stat('strength', card.strength_mod);
+        text += stat('vitality', card.vitality) + stat('vitality', card.vitality_mod);
+        text += stat('resistance', card.resistance) + stat('resistance', card.resistance_mod);
+        if(card.site_number !== null && card.site_number !== undefined) {
+            text += stat(card.type_code === 'ally' ? 'home_site' : 'site', card.site_number + (card.site_block ? ' ' + card.site_block : ''));
+        }
+        text += stat('site', card.site_number_mod);
+        text += stat('shadow_number', card.shadow_number);
+        text += stat('signet', card.signet);
         return text;
     };
 
@@ -77,11 +75,14 @@
     format.text = function text(card)
     {
         var text = card.text || '';
-        text = text.replace(/\[(\w+)\]/g, '<span class="icon-$1"></span>')
+        text = text.replace(/\[([A-Za-z][A-Za-z -]{1,20})\]/g, function (match, symbol) {
+            var code = symbol.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+            if(code === 'wraith') {
+                code = 'ringwraith'; // the culture's code; card text writes [WRAITH]
+            }
+            return '<span class="culture-symbol culture-' + code + '" title="' + symbol + '">' + symbol + '</span>';
+        });
         text = text.split("\n").join('</p><p>');
-        if(card.designer) {
-            text = text + '<p class="card-designer">' + card.designer + '</p>';
-        }
         return '<p>' + text + '</p>';
     };
 

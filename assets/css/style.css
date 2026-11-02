@@ -729,3 +729,10 @@ abbr.legality.banned {
         width: unset;
     }
 }
+
+/* LOTR card symbols. Card text writes cultures as [ELVEN]; until there are
+   culture icons the name is shown in small capitals. */
+.culture-symbol { font-weight: bold; font-variant: small-caps; text-transform: lowercase; }
+.culture-symbol:empty { display: none; }
+.card-unique { margin-right: 1px; }
+.card-versions ol li { margin-bottom: 4px; }

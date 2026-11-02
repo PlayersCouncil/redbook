@@ -91,15 +91,8 @@ interface PackInterface extends Serializable
      */
     public function getDateRelease();
 
-    /**
-     * @param int $cgdbId
-     */
-    public function setCgdbId($cgdbId);
 
-    /**
-     * @return int
-     */
-    public function getCgdbId();
+    public function getKind(): string;
 
     /**
      * @param CardInterface $card

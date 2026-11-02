@@ -392,6 +392,8 @@ search:
   no: No
   none: none
   only: Only
+  stats: Stats
+  sets: Sets and rarity
   sort:
     name: Sort by Name
     set: Sort by Set
@@ -399,6 +401,9 @@ search:
     type: Sort by Type
     costgold: Sort by Cost/Gold
     strini: Sort by Strength/Initiative
+    culture: Sort by Culture
+    twilight: Sort by Twilight cost
+    strength: Sort by Strength
   view:
     list: View as a Checklist
     spoiler: View as a Spoiler
@@ -410,6 +415,14 @@ pag:
   cardscount: "{0} There is no cards | {1} One card | ]1,Inf] %count% cards"
 
 card:
+  kind:
+    card: Cards
+    errata: PC errata blueprints
+    errata_short: Players Council errata
+  versions:
+    title: Revisions
+    printed: As printed
+    image: image
   podinfo_single: '%format% - If you deck includes %card% then it cannot include %other_card%.'
   podinfo_multiple: '%format% - If you deck includes %card% then it cannot include any of the following cards: %other_cards%.'
   restricted_podinfo_single: '%format% - If %restricted% is your chosen restricted card, you cannot include %card% in your deck.'
@@ -465,6 +478,20 @@ card:
       minimum: Your review must at least %min% characters long.
   info:
     name: Name
+    subtitle: Subtitle
+    culture: Culture
+    side: Side
+    twilight: Twilight
+    vitality: Vitality
+    resistance: Resistance
+    site: Site
+    home_site: Home site
+    shadow_number: Shadow number
+    signet: Signet
+    subtypes: Subtype
+    kind: Card or errata
+    errata_of: "Players Council errata of"
+    has_pc_errata: "This card has a Players Council errata:"
     unique: Unique
     text: Text
     flavor: Flavor text
@@ -495,6 +522,10 @@ card:
       type: T.
       faction: F.
     workInProgress: This card is considered "work in progress" and may be subject to modifications or removal without further notice.
+side:
+  free_peoples: Free Peoples
+  shadow: Shadow
+
 challenges:
   military: Military
   intrigue: Intrigue

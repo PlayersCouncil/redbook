@@ -13,8 +13,8 @@
                 {% for card in cards %}
                     <div class="col-sm-7" style="margin-bottom:2em">
                         <div>
-                            <div class="panel panel-default border-{{ card.faction_code }}">
-                                <div class="panel-heading border-{{ card.faction_code }} bg-{{ card.faction_code }}">
+                            <div class="panel panel-default border-culture-{{ card.culture_code ?? 'none' }}">
+                                <div class="panel-heading border-culture-{{ card.culture_code ?? 'none' }} bg-culture-{{ card.culture_code ?? 'none' }}">
                                     <h3 class="panel-title">
                                         {% include 'Search/card-name-with-link.html.twig' %}
                                     </h3>
@@ -24,18 +24,13 @@
                                     {% include 'Search/card-faction.html.twig' %}
                                     {% include 'Search/card-info.html.twig' %}
                                     {% include 'Search/card-text.html.twig' %}
-                                    {% if card.errataed %}
-                                        {%  include 'Search/card-errata-short.html.twig' %}
-                                    {% endif %}
+                                    {% include 'Search/card-errata-short.html.twig' %}
                                     {% include 'Search/card-flavor.html.twig' %}
-                                    {% include 'Search/card-illustrator.html.twig' %}
                                     {% include 'Search/card-pack.html.twig' %}
                                     {% include 'Search/card-rarity.html.twig' %}
                                 </div>
                             </div>
-                            {% if card.errataed %}
-                                {%  include 'Search/card-errata-long.html.twig' %}
-                            {% endif %}
+                            {% include 'Search/card-errata-long.html.twig' %}
                             <p>Link:
                                 <a href="{{ path('decklists_list',{type:'find',_locale:app.request.locale,'cards[]':card.code}) }}">Decklists</a>
                             </p>
@@ -45,7 +40,7 @@
                     <div class="col-sm-5" style="margin-bottom:2em">
                         <div>
                             {% if card.image_url %}
-                                <img src="{{ card.image_url }}" alt="{{ card.name }}" class="img-responsive"
+                                <img src="{{ card.image_url }}" alt="{{ card.label }}" class="img-responsive"
                                      style="margin:auto">
                             {% else %}
                                 <div class="no-image" style="margin:auto">

@@ -12,18 +12,12 @@
                             {% include 'Search/card-name-with-link.html.twig' %}
                         </h4>
                         <div class="card-content">
-                            <div class="faction-icon">
-                                <span class="icon-{{ card.faction_code }} fg-{{ card.faction_code }}"></span>
-                            </div>
                             {% include 'Search/card-work-in-progress.html.twig' %}
                             {% include 'Search/card-faction.html.twig' %}
                             {% include 'Search/card-info.html.twig' %}
                             {% include 'Search/card-text.html.twig' %}
-                            {% if card.errataed %}
-                                {% include 'Search/card-errata-short.html.twig' %}
-                            {% endif %}
+                            {% include 'Search/card-errata-short.html.twig' %}
                             {% include 'Search/card-flavor.html.twig' %}
-                            {% include 'Search/card-illustrator.html.twig' %}
                             {% include 'Search/card-pack.html.twig' %}
                         </div>
                     </div>

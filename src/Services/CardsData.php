@@ -51,61 +51,30 @@ class CardsData
      * @param string $text
      * @return string
      */
+    /**
+     * Culture symbols in game text ([GONDOR], [uruk-hai]) become spans the stylesheet can show as
+     * icons (Phase 6); until then they read as the culture's name.
+     */
     public function replaceSymbols($text)
     {
-        static $displayTextReplacements = [
-            '[baratheon]' => '<span class="icon-baratheon"></span>',
-            '[intrigue]' => '<span class="icon-intrigue"></span>',
-            '[greyjoy]' => '<span class="icon-greyjoy"></span>',
-            '[lannister]' => '<span class="icon-lannister"></span>',
-            '[martell]' => '<span class="icon-martell"></span>',
-            '[military]' => '<span class="icon-military"></span>',
-            '[thenightswatch]' => '<span class="icon-thenightswatch"></span>',
-            '[power]' => '<span class="icon-power"></span>',
-            '[stark]' => '<span class="icon-stark"></span>',
-            '[targaryen]' => '<span class="icon-targaryen"></span>',
-            '[tyrell]' => '<span class="icon-tyrell"></span>',
-            '[unique]' => '<span class="icon-unique"></span>',
-        ];
-
-        return str_replace(array_keys($displayTextReplacements), array_values($displayTextReplacements), $text);
+        if ($text === null || $text === '') {
+            return $text;
+        }
+        return preg_replace_callback('/\[([A-Za-z][A-Za-z -]{1,20})\]/', function ($m) {
+            $code = trim(preg_replace('/[^a-z0-9]+/', '_', strtolower($m[1])), '_');
+            if ($code === 'wraith') {
+                $code = 'ringwraith'; // the culture's code; card text writes [WRAITH]
+            }
+            return '<span class="culture-symbol culture-' . $code . '" title="' . htmlspecialchars($m[1]) . '">'
+                . htmlspecialchars($m[1]) . '</span>';
+        }, $text);
     }
 
     /**
-     * Searches for single keywords and surround them with <abbr>
-     * @param string $text
-     * @return string
+     * Was GoT keyword tooltips; LOTR keyword help comes later. Returns the text unchanged.
      */
     public function addAbbrTags($text)
     {
-        static $keywords = [
-            'renown',
-            'intimidate',
-            'stealth',
-            'insight',
-            'limited',
-            'pillage',
-            'terminal',
-            'ambush',
-            'bestow',
-            'shadow',
-            'assault',
-        ];
-
-        $locale = $this->request_stack->getCurrentRequest()
-            ? $this->request_stack->getCurrentRequest()->getLocale()
-            : 'en';
-
-        foreach ($keywords as $keyword) {
-            $translated = $this->translator->trans('keyword.' . $keyword . ".name", array(), "messages", $locale);
-
-            $text = preg_replace_callback("/\b($translated)\b/i", function ($matches) use ($keyword) {
-                return "<abbr data-keyword=\"$keyword\">" . $matches[1] . "</abbr>";
-            }, $text);
-        }
-
-
-
         return $text;
     }
 
@@ -122,18 +91,17 @@ class CardsData
     public function allsetsdata()
     {
         /** @var CycleInterface[] $list_cycles */
-        $list_cycles = $this->doctrine->getRepository(Cycle::class)->findAll();
+        $list_cycles = $this->doctrine->getRepository(Cycle::class)->findBy([], ['position' => 'ASC']);
         $lines = [];
 
         foreach ($list_cycles as $cycle) {
             $packs = $cycle->getPacks();
 
             foreach ($packs as $pack) {
-                if ($cycle->getSize() === 1) {
-                    $label = $pack->getName();
-                } else {
-                    $label = $pack->getPosition() . '. ' . $pack->getName();
+                if ($pack->getKind() === 'pc-errata') {
+                    continue; // errata blueprints are shown on their original card, not as sets
                 }
+                $label = $pack->getName();
                 $lines[] = array(
                     "code" => $pack->getCode(),
                     "label" => $label,
@@ -164,6 +132,9 @@ class CardsData
 
             /* @var PackInterface $pack */
             foreach ($list_packs as $pack) {
+                if ($pack->getKind() === 'pc-errata') {
+                    continue;
+                }
                 $label = $pack->getName();
 
                 $packs[] = [
@@ -178,7 +149,9 @@ class CardsData
                 ];
             }
 
-            if ($cycle->getSize() === 1) {
+            if (!$packs) {
+                continue;
+            } elseif (count($packs) === 1) {
                 $cycles[] = $packs[0];
             } else {
                 $cycles[] = [
@@ -220,7 +193,8 @@ class CardsData
                 ->leftJoin('c.pack', 'p')
                 ->leftJoin('p.cycle', 'y')
                 ->leftJoin('c.type', 't')
-                ->leftJoin('c.faction', 'f')
+                // The search letter is the join alias for "code" searches: f is culture, t type, r rarity
+                ->leftJoin('c.culture', 'f')
                 ->leftJoin('c.rarity', 'r');
         $qb2 = null;
         $qb3 = null;
@@ -331,7 +305,7 @@ class CardsData
                             }
                             $qb->andWhere(implode($operator == '!' ? " and " : " or ", $or));
                             break;
-                        default: // type, faction, or rarity
+                        default: // type, culture or rarity
                             $or = [];
                             foreach ($condition as $arg) {
                                 switch ($operator) {
@@ -350,151 +324,74 @@ class CardsData
                     break;
                 case 'string':
                     switch ($searchCode) {
-                        case '': // name or index
+                        case '': // name, blueprint ID or acronym
                             $or = [];
                             foreach ($condition as $arg) {
-                                $code = preg_match('/^\d\d\d\d\d$/u', $arg);
-                                $acronym = preg_match('/^[A-Z]{2,}$/', $arg);
-                                if ($code) {
+                                if (preg_match('/^\d+_\d+$/u', $arg)) {
                                     $or[] = "(c.code = ?$i)";
                                     $qb->setParameter($i++, $arg);
-                                } elseif ($acronym) {
+                                } elseif (preg_match('/^[A-Z]{2,}$/', $arg)) {
                                     $like = implode('% ', str_split($arg));
                                     $or[] = "(REPLACE(c.name, '-', ' ') like ?$i)";
                                     $qb->setParameter($i++, "$like%");
                                 } else {
-                                    $or[] = "(c.name like ?$i)";
+                                    $or[] = "(c.name like ?$i or c.subtitle like ?$i)";
                                     $qb->setParameter($i++, "%$arg%");
                                 }
                             }
                             $qb->andWhere(implode(" or ", $or));
                             break;
-                        case 'x': // text
+                        case 'd': // side: fp / free_peoples / shadow / none
                             $or = [];
                             foreach ($condition as $arg) {
-                                switch ($operator) {
-                                    case ':':
-                                            $or[] = "(c.text like ?$i)";
-                                        break;
-                                    case '!':
-                                            $or[] = "(c.text is null or c.text not like ?$i)";
-                                        break;
+                                $side = match (strtolower($arg)) {
+                                    'fp', 'free', 'freepeoples', 'free_peoples' => Card::SIDE_FREE_PEOPLES,
+                                    'shadow', 's' => Card::SIDE_SHADOW,
+                                    default => null,
+                                };
+                                if ($side === null) {
+                                    $or[] = $operator == '!' ? "(c.side is not null)" : "(c.side is null)";
+                                    continue;
                                 }
+                                $or[] = $operator == '!' ? "(c.side is null or c.side != ?$i)" : "(c.side = ?$i)";
+                                $qb->setParameter($i++, $side);
+                            }
+                            $qb->andWhere(implode($operator == '!' ? " and " : " or ", $or));
+                            $i++;
+                            break;
+                        case 'i': // kind: card / errata
+                            $or = [];
+                            foreach ($condition as $arg) {
+                                $or[] = $operator == '!' ? "(c.kind != ?$i)" : "(c.kind = ?$i)";
+                                $qb->setParameter($i++, strtolower($arg));
+                            }
+                            $qb->andWhere(implode($operator == '!' ? " and " : " or ", $or));
+                            break;
+                        default: // text, lore, subtypes, signet: contains
+                            $or = [];
+                            foreach ($condition as $arg) {
+                                $or[] = $operator == '!'
+                                    ? "(c.$searchName is null or c.$searchName not like ?$i)"
+                                    : "(c.$searchName like ?$i)";
                                 $qb->setParameter($i++, "%$arg%");
                             }
                             $qb->andWhere(implode($operator == '!' ? " and " : " or ", $or));
                             break;
-                        case 'a': // flavor
-                            $or = [];
-                            foreach ($condition as $arg) {
-                                switch ($operator) {
-                                    case ':':
-                                            $or[] = "(c.flavor like ?$i)";
-                                        break;
-                                    case '!':
-                                            $or[] = "(c.flavor is null or c.flavor not like ?$i)";
-                                        break;
-                                }
-                                $qb->setParameter($i++, "%$arg%");
-                            }
-                            $qb->andWhere(implode($operator == '!' ? " and " : " or ", $or));
-                            break;
-                        case 'k': // subtype (traits)
-                            $or = [];
-                            foreach ($condition as $arg) {
-                                switch ($operator) {
-                                    case ':':
-                                        if ('-' === $arg) {
-                                            $or[] = "(c.traits = ?$i)";
-                                            $qb->setParameter($i++, '');
-                                        } else {
-                                            $or[] = "((c.traits = ?$i) or (c.traits like ?"
-                                                . ($i + 1)
-                                                . ") or (c.traits like ?"
-                                                . ($i + 2)
-                                                . ") or (c.traits like ?"
-                                                . ($i + 3)
-                                                . "))";
-                                            $qb->setParameter($i++, "$arg.");
-                                            $qb->setParameter($i++, "$arg. %");
-                                            $qb->setParameter($i++, "%. $arg.");
-                                            $qb->setParameter($i++, "%. $arg. %");
-                                        }
-                                        break;
-                                    case '!':
-                                        if ('-' === $arg) {
-                                            $or[] = "(c.traits <> ?$i)";
-                                            $qb->setParameter($i++, '');
-                                        } else {
-                                            $or[] = "(c.traits is null or ((c.traits != ?$i) and (c.traits not like ?"
-                                                . ($i + 1)
-                                                . ") and (c.traits not like ?"
-                                                . ($i + 2)
-                                                . ") and (c.traits not like ?"
-                                                . ($i + 3)
-                                                . ")))";
-                                            $qb->setParameter($i++, "$arg.");
-                                            $qb->setParameter($i++, "$arg. %");
-                                            $qb->setParameter($i++, "%. $arg.");
-                                            $qb->setParameter($i++, "%. $arg. %");
-                                        }
-                                        break;
-                                }
-                            }
-                            $qb->andWhere(implode($operator == '!' ? " and " : " or ", $or));
-                            break;
-                        case 'i': // illustrator
-                            $or = [];
-                            foreach ($condition as $arg) {
-                                switch ($operator) {
-                                    case ':':
-                                            $or[] = "(c.illustrator = ?$i)";
-                                        break;
-                                    case '!':
-                                            $or[] = "(c.illustrator != ?$i)";
-                                        break;
-                                }
-                                $qb->setParameter($i++, $arg);
-                            }
-                            $qb->andWhere(implode($operator == '!' ? " and " : " or ", $or));
-                            break;
-                        case 'd': // designer
-                            $or = [];
-                            foreach ($condition as $arg) {
-                                switch ($operator) {
-                                    case ':':
-                                            $or[] = "(c.designer like ?$i)";
-                                        break;
-                                    case '!':
-                                            $or[] = "(c.designer is null or c.designer not like ?$i)";
-                                        break;
-                                }
-                                $qb->setParameter($i++, "%$arg%");
-                            }
-                            $qb->andWhere(implode($operator == '!' ? " and " : " or ", $or));
-                            break;
-                        case 'r': // Rarity
-                            $or = [];
-                            foreach ($condition as $arg) {
-                                switch ($operator) {
-                                    case ':':
-                                            $or[] = "(p.dateRelease <= ?$i)";
-                                        break;
-                                    case '!':
-                                            $or[] = "(p.dateRelease > ?$i or p.dateRelease IS NULL)";
-                                        break;
-                                }
-                                if ($arg == "now") {
-                                    $qb->setParameter($i++, new DateTime());
-                                } else {
-                                    $qb->setParameter($i++, new DateTime($arg));
-                                }
-                            }
-                                $qb->andWhere(implode(" or ", $or));
-                            break;
-                        break;
                     }
             }
+        }
+
+        // One entry per card: errata blueprints only when asked for (i:errata)
+        // (or looked up by blueprint ID, as the card page does)
+        $asksForKind = false;
+        foreach ($conditions as $condition) {
+            if ($condition[0] === 'i'
+                || ($condition[0] === '' && preg_grep('/^\d+_\d+$/', array_slice($condition, 2)))) {
+                $asksForKind = true;
+            }
+        }
+        if (!$asksForKind) {
+            $qb->andWhere("c.kind = 'card'");
         }
 
         if (!$i && !$forceempty) {
@@ -504,17 +401,18 @@ class CardsData
             case 'set':
                 $qb->orderBy('y.position')->addOrderBy('p.position')->addOrderBy('c.position');
                 break;
-            case 'faction':
-                $qb->orderBy('c.faction')->addOrderBy('c.type');
+            case 'culture':
+                $qb->orderBy('f.name')->addOrderBy('t.name');
                 break;
             case 'type':
-                $qb->orderBy('c.type')->addOrderBy('c.faction');
+                $qb->orderBy('t.name')->addOrderBy('f.name');
                 break;
+            case 'twilight':
             case 'cost':
-                $qb->orderBy('c.type')->addOrderBy('c.cost')->addOrderBy('c.income');
+                $qb->orderBy('t.name')->addOrderBy('c.twilight');
                 break;
             case 'strength':
-                $qb->orderBy('c.type')->addOrderBy('c.strength')->addOrderBy('c.initiative');
+                $qb->orderBy('t.name')->addOrderBy('c.strength')->addOrderBy('c.vitality');
                 break;
         }
         $qb->addOrderBy('c.name');
@@ -581,16 +479,10 @@ class CardsData
             UrlGeneratorInterface::ABSOLUTE_URL
         );
 
-        if ($card->getIsMultiple()) {
-            $cardinfo['label'] = $card->getName() . ' (' . $card->getPack()->getCode() . ')';
-        } else {
-            $cardinfo['label'] = $card->getName();
-        }
+        $cardinfo['label'] = $card->getFullName();
 
         if ($api) {
-            unset($cardinfo['id']);
-            $cardinfo['ci'] = $card->getCostIncome();
-            $cardinfo['si'] = $card->getStrengthInitiative();
+            unset($cardinfo['id'], $cardinfo['translations']);
         } else {
             $cardinfo['text'] = $this->replaceSymbols($cardinfo['text']);
             $cardinfo['text'] = $this->addAbbrTags($cardinfo['text']);
@@ -599,10 +491,6 @@ class CardsData
             $cardinfo['flavor'] = $this->replaceSymbols($cardinfo['flavor']);
         }
 
-        if ($version === '1.0') {
-            $cardinfo['cost'] = is_numeric($cardinfo['cost']) ? intval($cardinfo['cost']) : null;
-            $cardinfo['ci'] = is_numeric($cardinfo['ci']) ? intval($cardinfo['ci']) : null;
-        }
 
         $cardinfo['work_in_progress'] = $card->getPack()->getWorkInProgress();
         $cardinfo['dateUpdate'] = $card->getDateUpdate()->format('c');
@@ -645,7 +533,7 @@ class CardsData
                 if (
                     preg_match('/^"([^"]*)"(.*)/u', $query, $match)
                     // jeton "texte libre entre guillements"
-                    || preg_match('/^([\p{L}\p{N}\-\&]+)(.*)/u', $query, $match)
+                    || preg_match('/^([\p{L}\p{N}\-\&_]+)(.*)/u', $query, $match)
                     // jeton "texte autorisé sans guillements"
                 ) {
                     if (($etat == 2 && count($cond) == 2) || $etat == 3) {

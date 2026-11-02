@@ -70,11 +70,16 @@ class Pack implements PackInterface
     #[ORM\Column(name: 'date_release', type: 'date', nullable: true)]
     protected $dateRelease;
 
-    /**
-     * @var int|null
-     */
-    #[ORM\Column(name: 'cgdb_id', type: 'integer', nullable: true)]
-    protected $cgdbId;
+    /** decipher, pc (V-sets) or pc-errata (sets 50-69, hidden from set browsing) */
+    #[ORM\Column(name: 'kind', type: 'string', length: 20, nullable: false, options: ['default' => 'decipher'])]
+    protected string $kind = 'decipher';
+
+    /** The wiki's set ID (1, V1...); null for the PC errata sets */
+    #[ORM\Column(name: 'wiki_set', type: 'string', length: 10, nullable: true)]
+    protected ?string $wikiSet = null;
+
+    #[ORM\Column(name: 'abbreviation', type: 'string', length: 20, nullable: true)]
+    protected ?string $abbreviation = null;
 
     /**
      * @var int|null
@@ -232,21 +237,13 @@ class Pack implements PackInterface
         return $this->dateRelease;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function setCgdbId($cgdbId)
-    {
-        $this->cgdbId = $cgdbId;
-    }
 
-    /**
-     * @inheritdoc
-     */
-    public function getCgdbId()
-    {
-        return $this->cgdbId;
-    }
+    public function getKind(): string { return $this->kind; }
+    public function setKind(string $kind): void { $this->kind = $kind; }
+    public function getWikiSet(): ?string { return $this->wikiSet; }
+    public function setWikiSet(?string $wikiSet): void { $this->wikiSet = $wikiSet; }
+    public function getAbbreviation(): ?string { return $this->abbreviation; }
+    public function setAbbreviation(?string $abbreviation): void { $this->abbreviation = $abbreviation; }
 
     /**
      * @inheritdoc
@@ -310,7 +307,7 @@ class Pack implements PackInterface
             'name' => $this->name,
             'position' => $this->position,
             'size' => $this->size,
-            'cgdb_id' => $this->cgdbId,
+            'kind' => $this->kind,
             'work_in_progress' => $this->workInProgress
         ];
     }

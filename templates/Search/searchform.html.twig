@@ -1,6 +1,6 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Card Search{% endblock %}
+{% block title %}{{ 'search.title' | trans }}{% endblock %}
 
 {% block body %}
     <div class="main white container">
@@ -63,306 +63,166 @@
                         </div>
                     </fieldset>
                     <fieldset>
-                        <legend>{{ 'card.info.faction' | trans }}</legend>
+                        <legend>{{ 'card.info.culture' | trans }}</legend>
                         <div class="row">
                             <div class="col-sm-12">
                                 <div class="form-group">
-                                    <div class="btn-group" data-toggle="buttons">
-                                        {% for faction in factions %}
-                                            <label class="btn btn-default active" title="{{ faction.name }}"
-                                                   data-toggle="tooltip" data-container="body">
-                                                <input type="checkbox" name="f[]" checked value="{{ faction.code }}">
-                                                <span class="icon icon-{{ faction.code }}"></span>
+                                    <div class="btn-group btn-group-sm" data-toggle="buttons">
+                                        {% for culture in cultures %}
+                                            <label class="btn btn-default active" title="{{ culture.name }}">
+                                                <input type="checkbox" name="f[]" checked value="{{ culture.code }}">
+                                                <span class="culture-symbol culture-{{ culture.code }}">{{ culture.name }}</span>
                                             </label>
                                         {% endfor %}
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </fieldset>
-                    <fieldset>
-                        <legend>{{ 'search.attributes' | trans }}</legend>
                         <div class="row">
                             <div class="col-sm-4">
                                 <div class="form-group">
-                                    <label for="e">{{ 'card.info.set' | trans }}</label>
-                                    <div>
-                                        <select class="form-control" name="e" id="e">
-                                            <option value="">{{ 'search.any' | trans }}</option>
-                                            {% for pack in packs %}
-                                                <option value="{{ pack.code }}">{{ pack.label }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
+                                    <label for="d">{{ 'card.info.side' | trans }}</label>
+                                    <select class="form-control" name="d" id="d">
+                                        <option value="">{{ 'search.any' | trans }}</option>
+                                        <option value="fp">{{ 'side.free_peoples' | trans }}</option>
+                                        <option value="shadow">{{ 'side.shadow' | trans }}</option>
+                                        <option value="none">{{ 'search.none' | trans }}</option>
+                                    </select>
                                 </div>
                             </div>
-                            <div class="col-sm-4">
-                                <div class="form-group">
-                                    <label for="l">{{ 'card.info.loyal' | trans }}</label>
-                                    <div>
-                                        <select class="form-control" name="l" id="l">
-                                            <option value="">{{ 'search.any' | trans }}</option>
-                                            <option value="1">{{ 'search.yes' | trans }}</option>
-                                            <option value="0">{{ 'search.no' | trans }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-sm-4">
-                                <div class="form-group">
-                                    <label for="m">{{ 'challenges.military' | trans }}</label>
-                                    <div>
-                                        <select class="form-control" name="m" id="m">
-                                            <option value="">{{ 'search.any' | trans }}</option>
-                                            <option value="1">{{ 'search.yes' | trans }}</option>
-                                            <option value="0">{{ 'search.no' | trans }}</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
                             <div class="col-sm-4">
                                 <div class="form-group">
                                     <label for="t">{{ 'card.info.type' | trans }}</label>
-                                    <div>
-                                        <select class="form-control" name="t" id="t">
-                                            <option value="">{{ 'search.any' | trans }}</option>
-                                            {% for type in types %}
-                                                <option value="{{ type.code }}">{{ type.name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
+                                    <select class="form-control" name="t" id="t">
+                                        <option value="">{{ 'search.any' | trans }}</option>
+                                        {% for type in types %}
+                                            <option value="{{ type.code }}">{{ type.name }}</option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
                             </div>
                             <div class="col-sm-4">
-                            </div>
-                            <div class="col-sm-4">
                                 <div class="form-group">
-                                    <label for="g">{{ 'challenges.intrigue' | trans }}</label>
-                                    <div>
-                                        <select class="form-control" name="g" id="g">
-                                            <option value="">{{ 'search.any' | trans }}</option>
-                                            <option value="1">{{ 'search.yes' | trans }}</option>
-                                            <option value="0">{{ 'search.no' | trans }}</option>
-                                        </select>
-                                    </div>
+                                    <label for="k">{{ 'card.info.subtypes' | trans }}</label>
+                                    <select class="form-control" name="k" id="k">
+                                        <option value="">{{ 'search.any' | trans }}</option>
+                                        {% for subtype in subtypes %}
+                                            <option value="{{ subtype }}">{{ subtype }}</option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-sm-4">
-                                <div class="form-group">
-                                    <label for="k">{{ 'card.info.traits' | trans }}</label>
-                                    <div>
-                                        <select class="form-control" name="k" id="k">
-                                            <option value="">{{ 'search.any' | trans }}</option>
-                                            <option value="-">{{  'search.none' | trans }}</option>
-                                            <option disabled>&nbsp;</option>
-                                            {% for trait in traits %}
-                                                <option value="{{ trait }}">{{ trait }}</option>
-                                            {% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
                             <div class="col-sm-4">
                                 <div class="form-group">
                                     <label for="u">{{ 'card.info.unique' | trans }}</label>
-                                    <div>
-                                        <select class="form-control" name="u" id="u">
-                                            <option value="">{{ 'search.any' | trans }}</option>
-                                            <option value="1">{{ 'search.yes' | trans }}</option>
-                                            <option value="0">{{ 'search.no' | trans }}</option>
-                                        </select>
-                                    </div>
+                                    <select class="form-control" name="u" id="u">
+                                        <option value="">{{ 'search.any' | trans }}</option>
+                                        <option value="1">{{ 'search.yes' | trans }}</option>
+                                        <option value="0">{{ 'search.no' | trans }}</option>
+                                    </select>
                                 </div>
                             </div>
                             <div class="col-sm-4">
                                 <div class="form-group">
-                                    <label for="p">{{ 'challenges.power' | trans }}</label>
-                                    <div>
-                                        <select class="form-control" name="p" id="p">
-                                            <option value="">{{ 'search.any' | trans }}</option>
-                                            <option value="1">{{ 'search.yes' | trans }}</option>
-                                            <option value="0">{{ 'search.no' | trans }}</option>
-                                        </select>
-                                    </div>
+                                    <label for="g">{{ 'card.info.signet' | trans }}</label>
+                                    <input class="form-control" id="g" name="g" value="">
+                                </div>
+                            </div>
+                            <div class="col-sm-4">
+                                <div class="form-group">
+                                    <label for="i">{{ 'card.info.kind' | trans }}</label>
+                                    <select class="form-control" name="i" id="i">
+                                        <option value="">{{ 'card.kind.card' | trans }}</option>
+                                        <option value="errata">{{ 'card.kind.errata' | trans }}</option>
+                                    </select>
                                 </div>
                             </div>
                         </div>
                     </fieldset>
                     <fieldset>
-                        <legend>{{ 'search.numerics' | trans }}</legend>
+                        <legend>{{ 'search.stats' | trans }}</legend>
                         <div class="row">
-                            <div class="col-sm-6">
+                            <div class="col-sm-3">
                                 <div class="form-group">
-                                    <label for="o">{{ 'card.info.cost' | trans }}</label>
-                                    <div class="row">
-                                        <div class="col-xs-4">
-                                            <select name="oo" id="oo" class="form-control">
-                                                <option value=":">=</option>
-                                                <option value="<">&lt;</option>
-                                                <option value=">">&gt;</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-xs-8">
-                                            <input id="o" name="o" value="" class="form-control">
-                                        </div>
+                                    <label for="o">{{ 'card.info.twilight' | trans }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-btn"><select name="oo" class="form-control" style="width:4em"><option value=":">=</option><option value="<">&lt;</option><option value=">">&gt;</option><option value="!">&ne;</option></select></span>
+                                        <input class="form-control" size="2" id="o" name="o" value="">
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-sm-6">
-                                <div class="form-group">
-                                    <label for="n">{{ 'card.info.income' | trans }}</label>
-                                    <div class="row">
-                                        <div class="col-xs-4">
-                                            <select name="no" id="no" class="form-control">
-                                                <option value=":">=</option>
-                                                <option value="<">&lt;</option>
-                                                <option value=">">&gt;</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-xs-8">
-                                            <input id="n" name="n" value="" class="form-control">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-sm-6">
+                            <div class="col-sm-3">
                                 <div class="form-group">
                                     <label for="s">{{ 'card.info.strength' | trans }}</label>
-                                    <div class="row">
-                                        <div class="col-xs-4">
-                                            <select name="so" id="so" class="form-control">
-                                                <option value=":">=</option>
-                                                <option value="<">&lt;</option>
-                                                <option value=">">&gt;</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-xs-8">
-                                            <input id="s" name="s" value="" class="form-control">
-                                        </div>
+                                    <div class="input-group">
+                                        <span class="input-group-btn"><select name="so" class="form-control" style="width:4em"><option value=":">=</option><option value="<">&lt;</option><option value=">">&gt;</option><option value="!">&ne;</option></select></span>
+                                        <input class="form-control" size="2" id="s" name="s" value="">
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-sm-6">
+                            <div class="col-sm-3">
                                 <div class="form-group">
-                                    <label for="v">{{ 'card.info.initiative' | trans }}</label>
-                                    <div class="row">
-                                        <div class="col-xs-4">
-                                            <select name="vo" id="vo" class="form-control">
-                                                <option value=":">=</option>
-                                                <option value="<">&lt;</option>
-                                                <option value=">">&gt;</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-xs-8">
-                                            <input id="v" name="v" value="" class="form-control">
-                                        </div>
+                                    <label for="v">{{ 'card.info.vitality' | trans }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-btn"><select name="vo" class="form-control" style="width:4em"><option value=":">=</option><option value="<">&lt;</option><option value=">">&gt;</option><option value="!">&ne;</option></select></span>
+                                        <input class="form-control" size="2" id="v" name="v" value="">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-3">
+                                <div class="form-group">
+                                    <label for="z">{{ 'card.info.resistance' | trans }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-btn"><select name="zo" class="form-control" style="width:4em"><option value=":">=</option><option value="<">&lt;</option><option value=">">&gt;</option><option value="!">&ne;</option></select></span>
+                                        <input class="form-control" size="2" id="z" name="z" value="">
                                     </div>
                                 </div>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-sm-6">
+                            <div class="col-sm-3">
                                 <div class="form-group">
-                                    <label for="y">{{ 'card.info.quantity' | trans }}</label>
-                                    <div class="row">
-                                        <div class="col-xs-4">
-                                            <select name="yo" id="yo" class="form-control">
-                                                <option value=":">=</option>
-                                                <option value="<">&lt;</option>
-                                                <option value=">">&gt;</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-xs-8">
-                                            <input id="y" name="y" value="" class="form-control">
-                                        </div>
+                                    <label for="n">{{ 'card.info.site' | trans }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-btn"><select name="no" class="form-control" style="width:4em"><option value=":">=</option><option value="<">&lt;</option><option value=">">&gt;</option><option value="!">&ne;</option></select></span>
+                                        <input class="form-control" size="2" id="n" name="n" value="">
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-sm-6">
+                            <div class="col-sm-3">
                                 <div class="form-group">
-                                    <label for="b">{{ 'card.info.claim' | trans }}</label>
-                                    <div class="row">
-                                        <div class="col-xs-4">
-                                            <select name="bo" id="bo" class="form-control">
-                                                <option value=":">=</option>
-                                                <option value="<">&lt;</option>
-                                                <option value=">">&gt;</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-xs-8">
-                                            <input id="b" name="b" value="" class="form-control">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-sm-6">
-                            </div>
-                            <div class="col-sm-6">
-                                <div class="form-group">
-                                    <label for="h">{{ 'card.info.reserve' | trans }}</label>
-                                    <div class="row">
-                                        <div class="col-xs-4">
-                                            <select name="ho" id="ho" class="form-control">
-                                                <option value=":">=</option>
-                                                <option value="<">&lt;</option>
-                                                <option value=">">&gt;</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-xs-8">
-                                            <input id="h" name="h" value="" class="form-control">
-                                        </div>
+                                    <label for="h">{{ 'card.info.shadow_number' | trans }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-btn"><select name="ho" class="form-control" style="width:4em"><option value=":">=</option><option value="<">&lt;</option><option value=">">&gt;</option><option value="!">&ne;</option></select></span>
+                                        <input class="form-control" size="2" id="h" name="h" value="">
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </fieldset>
                     <fieldset>
-                        <legend>{{ 'search.other' | trans }}</legend>
+                        <legend>{{ 'search.sets' | trans }}</legend>
                         <div class="row">
-                            <div class="col-sm-4">
+                            <div class="col-sm-6">
                                 <div class="form-group">
-                                    <label>{{ 'search.previews' | trans }}</label>
-                                    <div class="btn-group btn-group-justified" data-toggle="buttons">
-                                        <label class="btn btn-default active"><input type="radio" name="r" checked
-                                                                                     value="">{{ 'search.yes' | trans }}
-                                        </label>
-                                        <label class="btn btn-default"><input type="radio" name="r"
-                                                                              value="<now">{{ 'search.no' | trans }}
-                                        </label>
-                                        <label class="btn btn-default"><input type="radio" name="r"
-                                                                              value=">now">{{ 'search.only' | trans }}
-                                        </label>
-                                    </div>
+                                    <label for="e">{{ 'card.info.set' | trans }}</label>
+                                    <select class="form-control" name="e" id="e">
+                                        <option value="">{{ 'search.any' | trans }}</option>
+                                        {% for pack in packs %}
+                                            <option value="{{ pack.code }}">{{ pack.label }}</option>
+                                        {% endfor %}
+                                    </select>
                                 </div>
                             </div>
-                            <div class="col-sm-4">
+                            <div class="col-sm-6">
                                 <div class="form-group">
-                                    <label for="i">{{ 'card.info.illustrator' | trans }}</label>
-                                    <div>
-                                        <select class="form-control" name="i" id="i">
-                                            <option value="">{{ 'search.any' | trans }}</option>{% for illustrator in illustrators %}
-                                            <option value="{{ illustrator }}">{{ illustrator }}</option>{% endfor %}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-sm-4">
-                                <div class="form-group">
-                                    <label for="i">{{ 'card.info.rarity' | trans }}</label>
-                                    <div>
-                                        <select class="form-control" name="r" id="r">
-                                            <option value="">{{ 'search.any' | trans }}</option>{% for rarity in rarities %}
-                                            <option value="{{ rarity.code }}">{{ ('rarity.' ~ rarity.code) | trans }}</option>{% endfor %}
-                                        </select>
-                                    </div>
+                                    <label for="r">{{ 'card.info.rarity' | trans }}</label>
+                                    <select class="form-control" name="r" id="r">
+                                        <option value="">{{ 'search.any' | trans }}</option>{% for rarity in rarities %}
+                                        <option value="{{ rarity.code }}">{{ rarity.code }}</option>{% endfor %}
+                                    </select>
                                 </div>
                             </div>
                         </div>

@@ -50,7 +50,8 @@ services:
     command: ["init"]
     environment:
       DATABASE_URL: "mysql://${DB_USER}:${DB_PASSWORD}@db:3306/${DB_NAME}?serverVersion=11.4.0-MariaDB"
-      CARD_DATA_REPO: ${CARD_DATA_REPO:-https://github.com/throneteki/throneteki-json-data.git}
+      CARD_DATA_REPO: ${CARD_DATA_REPO:-https://github.com/PlayersCouncil/lotrtcg-card-data.git}
+      CARD_DATA_REF: ${CARD_DATA_REF:-main}
       CARD_DATA_DIR: /srv/carddata
     volumes:
       - ./data/carddata:/srv/carddata

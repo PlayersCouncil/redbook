@@ -2,44 +2,31 @@
 
 namespace App\Tests\Entity;
 
-use PHPUnit\Framework\Attributes\CoversClass;
-use PHPUnit\Framework\Attributes\DataProvider;
 use App\Entity\Card;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Class CardTest
- * @package App\Tests\Entity
- */
 #[CoversClass(Card::class)]
 class CardTest extends TestCase
 {
-    public static function hasShadowKeywordProvider()
-    {
-        return [
-            ['', 'Shadow', false],
-            ['Shadow', 'Shadow', false],
-            ['Shadow (X)', 'Shadow', false],
-            ['Shadow (x).', 'Shadow', false],
-            ['Shadow (A).', 'Shadow', false],
-            ['Shadow (5X).', 'Shadow', false],
-            ['Shadow (99).', 'Schatten', false],
-            ["something else on first line\nShadow (99).", 'Shadow', false],
-            ['Shadow (X).', 'Shadow', true],
-            ['Shadow (X). Stealth.', 'Shadow', true],
-            ['Ambush (0). Shadow (X). Stealth.', 'Shadow', true],
-            ['Shadow (0).', 'Shadow', true],
-            ['Shadow (5).', 'Shadow', true],
-            ['Shadow (99).', 'Shadow', true],
-            ['Schatten (99).', 'Schatten', true],
-            ["Shadow (99). and other stuff on first line\nlorem ipsum", 'Shadow', true],
-        ];
-    }
-    #[DataProvider('hasShadowKeywordProvider')]
-    public function testHasShadowKeyword($text, $shadowKeyword, $hasKeyword)
+    public function testFullNameIncludesTheSubtitle(): void
     {
         $card = new Card();
-        $card->setText($text);
-        $this->assertEquals($card->hasKeyword($shadowKeyword), $hasKeyword);
+        $card->setName('Legolas');
+        $this->assertSame('Legolas', $card->getFullName());
+        $card->setSubtitle('Greenleaf');
+        $this->assertSame('Legolas, Greenleaf', $card->getFullName());
+    }
+
+    public function testKindAndSide(): void
+    {
+        $card = new Card();
+        $this->assertFalse($card->isErrata());
+        $card->setKind(Card::KIND_ERRATA);
+        $this->assertTrue($card->isErrata());
+
+        $card->setSide(Card::SIDE_SHADOW);
+        $this->assertTrue($card->isShadow());
+        $this->assertFalse($card->isFreePeoples());
     }
 }

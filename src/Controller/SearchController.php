@@ -7,6 +7,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Card;
 use App\Entity\CardInterface;
 use App\Entity\Cycle;
+use App\Entity\Culture;
 use App\Entity\Faction;
 use App\Entity\Pack;
 use App\Entity\Rarity;
@@ -32,60 +33,53 @@ class SearchController extends AbstractController
      * @todo redeclare as constant [ST 2020/08/09]
      */
     public static array $searchKeys = array(
-            ''  => 'code',
-            'a' => 'flavor',
-            'b' => 'claim',
-            'c' => 'cycle',
-            'd' => 'designer',
-            'e' => 'pack',
-            'f' => 'faction',
-            'g' => 'isIntrigue',
-            'h' => 'reserve',
-            'i' => 'illustrator',
-            'k' => 'traits',
-            'l' => 'isLoyal',
-            'm' => 'isMilitary',
-            'n' => 'income',
-            'o' => 'cost',
-            'p' => 'isPower',
+            ''  => 'code',       // name, subtitle, blueprint ID (1_50) or acronym
+            'a' => 'flavor',     // lore
+            'c' => 'cycle',      // block, by position
+            'd' => 'side',       // fp / shadow / none
+            'e' => 'pack',       // set (Gemp set number)
+            'f' => 'culture',
+            'g' => 'signet',
+            'h' => 'shadowNumber',
+            'i' => 'kind',       // card / errata
+            'k' => 'subtypes',   // race, item class...
+            'n' => 'siteNumber',
+            'o' => 'twilight',
+            'r' => 'rarity',
             's' => 'strength',
             't' => 'type',
             'u' => 'isUnique',
-            'v' => 'initiative',
+            'v' => 'vitality',
             'x' => 'text',
-            'y' => 'quantity',
-            'r' => 'rarity',
+            'z' => 'resistance',
     );
 
     /**
      * @var string[] $searchTypes
-     * @todo redeclare as constant [ST 2020/08/09]
      */
     public static array $searchTypes = array(
+        // "code" searches join on the search letter: t type, f culture, r rarity (CardsData::getSearchRows)
         't' => 'code',
         'e' => 'code',
         'f' => 'code',
+        'r' => 'code',
         '' => 'string',
         'a' => 'string',
-        'i' => 'string',
         'd' => 'string',
+        'g' => 'string',
+        'i' => 'string',
         'k' => 'string',
         'x' => 'string',
-        'b' => 'integer',
         'c' => 'integer',
         'h' => 'integer',
         'n' => 'integer',
         'o' => 'integer',
         's' => 'integer',
         'v' => 'integer',
-        'y' => 'integer',
-        'g' => 'boolean',
-        'l' => 'boolean',
-        'm' => 'boolean',
-        'p' => 'boolean',
+        'z' => 'integer',
         'u' => 'boolean',
-        'r' => 'code',
     );
+
     public function __construct(private readonly ManagerRegistry $managerRegistry)
     {
     }
@@ -109,25 +103,18 @@ class SearchController extends AbstractController
 
         $cycles = $this->managerRegistry->getRepository(Cycle::class)->findAll();
         $types = $this->managerRegistry->getRepository(Type::class)->findAll();
-        $factions = $this->managerRegistry->getRepository(Faction::class)->findAllAndOrderByName();
+        $cultures = $this->managerRegistry->getRepository(Culture::class)->findBy([], ['name' => 'ASC']);
         $rarity = $this->managerRegistry->getRepository(Rarity::class)->findAll();
-        $list_traits = $this->managerRegistry->getRepository(Card::class)->findTraits();
-        $traits = [];
-        foreach ($list_traits as $card) {
-            $subs = explode('.', $card["traits"]);
-            foreach ($subs as $sub) {
-                $traits[trim($sub)] = 1;
+        $subtypes = [];
+        foreach ($dbh->executeQuery("SELECT DISTINCT subtypes FROM card WHERE subtypes IS NOT NULL AND subtypes != ''")->fetchFirstColumn() as $value) {
+            foreach (preg_split('/\s*[•,]\s*/u', $value) as $sub) {
+                if ($sub !== '') {
+                    $subtypes[$sub] = 1;
+                }
             }
         }
-        $traits = array_filter(array_keys($traits));
-        sort($traits);
-
-        $list_illustrators = $dbh->executeQuery(
-            "SELECT DISTINCT c.illustrator FROM card c WHERE c.illustrator != '' ORDER BY c.illustrator"
-        )->fetchAllAssociative();
-        $illustrators = array_map(function ($card) {
-            return $card["illustrator"];
-        }, $list_illustrators);
+        $subtypes = array_keys($subtypes);
+        sort($subtypes);
 
         return $this->render('Search/searchform.html.twig', array(
                 "pagetitle" => $translator->trans('search.title'),
@@ -135,9 +122,8 @@ class SearchController extends AbstractController
                 "packs" => $packs,
                 "cycles" => $cycles,
                 "types" => $types,
-                "factions" => $factions,
-                "traits" => $traits,
-                "illustrators" => $illustrators,
+                "cultures" => $cultures,
+                "subtypes" => $subtypes,
                 "rarities" => $rarity,
         ), $response);
     }
@@ -150,7 +136,7 @@ class SearchController extends AbstractController
      * @return Response
      * @throws NonUniqueResultException
      */
-    #[Route(path: '/card/{card_code}', name: 'cards_zoom', methods: ['GET'], requirements: ['card_code' => '\d+'])]
+    #[Route(path: '/card/{card_code}', name: 'cards_zoom', methods: ['GET'], requirements: ['card_code' => '\d+_\d+'])]
     public function zoomAction($card_code, Request $request, string $gameName, string $publisherName)
     {
         /* @var CardInterface $card */
@@ -159,10 +145,9 @@ class SearchController extends AbstractController
             throw $this->createNotFoundException('Sorry, this card is not in the database (yet?)');
         }
 
-        $meta = $card->getName()
+        $meta = $card->getFullName()
              . ", a "
-            . $card->getFaction()->getName()
-            . " "
+            . ($card->getCulture() ? $card->getCulture()->getName() . " " : "")
             . $card->getType()->getName()
             . " card for {$gameName} from the set "
             . $card->getPack()->getName()
@@ -176,7 +161,7 @@ class SearchController extends AbstractController
                 'q' => $card->getCode(),
                 'view' => 'card',
                 'sort' => 'set',
-                'pagetitle' => $card->getName(),
+                'pagetitle' => $card->getFullName(),
                 'meta' => $meta
             )
         );
@@ -240,7 +225,7 @@ class SearchController extends AbstractController
      * @param string $publisherName
      * @return Response
      */
-    #[Route(path: '/cycle/{cycle_code}/{view}/{sort}/{page}', name: 'cards_cycle', methods: ['GET'], defaults: ['view' => 'list', 'sort' => 'faction', 'page' => 1])]
+    #[Route(path: '/cycle/{cycle_code}/{view}/{sort}/{page}', name: 'cards_cycle', methods: ['GET'], defaults: ['view' => 'list', 'sort' => 'culture', 'page' => 1])]
     public function cycleAction(
         $cycle_code,
         $view,
@@ -255,7 +240,7 @@ class SearchController extends AbstractController
             throw $this->createNotFoundException('This cycle does not exist');
         }
 
-        $meta = $cycle->getName() . ", a cycle of datapack for {$gameName} published by {$publisherName}.";
+        $meta = $cycle->getName() . ", a block of {$gameName} sets.";
 
         $key = array_search('cycle', SearchController::$searchKeys);
 
@@ -286,7 +271,7 @@ class SearchController extends AbstractController
         $sort = $request->query->get('sort') ?: 'name';
 
         $operators = array(":","!","<",">");
-        $factions = $this->managerRegistry->getRepository(Faction::class)->findAll();
+        $cultures = $this->managerRegistry->getRepository(Culture::class)->findAll();
 
         $params = [];
         if ($request->query->get('q') != "") {
@@ -296,7 +281,7 @@ class SearchController extends AbstractController
             $val = $request->query->get($key);
             if (isset($val) && $val != "") {
                 if (is_array($val)) {
-                    if ($searchName == "faction" && count($val) == count($factions)) {
+                    if ($searchName == "culture" && count($val) == count($cultures)) {
                         continue;
                     }
                     $params[] = $key . ":" . implode("|", array_map(function ($s) {
@@ -493,6 +478,11 @@ class SearchController extends AbstractController
                     }
                 }
                 $cardinfo['available'] = $availability[$pack->getCode()];
+                if ($view === 'card') {
+                    $cardinfo['versions'] = $this->versionsFor($card);
+                    $errata = $this->managerRegistry->getRepository(Card::class)->findOneBy(['errataOf' => $card]);
+                    $cardinfo['errata_card'] = $errata ? ['code' => $errata->getCode(), 'name' => $errata->getFullName()] : null;
+                }
                 if ($includeReviews) {
                     $cardinfo['reviews'] = $cardsData->getReviews($card);
                 }
@@ -515,15 +505,16 @@ class SearchController extends AbstractController
                 $sortfields = array(
                     'set' => 'pack_name',
                     'name' => 'name',
-                    'faction' => 'faction_name',
+                    'culture' => 'culture_name',
                     'type' => 'type_name',
-                    'cost' => 'cost',
+                    'twilight' => 'twilight',
+                    'cost' => 'twilight',
                     'strength' => 'strength',
                 );
 
                 $brokenlist = [];
                 for ($i = 0; $i < count($cards); $i++) {
-                    $val = $cards[$i][$sortfields[$sort]];
+                    $val = $cards[$i][$sortfields[$sort] ?? 'name'] ?? '';
                     if ($sort == "name") {
                         $val = substr($val, 0, 1);
                     }
@@ -562,6 +553,28 @@ class SearchController extends AbstractController
     }
 
     /**
+     * The card's English revisions for the card page (the errata history, decision 0021).
+     * On an errata blueprint, the versions are its original's.
+     */
+    protected function versionsFor(CardInterface $card): array
+    {
+        $source = $card->getErrataOf() ?? $card;
+        $versions = [];
+        foreach ($source->getVersions() as $version) {
+            $fields = $version->getFields();
+            $versions[] = [
+                'revision' => $version->getRevision(),
+                'issuer' => $version->getIssuer(),
+                'release_date' => $version->getReleaseDate()?->format('Y-m-d'),
+                'batch' => $version->getBatch()?->getLabel(),
+                'image' => $version->getImageUrl(),
+                'text' => $version->getRevision() > 0 ? ($fields['gameText'] ?? null) : null,
+            ];
+        }
+        return $versions;
+    }
+
+    /**
      * @param RouterInterface $router
      * @param CardInterface $card
      * @return string
@@ -573,9 +586,9 @@ class SearchController extends AbstractController
         $prev = $repo->findPreviousCard($card);
         $next = $repo->findNextCard($card);
         return $this->renderView('Search/setnavigation.html.twig', array(
-                "prevtitle" => $prev ? $prev->getName() : "",
+                "prevtitle" => $prev ? $prev->getFullName() : "",
                 "prevhref" => $prev ? $router->generate('cards_zoom', ['card_code' => $prev->getCode()]) : "",
-                "nexttitle" => $next ? $next->getName() : "",
+                "nexttitle" => $next ? $next->getFullName() : "",
                 "nexthref" => $next ? $router->generate('cards_zoom', ['card_code' => $next->getCode()]) : "",
                 "settitle" => $card->getPack()->getName(),
                 "sethref" => $router->generate('cards_list', ['pack_code' => $card->getPack()->getCode()]),

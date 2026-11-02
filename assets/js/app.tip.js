@@ -3,7 +3,7 @@
 (function app_tip(tip, $)
 {
 
-    var cards_zoom_regexp = /card\/(\d\d\d\d\d)$/,
+    var cards_zoom_regexp = /card\/(\d+_\d+)$/,
             mode = 'text',
             hide_event = 'mouseout';
 
@@ -11,7 +11,7 @@
     {
         var content;
         if(mode === 'text') {
-            var image = card.image_url ? '<div class="card-thumbnail card-thumbnail-' + (card.type_code === 'plot' ? 4 : 3) + 'x card-thumbnail-' + card.type_code + '" style="background-image:url(' + card.image_url + ')" data-code="' +  card.code +'"></div>' : "";
+            var image = card.image_url ? '<div class="card-thumbnail card-thumbnail-' + (card.type_code === 'site' ? 4 : 3) + 'x card-thumbnail-' + card.type_code + '" style="background-image:url(' + card.image_url + ')" data-code="' +  card.code +'"></div>' : "";
             var info = '<h4 class="card-name">' + app.format.name(card) + '</h4>';
             if (card.work_in_progress) {
                 info = info + '<div class="alert alert-danger">' +  Translator.trans('card.info.workInProgress')  + '</div>';
@@ -20,16 +20,16 @@
               + '<div class="card-faction">' + app.format.faction(card) + '</div>'
               + '<div class="card-info">' + app.format.info(card) + '</div>'
               + '<div class="card-traits">' + app.format.traits(card) + '</div>'
-              + '<div class="card-text border-' + card.faction_code + '">' + app.format.text(card) + '</div>';
+              + '<div class="card-text border-' + card.culture_code + '">' + app.format.text(card) + '</div>';
 
 
-            if (card.errataed) {
-                info += '<div class="card-errata-short">' +  Translator.trans('card.info.errataed_short')  + '</div>';
+            if (card.kind === 'errata') {
+                info += '<div class="card-errata-short">' + Translator.trans('card.kind.errata_short') + '</div>';
             }
 
             info += '<div class="card-pack">' + app.format.pack(card) + '</div>';
             if (card.rarity_code) {
-                info += '<div class="card-code">' + Translator.trans('card.info.rarity') + ': ' + Translator.trans('rarity.' + card.rarity_code) + '</div>'
+                info += '<div class="card-code">' + Translator.trans('card.info.rarity') + ': ' + card.rarity_name + '</div>'
             }
             content = image + info;
         } else {
