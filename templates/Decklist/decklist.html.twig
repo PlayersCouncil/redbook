@@ -15,13 +15,12 @@
     <div class="container">
 
         {% include 'alerts.html.twig' %}
-        <div class="row title bg-faction bg-{{ decklist.faction.code }}">
+        <div class="row title bg-faction">
             <div class="col-xs-12">
                 <h1 class="decklist-name text-center">
-                    <span class="icon icon-{{ decklist.faction.code }}"></span>
                     {{ decklist.name }}
                     <span class="dropdown">
-                  <button class="btn dropdown-toggle bg-{{ decklist.faction.code }}" type="button"
+                  <button class="btn btn-default dropdown-toggle" type="button"
                           data-toggle="dropdown" aria-haspopup="true" aria-expanded="true" id="dropdownVersions">
                     {{ decklist.version }}
                     <span class="caret"></span>
@@ -83,12 +82,10 @@
     <div class="main white container">
         <div class="row">
             <div class="col-md-6">
-                <div id="deck-content"></div>
-                <div id="deck-options">
-                    <div class="form-group">
-                        <div id="restricted_lists"></div>
-                    </div>
-                </div>
+                <p>{% include 'Deck/completeness-label.html.twig' with {deck: decklist} %}</p>
+                {% include 'Deck/validation.html.twig' with {deck: decklist, title: 'decklist.view.problems' | trans} %}
+                {% include 'Deck/deck-content.html.twig' with {deck: decklist} %}
+                {% include 'Decklist/plays.html.twig' %}
                 {% include 'Builder/deck-charts.html.twig' %}
                 {% include 'Builder/draw-simulator.html.twig' %}
                 {% include 'Decklist/table-predecessor.html.twig' %}
@@ -103,6 +100,9 @@
                     <div class="col-md-12">
                         {% include 'Decklist/author-and-description.html.twig' %}
                     </div>
+                    {% if decklist.source %}
+                        <div class="col-md-12">{% include 'Decklist/source.html.twig' with {source: decklist.source} %}</div>
+                    {% endif %}
                     <div class="col-md-12">
                         {% include 'Decklist/comments.html.twig' %}
                     </div>

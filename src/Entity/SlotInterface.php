@@ -27,4 +27,12 @@ interface SlotInterface
      * @param int $quantity
      */
     public function setQuantity($quantity);
+
+    /** ring_bearer, ring, site, draw or map (App\Classes\DeckContent) */
+    public function getRole(): string;
+
+    public function setRole(string $role): void;
+
+    /** The slot's key in a deck's content map */
+    public function getContentKey(): string;
 }

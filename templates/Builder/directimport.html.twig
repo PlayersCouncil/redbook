@@ -1,54 +1,44 @@
+{# Import decks as text: Gemp deck strings or card lists (DeckImportService) #}
 {% extends 'base.html.twig' %}
-
-{% block javascripts %}
-    {{ parent() }}
-    <script src="{{ asset('js/ui.deckimport.js') }}"></script>
-    <script>
-      $(document).on('data.app', function () {
-        app.data.factions = app.data.db.collection('faction', {primaryKey: 'code', changeTimestamp: false});
-        app.data.factions.setData({{ factions|json_encode|raw }});
-      });
-    </script>
-{% endblock %}
-
 {% block body %}
-
     <div class="main white container">
-
         {% include 'alerts.html.twig' %}
         <div class="row">
+            <div class="col-md-8 col-md-offset-2">
+                <h1>{{ 'decks.import.title' | trans }}</h1>
+                <p>{{ 'decks.import.intro' | trans }}</p>
+                <pre class="small">My Elves
+Ring-bearer: Frodo, Son of Drogo
+Ring: The One Ring, The Ruling Ring
+Adventure deck
+Bag End
+...
+Free Peoples
+2x Legolas, Greenleaf
+...
 
-            <div class="col-md-6">
-                <form role="form">
+{{ 'decks.import.or_gemp' | trans }}
+1_290|1_2|1_319,1_327,...|1_50,1_50,...</pre>
+                <form method="POST" action="{{ path('deck_fileimport') }}" enctype="multipart/form-data">
                     <div class="form-group">
-                        <label for="content">Paste the content of your deck here</label>
-                        <textarea class="form-control" id="content" rows="30"></textarea>
+                        <label for="target_format">{{ 'deck.target_format' | trans }}</label>
+                        <select class="form-control" id="target_format" name="target_format">
+                            {% for format in formats %}
+                                <option value="{{ format.code }}"{% if format.code == default_format %} selected{% endif %}>{{ format.name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
-                    <button id="btn-import" type="button" class="btn btn-primary">Parse</button>
+                    <div class="form-group">
+                        <label for="content">{{ 'decks.import.paste' | trans }}</label>
+                        <textarea class="form-control" id="content" name="content" rows="15"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="upfile">{{ 'decks.import.file' | trans }}</label>
+                        <input type="file" id="upfile" name="upfile" accept=".txt,text/plain">
+                    </div>
+                    <button type="submit" class="btn btn-success">{{ 'decks.import.submit' | trans }}</button>
                 </form>
             </div>
-
-            <div class="col-md-6">
-                <form role="form" id="deckimport" action="{{ path('deck_save') }}" method="POST">
-                    <div class="form-group">
-                        <label for="name">Deck Name</label>
-                        <input class="form-control decklist-name" type="text" name="name" placeholder="Name">
-                    </div>
-                    <div class="form-group">
-                        <ul class="list-group" id="deck">
-                        </ul>
-                    </div>
-                    <div class="form-group">
-                         <div id="restricted_lists"></div>
-                    </div>
-                    <input type="hidden" name="faction_code">
-                    <input type="hidden" name="content">
-                    <button id="btn-save" type="submit" class="btn btn-success">Save the deck</button>
-                </form>
-            </div>
-
-        </div> <!-- .row -->
-
-    </div> <!-- .container -->
-
+        </div>
+    </div>
 {% endblock %}

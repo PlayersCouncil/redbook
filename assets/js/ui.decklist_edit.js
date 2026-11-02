@@ -8,7 +8,20 @@
      */
     ui.setup_event_handlers = function setup_event_handlers()
     {
-        $('#restricted_lists').on('change', 'input[type=radio]', ui.on_rl_change);
+        // play records: add a blank row
+        $('#btn-add-play').on('click', function () {
+            var row = $('#plays .play-row').last().clone();
+            row.find('input').val('');
+            row.find('select').val('');
+            $('#plays').append(row);
+        });
+        $('#plays').on('click', '.btn-remove-play', function () {
+            if($('#plays .play-row').length > 1) {
+                $(this).closest('.play-row').remove();
+            } else {
+                $(this).closest('.play-row').find('input').val('');
+            }
+        });
     };
 
     /**
@@ -16,18 +29,8 @@
      */
     ui.refresh_deck = function refresh_deck()
     {
-        app.deck.display('#decklist', {cols: 1});
+        app.deck.display('#decklist');
     };
-
-    /**
-     * @memberOf ui
-     * @param event
-     */
-    ui.on_rl_change = function on_rl_change(event) {
-        var code = $(event.target).attr('data-rl-code');
-        app.config.set('restriction', code);
-        ui.refresh_deck();
-    }
 
     /**
      * called when the DOM is loaded
@@ -50,14 +53,6 @@
                                         title: Translator.trans('decklist.publish.editor.cardtolink'),
                                         icon: "fas fa-clone",
                                         callback: ui.on_button_card
-                                    }]
-                            }, {
-                                name: "groupSymbol",
-                                data: [{
-                                        name: "cmdSymbol",
-                                        title: Translator.trans('decklist.publish.editor.entersymbol'),
-                                        icon: "icon-power",
-                                        callback: ui.on_button_symbol
                                     }]
                             }, {
                                 name: "groupCustom",
@@ -112,29 +107,6 @@
         e.setSelection(cursor, cursor + chunk.length);
     };
 
-    ui.on_button_symbol = function ui_on_button_symbol(e)
-    {
-        var button = $('button[data-handler=bootstrap-markdown-cmdSymbol]');
-        $(button).attr('data-toggle', 'dropdown');
-        $(button).next().remove();
-
-        var menu = $('<ul class="dropdown-menu">').insertAfter(button).on('click', 'li', function (event)
-        {
-            var icon = $(this).data('icon');
-            var chunk = '<span class="icon-' + icon + '"></span>';
-            ui.replace_selection(e, e.getSelection(), chunk);
-            $(menu).remove();
-            $(button).off('click');
-        });
-
-        var icons = 'baratheon greyjoy intrigue lannister martell military thenightswatch power stark targaryen tyrell unique plot attachment location character event agenda neutral'.split(' ');
-        icons.forEach(function (icon)
-        {
-            menu.append('<li data-icon="' + icon + '"><a href="#"><span style="display:inline-block;width:2em;text-align:center" class="icon-' + icon + '"></span> ' + Translator.trans('icon.' + icon) + '</a></li>');
-        });
-        $(button).dropdown();
-    };
-
     ui.on_button_card = function ui_on_button_card(e)
     {
         var button = $('button[data-handler=bootstrap-markdown-cmdCard]');
@@ -150,13 +122,13 @@
             $(button).off('click');
         });
 
-        var cards = app.data.cards.find({name: new RegExp(e.getSelection().text, 'i')}, {'$orderBy': {name: 1}});
+        var cards = app.data.cards.find({label: new RegExp(e.getSelection().text, 'i'), kind: 'card'}, {'$orderBy': {label: 1}});
         if(cards.length > 10) {
             cards = cards.slice(0, 10);
         }
         cards.forEach(function (card)
         {
-            menu.append('<li data-code="' + card.code + '" data-name="' + card.name + '"><a href="#">' + card.label + ' <small><i>' + card.pack_name + '</i></small></a></li>');
+            menu.append('<li data-code="' + card.code + '" data-name="' + _.escape(card.label) + '"><a href="#">' + card.label + ' <small><i>' + card.pack_name + '</i></small></a></li>');
         });
         $(button).dropdown();
     };
@@ -184,9 +156,7 @@
     ui.on_all_loaded = function on_all_loaded()
     {
         app.textcomplete.setup('#descriptionMd');
-        ui.build_restrictions_selector('#restricted_lists');
         ui.refresh_deck();
-        ui.refresh_rl_indicators();
     };
 
 

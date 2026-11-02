@@ -13,13 +13,10 @@
             }
         }
         return _.extend({
-            'show-unusable': false,
+            'show-all-sets': false,
             'show-only-deck': false,
-            'hide-banned-melee': false,
-            'hide-banned-joust': false,
-            'display-column': 1,
-            'core-set': 3,
-            'buttons-behavior': 'cumulative'
+            'show-errata': true,
+            'hide-banned': false
         }, config || {});
     }
 

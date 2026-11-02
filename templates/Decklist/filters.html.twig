@@ -1,0 +1,28 @@
+{# Browsing filters shared by every decklist list (decision 0023; Ketura: filters,
+   not search fields). Variables: filters, formats, cultures #}
+{% set f = filters ?? {} %}
+<form method="get" class="form-inline decklist-filters well well-sm">
+    {% for key, value in app.request.query.all %}
+        {% if key not in ['format', 'culture', 'incomplete', 'half', 'from', 'to', 'page'] %}
+            {% if value is iterable %}{% for v in value %}<input type="hidden" name="{{ key }}[]" value="{{ v }}">{% endfor %}{% else %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}
+        {% endif %}
+    {% endfor %}
+    <select name="format" class="form-control input-sm">
+        <option value="">{{ 'decklist.filters.any_format' | trans }}</option>
+        {% for format in formats %}<option value="{{ format.code }}"{% if f.format is defined and f.format == format.code %} selected{% endif %}>{{ format.name }}</option>{% endfor %}
+    </select>
+    <select name="culture[]" class="form-control input-sm" title="{{ 'decklist.filters.culture' | trans }}">
+        <option value="">{{ 'decklist.filters.any_culture' | trans }}</option>
+        {% for culture in cultures %}{% if culture.side %}<option value="{{ culture.code }}"{% if culture.code in (f.culture ?? []) %} selected{% endif %}>{{ culture.name }}</option>{% endif %}{% endfor %}
+    </select>
+    <select name="half" class="form-control input-sm">
+        <option value="">{{ 'decklist.filters.whole_decks' | trans }}</option>
+        <option value="any"{% if (f.half ?? '') == 'any' %} selected{% endif %}>{{ 'decklist.filters.with_halves' | trans }}</option>
+        <option value="free_peoples"{% if (f.half ?? '') == 'free_peoples' %} selected{% endif %}>{{ 'deck.half.free_peoples' | trans }}</option>
+        <option value="shadow"{% if (f.half ?? '') == 'shadow' %} selected{% endif %}>{{ 'deck.half.shadow' | trans }}</option>
+    </select>
+    <input type="number" name="from" class="form-control input-sm" style="width:6em" min="2001" max="2100" placeholder="{{ 'decklist.filters.from' | trans }}" value="{{ f.from ?? '' }}">
+    <input type="number" name="to" class="form-control input-sm" style="width:6em" min="2001" max="2100" placeholder="{{ 'decklist.filters.to' | trans }}" value="{{ f.to ?? '' }}">
+    <label class="checkbox-inline small"><input type="checkbox" name="incomplete" value="1"{% if f.incomplete ?? false %} checked{% endif %}> {{ 'decklist.filters.incomplete' | trans }}</label>
+    <button type="submit" class="btn btn-default btn-sm">{{ 'decklist.filters.apply' | trans }}</button>
+</form>

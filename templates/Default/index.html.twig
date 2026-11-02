@@ -1,70 +1,46 @@
 {% extends 'base.html.twig' %}
 {% import "macros.html.twig" as macros %}
 
+{% macro decklist_row(decklist) %}
+    {% import "macros.html.twig" as macros %}
+    <tr>
+        <td>
+            <a href="{{ path('decklist_detail', {decklist_id: decklist.id, decklist_name: decklist.nameCanonical}) }}">{{ decklist.name }}</a>
+            <div class="small text-muted">
+                {% if decklist.source and decklist.user.username == 'archive' %}{{ decklist.source.legacyAuthor }}{% else %}{{ macros.username_colorless(decklist.user) }}{% endif %}
+                &middot; {{ decklist.targetFormat }}
+                &middot; {% for row in decklist.cultures | slice(0, 3) %}{{ row.culture.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+            </div>
+        </td>
+        <td class="text-right small">{{ macros.decklist_social_icons(decklist) }}</td>
+    </tr>
+{% endmacro %}
+
 {% block body %}
+    {% import _self as home %}
     <div class="main container">
         {% include 'alerts.html.twig' %}
         {% include 'banner-alerts.html.twig' %}
-        <h1 class="site-title hidden-xs">Thr<span style="position:relative">o<span class="icon icon-power"
-                                                                                   style="position:absolute;left: .65em;top: 1.2em;font-size: 30%;"></span></span>nesDB
-        </h1>
+        <h1 class="site-title hidden-xs">{{ 'site.name' | trans }}</h1>
         <div class="site-slogan">{{ 'slogan' | trans }}</div>
-    </div> <!-- .container -->
-
-    <div class="main container">
-        <div class="row">
-            {% for data in decklists_by_faction %}
-                <div class="col-md-6" style="margin-bottom:30px">
-                    <div class="bg-faction bg-{{ data.faction.code }}" style="padding:10px 10px 5px 10px">
-                        <div class="media">
-                            <div class="media-left" style="font-size:30px">
-                                <span class="icon icon-{{ data.faction.code }}"></span>
-                            </div>
-                            <div class="media-body">
-                                <h4 class="media-heading" style="white-space:nowrap"><a
-                                            href="{{ path('decklist_detail',{decklist_id:data.decklist.id,decklist_name:data.decklist.nameCanonical}) }}">{{ data.decklist.name }}</a>
-                                </h4>
-                                <div class="small">
-                                    {% set username %}
-                                        <span class="username">{{ macros.username_colorless(data.decklist.user) }}</span>
-                                    {% endset %}
-                                    {{ 'userby' | trans({'%user%': username}) | raw }}
-                                    &middot;
-                                    <time datetime="{{ data.decklist.dateCreation|date('c') }}">{{ data.decklist.dateCreation|date('M d, Y') }}</time>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div style="background-color: white; padding: 10px 20px 20px 20px">
-                        <div class="small pull-right">
-                            {{ macros.decklist_social_icons(data.decklist ) }}
-                        </div>
-                        <div>{{ data.factions }}</div>
-                        <p>{{ data.count_by_type|raw }}</p>
-                        <div class="text-center small"><a
-                                    href="{{ path('decklists_list',{type:'find',faction:data.faction.code}) }}">{{ 'seemore.faction' | trans }}</a>
-                        </div>
-                        <div style="clear:both"></div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
     </div>
 
-{% endblock %}
-
-{% block javascripts %}
-    {{ parent() }}
-    <script type="application/ld+json">
-        {
-            "@context": "http://schema.org",
-            "@type": "WebSite",
-            "url": "https://thronesdb.com/",
-            "potentialAction": {
-                "@type": "SearchAction",
-                "target": "https://thronesdb.com/find/?q={search_term_string}",
-                "query-input": "required name=search_term_string"
-            }
-        }
-    </script>
+    <div class="main white container">
+        <div class="row">
+            <div class="col-md-6">
+                <h3>{{ 'decklist.list.types.popular' | trans }}</h3>
+                <table class="table table-condensed">
+                    {% for decklist in popular_decklists %}{{ home.decklist_row(decklist) }}{% else %}<tr><td class="text-muted">{{ 'decklist.list.none' | trans }}</td></tr>{% endfor %}
+                </table>
+                <a href="{{ path('decklists_list', {type: 'popular'}) }}">{{ 'seemore.decklists' | trans }}</a>
+            </div>
+            <div class="col-md-6">
+                <h3>{{ 'decklist.list.types.recent' | trans }}</h3>
+                <table class="table table-condensed">
+                    {% for decklist in recent_decklists %}{{ home.decklist_row(decklist) }}{% else %}<tr><td class="text-muted">{{ 'decklist.list.none' | trans }}</td></tr>{% endfor %}
+                </table>
+                <a href="{{ path('decklists_list', {type: 'recent'}) }}">{{ 'seemore.decklists' | trans }}</a>
+            </div>
+        </div>
+    </div>
 {% endblock %}

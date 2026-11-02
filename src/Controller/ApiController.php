@@ -11,7 +11,6 @@ use App\Entity\Decklist;
 use App\Entity\Format;
 use App\Entity\Pack;
 use App\Entity\PackInterface;
-use App\Entity\Restriction;
 use App\Services\CardsData;
 use DateInterval;
 use DateTime;
@@ -551,54 +550,4 @@ class ApiController extends AbstractController
         return $response;
     }
 
-    /**
-     * All the restricted lists.
-     *
-     * Get the description of all the restricted lists as an array of JSON objects.
-     *
-     * @param Request $request
-     * @param int $cacheExpiration
-     * @param SerializerInterface $serializer
-     * @return Response
-     */
-    #[Route(path: '/api/public/restrictions/', name: 'api_restrictions', methods: ['GET'])]
-    #[OA\Tag(name: 'Public')]
-    #[OA\Parameter(name: 'activeonly', in: 'query', description: 'Pass TRUE to retrieve active RLs only', required: false, schema: new OA\Schema(type: 'string'))]
-    #[OA\Response(response: 200, description: 'Returned when successful')]
-    public function listRestrictions(Request $request, int $cacheExpiration, SerializerInterface $serializer): Response
-    {
-        $response = new Response();
-        $response->setPublic();
-        $response->setMaxAge($cacheExpiration);
-        $response->headers->add(array(
-            'Access-Control-Allow-Origin' => '*',
-            'Content-Language' => $request->getLocale()
-        ));
-
-        $repo = $this->managerRegistry->getRepository(Restriction::class);
-
-        $filters = [];
-        if ($request->query->getBoolean('activeonly')) {
-            $filters['active'] = true;
-        };
-        $restrictions = $repo->findBy($filters);
-
-        // check the last-modified-since header
-        $lastModified = null;
-        /* @var RestrictionInterface $restriction */
-        foreach ($restrictions as $restriction) {
-            if (!$lastModified || $lastModified < $restriction->getDateUpdate()) {
-                $lastModified = $restriction->getDateUpdate();
-            }
-        }
-        $response->setLastModified($lastModified);
-        if ($response->isNotModified($request)) {
-            return $response;
-        }
-
-        $json = json_encode($restrictions);
-        $response->headers->set('Content-Type', 'application/json');
-        $response->setContent($json);
-        return $response;
-    }
 }

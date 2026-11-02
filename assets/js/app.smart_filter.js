@@ -3,28 +3,25 @@
 
     var SmartFilterQuery = [];
 
+    // the card search's keys (SearchController), on the card data the API serves
     var configuration = {
+        '': [add_string_sf, 'label', Translator.trans('decks.smartfilter.filters.name')],
         a: [add_string_sf, 'flavor', Translator.trans('decks.smartfilter.filters.flavor')],
-        b: [add_integer_sf, 'claim', Translator.trans('decks.smartfilter.filters.claim')],
+        d: [add_string_sf, 'side', Translator.trans('decks.smartfilter.filters.side')],
         e: [add_string_sf, 'pack_code', Translator.trans('decks.smartfilter.filters.pack_code')],
-        f: [add_string_sf, 'faction_code', Translator.trans('decks.smartfilter.filters.faction_code')],
-        g: [add_boolean_sf, 'is_intrigue', Translator.trans('decks.smartfilter.filters.is_intrigue')],
-        h: [add_integer_sf, 'reserve', Translator.trans('decks.smartfilter.filters.reserve')],
-        i: [add_string_sf, 'illustrator', Translator.trans('decks.smartfilter.filters.illustrator')],
-        d: [add_string_sf, 'designer', Translator.trans('decks.smartfilter.filters.designer')],
-        k: [add_string_sf, 'traits', Translator.trans('decks.smartfilter.filters.traits')],
-        l: [add_boolean_sf, 'is_loyal', Translator.trans('decks.smartfilter.filters.is_loyal')],
-        m: [add_boolean_sf, 'is_military', Translator.trans('decks.smartfilter.filters.is_military')],
-        n: [add_integer_sf, 'income', Translator.trans('decks.smartfilter.filters.income')],
-        o: [add_integer_sf, 'cost', Translator.trans('decks.smartfilter.filters.cost')],
-        p: [add_boolean_sf, 'is_power', Translator.trans('decks.smartfilter.filters.is_power')],
+        f: [add_string_sf, 'culture_code', Translator.trans('decks.smartfilter.filters.culture_code')],
+        g: [add_string_sf, 'signet', Translator.trans('decks.smartfilter.filters.signet')],
+        h: [add_integer_sf, 'shadow_number', Translator.trans('decks.smartfilter.filters.shadow_number')],
+        k: [add_string_sf, 'subtypes', Translator.trans('decks.smartfilter.filters.subtypes')],
+        n: [add_integer_sf, 'site_number', Translator.trans('decks.smartfilter.filters.site_number')],
+        o: [add_integer_sf, 'twilight', Translator.trans('decks.smartfilter.filters.twilight')],
         r: [add_string_sf, 'rarity_code', Translator.trans('decks.smartfilter.filters.rarity')],
         s: [add_integer_sf, 'strength', Translator.trans('decks.smartfilter.filters.strength')],
         t: [add_string_sf, 'type_code', Translator.trans('decks.smartfilter.filters.type_code')],
         u: [add_boolean_sf, 'is_unique', Translator.trans('decks.smartfilter.filters.is_unique')],
-        v: [add_integer_sf, 'initiative', Translator.trans('decks.smartfilter.filters.initiative')],
+        v: [add_integer_sf, 'vitality', Translator.trans('decks.smartfilter.filters.vitality')],
         x: [add_string_sf, 'text', Translator.trans('decks.smartfilter.filters.text')],
-        y: [add_integer_sf, 'quantity', Translator.trans('decks.smartfilter.filters.quantity')]
+        z: [add_integer_sf, 'resistance', Translator.trans('decks.smartfilter.filters.resistance')]
     };
 
     /**

@@ -1,363 +1,89 @@
+/* global app, _, Translator */
+/**
+ * Deck charts (phase3/03): twilight curve split Free Peoples / Shadow, cultures,
+ * card types, companion strength and vitality. Draw deck only.
+ */
 (function app_deck_charts(deck_charts, $)
 {
+    var SIDE_COLORS = {free_peoples: '#3a7bbf', shadow: '#8b1a1a'};
 
-    var charts = [],
-            faction_colors = {
-                targaryen:
-                        '#1c1c1c',
-
-                baratheon:
-                        '#e3d852',
-
-                stark:
-                        '#cfcfcf',
-
-                greyjoy:
-                        '#1d7a99',
-
-                lannister:
-                        '#c00106',
-
-                tyrell:
-                        '#509f16',
-
-                thenightswatch:
-                        '#6e6e6e',
-
-                martell:
-                        '#e89521',
-
-                neutral:
-                        '#a99560',
-            };
-
-    deck_charts.chart_faction = function chart_faction()
+    function column(container, title, categories, series, stacked)
     {
-        var factions = {};
-        var draw_deck = app.deck.get_draw_deck();
-        draw_deck.forEach(function (card)
-        {
-            if(!factions[card.faction_code])
-                factions[card.faction_code] = {code: card.faction_code, name: card.faction_name, count: 0};
-            factions[card.faction_code].count += card.indeck;
-        })
+        $(container).highcharts({
+            chart: {type: 'column'},
+            title: {text: title},
+            credits: {enabled: false},
+            xAxis: {categories: categories},
+            yAxis: {title: {text: null}, allowDecimals: false, min: 0},
+            legend: {enabled: series.length > 1},
+            plotOptions: {column: {stacking: stacked ? 'normal' : null, borderWidth: 0, groupPadding: 0.1}},
+            tooltip: {shared: true},
+            series: series
+        });
+    }
 
-        var data = [];
-        _.each(_.values(factions), function (faction)
-        {
-            data.push({
-                name: faction.name,
-                label: '<span class="icon icon-' + faction.code + '"></span>',
-                color: faction_colors[faction.code],
-                y: faction.count
+    deck_charts.chart_twilight = function chart_twilight()
+    {
+        var draw = app.deck.get_draw_deck(),
+            max = _.max([0].concat(_.map(draw, function (c) { return c.twilight || 0; }))),
+            categories = _.range(0, max + 1),
+            series = _.map(['free_peoples', 'shadow'], function (side) {
+                var counts = _.map(categories, function () { return 0; });
+                _.each(draw, function (card) {
+                    if((card.side || 'free_peoples') === side && card.twilight !== null && card.twilight !== undefined) {
+                        counts[card.twilight] += card.indeck;
+                    }
+                });
+                return {name: Translator.trans('side.' + side), color: SIDE_COLORS[side], data: counts};
             });
-        })
+        column('#deck-chart-twilight', Translator.trans('decks.charts.twilight'), categories, series, true);
+    };
 
-        $("#deck-chart-faction").highcharts({
-            chart: {
-                type: 'column'
-            },
-            title: {
-                text: Translator.trans("decks.charts.faction.title")
-            },
-            subtitle: {
-                text: Translator.trans("decks.charts.faction.subtitle")
-            },
-            xAxis: {
-                categories: _.pluck(data, 'label'),
-                labels: {
-                    useHTML: true
-                },
-                title: {
-                    text: null
-                }
-            },
-            yAxis: {
-                min: 0,
-                allowDecimals: false,
-                tickInterval: 3,
-                title: null,
-                labels: {
-                    overflow: 'justify'
-                }
-            },
-            series: [{
-                    type: "column",
-                    animation: false,
-                    name: Translator.trans("decks.charts.faction.label"),
-                    showInLegend: false,
-                    data: data
-                }],
-            plotOptions: {
-                column: {
-                    borderWidth: 0,
-                    groupPadding: 0,
-                    shadow: false
-                }
-            }
-        });
-    }
-
-    deck_charts.chart_icon = function chart_icon()
+    deck_charts.chart_culture = function chart_culture()
     {
+        var cultures = app.deck.get_cultures();
+        column('#deck-chart-culture', Translator.trans('decks.charts.cultures'),
+            _.pluck(cultures, 'name'),
+            [{name: Translator.trans('decks.charts.cards'), color: '#8a6d3b', data: _.pluck(cultures, 'count')}]);
+    };
 
-        var data = [{
-                name: Translator.trans('challenges.military'),
-                label: '<span class="icon icon-military"></span>',
-                color: '#c8232a',
-                y: 0
-            }, {
-                name: Translator.trans('challenges.intrigue'),
-                label: '<span class="icon icon-intrigue"></span>',
-                color: '#13522f',
-                y: 0
-            }, {
-                name: Translator.trans('challenges.power'),
-                label: '<span class="icon icon-power"></span>',
-                color: '#292e5f',
-                y: 0
-            }];
-
-        var draw_deck = app.deck.get_draw_deck();
-        draw_deck.forEach(function (card)
-        {
-            if(card.is_military)
-                data[0].y += (card.is_unique ? 1 : card.indeck);
-            if(card.is_intrigue)
-                data[1].y += (card.is_unique ? 1 : card.indeck);
-            if(card.is_power)
-                data[2].y += (card.is_unique ? 1 : card.indeck);
-        })
-
-        $("#deck-chart-icon").highcharts({
-            chart: {
-                type: 'column'
-            },
-            title: {
-                text: Translator.trans("decks.charts.icon.title")
-            },
-            subtitle: {
-                text: Translator.trans("decks.charts.icon.subtitle")
-            },
-            xAxis: {
-                categories: _.pluck(data, 'label'),
-                labels: {
-                    useHTML: true
-                },
-                title: {
-                    text: null
-                }
-            },
-            yAxis: {
-                min: 0,
-                allowDecimals: false,
-                tickInterval: 2,
-                title: null,
-                labels: {
-                    overflow: 'justify'
-                }
-            },
-            tooltip: {
-                //headerFormat: '<span style="font-size: 10px">{point.key} Icon</span><br/>'
-                headerFormat: '<span style="font-size: 10px">' + Translator.trans('decks.charts.icon.tooltip.header', {type: '{point.key}'}) + '</span><br/>'
-            },
-            series: [{
-                    type: "column",
-                    animation: false,
-                    name: Translator.trans('decks.charts.icon.tooltip.label'),
-                    showInLegend: false,
-                    data: data
-                }],
-            plotOptions: {
-                column: {
-                    borderWidth: 0,
-                    groupPadding: 0,
-                    shadow: false
-                }
-            }
-        });
-    }
-
-    deck_charts.chart_strength = function chart_strength()
+    deck_charts.chart_type = function chart_type()
     {
-
-        var data = [];
-
-        var draw_deck = app.deck.get_draw_deck();
-        draw_deck.forEach(function (card)
-        {
-            if(typeof card.strength === 'number') {
-                data[card.strength] = data[card.strength] || 0;
-                data[card.strength] += (card.is_unique ? 1 : card.indeck);
-            }
-        })
-        data = _.flatten(data).map(function (value)
-        {
-            return value || 0;
+        var types = {};
+        _.each(app.deck.get_draw_deck(), function (card) {
+            var side = card.side || 'free_peoples';
+            types[card.type_name] = types[card.type_name] || {free_peoples: 0, shadow: 0};
+            types[card.type_name][side] += card.indeck;
         });
+        var names = _.keys(types).sort();
+        column('#deck-chart-type', Translator.trans('decks.charts.types'), names, _.map(['free_peoples', 'shadow'], function (side) {
+            return {name: Translator.trans('side.' + side), color: SIDE_COLORS[side], data: _.map(names, function (n) { return types[n][side]; })};
+        }), true);
+    };
 
-        $("#deck-chart-strength").highcharts({
-            chart: {
-                type: 'line'
-            },
-            title: {
-                text: Translator.trans("decks.charts.strength.title")
-            },
-            subtitle: {
-                text: Translator.trans("decks.charts.strength.subtitle")
-            },
-            xAxis: {
-                allowDecimals: false,
-                tickInterval: 1,
-                title: {
-                    text: null
-                }
-            },
-            yAxis: {
-                min: 0,
-                allowDecimals: false,
-                tickInterval: 1,
-                title: null,
-                labels: {
-                    overflow: 'justify'
-                }
-            },
-            tooltip: {
-                headerFormat: '<span style="font-size: 10px">' + Translator.trans('decks.charts.strength.tooltip.header', {str: '{point.key}'}) + '</span><br/>'
-            },
-            series: [{
-                    animation: false,
-                    name: Translator.trans('decks.charts.strength.tooltip.label'),
-                    showInLegend: false,
-                    data: data
-                }]
-        });
-    }
-
-    deck_charts.chart_cost = function chart_cost()
+    deck_charts.chart_companions = function chart_companions()
     {
-
-        var data = [];
-
-        var draw_deck = app.deck.get_draw_deck();
-        draw_deck.forEach(function (card)
-        {
-            if(card.cost !== null && card.cost !== 'X' && card.cost !== '-') {
-                data[card.cost] = data[card.cost] || 0;
-                data[card.cost] += card.indeck;
-            }
-        })
-        data = _.flatten(data).map(function (value)
-        {
-            return value || 0;
+        var companions = _.filter(app.deck.get_draw_deck(), function (card) { return card.type_code === 'companion'; });
+        _.each(app.deck.get_cards('ring_bearer'), function (slot) {
+            companions.unshift(_.extend({}, slot.card, {indeck: 1}));
         });
+        column('#deck-chart-companions', Translator.trans('decks.charts.companions'),
+            _.map(companions, function (c) { return c.name; }),
+            [
+                {name: Translator.trans('card.info.strength'), color: '#c9302c', data: _.map(companions, function (c) { return c.strength || 0; })},
+                {name: Translator.trans('card.info.vitality'), color: '#5cb85c', data: _.map(companions, function (c) { return c.vitality || 0; })}
+            ]);
+    };
 
-        $("#deck-chart-cost").highcharts({
-            chart: {
-                type: 'line'
-            },
-            title: {
-                text: Translator.trans("decks.charts.cost.title")
-            },
-            subtitle: {
-                text: Translator.trans("decks.charts.cost.subtitle")
-            },
-            xAxis: {
-                allowDecimals: false,
-                tickInterval: 1,
-                title: {
-                    text: null
-                }
-            },
-            yAxis: {
-                min: 0,
-                allowDecimals: false,
-                tickInterval: 1,
-                title: null,
-                labels: {
-                    overflow: 'justify'
-                }
-            },
-            tooltip: {
-                headerFormat: '<span style="font-size: 10px">' + Translator.trans('decks.charts.cost.tooltip.header', {cost: '{point.key}'}) + '</span><br/>'
-            },
-            series: [{
-                    animation: false,
-                    name: Translator.trans('decks.charts.cost.tooltip.label'),
-                    showInLegend: false,
-                    data: data
-                }]
-        });
-    }
-
-    deck_charts.chart_character_cost = function chart_character_cost()
+    deck_charts.setup = function setup()
     {
-
-        var data = [];
-
-        var draw_deck = app.deck.get_characters();
-        draw_deck.forEach(function (card)
-        {
-            if(card.cost !== null && card.cost !== 'X' && card.cost !== '-') {
-                data[card.cost] = data[card.cost] || 0;
-                data[card.cost] += card.indeck;
-            }
-        })
-        data = _.flatten(data).map(function (value)
-        {
-            return value || 0;
-        });
-
-        $("#deck-chart-character-cost").highcharts({
-            chart: {
-                type: 'line'
-            },
-            title: {
-                text: Translator.trans("decks.charts.character-cost.title")
-            },
-            subtitle: {
-                text: Translator.trans("decks.charts.character-cost.subtitle")
-            },
-            xAxis: {
-                allowDecimals: false,
-                tickInterval: 1,
-                title: {
-                    text: null
-                }
-            },
-            yAxis: {
-                min: 0,
-                allowDecimals: false,
-                tickInterval: 1,
-                title: null,
-                labels: {
-                    overflow: 'justify'
-                }
-            },
-            tooltip: {
-                headerFormat: '<span style="font-size: 10px">' + Translator.trans('decks.charts.character-cost.tooltip.header', {cost: '{point.key}'}) + '</span><br/>'
-            },
-            series: [{
-                animation: false,
-                name: Translator.trans('decks.charts.character-cost.tooltip.label'),
-                showInLegend: false,
-                data: data
-            }]
-        });
-    }
-
-    deck_charts.setup = function setup(options)
-    {
-        deck_charts.chart_faction();
-        deck_charts.chart_icon();
-        deck_charts.chart_strength();
-        deck_charts.chart_character_cost();
-        deck_charts.chart_cost();
-    }
-
-    $(document).on('shown.bs.tab', 'a[data-toggle=tab]', function (e)
-    {
-        deck_charts.setup();
-    });
+        if(!$('#deck-chart-twilight').length) {
+            return;
+        }
+        deck_charts.chart_twilight();
+        deck_charts.chart_culture();
+        deck_charts.chart_type();
+        deck_charts.chart_companions();
+    };
 
 })(app.deck_charts = {}, jQuery);

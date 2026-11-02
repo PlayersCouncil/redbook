@@ -11,7 +11,7 @@
     - nbdecks
     - cannotcreate
     - tournaments
-    - decklegality
+    - formats: Format by code
 #}
 {% extends 'base.html.twig' %}
 
@@ -146,67 +146,18 @@
                     {% for deck in decks %}
                         <tr data-id="{{ deck.id }}" data-uuid="{{ deck.uuid }}" class="list-decks-deck">
                             <td><input type="checkbox"></td>
-                            <td class="hidden-xs">
-                                <img
-                                    src="{{  asset('images/factions/' ~ deck.faction.code ~ '.png') }}"
-                                    title="{{ deck.faction.name }}"
-                                >
-                                {% for agenda in deck.slots.agendas %}
-                                    {% if agenda.card.imageUrl %}
-                                        <img src="{{ agenda.card.imageUrl }}" title="{{ agenda.card.name }}">
-                                    {% else %}
-                                        <img src="{{ asset('images/no-card.png') }}" title="{{ agenda.card.name }}">
-                                    {% endif %}
+                            <td class="hidden-xs deck-cultures">
+                                {% for row in deck.slots.cultures | slice(0, 4) %}
+                                    <span class="label label-default culture-label culture-{{ row.culture.code }}">{{ row.culture.name }} {{ row.count }}</span>
                                 {% endfor %}
                             </td>
                             <td>
                                 <a href="{{ path('deck_view',{deck_uuid:deck.uuid}) }}"
                                    class="deck-name">{{ deck.name }}</a> {{ deck.version }}
-                                {% if decklegality[deck.id] %}
-                                    <table class="tournament-legality-info">
-                                        {% for legality in decklegality[deck.id] %}
-                                            <tr>
-                                                <td class="rl-title">
-                                                    {{ legality.title }}
-                                                </td>
-                                                <td class="rl-indicator">
-                                                    {% if legality.joust %}
-                                                        <span class="text-success">
-                                                            <i class="fas fa-check"></i>
-                                                        </span>
-                                                    {% else %}
-                                                        <span class="text-danger">
-                                                            <i class="fas fa-times"></i>
-                                                        </span>
-                                                    {% endif %}
-                                                </td>
-                                                <td class="joust-title">
-                                                    {{ 'tournamentLegality.joust' | trans }}
-                                                </td>
-                                                <td class="rl-indicator">
-                                                    {% if legality.melee %}
-                                                        <span class="text-success">
-                                                            <i class="fas fa-check"></i>
-                                                        </span>
-                                                    {% else %}
-                                                        <span class="text-danger">
-                                                            <i class="fas fa-times"></i>
-                                                        </span>
-                                                    {% endif %}
-                                                </td>
-                                                <td class="melee-title">
-                                                    {{ 'tournamentLegality.melee' | trans }}
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    </table>
-                                {% endif %}
-                                {% if deck.problem is not null %}
-                                    <div class="text-danger small">
-                                        <span class="fas fa-exclamation-triangle"></span>
-                                        {{ deck_validation_helper.getProblemLabel(deck.problem) }}
-                                    </div>
-                                {% endif %}
+                                <div class="small">
+                                    {{ formats[deck.targetFormat].name ?? deck.targetFormat }}
+                                    {% include 'Deck/completeness-label.html.twig' with {deck: deck} %}
+                                </div>
                                 <div class="tags">
                                     {% for tag in deck.tags|trim|split(' ')|sort %}
                                         <span class="tag" data-tag="{{ tag }}">{{ tag }}</span>

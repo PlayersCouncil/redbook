@@ -1,4 +1,4 @@
-slogan: Deckbuilder for A Game of Thrones LCG 2nd Edition
+slogan: Decks for the Lord of the Rings Trading Card Game
 
 data_load_fail: "Unable to load the data. Click <a href='javascript:window.location.reload(true)'>here</a> to reload your page."
 login_required: You must be logged in for this operation.
@@ -6,6 +6,7 @@ login_required: You must be logged in for this operation.
 userby: by %user%
 seemore:
   faction: More in this faction
+  decklists: More decklists
 noimage: No image
 design_team_call_to_action: "If you are interested in playtesting cards like this, visit <a href=\"%url%\">The Citadel</a> for more info!"
 
@@ -627,3 +628,124 @@ formats:
     limit3: Limited to 3 copies
     valid: Also legal
     restricted_names: Restricted by name
+
+# ---- Red Book (LOTR) additions. Flat dotted keys extend the sections above. ----
+site.name: Red Book
+deck:
+  draw_deck: Draw deck
+  target_format: Format
+  format_unknown: format not known
+  effective_date: Played on
+  effective_date_hint: "When the deck was, or will be, played. Card versions and errata are shown as of this date."
+  ring_bearer: Ring-bearer
+  ring: The One Ring
+  map: Map
+  adventure_deck: Adventure deck
+  no_culture: No culture
+  ring_and_sites: Ring, sites, maps
+  in_deck: In deck
+  add: Add
+  shared: "Anyone with the link can view this deck"
+  shared_label: Shared by link
+  convert: Convert to PC errata
+  convert_hint: "Swap each card for its Players Council errata in this format, through Gemp"
+  convert_failed: "Gemp couldn't convert the deck just now. Try again in a moment."
+  half:
+    none: Whole deck
+    free_peoples: Free Peoples half
+    shadow: Shadow half
+  completeness:
+    complete: Legal
+    complete_hint: "Gemp accepts this deck in its format"
+    incomplete: Has problems
+    unvalidated: Not checked
+  validation:
+    unavailable: "Gemp couldn't be reached to check this deck. It will be checked again later."
+    valid: "Legal in %format%."
+    valid_with_errata: "Uses Decipher versions of cards that have PC errata; Gemp plays them as the errata in this format."
+    problems: "Problems in %format%:"
+    checked: "Checked by Gemp %date% UTC."
+decks.build.errors.noformat: "Choose a format for the deck."
+decks.build.newname_format: "New %format% deck"
+decks.build.format_hint: "Gemp checks the deck against this format. You can change it later."
+decks.build.name_hint: "Optional; you can name it later"
+decks.import.title: Import decks
+decks.import.intro: "Paste a deck as a card list (one card per line, with optional sections) or as a Gemp deck string. Separate several decks with a line of ===."
+decks.import.or_gemp: "or a Gemp deck string:"
+decks.import.paste: Decks as text
+decks.import.file: Or a text file
+decks.import.submit: Import
+decks.import.imported: "{1} Imported 1 deck.|]1,Inf] Imported %count% decks."
+decks.import.error.empty: "Nothing to import."
+decks.form.export.gemp: Gemp deck string
+decks.form.download.gemp: Gemp deck string
+decks.edit.build.options.show-all-sets: "Show cards from every set, not just the format's"
+decks.edit.build.options.show-errata: Show PC errata blueprints
+decks.edit.build.options.show-only-deck: Show only cards in the deck
+decks.edit.build.options.hide-banned: Hide banned cards
+decks.edit.build.more: "Showing %shown% of %total% cards; filter to narrow the list."
+decks.charts.twilight: Twilight curve
+decks.charts.cultures: Cultures
+decks.charts.cards: Cards
+decks.charts.types: Card types
+decks.charts.companions: Companions
+decks.compare.adventure: Adventure decks
+decks.compare.draw: Draw decks
+decks.compare.shared: In both
+decks.compare.only_in: "Only in %deck%"
+decks.smartfilter.filters.name: Name
+decks.smartfilter.filters.side: Side
+decks.smartfilter.filters.culture_code: Culture
+decks.smartfilter.filters.signet: Signet
+decks.smartfilter.filters.shadow_number: Shadow number
+decks.smartfilter.filters.subtypes: Subtype
+decks.smartfilter.filters.site_number: Site number
+decks.smartfilter.filters.twilight: Twilight cost
+decks.smartfilter.filters.vitality: Vitality
+decks.smartfilter.filters.resistance: Resistance
+card.info.short.twilight: Tw
+card.info.short.strvit: Str/Vit
+decklist.view.problems: "Problems Gemp found when this was published:"
+decklist.list.none: No decklists yet.
+decklist.plays.title: Played at
+decklist.plays.event: Event
+decklist.plays.placing: Place
+decklist.plays.players: Players
+decklist.plays.add: Add an event
+decklist.publish.half: Deck half
+decklist.publish.half_hint: "Publish only one side, for others to pair with their own."
+decklist.filters.any_format: Any format
+decklist.filters.culture: Culture
+decklist.filters.any_culture: Any culture
+decklist.filters.whole_decks: Whole decks
+decklist.filters.with_halves: Whole decks and halves
+decklist.filters.from: From year
+decklist.filters.to: To year
+decklist.filters.incomplete: Include decks with problems
+decklist.filters.apply: Filter
+decklist.source.title: "Archived deck by %author%"
+decklist.source.from: "From %source%:"
+decklist.source.original: original post
+decklist.source.archived: archived copy
+decklist.source.posted: "posted %date%"
+decklist.source.format: "format as written: %format%"
+decklist.source.ratings: "Rated %score% (%votes% votes, %scale%) on the original site."
+decklist.source.unresolved: "Lines in the original that couldn't be matched to a card:"
+decklist.source.raw: The decklist as originally posted
+decklist.source.comments: Comments from the original thread
+decklist.source.archived_label: (archived)
+decklist.claim.button: This is my deck
+decklist.claim.title: Claim an archived deck
+decklist.claim.intro: "If you posted this deck on the original site, ask for it to be moved to your account. An admin will check and approve it; the deck keeps a note of where it came from."
+decklist.claim.message: "How can we tell it's yours? (your name on the original site, anything else that helps)"
+decklist.claim.submit: Send the request
+decklist.claim.sent: "Your request has been sent. An admin will look at it."
+decklist.claim.pending: "You've already asked for this deck; an admin will look at it."
+decklist.claim.admin_title: Claims on archived decks
+decklist.claim.decklist: Decklist
+decklist.claim.user: Asked by
+decklist.claim.approve: Approve
+decklist.claim.reject: Reject
+decklist.claim.none: No requests waiting.
+decklist.claim.recent: Recently decided
+decklist.publish.format_unknown: "Not known yet: choose the format for its era"

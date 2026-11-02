@@ -22,64 +22,48 @@
         $('#cardModal').modal('show');
     };
 
+    /** How many copies the deckbuilder offers: 1 for the Ring, sites and maps, else the format's limit */
+    card_modal.max_quantity = function max_quantity(card)
+    {
+        if(app.deck.role_for_card(card) !== 'draw') {
+            return 1;
+        }
+        var format = app.deck.get_format();
+        return format ? format.maximum_same_name : 4;
+    };
+
     function fill_modal(code)
     {
         var card = app.data.cards.findById(code),
                 modal = $('#cardModal');
+        if(!card)
+            return;
         var info = '<div class="card-faction">' + app.format.faction(card) + '</div>'
           + '<div class="card-info">' + app.format.info(card) + '</div>'
           + '<div class="card-traits">' + app.format.traits(card) + '</div>'
-          + '<div class="card-text border-' + card.faction_code + '">' + app.format.text(card) + '</div>';
-
-        if (card.errataed) {
-            info += '<div class="card-errata-short">' +  Translator.trans('card.info.errataed_short')  + '</div>';
+          + '<div class="card-text">' + app.format.text(card) + '</div>'
+          + '<div class="card-pack">' + app.format.pack(card) + '</div>';
+        if (card.kind === 'errata') {
+            info += '<div class="card-errata-short">' + Translator.trans('card.kind.errata_short') + '</div>';
         }
-
-        info += '<div class="card-pack">' + app.format.pack(card) + '</div>';
-        if (card.rarity_code) {
-            info += '<div class="card-code">' + Translator.trans('card.info.rarity') + ': ' + Translator.trans('rarity.' + card.rarity_code) + '</div>'
-        }
-
-        if (card.work_in_progress) {
-            info = '<div class="alert alert-danger">' +  Translator.trans('card.info.workInProgress')  + '</div>' + info;
-        }
-        if(!card)
-            return;
 
         modal.data('code', code);
         modal.find('.card-modal-link').attr('href', card.url);
         modal.find('h3.modal-title').html(app.format.name(card));
-        modal.find('.modal-image').html('<img class="img-responsive" src="' + card.image_url + '">');
+        modal.find('.modal-image').html(card.image_url ? '<img class="img-responsive" src="' + card.image_url + '">' : '');
         modal.find('.modal-info').html(info);
 
         var qtyelt = modal.find('.modal-qty');
-        if(qtyelt) {
-
-            var qtyHtml = '';
-            if(card.maxqty > 3) {
-                qtyHtml = '<select class="qty-select form-control">';
-                for(var i = 0; i <= card.maxqty; i++) {
-                    qtyHtml += '<option value="' + i + '"' + (i === card.indeck ? ' selected' : '') + '>' + i + '</option>';
-                }
-                qtyHtml += '</select>';
-            } else {
-                for(var i = 0; i <= card.maxqty; i++) {
-                    qtyHtml += '<label class="btn btn-default"><input type="radio" name="qty" value="' + i + '">' + i + '</label>';
-                }
+        if(qtyelt.length && app.deck.get_id && app.deck.get_id() && $('#deck-save-id').length) {
+            var max = card_modal.max_quantity(card),
+                indeck = app.deck.get_quantity(card.code),
+                qtyHtml = '';
+            for(var i = 0; i <= max; i++) {
+                qtyHtml += '<label class="btn btn-default' + (i === indeck ? ' active' : '') + '"><input type="radio" name="qty" value="' + i + '">' + i + '</label>';
             }
             qtyelt.html(qtyHtml);
-
-            qtyelt.find('label').each(function (index, element)
-            {
-                if(index == card.indeck)
-                    $(element).addClass('active');
-                else
-                    $(element).removeClass('active');
-            });
-
-        } else {
-            if(qtyelt)
-                qtyelt.closest('.row').remove();
+        } else if(qtyelt.length) {
+            qtyelt.closest('.row').remove();
         }
     }
 

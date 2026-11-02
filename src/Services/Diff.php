@@ -42,7 +42,7 @@ class Diff
                 // since we're going to mutate the slots, we detach them first
                 $this->em->detach($slot);
 
-                $cardCodes[] = $slot->getCard()->getCode();
+                $cardCodes[] = $slot->getContentKey();
             }
         }
 
@@ -71,8 +71,9 @@ class Diff
             foreach ($list_slots as $j => $slots) {
                 // searching the slots
                 foreach ($slots as $k => $slot) {
-                    if ($slot->getCard()->getCode() === (string) $cardCode) {
+                    if ($slot->getContentKey() === (string) $cardCode) {
                         $card = $slot->getCard();
+                        $role = $slot->getRole();
                         $indexes[$j] = $k;
                         $quantities[$j] = $slot->getQuantity();
                         break;
@@ -87,6 +88,7 @@ class Diff
             $slot = new Deckslot();
             $slot->setCard($card);
             $slot->setQuantity($minimum);
+            $slot->setRole($role);
 
             // we add this slot to the list of common slots
             $intersection->add($slot);

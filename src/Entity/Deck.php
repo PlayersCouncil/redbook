@@ -15,6 +15,8 @@ use stdClass;
 #[ORM\Table(name: 'deck')]
 class Deck extends CommonDeck implements DeckInterface
 {
+    use LotrDeckTrait;
+
     /**
      * @var int
      */
@@ -49,11 +51,9 @@ class Deck extends CommonDeck implements DeckInterface
     #[ORM\Column(name: 'description_md', type: 'text', nullable: true)]
     protected $descriptionMd;
 
-    /**
-     * @var string|null
-     */
-    #[ORM\Column(name: 'problem', type: 'string', length: 255, nullable: true)]
-    protected $problem;
+    /** Anyone with the link can view it, without it being published (decision 0023) */
+    #[ORM\Column(name: 'shared', type: 'boolean', nullable: false, options: ['default' => false])]
+    protected bool $shared = false;
 
     /**
      * @var string|null
@@ -233,20 +233,14 @@ class Deck extends CommonDeck implements DeckInterface
         return $this->descriptionMd;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function setProblem($problem)
+    public function isShared(): bool
     {
-        $this->problem = $problem;
+        return $this->shared;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getProblem()
+    public function setShared(bool $shared): void
     {
-        return $this->problem;
+        $this->shared = $shared;
     }
 
     /**
@@ -603,28 +597,20 @@ class Deck extends CommonDeck implements DeckInterface
     public function jsonSerialize(): mixed
     {
         $slots = $this->getSlots();
-        $agendas = $slots->getAgendas();
-        $agendas_code = [];
-        foreach ($agendas as $agenda) {
-            $agendas_code[] = $agenda->getCard()->getCode();
-        }
-        $array = [
+        return [
             'id' => $this->getId(),
+            'uuid' => $this->getUuid(),
             'name' => $this->getName(),
             'date_creation' => $this->getDateCreation()->format('c'),
             'date_update' => $this->getDateUpdate()->format('c'),
             'description_md' => $this->getDescriptionMd(),
             'user_id' => $this->getUser()->getId(),
-            'faction_code' => $this->getFaction()->getCode(),
-            'faction_name' => $this->getFaction()->getName(),
             'slots' => $slots->getContent() ?: new stdClass(),
-            'agendas' => $agendas_code,
+            'gemp' => $slots->toGempString(),
             'version' => $this->getVersion(),
-        ];
-        $array['problem'] = $this->getProblem();
-        $array['tags'] = $this->getTags();
-        $array['uuid'] = $this->getUuid();
-        return $array;
+            'tags' => $this->getTags(),
+            'shared' => $this->shared,
+        ] + $this->lotrDeckJson();
     }
 
     /**

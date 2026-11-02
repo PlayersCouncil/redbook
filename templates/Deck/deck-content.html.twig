@@ -1,0 +1,56 @@
+{# A LOTR deck laid out by part (phase3/03): Ring-bearer, Ring, adventure deck,
+   Free Peoples and Shadow by culture, map.
+   Variables: deck (Deck or Decklist), format (Format|null) #}
+{% set slots = deck.slots %}
+{% set draw = slots.drawDeck %}
+{% set fp = slots.freePeoples.countCards %}
+{% set shadow = slots.shadow.countCards %}
+<div class="deck-content">
+    <p class="deck-summary">
+        <strong>{{ 'deck.draw_deck' | trans }}:</strong> {{ draw.countCards }}
+        ({{ 'side.free_peoples' | trans }} {{ fp }}, {{ 'side.shadow' | trans }} {{ shadow }})
+        {% if format %}&middot; <a href="{{ path('format', {code: format.code}) }}">{{ format.name }}</a>{% else %}&middot; {{ deck.targetFormat ?: ('deck.format_unknown' | trans) }}{% endif %}
+        &middot; {{ 'deck.effective_date' | trans }} {{ deck.effectiveDate | date('Y-m-d') }}
+    </p>
+    <div class="row">
+        <div class="col-sm-6">
+            <h5 class="deck-section-title">{{ 'deck.ring_bearer' | trans }}</h5>
+            {% if slots.ringBearer %}{% include 'Deck/card-line.html.twig' with {slot: slots.ringBearer, show_qty: false} %}{% else %}<div class="text-muted">&mdash;</div>{% endif %}
+            <h5 class="deck-section-title">{{ 'deck.ring' | trans }}</h5>
+            {% if slots.ring %}{% include 'Deck/card-line.html.twig' with {slot: slots.ring, show_qty: false} %}{% else %}<div class="text-muted">&mdash;</div>{% endif %}
+            {% if slots.map or (format and format.usesMaps) %}
+                <h5 class="deck-section-title">{{ 'deck.map' | trans }}</h5>
+                {% if slots.map %}{% include 'Deck/card-line.html.twig' with {slot: slots.map, show_qty: false} %}{% else %}<div class="text-muted">&mdash;</div>{% endif %}
+            {% endif %}
+        </div>
+        <div class="col-sm-6">
+            <h5 class="deck-section-title">{{ 'deck.adventure_deck' | trans }} ({{ slots.sites.countCards }})</h5>
+            {% if format and format.hasNumberedSites %}
+                {% set by_number = {} %}
+                {% for slot in slots.sites %}{% set by_number = by_number | merge({('n' ~ (slot.card.siteNumber ?? 0)): (by_number['n' ~ (slot.card.siteNumber ?? 0)] ?? []) | merge([slot])}) %}{% endfor %}
+                {% for n in 1..9 %}
+                    <div class="deck-site-number"><span class="site-number">{{ n }}</span>
+                        {% for slot in by_number['n' ~ n] ?? [] %}{% include 'Deck/card-line.html.twig' with {slot: slot, show_qty: false} %}{% else %}<span class="text-muted">&mdash;</span>{% endfor %}
+                    </div>
+                {% endfor %}
+                {% for slot in by_number['n0'] ?? [] %}{% include 'Deck/card-line.html.twig' with {slot: slot, show_qty: false} %}{% endfor %}
+            {% else %}
+                {% for slot in slots.sites %}{% include 'Deck/card-line.html.twig' with {slot: slot, show_qty: slot.quantity > 1} %}{% else %}<div class="text-muted">&mdash;</div>{% endfor %}
+            {% endif %}
+        </div>
+    </div>
+    <div class="row">
+        {% for side, cultures in slots.drawDeckBySideAndCulture %}
+            <div class="col-sm-6 deck-side deck-side-{{ side }}">
+                <h5 class="deck-section-title">{{ ('side.' ~ side) | trans }} ({{ side == 'shadow' ? shadow : fp }})</h5>
+                {% for culture, culture_slots in cultures %}
+                    {% set n = 0 %}{% for s in culture_slots %}{% set n = n + s.quantity %}{% endfor %}
+                    <h6 class="deck-culture">{{ culture ?: ('deck.no_culture' | trans) }} ({{ n }})</h6>
+                    {% for slot in culture_slots %}{% include 'Deck/card-line.html.twig' with {slot: slot} %}{% endfor %}
+                {% else %}
+                    <div class="text-muted">&mdash;</div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+    </div>
+</div>

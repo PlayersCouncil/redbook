@@ -2,204 +2,217 @@
 
 namespace App\Services;
 
+use App\Classes\DeckContent;
 use App\Entity\Card;
-use App\Entity\Faction;
-use App\Entity\Pack;
-use App\Entity\PackInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Exception;
-use Symfony\Contracts\Translation\TranslatorInterface;
+use InvalidArgumentException;
 
 /**
- * Description of DeckImportService
- *
- * @author cedric
+ * Reads decks pasted or uploaded as text. Accepts, per deck:
+ *  - a Gemp deck string: ringBearer|ring|site,...|card,...[|map]
+ *  - a card list, one card per line: "2x Legolas, Greenleaf", "2 Legolas, Greenleaf (1R50)",
+ *    "Legolas, Greenleaf (1_50)", with optional section headings (Ring-bearer, Ring,
+ *    Adventure deck / Sites, Free Peoples, Shadow, Map). Red Book's own text export is
+ *    one of these.
+ * Several decks are separated by a line of three or more "=". The first line of a
+ * card list that isn't a card or a heading is the deck's name.
  */
 class DeckImportService
 {
-    // three equal signs (or more) in a row are used
-    // to separate multiple decks in one upload
-    protected const DECKS_DELIMITER_REGEXP = '/[=]{3,}/';
+    protected const DECKS_DELIMITER_REGEXP = '/^\s*={3,}\s*$/m';
 
-    // <quantity>x<card name> (<pack code|name>)
-    // <quantity><card name> (<pack code|name>)
-    protected const CARD_WITH_PACK_INFO_REGEXP = '/^\s*(\d)x?([^(]+) \(([^)]+)/u';
+    /** "2x Name (info)", "2 Name", "Name (info)", "Name x2" */
+    protected const CARD_LINE_REGEXP = '/^(?:(\d+)\s*x?\s+)?(.+?)(?:\s+x(\d+))?(?:\s*\(([^)]+)\))?$/iu';
 
-    // <quantity>x<card name>
-    // <quantity><card name>
-    protected const CARD_WITHOUT_PACK_INFO_REGEXP = '/^\s*(\d)x?([\pLl\pLu\pN\-.\'!:" ]+)/u';
+    protected const HEADINGS = [
+        'ring-bearer' => DeckContent::ROLE_RING_BEARER, 'ring bearer' => DeckContent::ROLE_RING_BEARER,
+        'ring' => DeckContent::ROLE_RING, 'the one ring' => DeckContent::ROLE_RING,
+        'sites' => DeckContent::ROLE_SITE, 'adventure deck' => DeckContent::ROLE_SITE, 'adventure path' => DeckContent::ROLE_SITE,
+        'draw deck' => DeckContent::ROLE_DRAW, 'free peoples' => DeckContent::ROLE_DRAW, 'shadow' => DeckContent::ROLE_DRAW,
+        'map' => DeckContent::ROLE_MAP,
+    ];
 
-    // #<three digits> <quantity>x<card name>
-    // #<three digits> <quantity><card name>
-    protected const CARD_WITHOUT_PACK_INFO_ALT1_REGEXP = '/^\s*#\d{3}\s(\d)x?([\pLl\pLu\pN\-.\'!: ]+)/u';
+    /** @var array<string, Card>|null */
+    private ?array $byCode = null;
+    /** @var array<string, Card[]> */
+    private array $byName = [];
+    /** @var array<string, Card> */
+    private array $byCollInfo = [];
 
-    // <card name>x<quantity>
-    protected const CARD_WITHOUT_PACK_INFO_ALT2_REGEXP = '/^([^(]+).*x(\d)/';
-
-    // <card name>
-    protected const SINGLE_CARD_WITHOUT_PACK_INFO_REGEXP = '/^([^(]+)/';
-
-    // <card name> (<pack code|name>)
-    protected const SINGLE_CARD_WITH_PACK_INFO_REGEXP = '/^([^\(]+) \(([^)]+)/u';
-
-    protected EntityManagerInterface $em;
-
-    protected TranslatorInterface $translator;
-
-    public function __construct(EntityManagerInterface $em, TranslatorInterface $translator)
+    public function __construct(protected EntityManagerInterface $em)
     {
-        $this->em = $em;
-        $this->translator = $translator;
+    }
+
+    /** For tests: the cards to resolve against instead of the database */
+    public function setCards(array $cards): void
+    {
+        $this->byCode = [];
+        $this->byName = [];
+        $this->byCollInfo = [];
+        foreach ($cards as $card) {
+            $this->index($card);
+        }
     }
 
     /**
-     * @param string $text
-     * @return array
+     * @return array{decks: array<array{name: string, content: array<string, int>, description: string, warnings: string[]}>, errors: string[]}
      */
     public function parseTextImport(string $text): array
     {
-        $rhett = [
-            'decks' => [],
-            'errors' => [],
-        ];
-
-        $text = trim($text);
-        if ('' === $text) {
-            return $rhett;
-        }
-
-        $textChunks = preg_split(self::DECKS_DELIMITER_REGEXP, $text, -1, PREG_SPLIT_NO_EMPTY);
-
-        $decks = [];
-
-        // trim whitespace off of all lines and filter out any blank lines
-        $removeFiller = function (array $lines) {
-            $lines = array_map(function ($line) {
-                return trim($line);
-            }, $lines);
-            $lines = array_filter($lines, function ($line) {
-                return '' !== $line;
-            });
-            return array_values($lines);
-        };
-
-        foreach ($textChunks as $text) {
-            $lines = explode("\n", trim($text));
-            $lines = $removeFiller($lines);
-
-            if (!empty($lines)) {
-                $decks[] = $lines;
-            }
-        }
-
-        if (empty($decks)) {
-            return $rhett;
-        }
-
-        // load all packs upfront and map them by their names and codes for easy lookup below
-        $packs = $this->em->getRepository(Pack::class)->findAll();
-        $packsByName = array_combine(array_map(function (PackInterface $pack) {
-            return $pack->getName();
-        }, $packs), $packs);
-        $packsByCode = array_combine(array_map(function (PackInterface $pack) {
-            return $pack->getCode();
-        }, $packs), $packs);
-
-        foreach ($decks as $lines) {
-            try {
-                $rhett['decks'][] = $this->parseOneTextImport($lines, $packsByName, $packsByCode);
-            } catch (Exception $e) {
-                $rhett['errors'][] = $e->getMessage();
-            }
-        }
-
-        return $rhett;
-    }
-
-    /**
-     * @param array $lines
-     * @param array $packsByName
-     * @param array $packsByCode
-     * @return array
-     * @throws Exception
-     */
-    protected function parseOneTextImport(array $lines, array $packsByName, array $packsByCode): array
-    {
-        $data = [
-            'content' => [],
-            'faction' => null,
-            'description' => '',
-            'name' => 'new deck',
-        ];
-
-        // set the deck's name from the first line in the given import
-        $data['name'] = $lines[0];
-
-        foreach ($lines as $line) {
-            $matches = [];
-            $packNameOrCode = null;
-            $card = null;
-
-            if (preg_match(self::CARD_WITH_PACK_INFO_REGEXP, $line, $matches)) {
-                $quantity = intval($matches[1]);
-                $name = trim($matches[2]);
-                $packNameOrCode = trim($matches[3]);
-            } elseif (preg_match(self::CARD_WITHOUT_PACK_INFO_REGEXP, $line, $matches)) {
-                $quantity = intval($matches[1]);
-                $name = trim($matches[2]);
-            } elseif (preg_match(self::CARD_WITHOUT_PACK_INFO_ALT1_REGEXP, $line, $matches)) {
-                $quantity = intval($matches[1]);
-                $name = trim($matches[2]);
-            } elseif (preg_match(self::CARD_WITHOUT_PACK_INFO_ALT2_REGEXP, $line, $matches)) {
-                $quantity = intval($matches[2]);
-                $name = trim($matches[1]);
-            } elseif (preg_match(self::SINGLE_CARD_WITH_PACK_INFO_REGEXP, $line, $matches)) {
-                $quantity = 1;
-                $name = trim($matches[1]);
-                $packNameOrCode = trim($matches[2]);
-            } elseif (preg_match(self::SINGLE_CARD_WITHOUT_PACK_INFO_REGEXP, $line, $matches)) {
-                $quantity = 1;
-                $name = trim($matches[1]);
-            } else {
+        $result = ['decks' => [], 'errors' => []];
+        foreach (preg_split(self::DECKS_DELIMITER_REGEXP, trim($text), -1, PREG_SPLIT_NO_EMPTY) as $chunk) {
+            $lines = array_values(array_filter(array_map('trim', preg_split('/\R/', $chunk)), 'strlen'));
+            if (!$lines) {
                 continue;
             }
-
-            if ($packNameOrCode) {
-                /* @var PackInterface $pack */
-                $pack = null;
-                if (array_key_exists($packNameOrCode, $packsByName)) {
-                    $pack = $packsByName[$packNameOrCode];
-                } elseif (array_key_exists($packNameOrCode, $packsByCode)) {
-                    $pack = $packsByCode[$packNameOrCode];
-                }
-                if ($pack) {
-                    $card = $this->em->getRepository(Card::class)->findOneBy(array(
-                        'name' => $name,
-                        'pack' => $pack->getId(),
-                    ));
-                }
-            } else {
-                $card = $this->em->getRepository(Card::class)->findOneBy(array(
-                    'name' => $name
-                ));
+            try {
+                $result['decks'][] = $this->parseOne($lines);
+            } catch (InvalidArgumentException $e) {
+                $result['errors'][] = $e->getMessage();
             }
+        }
+        return $result;
+    }
 
-            if ($card) {
-                $data['content'][$card->getCode()] = $quantity;
-            } else {
-                $faction = $this->em->getRepository(Faction::class)->findOneBy(array(
-                    'name' => $name
-                ));
-                if ($faction) {
-                    $data['faction'] = $faction;
+    protected function parseOne(array $lines): array
+    {
+        $this->load();
+        $deck = ['name' => 'Imported deck', 'content' => [], 'description' => '', 'warnings' => []];
+
+        // a Gemp deck string, perhaps after a name line
+        foreach ($lines as $i => $line) {
+            $line = preg_replace('/^gemp:\s*/i', '', $line);
+            if (substr_count($line, '|') >= 3 && preg_match('/^[\d_,|*T\s]+$/', $line)) {
+                if ($i > 0) {
+                    $deck['name'] = $lines[0];
                 }
+                $deck['content'] = DeckContent::fromGempString($line);
+                $unknown = array_filter(array_keys($deck['content']), fn ($key) => !isset($this->byCode[DeckContent::parseKey($key)[0]]));
+                foreach ($unknown as $key) {
+                    $deck['warnings'][] = 'Unknown card ' . DeckContent::parseKey($key)[0];
+                    unset($deck['content'][$key]);
+                }
+                return $deck;
             }
         }
 
-        if (empty($data['faction'])) {
-            throw new Exception($this->translator->trans('decks.import.error.cannotFindFaction'));
+        $role = null;
+        $named = false;
+        foreach ($lines as $line) {
+            if (preg_match('/^(format|version|tags):/i', $line)) {
+                continue;
+            }
+            $heading = $this->heading($line);
+            if ($heading !== null) {
+                [$role, $rest] = $heading;
+                if ($rest === '') {
+                    continue;
+                }
+                $line = $rest;
+            }
+            $card = $this->parseCardLine($line);
+            if ($card === null) {
+                if (!$named && !$deck['content']) {
+                    $deck['name'] = $line;
+                    $named = true;
+                } else {
+                    $deck['warnings'][] = "Couldn't find a card for \"$line\"";
+                }
+                continue;
+            }
+            [$found, $quantity] = $card;
+            $key = $role === DeckContent::ROLE_RING_BEARER && !$this->hasRingBearer($deck['content'])
+                ? DeckContent::RING_BEARER_PREFIX . $found->getCode()
+                : $found->getCode();
+            $deck['content'][$key] = str_starts_with($key, DeckContent::RING_BEARER_PREFIX) ? 1 : ($deck['content'][$key] ?? 0) + $quantity;
         }
+        if (!$deck['content']) {
+            throw new InvalidArgumentException(sprintf('No cards found in "%s"', $deck['name']));
+        }
+        return $deck;
+    }
 
-        return $data;
+    private function hasRingBearer(array $content): bool
+    {
+        foreach (array_keys($content) as $key) {
+            if (str_starts_with($key, DeckContent::RING_BEARER_PREFIX)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** @return array{0: string, 1: string}|null the role a heading starts, and anything after "Heading:" */
+    private function heading(string $line): ?array
+    {
+        if (!preg_match('/^[#*\s]*([A-Za-z\- ]+?)\s*(?:\(\d+\))?\s*(?::\s*(.*))?$/u', $line, $m)) {
+            return null;
+        }
+        $role = self::HEADINGS[strtolower(trim($m[1]))] ?? null;
+        if ($role === null) {
+            return null;
+        }
+        // "Ring-bearer: Frodo, Son of Drogo" or a bare heading line
+        return [$role, trim($m[2] ?? '')];
+    }
+
+    /** @return array{0: Card, 1: int}|null */
+    private function parseCardLine(string $line): ?array
+    {
+        $line = trim(preg_replace('/^[-*•·\s]+/u', '', $line));
+        if (!preg_match(self::CARD_LINE_REGEXP, $line, $m)) {
+            return null;
+        }
+        $quantity = (int) ($m[1] ?: ($m[3] ?? 0) ?: 1);
+        $name = trim($m[2]);
+        $info = trim($m[4] ?? '');
+
+        if ($info !== '') {
+            if (preg_match('/^\d+_\d+$/', $info) && isset($this->byCode[$info])) {
+                return [$this->byCode[$info], $quantity];
+            }
+            $collInfo = strtoupper(str_replace(' ', '', $info));
+            if (isset($this->byCollInfo[$collInfo])) {
+                return [$this->byCollInfo[$collInfo], $quantity];
+            }
+        }
+        if (preg_match('/^\d+_\d+$/', $name) && isset($this->byCode[$name])) {
+            return [$this->byCode[$name], $quantity];
+        }
+        $candidates = $this->byName[self::normalize($name)] ?? [];
+        if (!$candidates) {
+            return null;
+        }
+        // the Decipher card over its PC errata, the earliest printing over reprints
+        usort($candidates, fn (Card $a, Card $b) => [$a->isErrata(), $a->getPack()->getPosition(), $a->getPosition()]
+            <=> [$b->isErrata(), $b->getPack()->getPosition(), $b->getPosition()]);
+        return [$candidates[0], $quantity];
+    }
+
+    public static function normalize(string $name): string
+    {
+        $name = mb_strtolower(trim(preg_replace('/^[•·*\s]+/u', '', $name)));
+        $name = strtr($name, ['’' => "'", '‘' => "'", 'é' => 'e', 'ó' => 'o', 'í' => 'i', 'û' => 'u', 'ú' => 'u', 'â' => 'a', 'ë' => 'e']);
+        return preg_replace('/\s+/', ' ', preg_replace('/\s*,\s*/', ', ', $name));
+    }
+
+    private function load(): void
+    {
+        if ($this->byCode !== null) {
+            return;
+        }
+        $this->byCode = [];
+        foreach ($this->em->getRepository(Card::class)->findAll() as $card) {
+            $this->index($card);
+        }
+    }
+
+    private function index(Card $card): void
+    {
+        $this->byCode[$card->getCode()] = $card;
+        $this->byName[self::normalize($card->getFullName())][] = $card;
+        if ($card->getCollInfo() && !$card->isErrata()) {
+            $this->byCollInfo[strtoupper(str_replace(' ', '', $card->getCollInfo()))] ??= $card;
+        }
     }
 }

@@ -11,15 +11,15 @@ use App\Entity\Cycle;
 use App\Entity\Deck;
 use App\Entity\Decklist;
 use App\Entity\DecklistInterface;
-use App\Entity\Faction;
-use App\Entity\Restriction;
+use App\Entity\Culture;
+use App\Entity\DecklistPlay;
+use App\Repository\FormatRepository;
 use App\Entity\Tournament;
 use App\Entity\User;
-use App\Services\DeckValidationHelper;
 use App\Services\CardsData;
 use App\Services\DecklistFactory;
 use App\Services\DecklistManager;
-use App\Services\RestrictionsChecker;
+use App\Services\DeckValidator;
 use App\Services\Texts;
 use DateTime;
 use Doctrine\ORM\NonUniqueResultException;
@@ -61,7 +61,6 @@ class SocialController extends AbstractController
      *
      * @param TranslatorInterface $translator
      * @param SessionInterface $session
-     * @param DeckValidationHelper $deckValidationHelper
      * @param DecklistFactory $decklistFactory
      * @param string $deck_uuid
      * @return RedirectResponse|Response
@@ -72,8 +71,8 @@ class SocialController extends AbstractController
     public function publishFormAction(
         TranslatorInterface $translator,
         SessionInterface $session,
-        DeckValidationHelper $deckValidationHelper,
         DecklistFactory $decklistFactory,
+        FormatRepository $formats,
         $deck_uuid
     ) {
         /* @var EntityManager $em */
@@ -93,9 +92,7 @@ class SocialController extends AbstractController
 
         $yesterday = (new DateTime())->modify('-24 hours');
         if (false && $user->getDateCreation() > $yesterday) {
-            $session
-                ->getFlashBag()
-                ->set('error', $translator->trans('decklist.publish.errors.antispam.newbie'));
+            $this->addFlash('error', $translator->trans('decklist.publish.errors.antispam.newbie'));
 
             return $this->redirectToRoute('deck_view', ['deck_uuid' => $deck->getUuid()]);
         }
@@ -108,25 +105,7 @@ class SocialController extends AbstractController
         $decklistsSinceYesterday = $query->getSingleScalarResult();
 
         if (false && $decklistsSinceYesterday > $user->getReputation()) {
-            $session
-                ->getFlashBag()
-                ->set('error', $translator->trans('decklist.publish.errors.antispam.limit'));
-
-            return $this->redirectToRoute('deck_view', ['deck_uuid' => $deck->getUuid()]);
-        }
-
-        $lastPack = $deck->getLastPack();
-        if (!$lastPack->getDateRelease() || $lastPack->getDateRelease() > new DateTime()) {
-            $session
-                ->getFlashBag()
-                ->set('error', $translator->trans('decklist.publish.errors.unreleased'));
-
-            return $this->redirectToRoute('deck_view', ['deck_uuid' => $deck->getUuid()]);
-        }
-
-        $problem = $deckValidationHelper->findProblem($deck);
-        if ($problem) {
-            $session->getFlashBag()->set('error', $translator->trans('decklist.publish.errors.invalid'));
+            $this->addFlash('error', $translator->trans('decklist.publish.errors.antispam.limit'));
 
             return $this->redirectToRoute('deck_view', ['deck_uuid' => $deck->getUuid()]);
         }
@@ -145,9 +124,7 @@ class SocialController extends AbstractController
                         'decklist_name' => $decklist->getNameCanonical(),
                     )
                 );
-                $session
-                    ->getFlashBag()
-                    ->set('warning', $translator->trans('decklist.publish.warnings.published', array("%url%" => $url)));
+                $this->addFlash('warning', $translator->trans('decklist.publish.warnings.published', array("%url%" => $url)));
             }
         }
 
@@ -167,6 +144,7 @@ class SocialController extends AbstractController
                 'deck' => $deck,
                 'decklist' => $decklist,
                 'tournaments' => $tournaments,
+                'format' => $formats->findOneByCode($deck->getTargetFormat()),
             ]
         );
     }
@@ -227,17 +205,13 @@ class SocialController extends AbstractController
             throw $this->createAccessDeniedException("Access denied to this object.");
         }
 
-        $name = filter_var(
-            $request->request->get('name'),
-            FILTER_SANITIZE_STRING,
-            FILTER_FLAG_NO_ENCODE_QUOTES
-        );
-        $descriptionMd = trim($request->request->get('descriptionMd'));
+        $name = trim(strip_tags((string) $request->request->get('name')));
+        $descriptionMd = trim((string) $request->request->get('descriptionMd'));
 
-        $tournament_id = filter_var($request->request->get('tournament'), FILTER_SANITIZE_NUMBER_INT);
+        $tournament_id = (int) $request->request->get('tournament');
         $tournament = $em->getRepository(Tournament::class)->find($tournament_id);
 
-        $precedent_id = trim($request->request->get('precedent'));
+        $precedent_id = trim((string) $request->request->get('precedent'));
         if (!preg_match('/^\d+$/', $precedent_id)) {
             // route decklist_detail hard-coded
             if (preg_match('/view\/(\d+)/', $precedent_id, $matches)) {
@@ -249,7 +223,14 @@ class SocialController extends AbstractController
         $precedent = $precedent_id ? $em->getRepository(Decklist::class)->find($precedent_id) : null;
 
         try {
-            $decklist = $decklistFactory->createDecklistFromDeck($deck, $name, $descriptionMd);
+            $decklist = $decklistFactory->createDecklistFromDeck(
+                $deck,
+                $name,
+                $descriptionMd,
+                $this->halfFrom($request),
+                $this->dateFrom($request->request->get('effective_date')),
+            );
+            $this->applyPlays($decklist, $request);
         } catch (Exception $e) {
             return $this->render(
                 'Default/error.html.twig',
@@ -279,7 +260,7 @@ class SocialController extends AbstractController
      * @return Response
      */
     #[Route(path: '/decklist/edit/{decklist_id}', name: 'decklist_edit', methods: ['GET'], requirements: ['decklist_id' => '\d+'])]
-    public function editFormAction($decklist_id)
+    public function editFormAction($decklist_id, FormatRepository $formats)
     {
         /* @var $em EntityManager */
         $em = $this->managerRegistry->getManager();
@@ -311,6 +292,7 @@ class SocialController extends AbstractController
                 'deck' => null,
                 'decklist' => $decklist,
                 'tournaments' => $tournaments,
+                'formats' => $formats->findSelectable(),
             ]
         );
     }
@@ -327,7 +309,7 @@ class SocialController extends AbstractController
      * @throws OptimisticLockException
      */
     #[Route(path: '/decklist/save/{decklist_id}', name: 'decklist_save', methods: ['POST'], requirements: ['decklist_id' => '\d+'])]
-    public function saveAction(Request $request, Texts $texts, $decklist_id)
+    public function saveAction(Request $request, Texts $texts, FormatRepository $formats, DeckValidator $validator, $decklist_id)
     {
         /* @var EntityManager $em*/
         $em = $this->managerRegistry->getManager();
@@ -349,24 +331,17 @@ class SocialController extends AbstractController
             throw $this->createAccessDeniedException("Access denied");
         }
 
-        $name = trim(
-            filter_var(
-                $request->request->get('name'),
-                FILTER_SANITIZE_STRING,
-                FILTER_FLAG_NO_ENCODE_QUOTES
-            )
-        );
-        $name = substr($name, 0, 60);
+        $name = mb_substr(trim(strip_tags((string) $request->request->get('name'))), 0, 60);
         if (empty($name)) {
             $name = "Untitled";
         }
-        $descriptionMd = trim($request->request->get('descriptionMd'));
+        $descriptionMd = trim((string) $request->request->get('descriptionMd'));
         $descriptionHtml = $texts->markdown($descriptionMd);
 
-        $tournament_id = intval(filter_var($request->request->get('tournament'), FILTER_SANITIZE_NUMBER_INT));
+        $tournament_id = (int) $request->request->get('tournament');
         $tournament = $em->getRepository(Tournament::class)->find($tournament_id);
 
-        $precedent_id = trim($request->request->get('precedent'));
+        $precedent_id = trim((string) $request->request->get('precedent'));
         if (!preg_match('/^\d+$/', $precedent_id)) {
             // route decklist_detail hard-coded
             if (preg_match('/view\/(\d+)/', $precedent_id, $matches)) {
@@ -385,6 +360,19 @@ class SocialController extends AbstractController
         $decklist->setDescriptionHtml($descriptionHtml);
         $decklist->setPrecedent($precedent);
         $decklist->setTournament($tournament);
+        $decklist->setHalf($this->halfFrom($request));
+        $effectiveDate = $this->dateFrom($request->request->get('effective_date'));
+        if ($effectiveDate) {
+            $decklist->setEffectiveDate($effectiveDate);
+        }
+        $this->applyPlays($decklist, $request);
+        // the format can be set or corrected after publishing (archived decks arrive
+        // without one, phase3/06); a change asks Gemp again
+        $format = $formats->findOneByCode((string) $request->request->get('target_format'));
+        if ($format !== null && $format->getCode() !== $decklist->getTargetFormat()) {
+            $decklist->setTargetFormat($format->getCode());
+            $validator->validateDeck($decklist);
+        }
         $decklist->setDateUpdate(new DateTime());
         $em->flush();
 
@@ -457,13 +445,12 @@ class SocialController extends AbstractController
         $doctrine = $this->managerRegistry;
         $dbh = $doctrine->getConnection();
 
-        $cards_code = $request->query->get('cards');
-        $faction_code = filter_var($request->query->get('faction'), FILTER_SANITIZE_STRING);
-        $tournament = filter_var($request->query->get('tournament'), FILTER_SANITIZE_NUMBER_INT);
-        $author_name = filter_var($request->query->get('author'), FILTER_SANITIZE_STRING);
-        $decklist_name = filter_var($request->query->get('name'), FILTER_SANITIZE_STRING);
+        $cards_code = $request->query->all()['cards'] ?? [];
+        $tournament = (int) $request->query->get('tournament');
+        $author_name = trim(strip_tags((string) $request->query->get('author')));
+        $decklist_name = trim(strip_tags((string) $request->query->get('name')));
         $sort = $request->query->get('sort');
-        $packs = $request->query->get('packs');
+        $packs = $request->query->all()['packs'] ?? null;
 
         if (!is_array($packs)) {
             $packs = $dbh->executeQuery("select id from pack")->fetchFirstColumn();
@@ -534,12 +521,10 @@ class SocialController extends AbstractController
             'inactiveTournamentTiers' => $inactiveTournamentTiers,
         );
         $params['sort_' . $sort] = ' selected="selected"';
-        $params['factions'] = $this->managerRegistry->getRepository(Faction::class)->findAllAndOrderByName();
-        $params['faction_selected'] = $faction_code;
         $params['selectedTournament'] = $tournament;
 
         if (!empty($cards_code) && is_array($cards_code)) {
-            $cards = $this->managerRegistry->getRepository(Card::class)->findAllByCodes($cards_code);
+            $cards = $this->managerRegistry->getRepository(Card::class)->findBy(['code' => $cards_code]);
 
             $params['cards'] = '';
             foreach ($cards as $card) {
@@ -558,7 +543,6 @@ class SocialController extends AbstractController
      * @param TranslatorInterface $translator
      * @param DecklistManager $decklistManager
      * @param CardsData $cardsData
-     * @param RestrictionsChecker $restrictionsChecker
      * @param int $cacheExpiration
      * @param string $type
      * @param int $page
@@ -570,7 +554,7 @@ class SocialController extends AbstractController
         TranslatorInterface $translator,
         DecklistManager $decklistManager,
         CardsData $cardsData,
-        RestrictionsChecker $restrictionsChecker,
+        FormatRepository $formats,
         int $cacheExpiration,
         $type,
         $page = 1
@@ -592,6 +576,7 @@ class SocialController extends AbstractController
                 break;
             case 'favorites':
                 $response->setPrivate();
+                $decklistManager->setBrowsing(false);
                 /* @var UserInterface $user */
                 $user = $this->getUser();
                 if ($user) {
@@ -602,6 +587,7 @@ class SocialController extends AbstractController
                 break;
             case 'mine':
                 $response->setPrivate();
+                $decklistManager->setBrowsing(false);
                 /* @var UserInterface $user */
                 $user = $this->getUser();
                 if ($user) {
@@ -631,37 +617,15 @@ class SocialController extends AbstractController
 
         $pagetitle = $translator->trans('decklist.list.titles.' . $type);
 
-        // check all decks against all active RLs
-        $restrictionsRepo = $this->managerRegistry->getRepository(Restriction::class);
-        $activeRestrictions = $restrictionsRepo->findBy(['active' => true], ['effectiveOn' => 'DESC']);
-
-        $deckLegalityMap = [];
-
-        foreach ($activeRestrictions as $restriction) {
-            foreach ($paginator as $decklist) {
-                $decklistId = $decklist->getId();
-                if (! array_key_exists($decklistId, $deckLegalityMap)) {
-                    $deckLegalityMap[$decklistId] = [];
-                }
-                $restrictionCode = $restriction->getCode();
-                $restrictionTitle = $restriction->getTitle();
-                if (! array_key_exists($restrictionCode, $deckLegalityMap[$decklistId])) {
-                    $deckLegalityMap[$decklistId][$restrictionCode] = [
-                        'title' => $restrictionTitle,
-                        'joust' => $restrictionsChecker->isLegalForJoust($restriction, $decklist),
-                        'melee' => $restrictionsChecker->isLegalForMelee($restriction, $decklist),
-                    ];
-                }
-            }
-        }
-
         return $this->render(
             'Decklist/decklists.html.twig',
             array(
                 'pagetitle' => $pagetitle,
                 'pagedescription' => "Browse the collection of thousands of premade decks.",
                 'decklists' => $paginator,
-                'decklegality' => $deckLegalityMap,
+                'filters' => $decklistManager->getFilters(),
+                'formats' => $formats->findSelectable(),
+                'cultures' => $this->managerRegistry->getRepository(Culture::class)->findBy([], ['name' => 'ASC']),
                 'url' => $request->getRequestUri(),
                 'header' => $header,
                 'type' => $type,
@@ -683,7 +647,7 @@ class SocialController extends AbstractController
      * @return Response
      */
     #[Route(path: '/decklist/view/{decklist_id}/{decklist_name}', name: 'decklist_detail', methods: ['GET'], defaults: ['decklist_name' => null], requirements: ['decklist_id' => '\d+'])]
-    public function viewAction(TranslatorInterface $translator, int $cacheExpiration, $decklist_id)
+    public function viewAction(TranslatorInterface $translator, int $cacheExpiration, FormatRepository $formats, $decklist_id)
     {
         $response = new Response();
         $response->setPublic();
@@ -721,6 +685,7 @@ class SocialController extends AbstractController
                 'duplicate' => $duplicate,
                 'commenters' => $commenters,
                 'versions' => $versions,
+                'format' => $formats->findOneByCode($decklist->getTargetFormat()),
             ),
             $response
         );
@@ -1094,114 +1059,69 @@ class SocialController extends AbstractController
             throw new NotFoundHttpException("Unable to find decklist.");
         }
 
-        $format = $request->query->get('format', 'text');
-
-        switch ($format) {
-            case 'octgn':
-                return $this->downloadInOctgnFormat($cacheExpiration, $texts, $decklist);
-                break;
-            case 'text_cycle':
-                return $this->downloadInTextFormatSortedByCycle($cacheExpiration, $texts, $decklist);
-                break;
-            case 'text':
-            default:
-                return $this->downloadInDefaultTextFormat($cacheExpiration, $texts, $decklist);
+        if ($request->query->get('format') === 'gemp') {
+            $content = $decklist->getSlots()->toGempString() . "\r\n";
+        } else {
+            $content = str_replace("\n", "\r\n", $this->renderView('Export/default.txt.twig', ['deck' => $decklist->getTextExport()]));
         }
+        $response = new Response($content);
+        $response->setPublic();
+        $response->setMaxAge($cacheExpiration);
+        $response->headers->set('Content-Type', 'text/plain; charset=utf-8');
+        $response->headers->set(
+            'Content-Disposition',
+            $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $texts->slugify($decklist->getName()) . '.txt')
+        );
+        return $response;
     }
 
-    /**
-     * @param int $cacheExpiration
-     * @param Texts $texts
-     * @param DecklistInterface $decklist
-     * @return Response
-     */
-    protected function downloadInOctgnFormat(int $cacheExpiration, Texts $texts, DecklistInterface $decklist)
+    /** free_peoples or shadow from the publish form; anything else is a whole deck */
+    private function halfFrom(Request $request): ?string
     {
-        $content = $this->renderView('Export/octgn.xml.twig', [ "deck" => $decklist->getTextExport() ]);
-
-        $response = new Response();
-        $response->setPublic();
-        $response->setMaxAge($cacheExpiration);
-        $response->headers->set('Content-Type', 'application/octgn');
-        $response->headers->set(
-            'Content-Disposition',
-            $response->headers->makeDisposition(
-                ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-                $texts->slugify($decklist->getName()) . '.o8d'
-            )
-        );
-
-        $response->setContent($content);
-
-        return $response;
+        $half = $request->request->get('half');
+        return in_array($half, [Card::SIDE_FREE_PEOPLES, Card::SIDE_SHADOW], true) ? $half : null;
     }
 
-    /**
-     * @param int $cacheExpiration
-     * @param Texts $texts
-     * @param DecklistInterface $decklist
-     * @return Response
-     */
-    protected function downloadInDefaultTextFormat(int $cacheExpiration, Texts $texts, DecklistInterface $decklist)
+    private function dateFrom(mixed $value): ?DateTime
     {
-        $content = $this->renderView(
-            'Export/default.txt.twig',
-            [
-                "deck" => $decklist->getTextExport(),
-            ]
-        );
-        $content = str_replace("\n", "\r\n", $content);
-
-        $response = new Response();
-        $response->setPublic();
-        $response->setMaxAge($cacheExpiration);
-        $response->headers->set('Content-Type', 'text/plain');
-        $response->headers->set(
-            'Content-Disposition',
-            $response->headers->makeDisposition(
-                ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-                $texts->slugify($decklist->getName()) . '.txt'
-            )
-        );
-
-        $response->setContent($content);
-        return $response;
+        if (!is_string($value) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
+            return null;
+        }
+        return DateTime::createFromFormat('!Y-m-d', $value) ?: null;
     }
 
     /**
-     * @param int $cacheExpiration
-     * @param Texts $texts
-     * @param DecklistInterface $decklist
-     * @return Response
+     * Play records from the publish and edit forms (phase3/03): parallel arrays
+     * play_event[], play_date[], play_tier[], play_placing[], play_players[], play_url[].
+     * The submitted rows replace the decklist's records.
      */
-    protected function downloadInTextFormatSortedByCycle(
-        int $cacheExpiration,
-        Texts $texts,
-        DecklistInterface $decklist
-    ) {
-        $content = $this->renderView(
-            'Export/sortedbycycle.txt.twig',
-            [
-                "deck" => $decklist->getCycleOrderExport(),
-            ]
-        );
-        $content = str_replace("\n", "\r\n", $content);
-
-        $response = new Response();
-        $response->setPublic();
-        $response->setMaxAge($cacheExpiration);
-        $response->headers->set('Content-Type', 'text/plain');
-        $response->headers->set(
-            'Content-Disposition',
-            $response->headers->makeDisposition(
-                ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-                $texts->slugify($decklist->getName()) . '.txt'
-            )
-        );
-
-        $response->setContent($content);
-
-        return $response;
+    private function applyPlays(Decklist $decklist, Request $request): void
+    {
+        $form = $request->request->all();
+        if (!isset($form['play_event'])) {
+            return;
+        }
+        foreach ($decklist->getPlays()->toArray() as $play) {
+            $decklist->removePlay($play);
+        }
+        $tiers = $this->managerRegistry->getRepository(Tournament::class);
+        foreach ((array) $form['play_event'] as $i => $event) {
+            $event = mb_substr(trim(strip_tags((string) $event)), 0, 255);
+            if ($event === '') {
+                continue;
+            }
+            $play = new DecklistPlay();
+            $play->setEventName($event);
+            $play->setEventDate($this->dateFrom($form['play_date'][$i] ?? null));
+            $tierId = (int) ($form['play_tier'][$i] ?? 0);
+            $play->setTier($tierId ? $tiers->find($tierId) : null);
+            $play->setPlacing(mb_substr(trim(strip_tags((string) ($form['play_placing'][$i] ?? ''))), 0, 50) ?: null);
+            $players = (int) ($form['play_players'][$i] ?? 0);
+            $play->setPlayerCount($players > 0 ? min($players, 32000) : null);
+            $url = trim((string) ($form['play_url'][$i] ?? ''));
+            $play->setUrl(filter_var($url, FILTER_VALIDATE_URL) && preg_match('#^https?://#', $url) ? mb_substr($url, 0, 500) : null);
+            $decklist->addPlay($play);
+        }
     }
 
     /**
@@ -1406,8 +1326,6 @@ class SocialController extends AbstractController
         $response->setPublic();
         $response->setMaxAge($cacheExpiration);
 
-        $factions = $this->managerRegistry->getRepository(Faction::class)->findAllAndOrderByName();
-
         $categories = [];
         $on = 0;
         $off = 0;
@@ -1463,7 +1381,6 @@ class SocialController extends AbstractController
         $searchForm = $this->renderView(
             'Search/form.html.twig',
             array(
-                'factions' => $factions,
                 'allowed' => $categories,
                 'on' => $on,
                 'off' => $off,
@@ -1480,7 +1397,9 @@ class SocialController extends AbstractController
             array(
                 'pagetitle' => $translator->trans('decklist.list.titles.search'),
                 'decklists' => null,
-                'decklegality' => [],
+                'filters' => [],
+                'formats' => [],
+                'cultures' => [],
                 'url' => $request->getRequestUri(),
                 'header' => $searchForm,
                 'type' => 'find',

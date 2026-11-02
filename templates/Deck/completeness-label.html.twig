@@ -1,0 +1,9 @@
+{# Complete / incomplete / unvalidated, and the half if any (decision 0023). Variables: deck #}
+{% if deck.half is defined and deck.half %}<span class="label label-info deck-half">{{ ('deck.half.' ~ deck.half) | trans }}</span>{% endif %}
+{% if deck.completeness == 'complete' %}
+    <span class="label label-success deck-completeness" title="{{ 'deck.completeness.complete_hint' | trans }}"><span class="fas fa-check"></span> {{ 'deck.completeness.complete' | trans }}</span>
+{% elseif deck.completeness == 'incomplete' %}
+    <span class="label label-warning deck-completeness" title="{{ (deck.validation.relevantProblems ?? []) | join("\n") }}">{{ 'deck.completeness.incomplete' | trans }}</span>
+{% else %}
+    <span class="label label-default deck-completeness">{{ 'deck.completeness.unvalidated' | trans }}</span>
+{% endif %}

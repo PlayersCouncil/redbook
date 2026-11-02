@@ -5,7 +5,7 @@
     Available variables:
     - pagetitle
     - decklists
-    - decklegality
+    - filters, formats, cultures: the browsing filters (DecklistManager::getFilters)
     - url
     - type
     - pages
@@ -85,6 +85,7 @@
             <div class="col-md-9">
 
                 {{ header|raw }}
+                {% if type != 'find' or decklists is not null %}{% include 'Decklist/filters.html.twig' %}{% endif %}
 
                 {% include 'Default/pagination.html.twig' %}
 
@@ -95,17 +96,9 @@
                     {% for decklist in decklists %}
 
                         <tr>
-                            <td class="decklist-faction-image">
-                                <img
-                                    src="{{ asset('images/factions/' ~ decklist.faction.code ~ '.png') }}"
-                                    title="{{ decklist.faction.name }}"
-                                >
-                                {% for agenda in decklist.slots.agendas %}
-                                    {% if agenda.card.imageUrl %}
-                                        <img src="{{ agenda.card.imageUrl }}" title="{{ agenda.card.name }}">
-                                    {% else %}
-                                        <img src="{{ asset('images/no-card.png') }}" title="{{ agenda.card.name }}">
-                                    {% endif %}
+                            <td class="decklist-cultures hidden-xs">
+                                {% for row in decklist.cultures %}
+                                    <span class="label label-default culture-label culture-{{ row.culture.code }}" title="{{ row.count }}">{{ row.culture.name }}</span><br>
                                 {% endfor %}
                             </td>
                             <td>
@@ -121,15 +114,19 @@
                                         <time class="pull-right"
                                               datetime="{{ decklist.dateCreation|date('c') }}">{{ decklist.dateCreation|date('M d') }}</time>
                                         <span class="username">
+                                            {% if decklist.source and decklist.user.username == 'archive' %}
+                                            <span class="legacy-author">{{ decklist.source.legacyAuthor }}</span> <small class="text-muted">{{ 'decklist.source.archived_label' | trans }}</small>
+                                            {% else %}
                                             <a href="{{ path('user_profile_public', {user_id:decklist.user.id,user_name:decklist.user.username|e('url')}) }}"
                                                class="{{ decklist.user.color }}">{{ decklist.user.username }}</a>
                                             {% if decklist.user.role('ROLE_ADMIN') %}
                                                 <span class="fas fa-user-tie admin" title="Administrator"></span>
                                             {% endif %}
                                             {% if decklist.user.donation > 0 %}
-                                                <span class="fas fa-gift donator" title="ThronesDB Gracious Donator"></span>
+                                                <span class="fas fa-gift donator" title="Donator"></span>
                                             {% endif %}
                                             <small class="reputation">{{ decklist.user.reputation }}</small>
+                                            {% endif %}
                                         </span>
                                         {% if decklist.tournament %}
                                             <span class="text-success" style="margin-left:1em">
@@ -137,45 +134,12 @@
                                             </span>
                                         {% endif %}
                                     </h5>
-                                    {% if decklegality[decklist.id] %}
-                                        <table class="tournament-legality-info">
-                                            {% for legality in decklegality[decklist.id] %}
-                                                <tr>
-                                                    <td class="rl-title">
-                                                        {{ legality.title }}
-                                                    </td>
-                                                    <td class="rl-indicator">
-                                                        {% if legality.joust %}
-                                                            <span class="text-success">
-                                                                <i class="fas fa-check"></i>
-                                                           </span>
-                                                        {% else %}
-                                                            <span class="text-danger">
-                                                                <i class="fas fa-times"></i>
-                                                            </span>
-                                                        {% endif %}
-                                                    </td>
-                                                    <td class="joust-title">
-                                                        {{ 'tournamentLegality.joust' | trans }}
-                                                    </td>
-                                                    <td class="rl-indicator">
-                                                        {% if legality.melee %}
-                                                            <span class="text-success">
-                                                                <i class="fas fa-check"></i>
-                                                            </span>
-                                                        {% else %}
-                                                            <span class="text-danger">
-                                                                <i class="fas fa-times"></i>
-                                                            </span>
-                                                        {% endif %}
-                                                    </td>
-                                                    <td class="melee-title">
-                                                        {{ 'tournamentLegality.melee' | trans }}
-                                                    </td>
-                                                </tr>
-                                            {% endfor %}
-                                        </table>
-                                    {% endif %}
+                                    <div class="small decklist-meta">
+                                        {{ decklist.targetFormat }}
+                                        &middot; {{ decklist.effectiveDate | date('Y') }}
+                                        {% include 'Deck/completeness-label.html.twig' with {deck: decklist} %}
+                                        {% if decklist.plays | length %}<span class="text-success"><span class="fas fa-trophy"></span> {{ decklist.plays | first.eventName }}</span>{% endif %}
+                                    </div>
                                 </article>
                             </td>
                         </tr>

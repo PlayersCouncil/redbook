@@ -1,52 +1,25 @@
+{% macro line(slot) %}{{ slot.quantity }}x {{ slot.card.fullName }} ({{ slot.card.code }})
+{% endmacro %}
+{% import _self as m %}
 {{ deck.name }}
-Version: {{ deck.version }}
+Format: {{ deck.target_format }}
 
-{{ deck.faction.name }}
-{% for agenda in deck.agendas %}
-{{ agenda.card.name }}{% if agenda.card.isMultiple == true %} ({{ agenda.card.pack.name }}){% endif %}
-
-{% endfor %}
-
-{% set first_pack = deck.included_packs|first %}
-{% set last_pack = deck.included_packs|last %}
-Packs: {% if deck.included_packs|length > 1 %}
-From {{ first_pack.pack.name }}{% if first_pack.nb > 1 %} ({{ first_pack.nb }}){% endif %} to {{ last_pack.pack.name }}{% if last_pack.nb > 1 %} ({{ last_pack.nb }}){% endif %}
-{% else %}
-{{ first_pack.pack.name }}{% if first_pack.nb > 1 %} ({{ first_pack.nb }}){% endif %}
+{% if deck.ring_bearer %}Ring-bearer: {{ deck.ring_bearer.card.fullName }} ({{ deck.ring_bearer.card.code }})
+{% endif %}
+{% if deck.ring %}Ring: {{ deck.ring.card.fullName }} ({{ deck.ring.card.code }})
 {% endif %}
 
+Adventure deck
+{% for slot in deck.sites %}{{ m.line(slot) }}{% endfor %}
 
-{% set plots = deck.slots_by_type.plot %}
-Plot{% if plots|length > 1 %}s{% endif %}
+Free Peoples
+{% for slot in deck.free_peoples %}{{ m.line(slot) }}{% endfor %}
 
-{% for slot in plots %}
-{{ slot.quantity }}x {{ slot.card.name }} ({{ slot.card.pack.name }})
-{% endfor %}
+Shadow
+{% for slot in deck.shadow %}{{ m.line(slot) }}{% endfor %}
+{% if deck.map %}
 
-{% set characters = deck.slots_by_type.character %}
-Character{% if characters|length > 1 %}s{% endif %}
+Map: {{ deck.map.card.fullName }} ({{ deck.map.card.code }})
+{% endif %}
 
-{% for slot in characters %}
-{{ slot.quantity }}x {{ slot.card.name }} ({{ slot.card.pack.name }})
-{% endfor %}
-
-{% set locations = deck.slots_by_type.location %}
-Location{% if locations|length > 1 %}s{% endif %}
-
-{% for slot in locations %}
-{{ slot.quantity }}x {{ slot.card.name }} ({{ slot.card.pack.name }})
-{% endfor %}
-
-{% set attachments = deck.slots_by_type.attachment %}
-Attachment{% if attachments|length > 1 %}s{% endif %}
-
-{% for slot in attachments %}
-{{ slot.quantity }}x {{ slot.card.name }} ({{ slot.card.pack.name }})
-{% endfor %}
-
-{% set events = deck.slots_by_type.event %}
-Event{% if events|length > 1 %}s{% endif %}
-
-{% for slot in events %}
-{{ slot.quantity }}x {{ slot.card.name }} ({{ slot.card.pack.name }})
-{% endfor %}
+Gemp: {{ deck.gemp }}

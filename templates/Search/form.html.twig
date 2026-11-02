@@ -3,16 +3,6 @@
     <div class="row" style="margin-bottom:1em">
         <div class="col-sm-4">
             <div class="form-group">
-                <label for="">{{ 'decklist.list.search.faction.label' | trans }}</label> <select class="form-control"
-                                                                                                 id="faction"
-                                                                                                 name="faction">
-                    <option value="">{{ 'decklist.list.search.faction.any' | trans }}</option>
-                    {% for faction in factions %}
-                        <option value="{{ faction.code }}"{% if faction_selected is defined  and faction_selected == faction.code %} selected="selected"{% endif %}>{{ faction.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
                 <label for="">{{ 'decklist.list.search.used.label' | trans }}</label>
                 {{ cards|default('')|raw }}
                 <input type="text" class="form-control" id="card"

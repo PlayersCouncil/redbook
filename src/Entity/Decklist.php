@@ -14,8 +14,28 @@ use stdClass;
 
 #[ORM\Entity(repositoryClass: DecklistRepository::class)]
 #[ORM\Table(name: 'decklist')]
+#[ORM\Index(name: 'decklist_format_idx', columns: ['target_format', 'completeness', 'half'])]
 class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
 {
+    use LotrDeckTrait;
+
+    /** Free Peoples or Shadow only (decision 0023); null for a whole deck */
+    #[ORM\Column(name: 'half', type: 'string', length: 12, nullable: true)]
+    protected ?string $half = null;
+
+    /** @var Collection<int, DecklistCulture> */
+    #[ORM\OneToMany(targetEntity: DecklistCulture::class, mappedBy: 'decklist', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    protected $cultures;
+
+    /** @var Collection<int, DecklistPlay> */
+    #[ORM\OneToMany(targetEntity: DecklistPlay::class, mappedBy: 'decklist', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OrderBy(['eventDate' => 'DESC'])]
+    protected $plays;
+
+    /** Set for decklists seeded from the archive (phase3/06) */
+    #[ORM\OneToOne(targetEntity: DecklistSource::class, mappedBy: 'decklist', cascade: ['persist', 'remove'])]
+    protected ?DecklistSource $source = null;
+
     /**
      * @var int
      */
@@ -185,6 +205,71 @@ class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
         $this->children = new ArrayCollection();
         $this->favorites = new ArrayCollection();
         $this->votes = new ArrayCollection();
+        $this->cultures = new ArrayCollection();
+        $this->plays = new ArrayCollection();
+    }
+
+    public function getHalf(): ?string
+    {
+        return $this->half;
+    }
+
+    public function setHalf(?string $half): void
+    {
+        $this->half = $half;
+    }
+
+    /** @return Collection<int, DecklistCulture> */
+    public function getCultures(): Collection
+    {
+        return $this->cultures;
+    }
+
+    /** Rebuilds the culture counts from the draw deck (phase3/03) */
+    public function updateCultures(): void
+    {
+        // updated in place: the rows are keyed by (decklist, culture), and Doctrine
+        // inserts before it deletes
+        $counts = $this->getSlots()->getCultures();
+        foreach ($this->cultures->toArray() as $row) {
+            $code = $row->getCulture()->getCode();
+            if (isset($counts[$code])) {
+                $row->setCount($counts[$code]['count']);
+                unset($counts[$code]);
+            } else {
+                $this->cultures->removeElement($row);
+            }
+        }
+        foreach ($counts as ['culture' => $culture, 'count' => $count]) {
+            $this->cultures->add(new DecklistCulture($this, $culture, $count));
+        }
+    }
+
+    /** @return Collection<int, DecklistPlay> */
+    public function getPlays(): Collection
+    {
+        return $this->plays;
+    }
+
+    public function addPlay(DecklistPlay $play): void
+    {
+        $play->setDecklist($this);
+        $this->plays->add($play);
+    }
+
+    public function removePlay(DecklistPlay $play): void
+    {
+        $this->plays->removeElement($play);
+    }
+
+    public function getSource(): ?DecklistSource
+    {
+        return $this->source;
+    }
+
+    public function setSource(?DecklistSource $source): void
+    {
+        $this->source = $source;
     }
 
     /**
@@ -625,24 +710,19 @@ class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
     public function jsonSerialize(): mixed
     {
         $slots = $this->getSlots();
-        $agendas = $slots->getAgendas();
-        $agendas_code = [];
-        foreach ($agendas as $agenda) {
-            $agendas_code[] = $agenda->getCard()->getCode();
-        }
-        $array = [
+        return [
             'id' => $this->getId(),
             'name' => $this->getName(),
             'date_creation' => $this->getDateCreation()->format('c'),
             'date_update' => $this->getDateUpdate()->format('c'),
             'description_md' => $this->getDescriptionMd(),
             'user_id' => $this->getUser()->getId(),
-            'faction_code' => $this->getFaction()->getCode(),
-            'faction_name' => $this->getFaction()->getName(),
             'slots' => $slots->getContent() ?: new stdClass(),
-            'agendas' => $agendas_code,
+            'gemp' => $slots->toGempString(),
             'version' => $this->getVersion(),
-        ];
-        return $array;
+            'half' => $this->half,
+            'plays' => array_map(fn (DecklistPlay $play) => $play->serialize(), $this->plays->toArray()),
+            'legacy_author' => $this->source?->getLegacyAuthor(),
+        ] + $this->lotrDeckJson();
     }
 }

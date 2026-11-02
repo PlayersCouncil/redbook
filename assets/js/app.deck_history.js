@@ -99,20 +99,16 @@
 
         var list = [];
         if(snapshot.variation) {
-            _.each(snapshot.variation[0], function (qty, code)
-            {
-                var card = app.data.cards.findById(code);
+            var line = function (sign, qty, key) {
+                var is_rb = key.indexOf('rb:') === 0,
+                    code = is_rb ? key.substr(3) : key,
+                    card = app.data.cards.findById(code);
                 if(!card)
                     return;
-                list.push('+' + qty + ' ' + '<a href="' + Routing.generate('cards_zoom', {card_code: code}) + '" class="card-tip" data-code="' + code + '">' + card.label + '</a>');
-            });
-            _.each(snapshot.variation[1], function (qty, code)
-            {
-                var card = app.data.cards.findById(code);
-                if(!card)
-                    return;
-                list.push('&minus;' + qty + ' ' + '<a href="' + Routing.generate('cards_zoom', {card_code: code}) + '" class="card-tip" data-code="' + code + '">' + card.label + '</a>');
-            });
+                list.push(sign + (is_rb ? ' ' + Translator.trans('deck.ring_bearer') + ':' : qty) + ' ' + '<a href="' + Routing.generate('cards_zoom', {card_code: code}) + '" class="card-tip" data-code="' + code + '">' + _.escape(card.label) + '</a>');
+            };
+            _.each(snapshot.variation[0], function (qty, key) { line('+', qty, key); });
+            _.each(snapshot.variation[1], function (qty, key) { line('&minus;', qty, key); });
         } else {
             list.push(Translator.trans('decks.history.firstversion'));
         }
@@ -134,18 +130,7 @@
         if(!snapshot)
             return;
 
-        app.data.cards.find({}).forEach(function (card)
-        {
-            var indeck = 0;
-            if(snapshot.content[card.code]) {
-                indeck = snapshot.content[card.code];
-            }
-            app.data.cards.updateById(card.code, {
-                indeck: indeck
-            });
-        });
-
-        app.ui.on_deck_modified();
+        app.deck.set_content(snapshot.content);
         changed_since_last_autosave = true;
 
         // cancel event

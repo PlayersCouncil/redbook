@@ -11,6 +11,26 @@ use DateTime;
  */
 interface CommonDeckInterface
 {
+    public const COMPLETENESS_COMPLETE = 'complete';
+    public const COMPLETENESS_INCOMPLETE = 'incomplete';
+    public const COMPLETENESS_UNVALIDATED = 'unvalidated';
+
+    public function getTargetFormat(): string;
+
+    public function setTargetFormat(string $targetFormat): void;
+
+    public function getEffectiveDate(): \DateTimeInterface;
+
+    public function setEffectiveDate(\DateTimeInterface $effectiveDate): void;
+
+    public function getValidation(): ?\App\Services\Gemp\DeckValidation;
+
+    public function setValidation(?\App\Services\Gemp\DeckValidation $validation): void;
+
+    public function getValidatedAt(): ?\DateTimeInterface;
+
+    public function getCompleteness(): string;
+
     /**
      * @return int
      */
@@ -96,8 +116,4 @@ interface CommonDeckInterface
      */
     public function getTextExport();
 
-    /**
-     * @return array
-     */
-    public function getCycleOrderExport();
 }

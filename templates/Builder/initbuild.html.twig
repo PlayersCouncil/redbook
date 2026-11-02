@@ -1,81 +1,33 @@
+{# New deck: pick the format it targets (decision 0020) and a name #}
 {% extends 'base.html.twig' %}
-{% import "macros.html.twig" as macros %}
-
-{% block javascripts %}
-    {{ parent() }}
-    <script src="{{ asset('js/ui.deckinit.js') }}"></script>
-{% endblock %}
-
 {% block body %}
-
     <div class="main white container">
-
         {% include 'alerts.html.twig' %}
-        <form action="{{ path('deck_initbuild') }}" method="post" enctype="application/x-www-form-urlencoded">
-            <div class="row">
-                <div class="col-md-8">
-                    <h1>{{ 'decks.build.choose.faction' | trans }}</h1>
-                    <div class="row">
-                        {% for faction in factions %}
-                            <div class="col-md-3 col-sm-4">
-                                <label class="thumbnail">
-                                    <img src="{{ asset('images/factions/' ~ faction.code ~ '.png') }}"
-                                         class="hidden-xs">
-                                    <div class="caption text-center" style="white-space:nowrap">
-                                        <input type="radio" name="faction" value="{{ faction.code }}">
-                                        <small>{{ faction.name }}</small>
-                                    </div>
-                                </label>
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <h2>{{ 'decks.build.choose.agenda' | trans }}</h2>
-                    <div class="btn-group btn-group-sm" data-toggle="buttons" id="build-mode">
-                        <label class="btn btn-default active">
-                            <input type="radio" name="build_mode" value="constructed" autocomplete="off" checked>
-                            {{ 'decks.build.mode.constructed' | trans }}
-                        </label>
-                        <label class="btn btn-default">
-                            <input type="radio" name="build_mode" value="variant" autocomplete="off">
-                            {{ 'decks.build.mode.variant' | trans }}
-                        </label>
-                    </div>
-                    <select id="restricted_lists" class="hidden"></select>
-                    <ul class="list-group">
-                        <li class="list-group-item radio no-agenda">
-                            <label>
-                                <input type="radio" name="agenda" value="" checked="checked">
-                                {{ 'decks.build.choose.noagenda' | trans }}
-                            </label>
-                        </li>
-                        {% for agenda in agendas %}
-                            <li class="list-group-item radio hidden agenda constructed" data-card-code="{{ agenda.code }}">
-                                <label>
-                                    <input type="radio" name="agenda" value="{{ agenda.code }}">
-                                    {{ macros.card_name_with_pack_no_link(agenda) }}
-                                </label>
-                            </li>
-                        {% endfor %}
-                        {% for agenda in variantAgendas %}
-                            <li class="list-group-item radio hidden agenda variant" data-card-code="{{ agenda.code }}">
-                                <label>
-                                    <input type="radio" name="agenda" value="{{ agenda.code }}">
-                                    {{ macros.card_name_with_pack_no_link(agenda) }}
-                                </label>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </div>
+        <div class="row">
+            <div class="col-md-6 col-md-offset-3">
+                <h1>{{ 'decks.form.new' | trans }}</h1>
+                {% if formats is empty %}
+                    <div class="alert alert-warning">{{ 'formats.none' | trans }}</div>
+                {% else %}
+                    <form method="POST" action="{{ path('deck_initbuild') }}">
+                        <div class="form-group">
+                            <label for="target_format">{{ 'deck.target_format' | trans }}</label>
+                            <select class="form-control" id="target_format" name="target_format">
+                                {% for format in formats %}
+                                    <option value="{{ format.code }}"{% if format.code == default_format %} selected{% endif %}>{{ format.name }}{% if format.pcErrata %} &ndash; {{ 'formats.pc_errata' | trans }}{% endif %}</option>
+                                {% endfor %}
+                            </select>
+                            <span class="help-block">{{ 'decks.build.format_hint' | trans }} <a href="{{ path('formats') }}">{{ 'nav.formats' | trans }}</a></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="name">{{ 'decks.edit.form.name' | trans }}</label>
+                            <input type="text" class="form-control" id="name" name="name" maxlength="255" placeholder="{{ 'decks.build.name_hint' | trans }}">
+                        </div>
+                        <button type="submit" class="btn btn-success">{{ 'decks.build.start' | trans }}</button>
+                        <a href="{{ path('deck_import') }}" class="btn btn-link">{{ 'decks.import.title' | trans }}</a>
+                    </form>
+                {% endif %}
             </div>
-            <div class="row">
-                <div class="col-md-12">
-                    <button type="submit" class="btn btn-primary btn-block">{{ 'decks.build.start' | trans }}</button>
-                </div>
-            </div>
-        </form>
-
+        </div>
     </div>
-
 {% endblock %}

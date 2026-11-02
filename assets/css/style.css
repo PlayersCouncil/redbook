@@ -738,3 +738,15 @@ abbr.legality.banned {
 .culture-symbol:empty { display: none; }
 .card-unique { margin-right: 1px; }
 .card-versions ol li { margin-bottom: 4px; }
+.deck-section-title { margin: 12px 0 4px; font-weight: bold; }
+.deck-culture { margin: 8px 0 2px; color: #777; }
+.deck-site-number { min-height: 1.5em; }
+.deck-site-number .site-number { display: inline-block; width: 1.6em; color: #999; text-align: right; margin-right: .4em; }
+.deck-site-number .deck-card { display: inline-block; }
+.deck-card-edit a { color: #999; margin-left: 2px; }
+.deck-card-edit a:hover { color: #337ab7; }
+.deck-validation-pending { opacity: .6; }
+.deck-problems { margin: 4px 0 0; padding-left: 18px; }
+.filter-buttons .btn { margin: 0 2px 2px 0; }
+.culture-label { display: inline-block; margin-bottom: 2px; }
+.pool-qty .btn-group-xs > .btn { padding: 0 5px; }

@@ -11,6 +11,8 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'decklistslot')]
 class Decklistslot implements DecklistslotInterface
 {
+    use SlotRoleTrait;
+
     /**
      * @var int
      */

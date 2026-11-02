@@ -6,45 +6,42 @@
     var locale_changed = false;
 
     var fdb = new ForerunnerDB();
-    var database = fdb.db('thronesdb');
+    var database = fdb.db('redbook');
 
     data.db = database;
 
     var masters = {
         packs: database.collection('master_pack', {primaryKey: 'code'}),
         cards: database.collection('master_card', {primaryKey: 'code'}),
-        restrictions: database.collection('master_restriction', {primaryKey: 'code'})
+        formats: database.collection('master_format', {primaryKey: 'code'})
     };
 
     var dfd;
 
     /**
+     * A Gemp format as Red Book copied it (phase3/04)
      * @param {String} code
      * @return {Object|null}
      */
-    data.findRestrictedList = function(code) {
-        var restrictions = data.restrictions.find({ 'code': code });
-        return restrictions.length ? restrictions[0] : null;
-    }
+    data.findFormat = function findFormat(code) {
+        return data.formats ? data.formats.findById(code) || null : null;
+    };
 
-    /**
-     * @return {Object|null}
-     */
-    data.getBestSelectedRestrictedList = function() {
-        var selectedRestrictionCode = app.config.get('restriction');
-        var restrictions;
-        if (selectedRestrictionCode) {
-            restrictions = data.restrictions.find({
-                'active': true,
-                'code': selectedRestrictionCode
-            });
-            if (restrictions.length) {
-                return restrictions[0];
+    /** The formats a deck can target, in Gemp's order */
+    data.selectableFormats = function selectableFormats() {
+        return data.formats.find({hall: true, retired: false}, {$orderBy: {position: 1}});
+    };
+
+    /** banned, restricted, limit2, limit3 or null for a card in a format */
+    data.format_limit = function format_limit(format, code) {
+        var lists = ['banned', 'restricted', 'limit2', 'limit3'];
+        for(var i = 0; i < lists.length; i++) {
+            if((format[lists[i]] || []).indexOf(code) !== -1) {
+                return lists[i];
             }
         }
-        restrictions = data.restrictions.find({ 'active': true }, { $limit: 1, $orderBy: { 'effectiveOn': -1 }});
-        return restrictions.length ? restrictions[0] : null;
-    }
+        return null;
+    };
 
     function onCollectionUpdate(updated) {
         database_changed = true;
@@ -60,9 +57,9 @@
      * @memberOf data
      */
     function load() {
-        masters.restrictions.load(function (err) {
+        masters.formats.load(function (err) {
             if (err) {
-                console.log('error when loading restrictions', err);
+                console.log('error when loading formats', err);
             }
             masters.packs.load(function (err) {
                 if (err) {
@@ -83,7 +80,7 @@
                      */
                     masters.packs.on("insert", onCollectionInsert).on("update", onCollectionUpdate);
                     masters.cards.on("insert", onCollectionInsert).on("update", onCollectionUpdate);
-                    masters.restrictions.on("insert", onCollectionInsert).on("update", onCollectionUpdate);
+                    masters.formats.on("insert", onCollectionInsert).on("update", onCollectionUpdate);
 
                     /*
                      * if database is not empty, use it for now
@@ -106,8 +103,8 @@
      * @memberOf data
      */
     function release() {
-        data.restrictions = database.collection('restriction', {primaryKey: 'code', changeTimestamp: false});
-        data.restrictions.setData(masters.restrictions.find());
+        data.formats = database.collection('format', {primaryKey: 'code', changeTimestamp: false});
+        data.formats.setData(masters.formats.find());
 
         data.packs = database.collection('pack', {primaryKey: 'code', changeTimestamp: false});
         data.packs.setData(masters.packs.find());
@@ -126,21 +123,18 @@
      */
     function query() {
         dfd = {
-            restrictions: new $.Deferred(),
+            formats: new $.Deferred(),
             packs: new $.Deferred(),
             cards: new $.Deferred()
         };
-        $.when(dfd.restrictions, dfd.packs, dfd.cards).done(update_done).fail(update_fail);
+        $.when(dfd.formats, dfd.packs, dfd.cards).done(update_done).fail(update_fail);
 
         $.ajax({
-            url: Routing.generate('api_restrictions'),
-            data: {
-                'activeonly': true,
-            },
-            success: parse_restrictions,
+            url: Routing.generate('api_formats'),
+            success: parse_formats,
             error: function (jqXHR, textStatus, errorThrown) {
-                console.log('error when requesting restrictions', errorThrown);
-                dfd.restrictions.reject(false);
+                console.log('error when requesting formats', errorThrown);
+                dfd.formats.reject(false);
             }
         });
 
@@ -191,8 +185,8 @@
      * deferred returns true if data has been loaded
      * @memberOf data
      */
-    function update_fail(restrictions_loaded, packs_loaded, cards_loaded) {
-        if (restrictions_loaded === false || packs_loaded === false || cards_loaded === false) {
+    function update_fail(formats_loaded, packs_loaded, cards_loaded) {
+        if (formats_loaded === false || packs_loaded === false || cards_loaded === false) {
             var message = Translator.trans('data_load_fail');
             app.ui.insert_alert_message('danger', message);
         } else {
@@ -205,52 +199,6 @@
         }
 
 
-    }
-
-    /**
-     * updates restrictions collection from fetched data
-     * @memberOf data
-     */
-    function update_restrictions_collection(data, collection, deferred) {
-        var existingRestrictionCodes = collection.find().map(function (record) {
-            return record.code;
-        });
-        var importedRestrictionCodes = data.map(function (record) {
-            return record.code;
-        });
-        data.forEach(function (row) {
-            var existingRow = collection.findById(row.code);
-            if(existingRow) {
-                // check last-updated timestamp here, if applicable, before updating.
-                // only update the record if the timestamp differs.
-                if (row.dateUpdate && row.dateUpdate !== existingRow.dateUpdate) {
-                    collection.update({code: row.code}, row);
-                }
-            } else {
-                collection.insert(row);
-            }
-        });
-        // delete any restrictions on file that aren't in the import
-        var restrictionsToRemove = existingRestrictionCodes.filter(function (code) {
-            return -1 === importedRestrictionCodes.indexOf(code);
-        });
-
-        if (restrictionsToRemove.length) {
-            collection.remove({
-                code: {
-                    $in: restrictionsToRemove
-                }
-            });
-        }
-
-        collection.save(function (err) {
-            if (err) {
-                console.log('error when saving ' + collection.name(), err);
-                deferred.reject(true)
-            } else {
-                deferred.resolve();
-            }
-        });
     }
 
     /**
@@ -295,11 +243,12 @@
     }
 
     /**
-     * handles the response to the ajax query for restrictions data
+     * handles the response to the ajax query for the formats
      * @memberOf data
      */
-    function parse_restrictions(response) {
-        update_restrictions_collection(response, masters.restrictions, dfd.restrictions);
+    function parse_formats(response, textStatus, jqXHR) {
+        _.each(response, function (row) { row.dateUpdate = row.date_update; });
+        update_collection(response, masters.formats, jqXHR.getResponseHeader('Content-Language'), dfd.formats);
     }
 
     /**

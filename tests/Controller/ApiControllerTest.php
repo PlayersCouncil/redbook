@@ -15,7 +15,7 @@ class ApiControllerTest extends WebTestCase
     public function testGetCard()
     {
         $client = static::createClient();
-        $client->request('GET', '/api/public/card/01001');
+        $client->request('GET', '/api/public/card/1_50');
         $response = $client->getResponse();
         $json = $response->getContent();
         $this->assertJson($json);
@@ -24,7 +24,7 @@ class ApiControllerTest extends WebTestCase
         $this->assertIsArray($data);
         $this->assertNotEmpty($data);
         $this->assertArrayHasKey("code", $data);
-        $this->assertEquals("01001", $data['code']);
+        $this->assertEquals("1_50", $data['code']);
     }
 
     public function testListCards()
@@ -43,7 +43,7 @@ class ApiControllerTest extends WebTestCase
     public function testListCardsByPack()
     {
         $client = static::createClient();
-        $client->request('GET', '/api/public/cards/Core');
+        $client->request('GET', '/api/public/cards/1');
         $response = $client->getResponse();
         $json = $response->getContent();
         $this->assertJson($json);
@@ -54,7 +54,7 @@ class ApiControllerTest extends WebTestCase
         foreach ($data as $item) {
             $this->assertIsArray($item);
             $this->assertArrayHasKey("pack_code", $item);
-            $this->assertEquals("Core", $item['pack_code']);
+            $this->assertEquals("1", $item['pack_code']);
         }
     }
 
@@ -76,6 +76,9 @@ class ApiControllerTest extends WebTestCase
         $client = static::createClient();
         $client->request('GET', '/api/public/decklist/1');
         $response = $client->getResponse();
+        if ($response->getStatusCode() === 404) {
+            $this->markTestSkipped('No decklist 1 in this database');
+        }
         $json = $response->getContent();
         $this->assertJson($json);
         $data = json_decode($json, true);
@@ -83,5 +86,17 @@ class ApiControllerTest extends WebTestCase
         $this->assertIsArray($data);
         $this->assertArrayHasKey("id", $data);
         $this->assertEquals(1, $data['id']);
+    }
+
+    public function testListFormats()
+    {
+        $client = static::createClient();
+        $client->request('GET', '/api/public/formats/');
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $this->assertIsArray($data);
+        foreach ($data as $format) {
+            $this->assertArrayHasKey('code', $format);
+            $this->assertNotSame('debug', $format['code']);
+        }
     }
 }

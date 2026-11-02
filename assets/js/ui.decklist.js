@@ -16,7 +16,6 @@
         $('#btn-group-decklist button[id],a[id]').on('click', ui.do_action_decklist);
         $('#btn-compare').on('click', ui.compare_form);
         $('#btn-compare-submit').on('click', ui.compare_submit);
-        $('#restricted_lists').on('change', 'input[type=radio]', ui.on_rl_change);
     };
 
     ui.delete_form = function delete_form()
@@ -31,51 +30,14 @@
             return;
         }
         switch(action_id) {
-            case 'btn-download-text':
-                location.href = Routing.generate('decklist_download', {decklist_id: app.deck.get_id(), format: 'text'});
-                break;
-            case 'btn-download-text-cycle':
-                location.href = Routing.generate('decklist_download', {decklist_id: app.deck.get_id(), format: 'text_cycle'});
-                break;
-            case 'btn-download-octgn':
-                location.href = Routing.generate('decklist_download', {decklist_id: app.deck.get_id(), format: 'octgn'});
-                break;
-            case 'btn-sort-default':
-                app.deck.change_sort('type');
-                break;
-            case 'btn-sort-name':
-                app.deck.change_sort('name');
-                break;
-            case 'btn-sort-set':
-                app.deck.change_sort('set');
-                break;
-            case 'btn-sort-setnumber':
-                app.deck.change_sort('setnumber');
-                break;
-            case 'btn-sort-faction':
-                app.deck.change_sort('faction');
-                break;
-            case 'btn-sort-factionnumber':
-                app.deck.change_sort('factionnumber');
-                break;
-            case 'btn-sort-cardnumber':
-                app.deck.change_sort('cardnumber');
-                break;
-            case 'btn-sort-cost':
-                app.deck.change_sort('cost');
-                break;
             case 'btn-export-plaintext':
                 ui.export_plaintext(app.deck);
                 break;
-            case 'btn-export-markdown':
-                ui.export_markdown(app.deck);
+            case 'btn-export-gemp':
+                ui.export_gemp(app.deck);
                 break;
-            case 'btn-export-agotcards':
-                ui.export_agotcards(app.deck);
-                break;
-            case 'btn-export-plotsanddrawdeckonly':
-                ui.export_plotsanddrawdeckonly(app.deck);
-                break;
+            default:
+                return;
         }
 
         event.preventDefault();
@@ -273,24 +235,8 @@
         });
     };
 
-    /**
-     * @memberOf ui
-     */
-    ui.refresh_deck = function refresh_deck()
-    {
-        app.deck.display('#deck-content');
-        app.deck_charts && app.deck_charts.setup();
-    };
 
-    /**
-     * @memberOf ui
-     * @param event
-     */
-    ui.on_rl_change = function on_rl_change(event) {
-        var code = $(event.target).attr('data-rl-code');
-        app.config.set('restriction', code);
-        ui.refresh_deck();
-    }
+
 
     /**
      * called when the DOM is loaded
@@ -316,10 +262,8 @@
      */
     ui.on_all_loaded = function on_all_loaded()
     {
-        ui.build_restrictions_selector('#restricted_lists');
-        ui.refresh_deck();
-        ui.refresh_rl_indicators();
         app.draw_simulator && app.draw_simulator.reset();
+        app.deck_charts && app.deck_charts.setup();
         app.user.loaded.done(function ()
         {
             ui.setup_comment_form();

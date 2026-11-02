@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Entity;
+
+use App\Classes\DeckContent;
+use Doctrine\ORM\Mapping as ORM;
+
+/**
+ * The part of a LOTR deck a slot belongs to (phase3/03): ring_bearer, ring, site,
+ * draw or map. Only the Ring-bearer is chosen; the others follow from the card's
+ * type (DeckContent::roleForType).
+ */
+trait SlotRoleTrait
+{
+    #[ORM\Column(name: 'role', type: 'string', length: 12, nullable: false, options: ['default' => 'draw'])]
+    protected string $role = DeckContent::ROLE_DRAW;
+
+    public function getRole(): string
+    {
+        return $this->role;
+    }
+
+    public function setRole(string $role): void
+    {
+        $this->role = $role;
+    }
+
+    /** This slot's key in a deck's content map (DeckContent) */
+    public function getContentKey(): string
+    {
+        return DeckContent::key($this->card->getCode(), $this->role);
+    }
+}

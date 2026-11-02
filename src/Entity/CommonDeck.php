@@ -9,7 +9,8 @@ namespace App\Entity;
 abstract class CommonDeck implements CommonDeckInterface
 {
     /**
-     * @inheritdoc
+     * The parts of the deck for the text export (templates/Export/default.txt.twig),
+     * which DeckImportService reads back.
      */
     public function getTextExport()
     {
@@ -17,30 +18,22 @@ abstract class CommonDeck implements CommonDeckInterface
         return [
             'name' => $this->getName(),
             'version' => $this->getVersion(),
-            'agendas' => $slots->getAgendas(),
-            'faction' => $this->getFaction(),
+            'target_format' => $this->getTargetFormat(),
+            'ring_bearer' => $slots->getRingBearer(),
+            'ring' => $slots->getRing(),
+            'sites' => $slots->getSites()->getSlots(),
+            'free_peoples' => $this->sortForExport($slots->getFreePeoples()->getSlots()),
+            'shadow' => $this->sortForExport($slots->getShadow()->getSlots()),
+            'map' => $slots->getMap(),
             'draw_deck_size' => $slots->getDrawDeck()->countCards(),
-            'plot_deck_size' => $slots->getPlotDeck()->countCards(),
-            'included_packs' => $slots->getIncludedPacks(),
-            'slots_by_type' => $slots->getSlotsByType()
+            'gemp' => $slots->toGempString(),
         ];
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getCycleOrderExport()
+    private function sortForExport(array $slots): array
     {
-        $slots = $this->getSlots();
-        return [
-            'name' => $this->getName(),
-            'version' => $this->getVersion(),
-            'agendas' => $slots->getAgendas(),
-            'faction' => $this->getFaction(),
-            'draw_deck_size' => $slots->getDrawDeck()->countCards(),
-            'plot_deck_size' => $slots->getPlotDeck()->countCards(),
-            'included_packs' => $slots->getIncludedPacks(),
-            'slots_by_cycle_order' => $slots->getSlotsByCycleOrder()
-        ];
+        usort($slots, fn (SlotInterface $a, SlotInterface $b) => [$a->getCard()->getCulture()?->getName(), $a->getCard()->getType()->getName(), $a->getCard()->getFullName()]
+            <=> [$b->getCard()->getCulture()?->getName(), $b->getCard()->getType()->getName(), $b->getCard()->getFullName()]);
+        return $slots;
     }
 }

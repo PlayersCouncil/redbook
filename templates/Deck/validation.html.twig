@@ -1,0 +1,21 @@
+{# Gemp's verdict on a deck (decision 0019): every problem as a checklist.
+   Variables: deck (Deck or Decklist), title (optional) #}
+{% set validation = deck.validation %}
+<div class="deck-validation deck-validation-{{ deck.completeness }}">
+    {% if validation is null %}
+        <div class="alert alert-warning">{{ 'deck.validation.unavailable' | trans }}</div>
+    {% elseif validation.isValid %}
+        <div class="alert alert-success">
+            <span class="fas fa-check"></span> {{ 'deck.validation.valid' | trans({'%format%': validation.formatName}) }}
+            {% if not validation.valid %}<br><small>{{ 'deck.validation.valid_with_errata' | trans }}</small>{% endif %}
+        </div>
+    {% else %}
+        <div class="alert alert-danger">
+            <strong>{{ title ?? ('deck.validation.problems' | trans({'%format%': validation.formatName})) }}</strong>
+            <ul class="deck-problems">
+                {% for problem in validation.relevantProblems %}<li>{{ problem }}</li>{% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    {% if deck.validatedAt %}<p class="small text-muted">{{ 'deck.validation.checked' | trans({'%date%': deck.validatedAt | date('Y-m-d H:i')}) }}</p>{% endif %}
+</div>

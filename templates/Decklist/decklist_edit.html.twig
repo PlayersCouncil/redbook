@@ -21,6 +21,51 @@
                         <label for="name">{{ 'decklist.publish.name' | trans }}</label>
                         <input type="text" class="form-control" name="name" id="name" value="{{ decklist.name }}">
                     </div>
+                    {% if formats is defined %}
+                        <div class="form-group">
+                            <label for="target_format">{{ 'deck.target_format' | trans }}</label>
+                            <select class="form-control" name="target_format" id="target_format">
+                                {% if not decklist.targetFormat %}<option value="">{{ 'decklist.publish.format_unknown' | trans }}</option>{% endif %}
+                                {% for f in formats %}<option value="{{ f.code }}"{% if f.code == decklist.targetFormat %} selected{% endif %}>{{ f.name }}</option>{% endfor %}
+                            </select>
+                        </div>
+                    {% endif %}
+                    <div class="row">
+                        <div class="col-sm-6 form-group">
+                            <label for="effective_date">{{ 'deck.effective_date' | trans }}</label>
+                            <input type="date" class="form-control" name="effective_date" id="effective_date" value="{{ decklist.effectiveDate | date('Y-m-d') }}">
+                            <span class="help-block small">{{ 'deck.effective_date_hint' | trans }}</span>
+                        </div>
+                        <div class="col-sm-6 form-group">
+                            <label for="half">{{ 'decklist.publish.half' | trans }}</label>
+                            <select class="form-control" name="half" id="half">
+                                <option value="">{{ 'deck.half.none' | trans }}</option>
+                                {% for side in ['free_peoples', 'shadow'] %}
+                                    <option value="{{ side }}"{% if decklist.half == side %} selected{% endif %}>{{ ('deck.half.' ~ side) | trans }}</option>
+                                {% endfor %}
+                            </select>
+                            <span class="help-block small">{{ 'decklist.publish.half_hint' | trans }}</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>{{ 'decklist.plays.title' | trans }}</label>
+                        <div id="plays">
+                            {% set plays = decklist.plays | length ? decklist.plays : [null] %}
+                            {% for play in plays %}
+                                <div class="row play-row" style="margin-bottom:5px">
+                                    <div class="col-sm-4"><input type="text" class="form-control input-sm" name="play_event[]" placeholder="{{ 'decklist.plays.event' | trans }}" value="{{ play ? play.eventName : '' }}"></div>
+                                    <div class="col-sm-2"><input type="date" class="form-control input-sm" name="play_date[]" value="{{ play and play.eventDate ? play.eventDate | date('Y-m-d') : '' }}"></div>
+                                    <div class="col-sm-2"><select class="form-control input-sm" name="play_tier[]"><option value=""></option>{% for tier in tournaments %}<option value="{{ tier.id }}"{% if play and play.tier and play.tier.id == tier.id %} selected{% endif %}>{{ tier.description }}</option>{% endfor %}</select></div>
+                                    <div class="col-sm-1"><input type="text" class="form-control input-sm" name="play_placing[]" placeholder="{{ 'decklist.plays.placing' | trans }}" value="{{ play ? play.placing : '' }}"></div>
+                                    <div class="col-sm-1"><input type="number" min="0" class="form-control input-sm" name="play_players[]" placeholder="{{ 'decklist.plays.players' | trans }}" value="{{ play ? play.playerCount : '' }}"></div>
+                                    <div class="col-sm-2"><input type="url" class="form-control input-sm" name="play_url[]" placeholder="URL" value="{{ play ? play.url : '' }}">
+                                    </div>
+                                    <div class="col-sm-12 text-right"><button type="button" class="btn btn-link btn-xs btn-remove-play">{{ 'forms.delete' | trans }}</button></div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button type="button" class="btn btn-default btn-xs" id="btn-add-play">{{ 'decklist.plays.add' | trans }}</button>
+                    </div>
                     <div class="form-group">
                         <label for="tournament">{{ 'decklist.publish.placedhigh' | trans }}</label>
                         <select class="form-control" name="tournament" id="tournament">
@@ -48,12 +93,8 @@
                 </form>
             </div>
             <div class="col-sm-3">
+                {% include 'Deck/validation.html.twig' with {deck: decklist} %}
                 <div id="decklist" class="small"></div>
-                <div id="deck-options">
-                    <div class="form-group">
-                        <div id="restricted_lists"></div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>

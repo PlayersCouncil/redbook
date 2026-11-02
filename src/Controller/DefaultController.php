@@ -5,9 +5,6 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\BannerAlert;
-use App\Entity\Faction;
-use App\Entity\Type;
-use App\Services\AgendaHelper;
 use App\Services\DecklistManager;
 use Exception;
 use Symfony\Component\HttpFoundation\Request;
@@ -29,7 +26,6 @@ class DefaultController extends AbstractController
      * @param string $gameName
      * @param string $publisherName
      * @param DecklistManager $decklistManager
-     * @param AgendaHelper $agendaHelper
      * @return Response
      * @throws Exception
      */
@@ -39,71 +35,27 @@ class DefaultController extends AbstractController
         string $gameName,
         string $publisherName,
         DecklistManager $decklistManager,
-        AgendaHelper $agendaHelper
     ) {
         $response = new Response();
         $response->setPublic();
         $response->setMaxAge($cacheExpiration);
 
-        $decklistManager->setLimit(1);
-
-        $typeNames = [];
-        /* @var TypeInterface $type */
-        foreach ($this->managerRegistry->getRepository(Type::class)->findAll() as $type) {
-            $typeNames[$type->getCode()] = $type->getName();
-        }
-
-        $decklists_by_faction = [];
-        $factions = $this->managerRegistry
-            ->getRepository(Faction::class)
-            ->findBy(['isPrimary' => true], ['code' => 'ASC']);
+        $decklistManager->setLimit(10);
+        $popular = iterator_to_array($decklistManager->findDecklistsByPopularity());
+        $recent = iterator_to_array($decklistManager->findDecklistsByAge());
 
         $alerts = $this->managerRegistry->getRepository(BannerAlert::class)
             ->findBy(['active' => true], ['id' => 'DESC']);
-
-        foreach ($factions as $faction) {
-            $array = [];
-            $array['faction'] = $faction;
-
-            $decklistManager->setFaction($faction);
-            $paginator = $decklistManager->findDecklistsByPopularity();
-            /* @var DecklistInterface $decklist */
-            $decklist = $paginator->getIterator()->current();
-
-            if ($decklist) {
-                $array['decklist'] = $decklist;
-
-                $countByType = $decklist->getSlots()->getCountByType();
-                $counts = [];
-                foreach ($countByType as $code => $qty) {
-                    $typeName = $typeNames[$code];
-                    $counts[] = $qty . " " . $typeName . "s";
-                }
-                $array['count_by_type'] = join(' &bull; ', $counts);
-
-                $factions = [$faction->getName()];
-                foreach ($decklist->getSlots()->getAgendas() as $agenda) {
-                    $minor_faction = $agendaHelper->getMinorFaction($agenda->getCard());
-                    if ($minor_faction) {
-                        $factions[] = $minor_faction->getName();
-                    } elseif ($agenda->getCard()->getCode() != '06018') { // prevent Alliance agenda to show up
-                        $factions[] = $agenda->getCard()->getName();
-                    }
-                }
-                $array['factions'] = join(' / ', $factions);
-
-                $decklists_by_faction[] = $array;
-            }
-        }
 
         return $this->render(
             'Default/index.html.twig',
             [
                 'pagetitle' => "{$gameName} Deckbuilder",
-                'pagedescription' => "Build your deck for {$gameName} by {$publisherName}."
-                    . " Browse the cards and the thousand of decklists submitted by the community."
+                'pagedescription' => "Build your deck for {$gameName}."
+                    . " Browse the cards and the decklists submitted by the community."
                     . " Publish your own decks and get feedback.",
-                'decklists_by_faction' => $decklists_by_faction,
+                'popular_decklists' => $popular,
+                'recent_decklists' => $recent,
                 'banner_alerts' => $alerts,
             ],
             $response

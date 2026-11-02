@@ -2,908 +2,457 @@
 
 namespace App\Controller;
 
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Doctrine\Persistence\ManagerRegistry;
+use App\Classes\DeckContent;
 use App\Entity\BannerAlert;
-use App\Entity\Card;
 use App\Entity\Deck;
 use App\Entity\Deckchange;
 use App\Entity\DeckInterface;
 use App\Entity\Decklist;
-use App\Entity\DecklistInterface;
-use App\Entity\Deckslot;
-use App\Entity\Faction;
-use App\Entity\FactionInterface;
-use App\Entity\Pack;
-use App\Entity\Restriction;
+use App\Entity\Format;
 use App\Entity\Tournament;
 use App\Entity\UserInterface;
-use App\Services\AgendaHelper;
+use App\Repository\FormatRepository;
 use App\Services\DeckImportService;
 use App\Services\DeckManager;
+use App\Services\DeckValidator;
 use App\Services\Diff;
-use App\Services\RestrictionsChecker;
+use App\Services\Gemp\GempClient;
+use App\Services\Gemp\GempRejectedException;
+use App\Services\Gemp\GempUnavailableException;
 use App\Services\Texts;
-use Doctrine\ORM\OptimisticLockException;
-use Doctrine\ORM\ORMException;
-use Exception;
+use Doctrine\Persistence\ManagerRegistry;
 use Psr\Log\LoggerInterface;
 use Ramsey\Uuid\Uuid;
-use Symfony\Component\Form\Extension\Core\Type\SubmitType;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
-use Symfony\Component\HttpKernel\Exception\UnauthorizedHttpException;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Routing\RouterInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
- * @package App\Controller
+ * The deckbuilder and the user's own decks (phase3/03).
  */
 class BuilderController extends AbstractController
 {
-    /**
-     * @const VARIANT_AGENDAS Codes of agendas that should not be available for selection under "constructed" in the new deck wizard.
-     * @todo Hardwiring those is good enough for now, rethink this if/as this list grows [ST 2019/04/04]
-     */
-    protected const VARIANT_AGENDAS = [
-        '00362', // Sealing the Pact (ToJ)
-        '00363', // Unknown and Unknowable (ToJ)
-        '00364', // Pass Beneath a Shadow (ToJ)
-        '00365', // Seeking Fortunes (ToJ)
-        '00366', // Join Forces (ToJ)
-        '00367', // Desperate Hope (ToJ)
-        '00001', // The Power of Wealth (VDS)
-        '00002', // Protectors of the Realm (VDS)
-        '00003', // Treaty (VDS)
-        '00004', // Uniting the Seven Kingdoms (VDS)
-        "00030", // The King's Voice (VHotK)
-    ];
-    public function __construct(private readonly ManagerRegistry $managerRegistry)
-    {
-    }
+    private const UUID = '[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}';
 
-    /**
-     * @param int $cacheExpiration
-     * @param TranslatorInterface $translator
-     * @return Response
-     */
-    #[Route(path: '/deck/new', name: 'deck_buildform', methods: ['GET'])]
-    public function buildformAction(int $cacheExpiration, TranslatorInterface $translator)
-    {
-        $response = new Response();
-        $response->setPublic();
-        $response->setMaxAge($cacheExpiration);
-
-
-        $em = $this->managerRegistry->getManager();
-
-        $factions = $em->getRepository(Faction::class)->findPrimaries();
-        $agendas = $em->getRepository(Card::class)->getAgendasForNewDeckWizard(self::VARIANT_AGENDAS);
-        $variantAgendas = [];
-        if (count(self::VARIANT_AGENDAS)) {
-            $variantAgendas = $em->getRepository(Card::class)->getVariantAgendasForNewDeckWizard(self::VARIANT_AGENDAS);
-        }
-
-        return $this->render(
-            'Builder/initbuild.html.twig',
-            [
-                'pagetitle' => $translator->trans('decks.form.new'),
-                'factions' => $factions,
-                'agendas' => $agendas,
-                'variantAgendas' => $variantAgendas,
-            ],
-            $response
-        );
-    }
-
-    /**
-     * @param Request $request
-     * @param TranslatorInterface $translator
-     * @param SessionInterface $session
-     * @param RouterInterface $router
-     * @param AgendaHelper $agendaHelper
-     * @return RedirectResponse
-     * @throws ORMException
-     * @throws OptimisticLockException
-     */
-    #[Route(path: '/deck/build', name: 'deck_initbuild', methods: ['POST'])]
-    public function initbuildAction(
-        Request $request,
-        TranslatorInterface $translator,
-        SessionInterface $session,
-        RouterInterface $router,
-        AgendaHelper $agendaHelper
+    public function __construct(
+        private readonly ManagerRegistry $managerRegistry,
+        private readonly FormatRepository $formats,
     ) {
-        /* @var $em EntityManager */
-        $em = $this->managerRegistry->getManager();
-
-        $faction_code = $request->request->get('faction');
-        $agenda_code = $request->request->get('agenda');
-
-        if (!$faction_code) {
-            $session->getFlashBag()->set('error', $translator->trans("decks.build.errors.nofaction"));
-
-            return $this->redirectToRoute('deck_buildform');
-        }
-
-        $faction = $em->getRepository(Faction::class)->findByCode($faction_code);
-        if (!$faction) {
-            $session->getFlashBag()->set('error', $translator->trans("decks.build.errors.nofaction"));
-
-            return $this->redirectToRoute('deck_buildform');
-        }
-        $tags = [$faction_code];
-
-        if (!$agenda_code) {
-            $agenda = null;
-            $name = $translator->trans(
-                "decks.build.newname.noagenda",
-                array(
-                    "%faction%" => $faction->getName(),
-                )
-            );
-            $pack = $em->getRepository(Pack::class)->findOneBy(array("code" => "Core"));
-        } else {
-            $agenda = $em->getRepository(Card::class)->findByCode($agenda_code);
-            $name = $translator->trans(
-                "decks.build.newname.noagenda",
-                array(
-                    "%faction%" => $faction->getName(),
-                    "%agenda%" => $agenda->getName(),
-                )
-            );
-            $pack = $agenda->getPack();
-            $tags[] = $agendaHelper->agendaToTag($agenda);
-        }
-
-        /** @var UserInterface $user */
-        $user = $this->getUser();
-
-        $deck = new Deck();
-        $deck->setDescriptionMd("");
-        $deck->setFaction($faction);
-        $deck->setLastPack($pack);
-        $deck->setName($name);
-        $deck->setProblem('too_few_cards');
-        $deck->setTags(join(' ', array_unique($tags)));
-        $deck->setUser($user);
-        $deck->setUuid(Uuid::uuid4());
-        if ($agenda) {
-            $slot = new Deckslot();
-            $slot->setCard($agenda);
-            $slot->setQuantity(1);
-            $slot->setDeck($deck);
-            $deck->addSlot($slot);
-        }
-
-        $em->persist($deck);
-        $em->flush();
-
-        return $this->redirect($router->generate('deck_edit', ['deck_uuid' => $deck->getUuid()]));
     }
 
-    /**
-     * @param int $cacheExpiration
-     * @return Response
-     */
-    #[Route(path: '/deck/import', name: 'deck_import', methods: ['GET'])]
-    public function importAction(int $cacheExpiration)
+    #[Route(path: '/deck/new', name: 'deck_buildform', methods: ['GET'])]
+    public function buildformAction(TranslatorInterface $translator, DeckManager $deckManager): Response
     {
-        $response = new Response();
-        $response->setPublic();
-        $response->setMaxAge($cacheExpiration);
+        return $this->render('Builder/initbuild.html.twig', [
+            'pagetitle' => $translator->trans('decks.form.new'),
+            'formats' => $this->formats->findSelectable(),
+            'default_format' => $deckManager->getDefaultFormat(),
+        ]);
+    }
 
-        $factions = $this->managerRegistry->getRepository(Faction::class)->findAll();
+    #[Route(path: '/deck/build', name: 'deck_initbuild', methods: ['POST'])]
+    public function initbuildAction(Request $request, TranslatorInterface $translator, DeckManager $deckManager): Response
+    {
+        $user = $this->requireUser();
+        if (count($user->getDecks()) >= $user->getMaxNbDecks()) {
+            $this->addFlash('error', $translator->trans('decks.save.outOfSlots'));
+            return $this->redirectToRoute('decks_list');
+        }
+        $format = $this->selectableFormat((string) $request->request->get('target_format'));
+        if ($format === null) {
+            $this->addFlash('error', $translator->trans('decks.build.errors.noformat'));
+            return $this->redirectToRoute('deck_buildform');
+        }
+        $name = trim(strip_tags((string) $request->request->get('name')))
+            ?: $translator->trans('decks.build.newname_format', ['%format%' => $format->getName()]);
 
-        return $this->render(
-            'Builder/directimport.html.twig',
-            array(
-                'pagetitle' => "Import a deck",
-                'factions' => array_map(
-                    function (FactionInterface $faction) {
-                        return ['code' => $faction->getCode(), 'name' => $faction->getName()];
-                    },
-                    $factions
-                ),
-            ),
-            $response
-        );
+        $deck = $deckManager->create($user, $name, $format->getCode());
+        $this->managerRegistry->getManager()->flush();
+
+        return $this->redirectToRoute('deck_edit', ['deck_uuid' => $deck->getUuid()]);
+    }
+
+    #[Route(path: '/deck/import', name: 'deck_import', methods: ['GET'])]
+    public function importAction(TranslatorInterface $translator, DeckManager $deckManager): Response
+    {
+        return $this->render('Builder/directimport.html.twig', [
+            'pagetitle' => $translator->trans('decks.import.title'),
+            'formats' => $this->formats->findSelectable(),
+            'default_format' => $deckManager->getDefaultFormat(),
+        ]);
     }
 
     /**
-     * @param Request $request
-     * @param DeckImportService $deckImportService
-     * @param DeckManager $deckManager
-     * @param SessionInterface $session
-     * @param TranslatorInterface $translator
-     * @throws BadRequestHttpException
-     * @return RedirectResponse
+     * Imports pasted text or an uploaded text file: Gemp deck strings or card lists,
+     * several decks separated by "===" lines (DeckImportService).
      */
     #[Route(path: '/deck/fileimport', name: 'deck_fileimport', methods: ['POST'])]
     public function fileimportAction(
         Request $request,
         DeckImportService $deckImportService,
         DeckManager $deckManager,
-        SessionInterface $session,
-        TranslatorInterface $translator
-    ) {
+        TranslatorInterface $translator,
+    ): Response {
+        $user = $this->requireUser();
+        $text = (string) $request->request->get('content');
         $uploadedFile = $request->files->get('upfile');
-        if (!isset($uploadedFile)) {
-            throw new BadRequestHttpException("No file");
-        }
-
-        $filename = $uploadedFile->getPathname();
-
-        if (function_exists("finfo_open")) {
-            // return mime type ala mimetype extension
-            $finfo = finfo_open(FILEINFO_MIME);
-
-            // check to see if the mime-type starts with 'text'
-            $is_text = substr(finfo_file($finfo, $filename), 0, 4) == 'text'
-                || substr(finfo_file($finfo, $filename), 0, 15) == "application/xml";
-            if (!$is_text) {
-                throw new BadRequestHttpException("Unsupported file format");
+        if ($uploadedFile !== null) {
+            $mime = (string) $uploadedFile->getMimeType();
+            if (!str_starts_with($mime, 'text') && $mime !== 'application/octet-stream') {
+                throw new BadRequestHttpException('Unsupported file format');
             }
+            $text = (string) file_get_contents($uploadedFile->getPathname());
         }
+        if (trim($text) === '') {
+            $this->addFlash('error', $translator->trans('decks.import.error.empty'));
+            return $this->redirectToRoute('deck_import');
+        }
+        $format = $this->selectableFormat((string) $request->request->get('target_format'));
+        $parsed = $deckImportService->parseTextImport($text);
 
-        $parsedData = $deckImportService->parseTextImport(file_get_contents($filename));
-
-        // Cancel import if number of given lists exceeds the number of available deck slots.
-        // No partial import of (bulk) uploads is supported.
-        /** @var UserInterface $user */
-        $user = $this->getUser();
-        $existingDecks = $deckManager->getByUser($user);
-        $numberSuccessfullyParsedDecks = count($parsedData['decks']);
-        $numberOfFailedParsedDecks = count($parsedData['errors']);
-        $errorMessages = array_unique($parsedData['errors']);
-        $numberOfDecksUploaded = $numberSuccessfullyParsedDecks + $numberOfFailedParsedDecks;
-
-        if ($user->getMaxNbDecks() < $numberOfDecksUploaded + count($existingDecks)) {
-            $session->getFlashBag()->set(
-                'error',
-                $translator->trans('decks.import.error.general')
-                . ' ' .
-                $translator->trans('decks.save.outOfSlots')
-            );
+        if (count($user->getDecks()) + count($parsed['decks']) > $user->getMaxNbDecks()) {
+            $this->addFlash('error', $translator->trans('decks.save.outOfSlots'));
             return $this->redirectToRoute('decks_list');
         }
 
-        // finally, import all the "good" decks(s)
-        foreach ($parsedData['decks'] as $data) {
-            $deck = new Deck();
-            $deck->setUuid(Uuid::uuid4());
-
-            $deckManager->save(
-                $this->getUser(),
-                $deck,
-                null,
-                $data['name'],
-                $data['faction'],
-                $data['description'],
-                null,
-                $data['content'],
-                null
-            );
+        $last = null;
+        foreach ($parsed['decks'] as $data) {
+            $last = $deckManager->create($user, $data['name'], $format?->getCode() ?? (string) $deckManager->getDefaultFormat(), $data['content']);
+            foreach ($data['warnings'] as $warning) {
+                $this->addFlash('warning', $data['name'] . ': ' . $warning);
+            }
         }
-
         $this->managerRegistry->getManager()->flush();
-        if ($numberSuccessfullyParsedDecks) {
-            $session->getFlashBag()->set(
-                'notice',
-                $translator->transChoice(
-                    "decks.import.success",
-                    $numberOfDecksUploaded,
-                    [ '%success%' => $numberSuccessfullyParsedDecks, '%all%' => $numberOfDecksUploaded ]
-                )
-            );
-        }
-        if ($numberOfFailedParsedDecks) {
-            $session->getFlashBag()->set(
-                'error',
-                $translator->transChoice(
-                    "decks.import.failures",
-                    $numberOfDecksUploaded,
-                    [ '%failures%' => $numberOfFailedParsedDecks, '%all%' => $numberOfDecksUploaded ]
-                ) . " " .
-                $translator->transChoice(
-                    "decks.import.failureReasons",
-                    count($errorMessages),
-                    [ '%reasons%' => implode('", "', $errorMessages) ]
-                )
-            );
-        }
 
+        foreach (array_unique($parsed['errors']) as $error) {
+            $this->addFlash('error', $error);
+        }
+        if (count($parsed['decks'])) {
+            $this->addFlash('notice', $translator->trans('decks.import.imported', ['%count%' => count($parsed['decks'])]));
+        }
+        // a single deck opens in the deckbuilder
+        if (count($parsed['decks']) === 1 && $last !== null) {
+            return $this->redirectToRoute('deck_edit', ['deck_uuid' => $last->getUuid()]);
+        }
         return $this->redirectToRoute('decks_list');
     }
 
-    /**
-     * @param Request $request
-     * @param Texts $texts
-     * @param string $deck_uuid
-     * @return Response
-     */
-    #[Route(path: '/deck/export/octgn/{deck_uuid}', name: 'deck_download', methods: ['GET'], requirements: ['deck_uuid' => '[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}'])]
-    public function downloadAction(Request $request, Texts $texts, $deck_uuid)
+    /** Text export: format=text (card list, the default) or format=gemp (Gemp deck string) */
+    #[Route(path: '/deck/export/{deck_uuid}', name: 'deck_download', methods: ['GET'], requirements: ['deck_uuid' => self::UUID])]
+    public function downloadAction(Request $request, Texts $texts, string $deck_uuid): Response
     {
-        /* @var DeckInterface $deck */
-        $deck = $this->managerRegistry->getManager()->getRepository(Deck::class)->findOneBy(['uuid' => $deck_uuid]);
+        $deck = $this->findViewableDeck($deck_uuid);
+        $content = $request->query->get('format') === 'gemp'
+            ? $deck->getSlots()->toGempString() . "\r\n"
+            : str_replace("\n", "\r\n", $this->renderView('Export/default.txt.twig', ['deck' => $deck->getTextExport()]));
 
-        $is_owner = $this->getUser() && $this->getUser()->getId() == $deck->getUser()->getId();
-        if (!$deck->getUser()->getIsShareDecks() && !$is_owner) {
-            return $this->render(
-                'Default/error.html.twig',
-                array(
-                    'pagetitle' => "Error",
-                    'error' => 'You are not allowed to view this deck.'
-                        . ' To get access, you can ask the deck owner to enable "Share your decks" on their account.',
-                )
-            );
-        }
-
-        $format = $request->query->get('format', 'text');
-
-        switch ($format) {
-            case 'octgn':
-                return $this->downloadInOctgnFormat($deck, $texts);
-                break;
-            case 'text_cycle':
-                return $this->downloadInTextFormatSortedByCycle($deck, $texts);
-                break;
-            case 'text':
-            default:
-                return $this->downloadInDefaultTextFormat($deck, $texts);
-        }
+        return $this->textFile($content, $texts->slugify($deck->getName()) . '.txt');
     }
 
-    /**
-     * @param string $deck_uuid
-     * @return Response
-     */
-    #[Route(path: '/deck/clone/{deck_uuid}', name: 'deck_clone', methods: ['GET'], requirements: ['deck_uuid' => '[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}'])]
-    public function cloneAction($deck_uuid, DeckManager $deckManager, TranslatorInterface $translator)
+    #[Route(path: '/deck/clone/{deck_uuid}', name: 'deck_clone', methods: ['GET'], requirements: ['deck_uuid' => self::UUID])]
+    public function cloneAction(string $deck_uuid, DeckManager $deckManager, TranslatorInterface $translator): Response
     {
-        $em = $this->managerRegistry->getManager();
-        /* @var DeckInterface $deck */
-        $deck = $em->getRepository(Deck::class)->findOneBy(['uuid' => $deck_uuid]);
-
-        $user = $this->getUser();
-        $isOwner = $user->getId() === $deck->getUser()->getId();
-        if (!$deck->getUser()->getIsShareDecks() && !$isOwner) {
-            return $this->render(
-                'Default/error.html.twig',
-                array(
-                    'pagetitle' => "Error",
-                    'error' => 'You are not allowed to access this deck.'
-                        . ' To get access, you can ask the deck owner to enable "Share your decks" on their account.',
-                )
-            );
+        $user = $this->requireUser();
+        $deck = $this->findViewableDeck($deck_uuid);
+        if (count($user->getDecks()) >= $user->getMaxNbDecks()) {
+            $this->addFlash('error', $translator->trans('decks.save.outOfSlots'));
+            return $this->redirectToRoute('decks_list');
         }
-
-        if (count($user->getDecks()) > $user->getMaxNbDecks()) {
-            return new Response(
-                $translator->trans('decks.save.outOfSlots')
-            );
-        }
-
-        $content = [];
-        foreach ($deck->getSlots() as $slot) {
-            $content[$slot->getCard()->getCode()] = $slot->getQuantity();
-        }
-        $newDeck = new Deck();
-        $newDeck->setParentDeck($deck);
-        $newDeck->setUuid(Uuid::uuid4());
-
-        $deckManager->save(
-            $this->getUser(),
-            $newDeck,
-            null,
-            $deck->getName() . ' (clone)',
-            $deck->getFaction(),
-            $deck->getDescriptionMd(),
-            false,
-            $content,
-            null,
-        );
-        $em->flush();
+        $deckManager->copy($user, $deck, $deck->getName() . ' (clone)');
+        $this->managerRegistry->getManager()->flush();
         return $this->redirectToRoute('decks_list');
     }
 
-    /**
-     * @param Request $request
-     * @param DeckManager $deckManager
-     * @param TranslatorInterface $translator
-     * @return RedirectResponse|Response
-     */
     #[Route(path: '/deck/save', name: 'deck_save', methods: ['POST'])]
-    public function saveAction(Request $request, DeckManager $deckManager, TranslatorInterface $translator)
+    public function saveAction(Request $request, DeckManager $deckManager, TranslatorInterface $translator): Response
     {
-
-        /* @var EntityManager $em*/
+        $user = $this->requireUser();
         $em = $this->managerRegistry->getManager();
 
-        $user = $this->getUser();
-        if (count($user->getDecks()) > $user->getMaxNbDecks()) {
-            return new Response(
-                $translator->trans('decks.save.outOfSlots')
-            );
-        }
-
-        $id = filter_var($request->get('id'), FILTER_SANITIZE_NUMBER_INT);
+        $id = (int) $request->get('id');
         $deck = null;
-        $source_deck = null;
+        $sourceDeck = null;
         if ($id) {
             $deck = $em->getRepository(Deck::class)->find($id);
             if (!$deck || $user->getId() != $deck->getUser()->getId()) {
-                throw new UnauthorizedHttpException("You don't have access to this deck.");
+                throw new AccessDeniedHttpException("You don't have access to this deck.");
             }
-            $source_deck = $deck;
+            $sourceDeck = $deck;
         }
 
-        $faction_code = filter_var($request->get('faction_code'), FILTER_SANITIZE_STRING, FILTER_FLAG_NO_ENCODE_QUOTES);
-        if (!$faction_code) {
-            return new Response('Cannot import deck without faction');
-        }
-        $faction = $em->getRepository(Faction::class)->findOneBy(['code' => $faction_code]);
-        if (!$faction) {
-            return new Response('Cannot import deck with unknown faction ' . $faction_code);
-        }
-
-        $cancel_edits = (bool)filter_var($request->get('cancel_edits'), FILTER_SANITIZE_NUMBER_INT);
-        if ($cancel_edits) {
+        if ($request->get('cancel_edits')) {
             if ($deck) {
                 $deckManager->revert($deck);
             }
-
             return $this->redirectToRoute('decks_list');
         }
 
-        $is_copy = (bool)filter_var($request->get('copy'), FILTER_SANITIZE_NUMBER_INT);
-
-        if ($is_copy || !$id) {
+        if ($request->get('copy') || !$id) {
+            if (count($user->getDecks()) >= $user->getMaxNbDecks()) {
+                $this->addFlash('error', $translator->trans('decks.save.outOfSlots'));
+                return $this->redirectToRoute('decks_list');
+            }
+            $parentDeck = $id ? $deck : null;
             $deck = new Deck();
             $deck->setUuid(Uuid::uuid4());
-            $parent_deck_id = filter_var($request->get('parent_deck_id'), FILTER_SANITIZE_NUMBER_INT);
-
-            if ($parent_deck_id) {
-                /* @var DeckInterface $parentDeck */
-                $parentDeck = $em->getRepository(Deck::class)->find($parent_deck_id);
-                if (!$parentDeck) {
-                    throw new UnauthorizedHttpException("Parent deck not found.");
-                }
+            $parentId = (int) $request->get('parent_deck_id');
+            if ($parentId) {
+                $parentDeck = $em->getRepository(Deck::class)->find($parentId);
+            }
+            if ($parentDeck) {
                 $deck->setParentDeck($parentDeck);
             }
+            $sourceDeck = null;
         }
 
-        $content = (array)json_decode($request->get('content'));
-        if (!count($content)) {
-            return new Response('Cannot import empty deck');
+        $content = json_decode((string) $request->get('content'), true);
+        if (!is_array($content)) {
+            throw new BadRequestHttpException('Deck content missing');
         }
+        $format = $this->selectableFormat((string) $request->get('target_format'));
 
-        $name = filter_var($request->get('name'), FILTER_SANITIZE_STRING, FILTER_FLAG_NO_ENCODE_QUOTES);
-        $decklist_id = filter_var($request->get('decklist_id'), FILTER_SANITIZE_NUMBER_INT);
-        $description = trim($request->get('description'));
-        $tags = filter_var($request->get('tags'), FILTER_SANITIZE_STRING, FILTER_FLAG_NO_ENCODE_QUOTES);
-
-        $deckManager->save(
-            $this->getUser(),
-            $deck,
-            $decklist_id,
-            $name,
-            $faction,
-            $description,
-            $tags,
-            $content,
-            $source_deck ? $source_deck : null
-        );
+        $deckManager->save($user, $deck, [
+            'name' => strip_tags((string) $request->get('name')),
+            'description' => trim((string) $request->get('description')),
+            'tags' => strip_tags((string) $request->get('tags')),
+            'content' => $content,
+            'target_format' => $format?->getCode() ?? ($deck->getTargetFormat() ?: null),
+            'effective_date' => $request->get('effective_date') ?: null,
+            'decklist_id' => (int) $request->get('decklist_id') ?: null,
+            'shared' => $request->request->has('shared') ? (bool) $request->get('shared') : null,
+        ], $sourceDeck);
         $em->flush();
 
-        return $this->redirectToRoute('decks_list');
+        return $this->redirectToRoute('deck_view', ['deck_uuid' => $deck->getUuid()]);
     }
 
     /**
-     * @param Request $request
-     * @param SessionInterface $session
-     * @return RedirectResponse
-     * @throws ORMException
-     * @throws OptimisticLockException
+     * The deckbuilder's live checklist (decision 0019): the content as the browser
+     * holds it, validated by Gemp. Debounced on the browser side.
      */
-    #[Route(path: '/deck/delete', name: 'deck_delete', methods: ['POST'])]
-    public function deleteAction(Request $request, SessionInterface $session)
+    #[Route(path: '/deck/validate', name: 'deck_validate', methods: ['POST'])]
+    public function validateAction(Request $request, DeckValidator $validator): JsonResponse
     {
-        /* @var $em EntityManager */
-        $em = $this->managerRegistry->getManager();
+        $this->requireUser();
+        $content = json_decode((string) $request->get('content'), true);
+        $format = (string) $request->get('target_format');
+        if (!is_array($content) || $format === '') {
+            throw new BadRequestHttpException('content and target_format are required');
+        }
+        $validation = $validator->validateContent($content, $format);
+        return new JsonResponse([
+            'available' => $validation !== null,
+            'validation' => $validation?->toArray(),
+            'valid' => $validation?->isValid(),
+        ]);
+    }
 
-        $deck_id = filter_var($request->get('deck_id'), FILTER_SANITIZE_NUMBER_INT);
-        /** @var DeckInterface $deck */
-        $deck = $em->getRepository(Deck::class)->find($deck_id);
+    /**
+     * "Convert to PC": swaps each card for its PC errata in the format, through
+     * Gemp (decision 0021). Returns the new content; the deckbuilder applies it.
+     */
+    #[Route(path: '/deck/convert', name: 'deck_convert', methods: ['POST'])]
+    public function convertAction(Request $request, DeckValidator $validator, GempClient $gemp, DeckManager $deckManager): JsonResponse
+    {
+        $this->requireUser();
+        $content = json_decode((string) $request->get('content'), true);
+        $format = (string) $request->get('target_format');
+        if (!is_array($content) || $format === '') {
+            throw new BadRequestHttpException('content and target_format are required');
+        }
+        [$triples] = $validator->resolve($deckManager->normalizeContent($content));
+        try {
+            $converted = $gemp->convertToErrata($format, DeckContent::toGempString($triples));
+        } catch (GempUnavailableException) {
+            return new JsonResponse(['success' => false, 'error' => 'gemp_unavailable'], 503);
+        } catch (GempRejectedException $e) {
+            return new JsonResponse(['success' => false, 'error' => $e->getMessage()], 400);
+        }
+        return new JsonResponse([
+            'success' => true,
+            'content' => DeckContent::fromGempString((string) $converted['deckContents']),
+        ]);
+    }
+
+    #[Route(path: '/deck/delete', name: 'deck_delete', methods: ['POST'])]
+    public function deleteAction(Request $request): Response
+    {
+        $user = $this->requireUser();
+        $em = $this->managerRegistry->getManager();
+        $deck = $em->getRepository(Deck::class)->find((int) $request->get('deck_id'));
         if (!$deck) {
             return $this->redirectToRoute('decks_list');
         }
-        if ($this->getUser()->getId() != $deck->getUser()->getId()) {
-            throw new UnauthorizedHttpException("You don't have access to this deck.");
+        if ($user->getId() != $deck->getUser()->getId()) {
+            throw new AccessDeniedHttpException("You don't have access to this deck.");
         }
-
-        foreach ($deck->getChildren() as $decklist) {
-            /** @var DecklistInterface $decklist */
-            $decklist->setParent(null);
-        }
-        $em->remove($deck);
+        $this->removeDeck($deck);
         $em->flush();
-
-        $session->getFlashBag()->set('notice', "Deck deleted.");
-
+        $this->addFlash('notice', 'Deck deleted.');
         return $this->redirectToRoute('decks_list');
     }
 
-    /**
-     * @param Request $request
-     * @param SessionInterface $session
-     * @return Response
-     */
     #[Route(path: '/deck/download_list', name: 'deck_download_list', methods: ['POST'])]
-    public function downloadListAction(Request $request, SessionInterface $session)
+    public function downloadListAction(Request $request): Response
     {
-        /* @var $em EntityManager */
-        $em = $this->managerRegistry->getManager();
-        $ids = explode('-', $request->get('ids'));
-        $decks = $em->getRepository(Deck::class)->findBy(['id' => $ids]);
-
-        $currentUserId = $this->getUser()->getId();
-        $decks = array_values(array_filter($decks, function (DeckInterface $deck) use ($currentUserId) {
-            return $currentUserId === $deck->getUser()->getId();
-        }));
-
+        $user = $this->requireUser();
+        $decks = $this->managerRegistry->getRepository(Deck::class)->findBy(['id' => explode('-', (string) $request->get('ids'))]);
         $exports = [];
         foreach ($decks as $deck) {
-            $content = $this->renderView('Export/default.txt.twig', [ "deck" => $deck->getTextExport() ]);
-            $exports[] = str_replace("\n", "\r\n", $content);
+            if ($deck->getUser()->getId() === $user->getId()) {
+                $exports[] = str_replace("\n", "\r\n", $this->renderView('Export/default.txt.twig', ['deck' => $deck->getTextExport()]));
+            }
         }
-
-        $response = new Response();
-        $response->headers->set('Content-Type', 'text/plain');
-        $response->headers->set(
-            'Content-Disposition',
-            $response->headers->makeDisposition(
-                ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-                'decks.txt'
-            )
-        );
-
-        $response->setContent(implode("\r\n===\r\n", $exports));
-
-        return $response;
+        return $this->textFile(implode("\r\n===\r\n", $exports), 'decks.txt');
     }
 
-    /**
-     * @param Request $request
-     * @param SessionInterface $session
-     * @return RedirectResponse
-     * @throws ORMException
-     * @throws OptimisticLockException
-     */
     #[Route(path: '/deck/delete_list', name: 'deck_delete_list', methods: ['POST'])]
-    public function deleteListAction(Request $request, SessionInterface $session)
+    public function deleteListAction(Request $request): Response
     {
-        /* @var $em EntityManager */
+        $user = $this->requireUser();
         $em = $this->managerRegistry->getManager();
-
-        $list_id = explode('-', $request->get('ids'));
-
-        foreach ($list_id as $id) {
-            /* @var DeckInterface $deck */
-            $deck = $em->getRepository(Deck::class)->find($id);
-            if (!$deck) {
-                continue;
+        foreach (explode('-', (string) $request->get('ids')) as $id) {
+            $deck = $em->getRepository(Deck::class)->find((int) $id);
+            if ($deck && $user->getId() == $deck->getUser()->getId()) {
+                $this->removeDeck($deck);
             }
-            if ($this->getUser()->getId() != $deck->getUser()->getId()) {
-                continue;
-            }
-
-            foreach ($deck->getChildren() as $decklist) {
-                $decklist->setParent(null);
-            }
-            $em->remove($deck);
         }
         $em->flush();
-
-        $session->getFlashBag()->set('notice', "Decks deleted.");
+        $this->addFlash('notice', 'Decks deleted.');
         return $this->redirectToRoute('decks_list');
     }
 
-    /**
-     *
-     * @param string $deck_uuid
-     * @return Response
-     */
-    #[Route(path: '/deck/edit/{deck_uuid}', name: 'deck_edit', methods: ['GET'], requirements: ['deck_uuid' => '[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}'])]
-    public function editAction($deck_uuid)
+    #[Route(path: '/deck/edit/{deck_uuid}', name: 'deck_edit', methods: ['GET'], requirements: ['deck_uuid' => self::UUID])]
+    public function editAction(string $deck_uuid): Response
     {
-        /** @var DeckInterface $deck */
-        $deck = $this->managerRegistry->getManager()->getRepository(Deck::class)->findOneBy(['uuid' => $deck_uuid]);
-
-        if ($this->getUser()->getId() != $deck->getUser()->getId()) {
-            return $this->render(
-                'Default/error.html.twig',
-                array(
-                    'pagetitle' => "Error",
-                    'error' => 'You are not allowed to view this deck.',
-                )
-            );
-        }
-
-        return $this->render(
-            'Builder/deckedit.html.twig',
-            array(
-                'pagetitle' => "Deckbuilder",
-                'deck' => $deck,
-            )
-        );
-    }
-
-    /**
-     * @param string $deck_uuid
-     * @return Response
-     */
-    #[Route(path: '/deck/view/{deck_uuid}', name: 'deck_view', methods: ['GET'], requirements: ['deck_uuid' => '[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}'])]
-    public function viewAction($deck_uuid)
-    {
-        /** @var DeckInterface $deck */
-        $deck = $this->managerRegistry->getManager()->getRepository(Deck::class)->findOneBy(['uuid' => $deck_uuid]);
-
-        if (!$deck) {
-            return $this->render(
-                'Default/error.html.twig',
-                array(
-                    'pagetitle' => "Error",
-                    'error' => "This deck doesn't exist.",
-                )
-            );
-        }
-
-        $is_owner = $this->getUser() && $this->getUser()->getId() == $deck->getUser()->getId();
-        if (!$deck->getUser()->getIsShareDecks() && !$is_owner) {
-            return $this->render(
-                'Default/error.html.twig',
-                array(
-                    'pagetitle' => "Error",
-                    'error' => 'You are not allowed to view this deck.'
-                        . ' To get access, you can ask the deck owner to enable "Share your decks" on their account.',
-                )
-            );
-        }
-
-        $tournaments = $this->managerRegistry->getManager()->getRepository(Tournament::class)->findAll();
-
-        return $this->render(
-            'Builder/deckview.html.twig',
-            array(
-                'pagetitle' => "Deckbuilder",
-                'deck' => $deck,
-                'is_owner' => $is_owner,
-                'tournaments' => $tournaments,
-            )
-        );
-    }
-
-    /**
-     * @param string $deck1_uuid
-     * @param string $deck2_uuid
-     * @param Diff $diff
-     * @return Response
-     */
-    #[Route(path: '/deck/compare/{deck1_uuid}/{deck2_uuid}', name: 'decks_diff', methods: ['GET'], requirements: ['deck1_uuid' => '[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}', 'deck2_uuid' => '[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}'])]
-    public function compareAction($deck1_uuid, $deck2_uuid, Diff $diff)
-    {
-        $repo = $this->managerRegistry->getManager()->getRepository(Deck::class);
-
-        /* @var DeckInterface $deck1 */
-        $deck1 = $repo->findOneBy(['uuid' => $deck1_uuid]);
-        /* @var DeckInterface $deck2 */
-        $deck2 = $repo->findOneBy(['uuid' => $deck2_uuid]);
-
-        if (!$deck1 || !$deck2) {
-            return $this->render(
-                'Default/error.html.twig',
-                array(
-                    'pagetitle' => "Error",
-                    'error' => 'This deck cannot be found.',
-                )
-            );
-        }
-
-        $is_owner = $this->getUser() && $this->getUser()->getId() == $deck1->getUser()->getId();
-        if (!$deck1->getUser()->getIsShareDecks() && !$is_owner) {
-            return $this->render(
-                'Default/error.html.twig',
-                array(
-                    'pagetitle' => "Error",
-                    'error' => 'You are not allowed to view this deck.'
-                        . ' To get access, you can ask the deck owner to enable "Share your decks" on their account.',
-                )
-            );
-        }
-
-        $is_owner = $this->getUser() && $this->getUser()->getId() == $deck2->getUser()->getId();
-        if (!$deck2->getUser()->getIsShareDecks() && !$is_owner) {
-            return $this->render(
-                'Default/error.html.twig',
-                array(
-                    'pagetitle' => "Error",
-                    'error' => 'You are not allowed to view this deck.'
-                        . ' To get access, you can ask the deck owner to enable "Share your decks" on their account.',
-                )
-            );
-        }
-
-        $plotIntersection = $diff->getSlotsDiff([$deck1->getSlots()->getPlotDeck(), $deck2->getSlots()->getPlotDeck()]);
-        $drawIntersection = $diff->getSlotsDiff([$deck1->getSlots()->getDrawDeck(), $deck2->getSlots()->getDrawDeck()]);
-
-        return $this->render(
-            'Compare/deck_compare.html.twig',
-            [
-                'deck1' => $deck1,
-                'deck2' => $deck2,
-                'plot_deck' => $plotIntersection,
-                'draw_deck' => $drawIntersection,
-            ]
-        );
-    }
-
-    /**
-     * @param DeckManager $deckManager
-     * @param RestrictionsChecker $restrictionsChecker
-     * @param TranslatorInterface $translator
-     * @return Response
-     */
-    #[Route(path: '/decks', name: 'decks_list', methods: ['GET'])]
-    public function listAction(
-        DeckManager $deckManager,
-        RestrictionsChecker $restrictionsChecker,
-        TranslatorInterface $translator
-    ) {
-        /* @var UserInterface $user */
-        $user = $this->getUser();
-
-        $decks = $deckManager->getByUser($user);
-
-        $alerts = $this->managerRegistry->getRepository(BannerAlert::class)
-            ->findBy(['active' => true], ['id' => 'DESC']);
-
-        /* @todo refactor this out, use DQL not raw SQL [ST 2019/04/04] */
-        $tournaments = $this->managerRegistry->getConnection()->executeQuery(
-            "SELECT t.id, t.description FROM tournament t ORDER BY t.description desc"
-        )->fetchAllAssociative();
-
-
-        if (count($decks)) {
-            // collect all deck tags
-            $tags = [];
-            foreach ($decks as $deck) {
-                /* @var DeckInterface $deck */
-                $tags[] = $deck->getTags();
-            }
-            $tags = array_unique($tags);
-
-            // check all decks against all active RLs
-            $restrictionsRepo = $this->managerRegistry->getRepository(Restriction::class);
-            $activeRestrictions = $restrictionsRepo->findBy(['active' => true], ['effectiveOn' => 'DESC']);
-
-            $deckLegalityMap = [];
-
-            foreach ($activeRestrictions as $restriction) {
-                foreach ($decks as $deck) {
-                    $deckId = $deck->getId();
-                    if (! array_key_exists($deckId, $deckLegalityMap)) {
-                        $deckLegalityMap[$deckId] = [];
-                    }
-                    $restrictionCode = $restriction->getCode();
-                    $restrictionTitle = $restriction->getTitle();
-                    if (! array_key_exists($restrictionCode, $deckLegalityMap[$deckId])) {
-                        $deckLegalityMap[$deckId][$restrictionCode] = [
-                            'title' => $restrictionTitle,
-                            'joust' => $restrictionsChecker->isLegalForJoust($restriction, $deck),
-                            'melee' => $restrictionsChecker->isLegalForMelee($restriction, $deck),
-                        ];
-                    }
-                }
-            }
-
-            return $this->render(
-                'Builder/decks.html.twig',
-                array(
-                    'pagetitle' => $translator->trans('nav.mydecks'),
-                    'pagedescription' => "Create custom decks with the help of a powerful deckbuilder.",
-                    'decks' => $decks,
-                    'tags' => $tags,
-                    'nbmax' => $user->getMaxNbDecks(),
-                    'nbdecks' => count($decks),
-                    'cannotcreate' => $user->getMaxNbDecks() <= count($decks),
-                    'tournaments' => $tournaments,
-                    'decklegality' => $deckLegalityMap,
-                    'banner_alerts' => $alerts,
-                )
-            );
-        } else {
-            return $this->render(
-                'Builder/no-decks.html.twig',
-                array(
-                    'pagetitle' => $translator->trans('nav.mydecks'),
-                    'pagedescription' => "Create custom decks with the help of a powerful deckbuilder.",
-                    'nbmax' => $user->getMaxNbDecks(),
-                    'tournaments' => $tournaments,
-                )
-            );
-        }
-    }
-
-    /**
-     * @param int $decklist_id
-     * @return Response
-     */
-    #[Route(path: '/deck/copy/{decklist_id}', name: 'deck_copy', methods: ['GET'], requirements: ['decklist_id' => '\d+'])]
-    public function copyAction($decklist_id)
-    {
-        /* @var EntityManager $em */
-        $em = $this->managerRegistry->getManager();
-
-        /* @var DecklistInterface $decklist */
-        $decklist = $em->getRepository(Decklist::class)->find($decklist_id);
-
-        $content = [];
-        foreach ($decklist->getSlots() as $slot) {
-            $content[$slot->getCard()->getCode()] = $slot->getQuantity();
-        }
-
-        return $this->forward(
-            'App\Controller\BuilderController::saveAction',
-            array(
-                'name' => $decklist->getName(),
-                'faction_code' => $decklist->getFaction()->getCode(),
-                'content' => json_encode($content),
-                'decklist_id' => $decklist_id,
-            )
-        );
-    }
-
-    /**
-     * @param Request $request
-     * @param LoggerInterface $logger
-     * @return Response
-     * @throws ORMException
-     * @throws OptimisticLockException
-     */
-    #[Route(path: '/deck/autosave', name: 'deck_autosave', methods: ['POST'])]
-    public function autosaveAction(Request $request, LoggerInterface $logger)
-    {
-        $user = $this->getUser();
-
-        /* @var $em EntityManager */
-        $em = $this->managerRegistry->getManager();
-
-        $deck_id = $request->get('deck_id');
-
-        /* @var DeckInterface $deck */
-        $deck = $em->getRepository(Deck::class)->find($deck_id);
-        if (!$deck) {
-            throw new BadRequestHttpException("Cannot find deck " . $deck_id);
-        }
+        $user = $this->requireUser();
+        $deck = $this->findDeck($deck_uuid);
         if ($user->getId() != $deck->getUser()->getId()) {
-            throw new UnauthorizedHttpException("You don't have access to this deck.");
+            throw new AccessDeniedHttpException('You are not allowed to edit this deck.');
+        }
+        return $this->render('Builder/deckedit.html.twig', [
+            'pagetitle' => 'Deckbuilder',
+            'deck' => $deck,
+            'formats' => $this->formats->findSelectable(),
+            'format' => $this->formats->findOneByCode($deck->getTargetFormat()),
+        ]);
+    }
+
+    #[Route(path: '/deck/view/{deck_uuid}', name: 'deck_view', methods: ['GET'], requirements: ['deck_uuid' => self::UUID])]
+    public function viewAction(string $deck_uuid): Response
+    {
+        $deck = $this->findViewableDeck($deck_uuid);
+        return $this->render('Builder/deckview.html.twig', [
+            'pagetitle' => $deck->getName(),
+            'deck' => $deck,
+            'is_owner' => $this->isOwner($deck),
+            'format' => $this->formats->findOneByCode($deck->getTargetFormat()),
+            'tournaments' => $this->managerRegistry->getRepository(Tournament::class)->findAll(),
+        ]);
+    }
+
+    #[Route(path: '/deck/compare/{deck1_uuid}/{deck2_uuid}', name: 'decks_diff', methods: ['GET'], requirements: ['deck1_uuid' => self::UUID, 'deck2_uuid' => self::UUID])]
+    public function compareAction(string $deck1_uuid, string $deck2_uuid, Diff $diff): Response
+    {
+        $deck1 = $this->findViewableDeck($deck1_uuid);
+        $deck2 = $this->findViewableDeck($deck2_uuid);
+        $parts = [];
+        foreach (['adventure' => 'getSites', 'draw' => 'getDrawDeck'] as $part => $getter) {
+            $parts[$part] = $diff->getSlotsDiff([$deck1->getSlots()->$getter(), $deck2->getSlots()->$getter()]);
+        }
+        return $this->render('Compare/deck_compare.html.twig', [
+            'deck1' => $deck1,
+            'deck2' => $deck2,
+            'parts' => $parts,
+        ]);
+    }
+
+    #[Route(path: '/decks', name: 'decks_list', methods: ['GET'])]
+    public function listAction(DeckManager $deckManager, TranslatorInterface $translator): Response
+    {
+        $user = $this->requireUser();
+        $decks = $deckManager->getByUser($user);
+        $tournaments = $this->managerRegistry->getRepository(Tournament::class)->findBy([], ['description' => 'DESC']);
+
+        if (!count($decks)) {
+            return $this->render('Builder/no-decks.html.twig', [
+                'pagetitle' => $translator->trans('nav.mydecks'),
+                'nbmax' => $user->getMaxNbDecks(),
+                'tournaments' => $tournaments,
+            ]);
         }
 
-        $diff = (array)json_decode($request->get('diff'));
-        if (count($diff) != 2) {
-            $logger->error("cannot use diff", $diff);
-            throw new BadRequestHttpException("Wrong content " . json_encode($diff));
+        $tags = [];
+        foreach ($decks as $deck) {
+            foreach (preg_split('/\s+/', (string) $deck->getTags(), -1, PREG_SPLIT_NO_EMPTY) as $tag) {
+                $tags[$tag] = true;
+            }
         }
+        ksort($tags);
 
+        return $this->render('Builder/decks.html.twig', [
+            'pagetitle' => $translator->trans('nav.mydecks'),
+            'pagedescription' => 'Create custom decks with the help of a powerful deckbuilder.',
+            'decks' => $decks,
+            'tags' => array_keys($tags),
+            'nbmax' => $user->getMaxNbDecks(),
+            'nbdecks' => count($decks),
+            'cannotcreate' => $user->getMaxNbDecks() <= count($decks),
+            'tournaments' => $tournaments,
+            'formats' => $this->formats->findAllByCode(),
+            'banner_alerts' => $this->managerRegistry->getRepository(BannerAlert::class)->findBy(['active' => true], ['id' => 'DESC']),
+        ]);
+    }
+
+    /** A new deck from a published decklist */
+    #[Route(path: '/deck/copy/{decklist_id}', name: 'deck_copy', methods: ['GET'], requirements: ['decklist_id' => '\d+'])]
+    public function copyAction(int $decklist_id, DeckManager $deckManager, TranslatorInterface $translator): Response
+    {
+        $user = $this->requireUser();
+        $decklist = $this->managerRegistry->getRepository(Decklist::class)->find($decklist_id)
+            ?? throw new NotFoundHttpException('No such decklist');
+        if (count($user->getDecks()) >= $user->getMaxNbDecks()) {
+            $this->addFlash('error', $translator->trans('decks.save.outOfSlots'));
+            return $this->redirectToRoute('decks_list');
+        }
+        $deck = new Deck();
+        $deck->setUuid(Uuid::uuid4());
+        $deckManager->save($user, $deck, [
+            'name' => $decklist->getName(),
+            'description' => $decklist->getDescriptionMd(),
+            'content' => $decklist->getSlots()->getContent(),
+            'target_format' => $decklist->getTargetFormat(),
+            'effective_date' => $decklist->getEffectiveDate(),
+            'decklist_id' => $decklist->getId(),
+        ]);
+        $this->managerRegistry->getManager()->flush();
+        return $this->redirectToRoute('deck_edit', ['deck_uuid' => $deck->getUuid()]);
+    }
+
+    /** Unsaved edits, as a diff, so the deckbuilder can restore them */
+    #[Route(path: '/deck/autosave', name: 'deck_autosave', methods: ['POST'])]
+    public function autosaveAction(Request $request, LoggerInterface $logger): Response
+    {
+        $user = $this->requireUser();
+        $em = $this->managerRegistry->getManager();
+        $deck = $em->getRepository(Deck::class)->find((int) $request->get('deck_id'))
+            ?? throw new BadRequestHttpException('Cannot find deck');
+        if ($user->getId() != $deck->getUser()->getId()) {
+            throw new AccessDeniedHttpException("You don't have access to this deck.");
+        }
+        $diff = json_decode((string) $request->get('diff'), true);
+        if (!is_array($diff) || count($diff) != 2) {
+            $logger->error('cannot use diff', ['diff' => $request->get('diff')]);
+            throw new BadRequestHttpException('Wrong content');
+        }
+        $date = new \DateTime();
         if (count($diff[0]) || count($diff[1])) {
             $change = new Deckchange();
             $change->setDeck($deck);
@@ -911,254 +460,61 @@ class BuilderController extends AbstractController
             $change->setIsSaved(false);
             $em->persist($change);
             $em->flush();
+            $date = $change->getDatecreation();
         }
-
-        return new Response($change->getDatecreation()->format('c'));
+        return new Response($date->format('c'));
     }
 
-
-    /**
-     * @param DeckInterface $deck
-     * @param Texts $texts
-     * @return Response
-     */
-    protected function downloadInOctgnFormat(DeckInterface $deck, Texts $texts)
+    private function requireUser(): UserInterface
     {
-        $content = $this->renderView(
-            'Export/octgn.xml.twig',
-            [
-                "deck" => $deck->getTextExport(),
-            ]
-        );
-
-        $response = new Response();
-        $response->headers->set('Content-Type', 'application/octgn');
-        $response->headers->set(
-            'Content-Disposition',
-            $response->headers->makeDisposition(
-                ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-                $texts->slugify($deck->getName()) . '.o8d'
-            )
-        );
-
-        $response->setContent($content);
-
-        return $response;
-    }
-
-    /**
-     * @param DeckInterface $deck
-     * @param Texts $texts
-     * @return Response
-     */
-    protected function downloadInDefaultTextFormat(DeckInterface $deck, Texts $texts)
-    {
-        $content = $this->renderView(
-            'Export/default.txt.twig',
-            [
-                "deck" => $deck->getTextExport(),
-            ]
-        );
-        $content = str_replace("\n", "\r\n", $content);
-
-        $response = new Response();
-        $response->headers->set('Content-Type', 'text/plain');
-        $response->headers->set(
-            'Content-Disposition',
-            $response->headers->makeDisposition(
-                ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-                $texts->slugify($deck->getName()) . '.txt'
-            )
-        );
-
-        $response->setContent($content);
-
-        return $response;
-    }
-
-    /**
-     * @param DeckInterface $deck
-     * @param Texts $texts
-     * @return Response
-     */
-    protected function downloadInTextFormatSortedByCycle(DeckInterface $deck, Texts $texts)
-    {
-        $content = $this->renderView(
-            'Export/sortedbycycle.txt.twig',
-            [
-                "deck" => $deck->getCycleOrderExport(),
-            ]
-        );
-        $content = str_replace("\n", "\r\n", $content);
-
-        $response = new Response();
-        $response->headers->set('Content-Type', 'text/plain');
-        $response->headers->set(
-            'Content-Disposition',
-            $response->headers->makeDisposition(
-                ResponseHeaderBag::DISPOSITION_ATTACHMENT,
-                $texts->slugify($deck->getName()) . '.txt'
-            )
-        );
-
-        $response->setContent($content);
-
-        return $response;
-    }
-
-    /**
-     * @param Request $request
-     * @param TranslatorInterface $translator
-     * @param DeckManager $deckManager
-     * @return Response|RedirectResponse
-     * @throws Exception
-     */
-    #[Route(path: '/decks/bulkclone', name: 'decks_bulkclone', methods: ['POST', 'GET'])]
-    public function bulkCloneDeckAction(
-        Request $request,
-        TranslatorInterface $translator,
-        DeckManager $deckManager
-    ): Response {
-
-        /* @var EntityManager $em*/
-        $em = $this->managerRegistry->getManager();
-
-        $form = $this->createFormBuilder([])
-            ->add('decks', TextareaType::class, [
-                'help' => "Put your list of deck URLs in here. One deck per line. <br>"
-                    . "You may also provide a new deck name, which must be separated from the URL by <code>|</code>"
-                    . ".<br><br>Example: " .
-                    "<code>https://thronesdb.com/deck/view/XXXXXXXXX-XXXX-XXXX-XXXX-000000000001|New name</code>",
-                'help_html' => true,
-                'label' => 'Deck URLs',
-                'attr' => ['rows' => 15],
-            ])
-            ->add('send', SubmitType::class, [
-                'attr' => ['class' => 'btn-primary'],
-                'label' => 'Clone Decks',
-            ])
-            ->getForm();
-
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $data = $form->getData();
-            if (empty($data) || empty($data['decks'])) {
-                $this->addFlash('error', 'Empty input. Please provide at least one deck URL.');
-                return $this->render('Builder/bulkclone.html.twig', [
-                    'form' => $form->createView(),
-                ]);
-            }
-
-            $lines = array_map('trim', explode(PHP_EOL, $data['decks']));
-            $lines = array_values(array_filter($lines));
-
-            if (empty($lines)) {
-                $this->addFlash('error', 'Empty input. Please provide at least one deck URL.');
-                return $this->render('Builder/bulkclone.html.twig', [
-                    'form' => $form->createView(),
-                ]);
-            }
-
-            $totalDecksToClone = count($lines);
-
-            /* @var UserInterface $user */
-            $user = $this->getUser();
-            $availableDeckSlots = $user->getMaxNbDecks();
-            $numDecks = count($user->getDecks()) + $totalDecksToClone;
-            if ($numDecks > $availableDeckSlots) {
-                $this->addFlash('error', $translator->trans('decks.save.outOfSlots'));
-                return $this->render('Builder/bulkclone.html.twig', [
-                    'form' => $form->createView(),
-                ]);
-            }
-
-            $errors = [];
-            $successes = [];
-            $reUuid4 = '/[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}/';
-
-            $deckRepo = $em->getRepository(Deck::class);
-
-            $i = 0;
-            foreach ($lines as $line) {
-                $i++;
-                $clean = [];
-                $items = explode('|', $line, 2);
-                $hasName = (2 === count($items));
-                $clean['url'] = filter_var($items['0'], FILTER_SANITIZE_URL);
-                $clean['name'] = $hasName
-                    ? filter_var($items[1], FILTER_SANITIZE_STRING, FILTER_FLAG_NO_ENCODE_QUOTES)
-                    : '';
-
-                if (!preg_match($reUuid4, $clean['url'], $matches)) {
-                    $errors[] = "[line {$i}] {$clean['url']}"
-                        . ($hasName ? " ({$clean['name']})" : '')
-                        . ' is not a valid deck URL.';
-                    continue;
-                }
-                /* @var DeckInterface $deck */
-                $deck = $deckRepo->findOneBy(['uuid' => $matches[0]]);
-                if (!$deck) {
-                    $errors[] = "[line {$i}] Cannot find deck at {$clean['url']}"
-                    . ($hasName ? " ({$clean['name']})" : '') . '.';
-                    continue;
-                }
-                $owner = $deck->getUser();
-                if (!$owner->getIsShareDecks() && $owner->getId() !== $user->getId()) {
-                    $errors[] = "[line {$i}] {$clean['url']}"
-                        . ($hasName ? " ({$clean['name']})" : '')
-                        . ' cannot be accessed because deck-sharing is not enabled by its owner.';
-                    continue;
-                }
-
-                $content = [];
-                foreach ($deck->getSlots() as $slot) {
-                    $content[$slot->getCard()->getCode()] = $slot->getQuantity();
-                }
-                $newDeck = new Deck();
-                $newDeck->setUuid(Uuid::uuid4());
-                $newDeck->setParentDeck($deck);
-
-                $deckManager->save(
-                    $user,
-                    $newDeck,
-                    null,
-                    $hasName ? $clean['name'] : $deck->getName() . ' (Clone)',
-                    $deck->getFaction(),
-                    $deck->getDescriptionMd(),
-                    $deck->getTags(),
-                    $content,
-                    null,
-                );
-
-                $newDeckUrl = $this->generateUrl(
-                    'deck_view',
-                    ['deck_uuid' => $newDeck->getUuid()->toString()],
-                    UrlGeneratorInterface::ABSOLUTE_URL
-                );
-
-                $successes[] = "<a href=\"{$clean['url']}\" target=\"_blank\">{$clean['url']}</a> "
-                    . 'has been successfully cloned to '
-                    . "<a href=\"{$newDeckUrl}\" target=\"_blank\">{$newDeckUrl}"
-                    . ($hasName ? " ({$clean['name']})" : '')
-                    . "</a>.";
-            }
-
-            $em->flush();
-
-            foreach ($errors as $error) {
-                $this->addFlash('error', $error);
-            }
-
-            foreach ($successes as $success) {
-                $this->addFlash('notice', $success);
-            }
-
-            return $this->redirectToRoute('decks_bulkclone');
+        $user = $this->getUser();
+        if (!$user instanceof UserInterface) {
+            throw new AccessDeniedHttpException('You must be logged in.');
         }
+        return $user;
+    }
 
-        return $this->render('Builder/bulkclone.html.twig', [
-            'form' => $form->createView(),
-        ]);
+    private function findDeck(string $uuid): Deck
+    {
+        return $this->managerRegistry->getRepository(Deck::class)->findOneBy(['uuid' => $uuid])
+            ?? throw new NotFoundHttpException("This deck doesn't exist.");
+    }
+
+    private function isOwner(DeckInterface $deck): bool
+    {
+        $user = $this->getUser();
+        return $user instanceof UserInterface && $user->getId() == $deck->getUser()->getId();
+    }
+
+    /** Owner, a deck shared by link (0023), or an owner who shares all their decks */
+    private function findViewableDeck(string $uuid): Deck
+    {
+        $deck = $this->findDeck($uuid);
+        if (!$this->isOwner($deck) && !$deck->isShared() && !$deck->getUser()->getIsShareDecks()) {
+            throw new AccessDeniedHttpException('You are not allowed to view this deck. Its owner can share it by link.');
+        }
+        return $deck;
+    }
+
+    private function selectableFormat(string $code): ?Format
+    {
+        $format = $code === '' ? null : $this->formats->findOneByCode($code);
+        return $format !== null && $format->isSelectable() ? $format : null;
+    }
+
+    private function removeDeck(Deck $deck): void
+    {
+        foreach ($deck->getChildren() as $decklist) {
+            $decklist->setParent(null);
+        }
+        $this->managerRegistry->getManager()->remove($deck);
+    }
+
+    private function textFile(string $content, string $filename): Response
+    {
+        $response = new Response($content);
+        $response->headers->set('Content-Type', 'text/plain; charset=utf-8');
+        $response->headers->set('Content-Disposition', $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $filename));
+        return $response;
     }
 }

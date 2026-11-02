@@ -5,8 +5,11 @@ namespace App\Services;
 use App\Entity\Card;
 use App\Entity\Decklist;
 use App\Entity\Decklistslot;
-use App\Entity\Faction;
-use App\Entity\FactionInterface;
+use App\Entity\Card as CardEntity;
+use App\Entity\CommonDeckInterface;
+use App\Entity\Culture;
+use App\Entity\DecklistCulture;
+use Doctrine\ORM\QueryBuilder;
 use App\Entity\UserInterface;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
@@ -22,7 +25,8 @@ use Symfony\Component\Routing\RouterInterface;
  */
 class DecklistManager
 {
-    protected $faction;
+    /** Hide incomplete decks and halves unless the filters ask for them (decision 0023) */
+    protected bool $browsing = true;
     protected $page = 1;
     protected $start = 0;
     protected $limit = 30;
@@ -54,9 +58,67 @@ class DecklistManager
         $this->logger = $logger;
     }
 
-    public function setFaction(?FactionInterface $faction = null)
+    /**
+     * Lists of the user's own decklists or favorites show everything; public
+     * browsing shows complete whole decks unless the filters say otherwise.
+     */
+    public function setBrowsing(bool $browsing): void
     {
-        $this->faction = $faction;
+        $this->browsing = $browsing;
+    }
+
+    /**
+     * The browsing filters, from the query string, shared by every list (Ketura,
+     * 2026-11-01: filters, not search fields):
+     *   format=<gemp code>      target format
+     *   culture[]=<code>        has cards of each culture
+     *   incomplete=1            include decks Gemp finds problems with, or couldn't check
+     *   half=any|free_peoples|shadow  include deck halves (any), or show only that half
+     *   from=YYYY, to=YYYY      effective date (the year the deck was played)
+     */
+    public function getFilters(): array
+    {
+        $query = $this->request_stack->getCurrentRequest()?->query;
+        if ($query === null) {
+            return [];
+        }
+        $cultures = $query->all()['culture'] ?? [];
+        return array_filter([
+            'format' => preg_replace('/[^\w-]/', '', (string) $query->get('format')),
+            'culture' => array_values(array_filter(array_map(fn ($c) => preg_replace('/[^\w]/', '', (string) $c), (array) $cultures))),
+            'incomplete' => (bool) $query->get('incomplete'),
+            'half' => in_array($query->get('half'), ['any', CardEntity::SIDE_FREE_PEOPLES, CardEntity::SIDE_SHADOW], true) ? $query->get('half') : null,
+            'from' => (int) $query->get('from') ?: null,
+            'to' => (int) $query->get('to') ?: null,
+        ]);
+    }
+
+    private function applyFilters(QueryBuilder $qb): void
+    {
+        $filters = $this->getFilters();
+        if (!empty($filters['format'])) {
+            $qb->andWhere('d.targetFormat = :format')->setParameter('format', $filters['format']);
+        }
+        foreach ($filters['culture'] ?? [] as $i => $code) {
+            $qb->andWhere("EXISTS (SELECT dc$i FROM " . DecklistCulture::class . " dc$i JOIN dc$i.culture cu$i WHERE dc$i.decklist = d AND cu$i.code = :culture$i)")
+                ->setParameter("culture$i", $code);
+        }
+        if (!empty($filters['from'])) {
+            $qb->andWhere('d.effectiveDate >= :from')->setParameter('from', $filters['from'] . '-01-01');
+        }
+        if (!empty($filters['to'])) {
+            $qb->andWhere('d.effectiveDate <= :to')->setParameter('to', $filters['to'] . '-12-31');
+        }
+        $half = $filters['half'] ?? null;
+        if (in_array($half, [CardEntity::SIDE_FREE_PEOPLES, CardEntity::SIDE_SHADOW], true)) {
+            $qb->andWhere('d.half = :half')->setParameter('half', $half);
+        } elseif ($half === null && $this->browsing) {
+            $qb->andWhere('d.half IS NULL');
+        }
+        // a half is never "complete" as a deck, so asking for halves includes them whatever their validation
+        if (empty($filters['incomplete']) && $this->browsing && $half === null) {
+            $qb->andWhere('d.completeness = :complete')->setParameter('complete', CommonDeckInterface::COMPLETENESS_COMPLETE);
+        }
     }
 
     public function setLimit($limit)
@@ -83,10 +145,7 @@ class DecklistManager
         $qb = $this->doctrine->createQueryBuilder();
         $qb->select('d');
         $qb->from(Decklist::class, 'd');
-        if ($this->faction) {
-            $qb->where('d.faction = :faction');
-            $qb->setParameter('faction', $this->faction);
-        }
+        $this->applyFilters($qb);
         $qb->setFirstResult($this->start);
         $qb->setMaxResults($this->limit);
         $qb->distinct();
@@ -199,37 +258,30 @@ class DecklistManager
     {
         $request = $this->request_stack->getCurrentRequest();
 
-        $cards_code = $request->query->get('cards');
+        $cards_code = $request->query->all()['cards'] ?? [];
         if (!is_array($cards_code)) {
             $cards_code = [];
         }
 
-        $faction_code = filter_var($request->query->get('faction'), FILTER_SANITIZE_STRING);
-        if ($faction_code) {
-            $faction = $this->doctrine->getRepository(Faction::class)->findOneBy(['code' => $faction_code]);
-        }
+        $author_name = trim(strip_tags((string) $request->query->get('author')));
 
-        $author_name = filter_var($request->query->get('author'), FILTER_SANITIZE_STRING);
+        $decklist_name = trim(strip_tags((string) $request->query->get('name')));
 
-        $decklist_name = filter_var($request->query->get('name'), FILTER_SANITIZE_STRING);
-
-        $tournament = filter_var($request->query->get('tournament'), FILTER_SANITIZE_NUMBER_INT);
+        $tournament = (int) $request->query->get('tournament');
 
         $sort = $request->query->get('sort');
 
-        $packs = $request->query->get('packs');
+        $packs = $request->query->all()['packs'] ?? null;
 
         $qb = $this->getQueryBuilder();
         $joinTables = [];
 
-        if (!empty($faction)) {
-            $qb->andWhere('d.faction = :faction');
-            $qb->setParameter('faction', $faction);
-        }
         if (!empty($author_name)) {
+            // a registered author, or the source's author of a seeded deck (phase3/06)
             $qb->innerJoin('d.user', 'u');
             $joinTables[] = 'd.user';
-            $qb->andWhere('u.username = :username');
+            $qb->leftJoin('d.source', 'src');
+            $qb->andWhere('u.username = :username OR src.legacyAuthor = :username');
             $qb->setParameter('username', $author_name);
         }
         if (!empty($decklist_name)) {

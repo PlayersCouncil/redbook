@@ -187,7 +187,7 @@ class Oauth2Controller extends AbstractController
      */
     #[Route(path: '/api/oauth2/deck/save/{id}', name: 'api_oauth2_save_deck', methods: ['PUT'], requirements: ['id' => '\d+'])]
     #[OA\Tag(name: 'Protected')]
-    #[OA\RequestBody(content: new OA\MediaType(mediaType: 'application/x-www-form-urlencoded', schema: new OA\Schema(required: ['name'], properties: [new OA\Property(property: 'name', type: 'string', description: 'Name of the Deck'), new OA\Property(property: 'decklist_id', type: 'integer', description: 'Identifier of the Decklist from which the Deck is copied'), new OA\Property(property: 'description_md', type: 'string', description: 'Description of the Decklist in Markdown'), new OA\Property(property: 'faction_code', type: 'string', description: 'Code of the faction of the Deck'), new OA\Property(property: 'tags', type: 'string', description: 'Space-separated list of tags'), new OA\Property(property: 'slots', type: 'string', description: 'Content of the Decklist as a JSON object')])))]
+    #[OA\RequestBody(content: new OA\MediaType(mediaType: 'application/x-www-form-urlencoded', schema: new OA\Schema(required: ['name'], properties: [new OA\Property(property: 'name', type: 'string', description: 'Name of the Deck'), new OA\Property(property: 'decklist_id', type: 'integer', description: 'Identifier of the Decklist from which the Deck is copied'), new OA\Property(property: 'description_md', type: 'string', description: 'Description of the Decklist in Markdown'), new OA\Property(property: 'target_format', type: 'string', description: 'Gemp format code'), new OA\Property(property: 'effective_date', type: 'string', description: 'YYYY-MM-DD'), new OA\Property(property: 'tags', type: 'string', description: 'Space-separated list of tags'), new OA\Property(property: 'slots', type: 'string', description: 'Content as a JSON object of blueprint ID => quantity; the Ring-bearer as "rb:" + blueprint ID')])))]
     #[OA\Response(response: 200, description: 'Returned when successful')]
     public function saveDeckAction($id, Request $request, DeckManager $deckManager)
     {
@@ -202,38 +202,15 @@ class Oauth2Controller extends AbstractController
             }
         }
 
-        $faction_code = filter_var(
-            $request->get('faction_code'),
-            FILTER_SANITIZE_STRING,
-            FILTER_FLAG_NO_ENCODE_QUOTES
-        );
-        if (!$faction_code) {
-            return new JsonResponse([
-                'success' => false,
-                'msg'     => "Faction code missing",
-            ]);
-        }
-        /* @var FactionInterface $faction */
-        $faction = $this->managerRegistry
-            ->getManager()
-            ->getRepository(Faction::class)
-            ->findOneBy(['code' => $faction_code]);
-        if (!$faction) {
-            return new JsonResponse([
-                'success' => false,
-                'msg'     => "Faction code invalid",
-            ]);
-        }
-
-        $slots = (array) json_decode($request->get('slots'));
+        $slots = (array) json_decode((string) $request->get('slots'), true);
         if (!count($slots)) {
             return new JsonResponse([
                 'success' => false,
                 'msg'     => "Slots missing",
             ]);
         }
-        foreach ($slots as $card_code => $qty) {
-            if (!is_string($card_code) || !is_integer($qty)) {
+        foreach ($slots as $key => $qty) {
+            if (!is_string($key) || !is_integer($qty)) {
                 return new JsonResponse([
                     'success' => false,
                     'msg'     => "Slots invalid",
@@ -241,11 +218,7 @@ class Oauth2Controller extends AbstractController
             }
         }
 
-        $name = filter_var(
-            $request->get('name'),
-            FILTER_SANITIZE_STRING,
-            FILTER_FLAG_NO_ENCODE_QUOTES
-        );
+        $name = trim(strip_tags((string) $request->get('name')));
         if (!$name) {
             return new JsonResponse([
                 'success' => false,
@@ -253,21 +226,15 @@ class Oauth2Controller extends AbstractController
             ]);
         }
 
-        $decklist_id = filter_var($request->get('decklist_id'), FILTER_SANITIZE_NUMBER_INT);
-        $description = trim($request->get('description'));
-        $tags = filter_var($request->get('tags'), FILTER_SANITIZE_STRING, FILTER_FLAG_NO_ENCODE_QUOTES);
-
-        $deckManager->save(
-            $this->getUser(),
-            $deck,
-            $decklist_id,
-            $name,
-            $faction,
-            $description,
-            $tags,
-            $slots,
-            null
-        );
+        $deckManager->save($this->getUser(), $deck, [
+            'name' => $name,
+            'decklist_id' => (int) $request->get('decklist_id') ?: null,
+            'description' => trim((string) $request->get('description_md', $request->get('description', ''))),
+            'tags' => strip_tags((string) $request->get('tags')),
+            'content' => $slots,
+            'target_format' => $request->get('target_format') ?: null,
+            'effective_date' => $request->get('effective_date') ?: null,
+        ]);
 
         $this->managerRegistry->getManager()->flush();
 

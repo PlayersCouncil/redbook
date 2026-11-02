@@ -64,8 +64,7 @@
 {% endmacro %}
 
 {% macro slot_with_icons(slot) %}
-    {{ slot.quantity }}x <span class="icon icon-{{ slot.card.type.code }} fg-{{ slot.card.faction.code }}"></span>
-    <a href="{{ path('cards_zoom', {card_code: slot.card.code }) }}" class="card card-tip" data-code="{{ slot.card.code }}">
-        {{ slot.card.name }} {% if slot.card.isMultiple %}({{ slot.card.pack.code }}) {% endif %}
-    </a>
+    {{ slot.quantity }}x
+    <a href="{{ path('cards_zoom', {card_code: slot.card.code }) }}" class="card card-tip" data-code="{{ slot.card.code }}">{% if slot.card.isUnique %}&bull;{% endif %}{{ slot.card.fullName }}</a>
+    {% if slot.role == 'ring_bearer' %}<span class="label label-default">{{ 'deck.ring_bearer' | trans }}</span>{% endif %}
 {% endmacro %}

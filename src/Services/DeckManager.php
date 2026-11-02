@@ -2,191 +2,219 @@
 
 namespace App\Services;
 
+use App\Classes\DeckContent;
 use App\Entity\Card;
+use App\Entity\Deck;
 use App\Entity\Deckchange;
 use App\Entity\DeckInterface;
 use App\Entity\Decklist;
 use App\Entity\Deckslot;
-use App\Entity\FactionInterface;
+use App\Entity\Faction;
+use App\Entity\Format;
 use App\Entity\UserInterface;
+use DateTime;
+use DateTimeInterface;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
-use Psr\Log\LoggerInterface;
+use InvalidArgumentException;
 
+/**
+ * Creating and saving decks (phase3/03).
+ */
 class DeckManager
 {
-    protected EntityManagerInterface $doctrine;
-
-    protected DeckValidationHelper $deck_validation_helper;
-
-    protected AgendaHelper $agenda_helper;
-
-    protected Diff $diff;
-
-    protected LoggerInterface $logger;
-
     public function __construct(
-        EntityManagerInterface $doctrine,
-        DeckValidationHelper $deck_validation_helper,
-        AgendaHelper $agenda_helper,
-        Diff $diff,
-        LoggerInterface $logger
+        protected EntityManagerInterface $em,
+        protected DeckValidator $validator,
+        protected Diff $diff,
     ) {
-        $this->doctrine = $doctrine;
-        $this->deck_validation_helper = $deck_validation_helper;
-        $this->agenda_helper = $agenda_helper;
-        $this->diff = $diff;
-        $this->logger = $logger;
     }
 
-    /**
-     * @param UserInterface $user
-     * @return Collection
-     * @see UserInterface::getDecks()
-     */
-    public function getByUser(UserInterface $user)
+    /** @see UserInterface::getDecks() */
+    public function getByUser(UserInterface $user): Collection
     {
         return $user->getDecks();
     }
 
-    /**
-     * @param UserInterface $user
-     * @param DeckInterface $deck
-     * @param int $decklist_id
-     * @param string $name
-     * @param FactionInterface $faction
-     * @param string $description
-     * @param string|array $tags
-     * @param array $content
-     * @param DeckInterface $source_deck
-     * @return int
-     */
-    public function save($user, $deck, $decklist_id, $name, $faction, $description, $tags, $content, $source_deck)
+    /** The "_" placeholder faction every deck carries (decision 0018) */
+    public function getPlaceholderFaction(): Faction
     {
-        $deck_content = [];
+        return $this->em->getRepository(Faction::class)->findOneBy(['code' => '_'])
+            ?? throw new InvalidArgumentException('The "_" faction is missing; run the fixtures');
+    }
 
-        if ($decklist_id) {
-            /* @var DecklistInterface $decklist */
-            $decklist = $this->doctrine->getRepository(Decklist::class)->find($decklist_id);
+    /** The format a new deck targets when none is chosen: the first hall format */
+    public function getDefaultFormat(): ?string
+    {
+        $formats = $this->em->getRepository(Format::class)->findBy(['hall' => true, 'retired' => false], ['position' => 'ASC'], 1);
+        return $formats ? $formats[0]->getCode() : null;
+    }
+
+    /**
+     * Saves a deck.
+     *
+     * @param array{name?: string, description?: string, tags?: string|array|null, content: array<string, int>,
+     *     target_format?: string, effective_date?: DateTimeInterface|string|null, decklist_id?: int|null,
+     *     shared?: bool} $data
+     * @param DeckInterface|null $sourceDeck the deck as it was saved before, to record the change in its history
+     */
+    public function save(UserInterface $user, DeckInterface $deck, array $data, ?DeckInterface $sourceDeck = null): void
+    {
+        if (!empty($data['decklist_id'])) {
+            $decklist = $this->em->getRepository(Decklist::class)->find($data['decklist_id']);
             if ($decklist) {
                 $deck->setParent($decklist);
             }
         }
 
-        $deck->setName($name);
-        $deck->setFaction($faction);
-        $deck->setDescriptionMd($description);
         $deck->setUser($user);
+        $deck->setName(trim((string) ($data['name'] ?? '')) ?: 'Untitled deck');
+        $deck->setDescriptionMd($data['description'] ?? $deck->getDescriptionMd() ?? '');
+        $deck->setFaction($this->getPlaceholderFaction());
+        $deck->setTargetFormat($data['target_format'] ?? ($deck->getTargetFormat() ?: (string) $this->getDefaultFormat()));
+        $effective = $data['effective_date'] ?? null;
+        if (is_string($effective) && $effective !== '') {
+            $effective = DateTime::createFromFormat('!Y-m-d', $effective) ?: null;
+        }
+        $deck->setEffectiveDate($effective instanceof DateTimeInterface ? $effective : ($deck->getId() ? $deck->getEffectiveDate() : new DateTime('today')));
+        if (isset($data['shared'])) {
+            $deck->setShared((bool) $data['shared']);
+        }
         $deck->setMinorVersion($deck->getMinorVersion() + 1);
-        $cards = [];
-        /* @var PackInterface $latestPack */
+
+        $tags = $data['tags'] ?? [];
+        if (is_string($tags)) {
+            $tags = preg_split('/\s+/', trim($tags), -1, PREG_SPLIT_NO_EMPTY);
+        }
+        $deck->setTags(implode(' ', array_unique(array_values($tags ?? []))));
+
+        $content = $this->normalizeContent($data['content']);
+        [$cards] = $this->loadCards($content);
+
         $latestPack = null;
-        foreach ($content as $card_code => $qty) {
-            $card = $this->doctrine->getRepository(Card::class)->findOneBy(array(
-                "code" => $card_code
-            ));
-            if (!$card) {
-                continue;
-            }
-
-            $cards [$card_code] = $card;
-
+        foreach ($cards as $card) {
             $pack = $card->getPack();
-            if (!$latestPack) {
-                $latestPack = $pack;
-            } elseif (empty($pack->getDateRelease())) {
-                $latestPack = $pack;
-            } elseif ($latestPack->getDateRelease() < $pack->getDateRelease()) {
+            if (!$latestPack || ($pack->getDateRelease() && $latestPack->getDateRelease() < $pack->getDateRelease())) {
                 $latestPack = $pack;
             }
         }
         $deck->setLastPack($latestPack);
-        if (empty($tags)) {
-            // tags can never be empty. if it is we put faction in
-            $tags = [$faction->getCode()];
-        }
-        if (is_string($tags)) {
-            $tags = preg_split('/\s+/', $tags);
-        }
-        $tags = implode(' ', array_unique(array_values($tags)));
-        $deck->setTags($tags);
-        $this->doctrine->persist($deck);
+        $this->em->persist($deck);
 
-        // on the deck content
-
-        if ($source_deck) {
-            // compute diff between current content and saved content
-            list($listings) = $this->diff->diffContents(array(
-                $content,
-                $source_deck->getSlots()->getContent()
-            ));
-            // remove all change (autosave) since last deck update (changes are sorted)
-            $changes = $this->getUnsavedChanges($deck);
-            foreach ($changes as $change) {
-                $this->doctrine->remove($change);
+        if ($sourceDeck) {
+            // record the change since the last save in the deck's history
+            [$listings] = $this->diff->diffContents([$content, $sourceDeck->getSlots()->getContent()]);
+            foreach ($this->getUnsavedChanges($deck) as $change) {
+                $this->em->remove($change);
             }
-            $this->doctrine->flush();
-            // save new change unless empty
-            if (count($listings [0]) || count($listings [1])) {
+            if (count($listings[0]) || count($listings[1])) {
                 $change = new Deckchange();
                 $change->setDeck($deck);
                 $change->setVariation(json_encode($listings));
                 $change->setIsSaved(true);
                 $change->setVersion($deck->getVersion());
-                $this->doctrine->persist($change);
-                $this->doctrine->flush();
+                $this->em->persist($change);
             }
-            // copy version
-            $deck->setMajorVersion($source_deck->getMajorVersion());
-            $deck->setMinorVersion($source_deck->getMinorVersion());
+            $deck->setMajorVersion($sourceDeck->getMajorVersion());
+            $deck->setMinorVersion($sourceDeck->getMinorVersion());
         }
+
+        $this->setSlots($deck, $content, $cards);
+        $this->validator->validateDeck($deck);
+    }
+
+    /** Replaces a deck's slots with the content map */
+    public function setSlots(DeckInterface $deck, array $content, ?array $cards = null): void
+    {
+        $cards ??= $this->loadCards($content)[0];
         foreach ($deck->getSlots() as $slot) {
             $deck->removeSlot($slot);
-            $this->doctrine->remove($slot);
+            $this->em->remove($slot);
         }
-
-        foreach ($content as $card_code => $qty) {
-            $card = $cards [$card_code];
+        foreach ($content as $key => $quantity) {
+            [$code, $isRingBearer] = DeckContent::parseKey((string) $key);
+            if (!isset($cards[$code]) || $quantity < 1) {
+                continue;
+            }
             $slot = new Deckslot();
-            $slot->setQuantity($qty);
-            $slot->setCard($card);
+            $slot->setCard($cards[$code]);
+            $slot->setQuantity($quantity);
+            $slot->setRole($isRingBearer ? DeckContent::ROLE_RING_BEARER : DeckContent::roleForType($cards[$code]->getType()->getCode()));
             $slot->setDeck($deck);
             $deck->addSlot($slot);
-            $deck_content [$card_code] = array(
-                'card' => $card,
-                'qty' => $qty
-            );
         }
-
-        $deck->setProblem($this->deck_validation_helper->findProblem($deck));
-
-        return $deck->getId();
     }
 
-    public function revert($deck)
+    /** Positive integer quantities keyed by content key; a single Ring-bearer */
+    public function normalizeContent(array $content): array
     {
-        $changes = $this->getUnsavedChanges($deck);
-        foreach ($changes as $change) {
-            $this->doctrine->remove($change);
-        }
-        // if all remaining cards are agendas, delete it
-        $nonAgendaCards = 0;
-        foreach ($deck->getSlots() as $slot) {
-            if ($slot->getCard()->getType()->getCode() !== 'agenda') {
-                $nonAgendaCards += $slot->getQuantity();
+        $clean = [];
+        $ringBearer = false;
+        foreach ($content as $key => $quantity) {
+            $key = trim((string) $key);
+            $quantity = (int) $quantity;
+            if ($quantity < 1 || !preg_match('/^(rb:)?\d+_\d+$/', $key)) {
+                continue;
             }
+            if (str_starts_with($key, DeckContent::RING_BEARER_PREFIX)) {
+                if ($ringBearer) {
+                    continue;
+                }
+                $ringBearer = true;
+                $quantity = 1;
+            }
+            $clean[$key] = min($quantity, 99);
         }
-        if ($nonAgendaCards === 0) {
-            $this->doctrine->remove($deck);
-        }
-        $this->doctrine->flush();
+        return $clean;
     }
 
-    public function getUnsavedChanges($deck)
+    /** @return array{0: array<string, Card>, 1: string[]} cards by blueprint ID, and unknown IDs */
+    public function loadCards(array $content): array
     {
-        return $this->doctrine->getRepository(Deckchange::class)->findBy(array(
-                    'deck' => $deck,
-                    'isSaved' => false
-        ));
+        $codes = array_unique(array_map(fn ($key) => DeckContent::parseKey((string) $key)[0], array_keys($content)));
+        $cards = [];
+        foreach ($this->em->getRepository(Card::class)->findBy(['code' => $codes]) as $card) {
+            $cards[$card->getCode()] = $card;
+        }
+        return [$cards, array_values(array_diff($codes, array_keys($cards)))];
+    }
+
+    /** A new deck for the user, not yet saved */
+    public function create(UserInterface $user, string $name, string $format, array $content = []): Deck
+    {
+        $deck = new Deck();
+        $deck->setUuid(\Ramsey\Uuid\Uuid::uuid4());
+        $this->save($user, $deck, ['name' => $name, 'target_format' => $format, 'content' => $content]);
+        return $deck;
+    }
+
+    /** A copy of another deck for the user */
+    public function copy(UserInterface $user, DeckInterface $source, ?string $name = null): Deck
+    {
+        $deck = new Deck();
+        $deck->setUuid(\Ramsey\Uuid\Uuid::uuid4());
+        $deck->setParentDeck($source);
+        $this->save($user, $deck, [
+            'name' => $name ?? $source->getName() . ' (copy)',
+            'description' => $source->getDescriptionMd(),
+            'tags' => $source->getTags(),
+            'content' => $source->getSlots()->getContent(),
+            'target_format' => $source->getTargetFormat(),
+            'effective_date' => $source->getEffectiveDate(),
+        ]);
+        return $deck;
+    }
+
+    public function revert(DeckInterface $deck): void
+    {
+        foreach ($this->getUnsavedChanges($deck) as $change) {
+            $this->em->remove($change);
+        }
+        $this->em->flush();
+    }
+
+    public function getUnsavedChanges(DeckInterface $deck): array
+    {
+        return $this->em->getRepository(Deckchange::class)->findBy(['deck' => $deck, 'isSaved' => false]);
     }
 }

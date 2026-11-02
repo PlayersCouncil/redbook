@@ -48,6 +48,22 @@ class DeckValidation
         );
     }
 
+    /**
+     * Valid in the format as Red Book shows it: for a PC errata format Gemp also
+     * validates with the errata applied, and a deck that is legal once its cards
+     * are converted counts (decision 0021: decks keep raw blueprint IDs).
+     */
+    public function isValid(): bool
+    {
+        return $this->valid || $this->validWithErrata === true;
+    }
+
+    /** The problems that matter: with errata applied when the format has errata */
+    public function getRelevantProblems(): array
+    {
+        return $this->problemsWithErrata ?? $this->problems;
+    }
+
     public function toArray(): array
     {
         return [

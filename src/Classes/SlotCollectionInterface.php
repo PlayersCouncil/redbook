@@ -2,133 +2,55 @@
 
 namespace App\Classes;
 
-use App\Entity\PackInterface;
 use App\Entity\SlotInterface;
 use ArrayAccess;
 use Countable;
-use Doctrine\Common\Collections\Collection;
 use IteratorAggregate;
 
 /**
- * Interface for a collection of SlotInterface
+ * A deck's slots (phase3/03): one per card and role.
  */
 interface SlotCollectionInterface extends Countable, IteratorAggregate, ArrayAccess
 {
-    /**
-     * Adds a slot to the collection.
-     * @param SlotInterface $slot
-     */
     public function add(SlotInterface $slot);
 
-    /**
-     * Removes a slot from the collection.
-     * @param SlotInterface $slot
-     */
     public function removeElement(SlotInterface $slot);
-    /**
-     * Get quantity of cards
-     * @return integer
-     */
-    public function countCards();
 
-    /**
-     * Get included packs
-     * @return PackInterface[]
-     */
-    public function getIncludedPacks();
+    /** Number of cards, copies included */
+    public function countCards(): int;
 
-    /**
-     * Get all slots sorted by type code (including plots)
-     * @return array
-     */
-    public function getSlotsByType();
+    /** @return SlotInterface[] */
+    public function getSlots(): array;
 
-    /**
-     * Get all slots sorted by cycle number (including plots)
-     * @return array
-     */
-    public function getSlotsByCycleOrder();
+    /** @return array<string, int> the content map (DeckContent) */
+    public function getContent(): array;
 
-    /**
-     * Get all slot counts sorted by type code (excluding plots)
-     * @return array
-     */
-    public function getCountByType();
+    public function byRole(string $role): self;
 
-    /**
-     * Get the plot deck
-     * @return SlotCollectionInterface
-     */
-    public function getPlotDeck();
+    public function getRingBearer(): ?SlotInterface;
 
-    /**
-     * Get all the agendas
-     * @return SlotCollectionInterface
-     */
-    public function getAgendas();
+    public function getRing(): ?SlotInterface;
 
-    /**
-     * Return true is agenda is Alliance (06018)
-     * @return boolean
-     */
-    public function isAlliance();
+    public function getSites(): self;
 
-    /**
-     * Get the draw deck
-     * @return SlotCollectionInterface
-     */
-    public function getDrawDeck();
+    public function getDrawDeck(): self;
 
-    /**
-     * Get the content as an array card_code => qty
-     * @return array
-     */
-    public function getContent();
+    public function getMap(): ?SlotInterface;
 
-    /**
-     *
-     * @param string $faction_code
-     * @return SlotCollectionDecorator
-     */
-    public function filterByFaction($faction_code);
+    public function getFreePeoples(): self;
 
-    /**
-     * Returns only any cards that don't match the given faction.
-     * @param string $faction_code
-     * @return SlotCollectionDecorator
-     */
-    public function excludeByFaction($faction_code);
+    public function getShadow(): self;
 
-    /**
-     * Returns only cards that match the given type.
-     * @param string $type_code
-     * @return SlotCollectionDecorator
-     */
-    public function filterByType($type_code);
+    /** @return array<string, array{culture: \App\Entity\Culture, count: int}> draw deck cards per culture code */
+    public function getCultures(): array;
 
-    /**
-     * Returns only any cards that don't match the given type.
-     * @param string $type_code
-     * @return SlotCollectionDecorator
-     */
-    public function excludeByType($type_code);
+    public function filterByType(string $typeCode): self;
 
-    /**
-     *
-     * @param string $trait
-     * @return SlotCollectionDecorator
-     */
-    public function filterByTrait($trait);
+    public function filterByCulture(string $cultureCode): self;
 
-    /**
-     * Returns the collection of slots.
-     * @return Collection
-     */
-    public function getSlots();
+    /** @return array<int, array{pack: \App\Entity\PackInterface, nb: int}> sets used, in release order */
+    public function getIncludedPacks(): array;
 
-    /**
-     * Returns a map of limits and total copies per card in the collection, keyed off by card name.
-     * @return array
-     */
-    public function getCopiesAndDeckLimit();
+    /** The Gemp deck string (DeckContent::toGempString) */
+    public function toGempString(): string;
 }

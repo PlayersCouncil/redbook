@@ -9,16 +9,6 @@ use Ramsey\Uuid\UuidInterface;
 interface DeckInterface extends CommonDeckInterface, JsonSerializable
 {
     /**
-     * @param string $problem
-     */
-    public function setProblem($problem);
-
-    /**
-     * @return string
-     */
-    public function getProblem();
-
-    /**
      * @param string $tags
      */
     public function setTags($tags);
@@ -152,4 +142,8 @@ interface DeckInterface extends CommonDeckInterface, JsonSerializable
      * @return UuidInterface|null
      */
     public function getUuid();
+
+    public function isShared(): bool;
+
+    public function setShared(bool $shared): void;
 }
