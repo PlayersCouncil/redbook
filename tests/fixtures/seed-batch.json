@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "source": "decktech",
+  "generatedAt": "2026-11-02T00:00:00Z",
+  "generator": "hand-written fixture for tests (not real archive data)",
+  "decks": [
+    {
+      "sourceId": "fixture-1",
+      "sourceUrl": "https://example.invalid/decktech/1",
+      "archiveUrl": "https://web.archive.org/web/2003/https://example.invalid/decktech/1",
+      "title": "Fixture Elves and Moria",
+      "legacyAuthor": "FixtureAuthor",
+      "postedDate": "2003-08",
+      "effectiveDate": "2003-08-14",
+      "formatAsWritten": "Standard",
+      "targetFormat": "fotr_block",
+      "ringBearer": "1_290",
+      "ring": "1_2",
+      "sites": ["1_319", "1_327", "1_337", "1_343", "1_349", "1_350", "1_353", "1_356", "1_360"],
+      "drawDeck": [
+        {"card": "1_50", "count": 2},
+        {"card": "1_30", "count": 1},
+        {"card": "1_165", "count": 3},
+        {"card": "999_1", "count": 1}
+      ],
+      "unresolved": [
+        {"line": "2x Gandalfs Pipe", "count": 2, "section": "draw", "reason": "ambiguous title"}
+      ],
+      "rawDecklist": "Frodo, Son of Drogo\nThe One Ring, The Ruling Ring\n...\n2x Legolas, Greenleaf\n2x Gandalfs Pipe",
+      "description": "<p>A <b>fixture</b> deck.</p><p>Not a real deck.</p>",
+      "descriptionFormat": "html",
+      "tournament": {"name": "Fixture Regionals", "date": "2003-08-14", "placing": "1st", "players": 12, "location": "Nowhere"},
+      "ratings": {"score": 4.2, "votes": 17, "scale": "1-5"},
+      "comments": [{"author": "Commenter", "date": "2003-08-15", "text": "Nice deck", "format": "text"}]
+    },
+    {
+      "sourceId": "fixture-2",
+      "sourceUrl": "https://example.invalid/decktech/2",
+      "title": "Fixture Shadow half",
+      "legacyAuthor": "Someone Else",
+      "postedDate": "2004",
+      "targetFormat": null,
+      "drawDeck": [{"card": "1_165", "count": 4}],
+      "rawDecklist": "4x Goblin Runner"
+    }
+  ]
+}
