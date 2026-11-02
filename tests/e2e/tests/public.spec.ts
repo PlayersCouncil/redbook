@@ -6,6 +6,7 @@ import { baseURL } from '../playwright.config';
 test('home page renders with navigation', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('nav.navbar')).toBeVisible();
+  await expect(page.locator('nav.navbar')).toContainText('Red Book');
   await expect(page.getByRole('link', { name: 'Decklists' }).first()).toBeVisible();
   await snap(page, 'home page');
   // The built CSS and JS bundles (gulp output) are referenced and load
@@ -15,23 +16,36 @@ test('home page renders with navigation', async ({ page }) => {
   expect(js).toBeGreaterThan(0);
 });
 
-test('card search finds cards', async ({ page }) => {
-  await page.goto('/find?q=Eddard');
-  await expect(page.locator('body')).toContainText('Eddard Stark');
-  await snap(page, 'search results for Eddard');
+test('card search finds cards by name and by key', async ({ page }) => {
+  await page.goto('/find?q=legolas');
+  await expect(page.locator('body')).toContainText('Legolas, Greenleaf');
+  await page.goto('/find?q=f:elven+t:companion');
+  await expect(page.locator('body')).toContainText('Arwen');
+  await snap(page, 'Elven companions');
 });
 
-test('a card page shows the card', async ({ page }) => {
-  await page.goto('/card/01001');
-  await expect(page.locator('body')).toContainText('A Clash of Kings');
-  await snap(page, 'card 01001');
+test('a card page shows the card, its revisions and its errata', async ({ page }) => {
+  await page.goto('/card/1_50');
+  await expect(page.locator('body')).toContainText('Legolas');
+  await expect(page.locator('body')).toContainText('51_50');
+  await snap(page, 'card 1_50');
+});
+
+test('formats are copied from Gemp, without the debug format', async ({ page, request }) => {
+  await page.goto('/formats');
+  await expect(page.locator('body')).toContainText('Fellowship Block');
+  await page.goto('/formats/standard');
+  await expect(page.locator('body')).toContainText('Banned');
+  const formats = await (await request.get('/api/public/formats/')).json();
+  expect(formats.length).toBeGreaterThan(10);
+  expect(formats.map((f) => f.code)).not.toContain('debug');
 });
 
 test('decklist listings load', async ({ page }) => {
   for (const type of ['popular', 'recent', 'halloffame']) {
     const res = await page.goto(`/decklists/${type}`);
     expect(res?.status(), type).toBe(200);
-    await snap(page, `decklists: ${type}`);
+    await expect(page.locator('form.decklist-filters')).toBeVisible();
   }
 });
 
@@ -42,12 +56,13 @@ test('anonymous users are sent to the login page for their decks', async ({ page
 
 test('public card API returns the card pool', async ({ request }) => {
   const cards = await (await request.get('/api/public/cards/')).json();
-  expect(cards.length).toBeGreaterThan(1000);
+  expect(cards.length).toBeGreaterThan(3000);
   expect(cards[0]).toHaveProperty('code');
-  expect(cards[0]).toHaveProperty('name');
+  expect(cards[0]).toHaveProperty('culture_code');
 
-  const card = await (await request.get('/api/public/card/01001')).json();
-  expect(card.name).toBe('A Clash of Kings');
+  const card = await (await request.get('/api/public/card/1_50')).json();
+  expect(card.name).toBe('Legolas');
+  expect(card.subtitle).toBe('Greenleaf');
 
   const packs = await (await request.get('/api/public/packs/')).json();
   expect(packs.length).toBeGreaterThan(10);

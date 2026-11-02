@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { test, expect, runId, waitForCardData, snap } from '../helpers/test';
+import { test, expect, runId, snap } from '../helpers/test';
 import { storageFor } from '../helpers/users';
 
 // Publishing a deck as a decklist, and what other users can do with it:
@@ -14,31 +14,33 @@ const decklistName = `E2E decklist ${runId}`;
 let decklistUrl = '';
 let decklistId = '';
 
-test('publish a deck as a decklist', async ({ page }) => {
+test('publish a deck as a decklist, with a play record', async ({ page }) => {
   const deckName = `E2E to publish ${runId}`;
-  const text = fs
-    .readFileSync(path.join(__dirname, '..', 'fixtures', 'stark-core.txt'), 'utf8')
-    .replace(/^.*$/m, deckName);
+  const [, gemp] = fs.readFileSync(path.join(__dirname, '..', 'fixtures', 'fellowship-gemp.txt'), 'utf8').trim().split('\n');
 
   await page.goto('/deck/import');
-  await waitForCardData(page);
-  await page.fill('#content', text);
-  await page.click('#btn-import');
-  await expect(page.locator('body')).toContainText('Draw deck: 60 cards');
-  await page.click('#btn-save');
-  await expect(page).toHaveURL(/\/decks/);
-  await page.getByRole('link', { name: deckName }).first().click();
+  await page.selectOption('#target_format', 'fotr_block');
+  await page.fill('#content', `${deckName}\n${gemp}`);
+  await page.click('form[action$="/deck/fileimport"] button[type=submit]');
+  await expect(page).toHaveURL(/\/deck\/edit\//);
+  await page.locator('#save_form button[type=submit].btn-success').click();
+  await expect(page).toHaveURL(/\/deck\/view\//);
 
   await page.click('#btn-publish');
   await expect(page).toHaveURL(/\/deck\/publish\//);
   await page.fill('#name', decklistName);
   await page.fill('#descriptionMd', 'Published by the **smoke test**.');
+  await page.fill('input[name="play_event[]"]', `E2E Regionals ${runId}`);
+  await page.fill('input[name="play_placing[]"]', '1st');
   await snap(page, 'publish form');
   await page.click('form[action="/decklist/create"] button[type=submit]');
 
   await expect(page).toHaveURL(/\/decklist\/view\/(\d+)\//);
   await expect(page.locator('h1')).toContainText(decklistName);
   await expect(page.locator('body')).toContainText('Published by the smoke test.');
+  await expect(page.locator('.deck-validation')).toContainText('Legal in Fellowship Block');
+  await expect(page.locator('.decklist-plays')).toContainText(`E2E Regionals ${runId}`);
+  await expect(page.locator('.deck-content')).toContainText('Ring-bearer');
   await snap(page, 'decklist published');
   decklistUrl = page.url();
   decklistId = decklistUrl.match(/\/decklist\/view\/(\d+)\//)![1];
@@ -70,7 +72,7 @@ test('another user likes, favourites and comments on it', async ({ pageAs }) => 
     page.waitForResponse((r) => r.url().includes('/user/comment') && r.request().method() === 'POST'),
     page.locator('form:has(#comment-form-text) button[type=submit]').click(),
   ]);
-  await expect(page.locator('.alert-success')).toContainText('comment has been posted');
+  await expect(page.locator('.alert-success[role=alert]')).toContainText('comment has been posted');
   await snap(page, 'liked, favourited, comment posted');
 
   // The counts are stored, not just updated in the page
@@ -99,5 +101,8 @@ test('the public API serves the decklist', async ({ request }) => {
   const decklist = await res.json();
   expect(decklist.name).toBe(decklistName);
   const total = Object.values(decklist.slots as Record<string, number>).reduce((a, b) => a + b, 0);
-  expect(total).toBe(67); // 60 draw + 7 plots
+  expect(total).toBe(71); // Ring-bearer, Ring, 9 sites, 60 draw
+  expect(decklist.slots['rb:1_290']).toBe(1);
+  expect(decklist.target_format).toBe('fotr_block');
+  expect(decklist.completeness).toBe('complete');
 });

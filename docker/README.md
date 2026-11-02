@@ -46,7 +46,17 @@ From the host, as the web server user (so cache files keep the right owner):
 docker exec -u www-data <project> php bin/console <command>
 ```
 
-For example, `fos:user:promote <username> ROLE_ADMIN`, or `app:restrictions:import /path` after copying data in.
+For example, `fos:user:promote <username> ROLE_ADMIN`. Red Book's own:
+
+- `app:import:cards /srv/carddata`: re-import the card data (init does this; it fetches lotrtcg-card-data at `CARD_DATA_REF` first)
+- `app:formats:refresh`: copy Gemp's formats now (the crontab does it hourly)
+- `app:import:seed-decks <batch.json>`: import archived decks (phase3/06 batches); `-` reads the batch from standard input, so a file on the host goes in with `docker exec -i -u www-data <project> php bin/console app:import:seed-decks - < batch.json`. `--dry-run` checks without saving, `--no-validate` skips Gemp
+
+Archived decks can be claimed by their authors; admins approve the requests at `/admin/claims`.
+
+## Gemp
+
+Deck validation, PC errata conversion and the formats come from Gemp's public JSON endpoints, at `GEMP_URL` (default: the test server, which has them; set it in `app.env` once the live server does). If Gemp can't be reached, decks still save and show as not checked. The browser tests use a stub instead (`tests/e2e/gemp-stub`).
 
 ## Mail
 

@@ -2,6 +2,7 @@
    Free Peoples and Shadow by culture, map.
    Variables: deck (Deck or Decklist), format (Format|null) #}
 {% set slots = deck.slots %}
+{% set date = deck.effectiveDate %}
 {% set draw = slots.drawDeck %}
 {% set fp = slots.freePeoples.countCards %}
 {% set shadow = slots.shadow.countCards %}

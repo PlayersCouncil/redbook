@@ -749,3 +749,6 @@ decklist.claim.reject: Reject
 decklist.claim.none: No requests waiting.
 decklist.claim.recent: Recently decided
 decklist.publish.format_unknown: "Not known yet: choose the format for its era"
+nav.pc_errata: PC errata
+nav.wiki: The PC wiki
+nav.gemp: Play on Gemp

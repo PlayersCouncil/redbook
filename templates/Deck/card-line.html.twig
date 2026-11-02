@@ -1,10 +1,11 @@
 {# One slot: quantity, card name with its image on hover, and the format's limit on it.
-   Variables: slot, format (Format|null), show_qty (default true) #}
+   Variables: slot, format (Format|null), show_qty (default true), date (the deck's
+   effective date: the hover image is the card's version then, decision 0021) #}
 {% set card = slot.card %}
 {% set limit = format ? format.limitFor(card.code) : null %}
 <div class="deck-card deck-card-{{ card.side ?? 'none' }}" data-code="{{ card.code }}">
     {% if show_qty ?? true %}<span class="deck-card-qty">{{ slot.quantity }}x</span>{% endif %}
-    <a href="{{ path('cards_zoom', {card_code: card.code}) }}" class="card card-tip" data-code="{{ card.code }}">{% if card.isUnique %}&bull;{% endif %}{{ card.fullName }}</a>
+    <a href="{{ path('cards_zoom', {card_code: card.code}) }}" class="card card-tip" data-code="{{ card.code }}"{% if date is defined and date %} data-image="{{ card_image(card, date) }}"{% endif %}>{% if card.isUnique %}&bull;{% endif %}{{ card.fullName }}</a>
     {% if card.isErrata %}<span class="label label-info" title="{{ 'card.kind.errata_short' | trans }}">PC</span>{% endif %}
     {% if limit %}<span class="label label-{{ limit == 'banned' ? 'danger' : 'warning' }} deck-card-limit">{{ ('formats.list.' ~ limit) | trans }}</span>{% endif %}
 </div>

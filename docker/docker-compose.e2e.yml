@@ -7,12 +7,28 @@
 #   (and Spanish at http://es.localhost:${APP_PORT})
 # - sends all mail to Mailpit, which the tests read through its API
 #   at http://localhost:${MAILPIT_PORT:-8025}
+# - points the app at a Gemp stub (tests/e2e/gemp-stub) instead of a real Gemp,
+#   so deck validation answers the same way every run
 
 services:
   app:
     environment:
       APP_WEBSITE_URL: localhost
       MAILER_DSN: smtp://mailpit:1025
+      GEMP_URL: http://gemp-stub:8080/gemp-lotr-server
+
+  init:
+    environment:
+      GEMP_URL: http://gemp-stub:8080/gemp-lotr-server
+
+  gemp-stub:
+    image: node:22-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-redbook}_gemp_stub
+    restart: unless-stopped
+    working_dir: /stub
+    command: ["node", "server.js"]
+    volumes:
+      - ../tests/e2e/gemp-stub:/stub:ro
 
   mailpit:
     image: axllent/mailpit:v1.33.0

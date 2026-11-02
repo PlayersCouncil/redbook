@@ -66,9 +66,6 @@
                                         {% if review.user.role('ROLE_ADMIN') %}
                                             <span class="fas fa-user-tie admin" title="Administrator"></span>
                                         {% endif %}
-                                        {% if review.user.donation > 0 %}
-                                            <span class="fas fa-gift donator" title="ThronesDB Gracious Donator"></span>
-                                        {% endif %}
                                         <small class="reputation">{{ review.user.reputation }}</small>
                                     </div>
 
@@ -83,9 +80,6 @@
                                                    class="username {{ comment.user.color }}">{{ comment.user.username }}</a>
                                                 {% if comment.user.role('ROLE_ADMIN') %}
                                                     <span class="fas fa-user-tie admin" title="Administrator"></span>
-                                                {% endif %}
-                                                {% if comment.user.donation > 0 %}
-                                                    <span class="fas fa-gift donator" title="ThronesDB Gracious Donator"></span>
                                                 {% endif %}
                                                 <time datetime="{{ comment.dateCreation|date('c') }}"
                                                       title="{{ comment.dateCreation|date('F jS, Y') }}">{{ comment.dateCreation|date('n/j/y') }}</time>

@@ -73,6 +73,11 @@
         var card = app.data.cards.findById(code);
         if(!card)
             return;
+        // a deck page names the card's version as of the deck's date (decision 0021)
+        var image = $(this).data('image');
+        if(image && image !== card.image_url) {
+            card = _.extend({}, card, {image_url: image});
+        }
         display_card_on_element(card, this, event);
     };
 

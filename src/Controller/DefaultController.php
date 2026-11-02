@@ -67,69 +67,6 @@ class DefaultController extends AbstractController
      * @param TranslatorInterface $translator
      * @return Response
      */
-    #[Route(path: '/rulesreference', name: 'rulesreference', methods: ['GET'])]
-    public function rulesreferenceAction(int $cacheExpiration, TranslatorInterface $translator)
-    {
-        $response = new Response();
-        $response->setPublic();
-        $response->setMaxAge($cacheExpiration);
-
-        $page = $this->renderView(
-            'Default/rulesreference.html.twig',
-            array("pagetitle" => $translator->trans("nav.rules"), "pagedescription" => "Rules Reference")
-        );
-        $response->setContent($page);
-
-        return $response;
-    }
-
-    /**
-     * @param int $cacheExpiration
-     * @param TranslatorInterface $translator
-     * @return Response
-     */
-    #[Route(path: '/faq', name: 'faq', methods: ['GET'])]
-    public function faqAction(int $cacheExpiration, TranslatorInterface $translator)
-    {
-        $response = new Response();
-        $response->setPublic();
-        $response->setMaxAge($cacheExpiration);
-
-        $page = $this->renderView(
-            'Default/faq.html.twig',
-            array("pagetitle" => $translator->trans("nav.rules"), "pagedescription" => "F.A.Q")
-        );
-        $response->setContent($page);
-
-        return $response;
-    }
-
-    /**
-     * @param int $cacheExpiration
-     * @param TranslatorInterface $translator
-     * @return Response
-     */
-    #[Route(path: '/draft', name: 'draft', methods: ['GET'])]
-    public function draftAction(int $cacheExpiration, TranslatorInterface $translator)
-    {
-        $response = new Response();
-        $response->setPublic();
-        $response->setMaxAge($cacheExpiration);
-
-        $page = $this->renderView(
-            'Default/draft.html.twig',
-            array("pagetitle" => $translator->trans("nav.draft"), "pagedescription" => "Draft F.A.Q")
-        );
-        $response->setContent($page);
-
-        return $response;
-    }
-
-    /**
-     * @param int $cacheExpiration
-     * @param TranslatorInterface $translator
-     * @return Response
-     */
     #[Route(path: '/syntax', name: 'syntax', methods: ['GET'])]
     public function syntaxAction(int $cacheExpiration, TranslatorInterface $translator): Response
     {
@@ -141,32 +78,8 @@ class DefaultController extends AbstractController
             'Default/syntax.html.twig',
             [
                 "pagetitle" => $translator->trans("nav.syntax"),
-                "pagedescription" => "ThronesDB Search Syntax documentation",
+                "pagedescription" => "Card search syntax",
             ]
-        );
-        $response->setContent($page);
-
-        return $response;
-    }
-
-    /**
-     * @param int $cacheExpiration
-     * @param TranslatorInterface $translator
-     * @return Response
-     */
-    #[Route(path: '/tournamentregulations', name: 'tournamentregulations', methods: ['GET'])]
-    public function tournamentregulationsAction(int $cacheExpiration, TranslatorInterface $translator)
-    {
-        $response = new Response();
-        $response->setPublic();
-        $response->setMaxAge($cacheExpiration);
-
-        $page = $this->renderView(
-            'Default/tournamentregulations.html.twig',
-            array(
-                "pagetitle" => $translator->trans("nav.rules"),
-                "pagedescription" => "Tournament Regulations",
-            )
         );
         $response->setContent($page);
 

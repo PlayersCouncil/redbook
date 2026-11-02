@@ -22,7 +22,7 @@ class ImportSeedDecksCommand extends Command
     protected function configure(): void
     {
         $this
-            ->addArgument('batch', InputArgument::REQUIRED, 'The batch JSON file')
+            ->addArgument('batch', InputArgument::REQUIRED, 'The batch JSON file, or - to read it from standard input')
             ->addOption('no-validate', null, InputOption::VALUE_NONE, "Don't ask Gemp to validate each deck")
             ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Check the batch without saving anything');
     }
@@ -31,7 +31,8 @@ class ImportSeedDecksCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
         $path = $input->getArgument('batch');
-        $batch = is_file($path) ? json_decode((string) file_get_contents($path), true) : null;
+        $json = $path === '-' ? stream_get_contents(STDIN) : (is_file($path) ? file_get_contents($path) : null);
+        $batch = is_string($json) ? json_decode($json, true) : null;
         if (!is_array($batch)) {
             $io->error("$path isn't a JSON file");
             return Command::FAILURE;

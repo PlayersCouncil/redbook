@@ -21,6 +21,8 @@ npm run stack:up      # build and start (docker-compose.yml + docker-compose.e2e
 npm run stack:init    # first time only: schema, default data, cards
 ```
 
+Gemp isn't involved: the test overlay runs a small stub (`gemp-stub/`) in its place, which serves Gemp's formats as recorded from the test server and answers deck validation with a few of Gemp's rules (Ring-bearer, Ring, deck size, Free Peoples/Shadow balance, 9 sites) in Gemp's wording. `node gemp-stub/record.js` re-records the formats.
+
 ## Running
 
 ```bash
@@ -56,13 +58,20 @@ npm run test:visual            # compare; differences are in the HTML report
 | `tests/auth.setup.ts` | registers and confirms the two test accounts, saves their logins |
 | `tests/public.spec.ts` | pages and API anyone can see |
 | `tests/account.spec.ts` | login, logout, wrong password, password reset email |
-| `tests/decks.spec.ts` | building a deck, importing one from text, deleting |
-| `tests/decklists.spec.ts` | publishing, likes, favourites, comments, search, the decklist API |
+| `tests/decks.spec.ts` | building a deck against a format with Gemp's checklist, converting to PC errata, importing and exporting a Gemp deck string, deleting |
+| `tests/decklists.spec.ts` | publishing with a play record, likes, favourites, comments, search, the decklist API |
+| `tests/archive.spec.ts` | importing a seed batch (via `docker exec`), the archived decklist, claiming it and approving the claim |
+| `tests/oauth.spec.ts` | the OAuth2 server other apps use (registers a client via `docker exec`) |
 | `tests/visual.spec.ts` | screenshot comparisons (`npm run test:visual`) |
 | `helpers/test.ts` | the `test` used by every spec: fails on any JavaScript error or server error, hides the cookie banner; `snap()` for step screenshots |
 | `open-report.js` | `npm run report` / `reports:clean` |
 | `helpers/mailpit.ts` | reads mail from Mailpit's API |
-| `fixtures/stark-core.txt` | a legal Core Set deck in the text import format |
+| `helpers/console.ts` | runs `bin/console` in the app container |
+| `fixtures/fellowship-gemp.txt` | a deck the Gemp stub accepts in Fellowship Block, as a name line and a Gemp deck string |
+| `gemp-stub/` | the stand-in for Gemp (see above) |
+| `../fixtures/seed-batch.json` | a hand-written seed batch (not archive data) |
+
+The visual baselines (`visual.spec.ts-snapshots`) are still ThronesDB's; re-record them with `npm run test:visual:baseline` once the LOTR styling settles.
 
 ## Notes for writing tests
 

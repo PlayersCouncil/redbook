@@ -1411,35 +1411,4 @@ class SocialController extends AbstractController
         );
     }
 
-    /**
-     * @param Request $request
-     * @param int $cacheExpiration
-     * @return Response
-     * @throws \Doctrine\DBAL\Exception
-     */
-    #[Route(path: '/donators', name: 'donators', methods: ['GET'])]
-    public function donatorsAction(Request $request, int $cacheExpiration)
-    {
-        $response = new Response();
-        $response->setPublic();
-        $response->setMaxAge($cacheExpiration);
-
-        /* @var $dbh Connection */
-        $dbh = $this->managerRegistry->getConnection();
-
-        $users = $dbh->executeQuery("SELECT * FROM user WHERE donation>0 ORDER BY donation DESC, username", [])
-            ->fetchAllAssociative();
-
-        return $this->render(
-            $this->getLocaleSpecificViewPath(
-                'donators',
-                $request->getLocale()
-            ),
-            array(
-                'pagetitle' => 'The Gracious Donators',
-                'donators' => $users,
-            ),
-            $response
-        );
-    }
 }
