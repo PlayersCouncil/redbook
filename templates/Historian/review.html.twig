@@ -13,7 +13,8 @@
             <a class="rb-queue-public" href="{{ path('decklist_detail', {decklist_id: decklist.id, decklist_name: decklist.nameCanonical}) }}" target="_blank" rel="noopener" title="{{ 'historian.review.view_published' | trans }}"><span class="fas fa-external-link-alt" aria-hidden="true"></span><span class="sr-only">{{ 'historian.review.view_published' | trans }}</span></a>
         </div>
         <div class="rb-queue-meta">
-            <span>{{ decklist.user.displayName }}{% if not decklist.user.historic %} <span class="text-muted">({{ 'historian.queue.claimed' | trans }})</span>{% endif %}</span>
+            {% set submitted = decklist.reviewFlags | filter(f => f.code == 'submitted') | length > 0 %}
+            <span>{{ decklist.user.displayName }}{% if submitted %} <span class="text-muted">({{ 'historian.queue.submitted' | trans }})</span>{% elseif not decklist.user.historic %} <span class="text-muted">({{ 'historian.queue.claimed' | trans }})</span>{% endif %}</span>
             {% if source %}<span>{{ source.source }}</span>{% endif %}
             <span>{{ decklist.effectiveDate ? decklist.effectiveDate | date('Y-m-d') : '' }}</span>
             <span>{{ decklist.targetFormat ? (format_names[decklist.targetFormat] ?? decklist.targetFormat) : ('historian.review.flag.no_format' | trans) }}</span>

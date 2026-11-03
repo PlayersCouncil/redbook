@@ -1,43 +1,16 @@
-{% import "macros.html.twig" as macros %}
-
-<!-- History -->
-<div class="row">
-    <div class="col-sm-12" id="history">
-        <p class="text-muted small">{{ 'deckbuilder.history.intro' | trans }}</p>
-        <table class="table">
-            <thead>
-            <tr>
-                <th>{{ 'decks.history.columns.date' | trans }}</th>
-                <th>{{ 'decks.history.columns.version' | trans }}</th>
-                <th>{{ 'decks.history.columns.changes' | trans }}</th>
-                <th>{{ 'decks.history.columns.action' | trans }}</th>
-            </tr>
-            </thead>
-            <tbody>
-            </tbody>
-        </table>
-    </div><!-- /.col-sm-12 -->
-</div><!-- /.row -->
-<!-- History -->
-
-<!-- Published decklists Table -->
-<table class="table table-condensed" id="table-predecessor">
-    <thead>
-    <tr>
-        <th colspan="{% if deck.children|length %}4{% else %}1{% endif %}"><span
-                    class="fas fa-share"></span> {{ 'decks.published.title' | trans }}</th>
-    </tr>
-    </thead>
-    <tbody>
-    {% if deck.children|length %}
-        {% for decklist in deck.children %}
-            {{ macros.decklist_table_row(decklist) }}
-        {% endfor %}
-    {% else %}
+{# One timeline of the deck (Ketura, 2026-11-03): saved versions and published versions
+   together, newest first; app.deck_history fills it in #}
+<div class="rb-history" id="history">
+    <p class="text-muted small">{{ 'deckbuilder.history.intro' | trans }}</p>
+    <table class="table table-condensed rb-history-table">
+        <thead>
         <tr>
-            <td>{{ 'decks.published.none' | trans }}.</td>
+            <th>{{ 'decks.history.columns.date' | trans }}</th>
+            <th>{{ 'decks.history.columns.version' | trans }}</th>
+            <th>{{ 'decks.history.columns.changes' | trans }}</th>
+            <th></th>
         </tr>
-    {% endif %}
-    </tbody>
-</table>
-<!-- Published decklists Table -->
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>

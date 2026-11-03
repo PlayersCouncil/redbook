@@ -91,7 +91,8 @@
         _.each(_.keys(state.content || {}).sort(), function (k) { sorted[k] = state.content[k]; });
         return {
             name: state.name || '', target_format: state.target_format || '', description_md: state.description_md || '',
-            tags: state.tags || '', historic: state.historic || null, starting: (state.starting || []).slice().sort(), content: sorted, pending: (state.pending || []).slice().sort()
+            tags: state.tags || '', historic: state.historic || null, starting: (state.starting || []).slice().sort(), content: sorted,
+            starting_bid: state.starting_bid || '', starting_notes: state.starting_notes || '', annotations: state.annotations || [], pending: (state.pending || []).slice().sort()
         };
     }
 
@@ -151,7 +152,10 @@
             description: app.deck.get_description_md() || '',
             tags: app.deck.get_tags() || '',
             historic: historic ? JSON.stringify(historic) : '',
-            starting: JSON.stringify(app.deck.get_starting())
+            starting: JSON.stringify(app.deck.get_starting()),
+            starting_bid: app.deck.get_starting_bid(),
+            starting_notes: app.deck.get_starting_notes(),
+            annotations: JSON.stringify(app.deck.get_annotations())
         };
     }
 
@@ -212,6 +216,7 @@
             case 'format_guessed':
             case 'problems':
             case 'parse':
+            case 'submitted':
                 return t('historian.review.flag.' + flag.code, {detail: detail});
             default:
                 return t('historian.review.flag.' + flag.code);
@@ -242,20 +247,19 @@
         $('#deck-format').val(app.deck.get_format_code() || '');
         $('textarea[name=description_]').val(app.deck.get_description_md() || '');
         $('input[name=tags_]').val(app.deck.get_tags() || '');
+        app.deck_notes && app.deck_notes.fill();
         var historic = app.deck.get_historic();
-        $('#historic-on').prop('checked', !!historic);
-        $('#historic-fields').prop('disabled', !historic);
-        $('.rb-historic-badge').prop('hidden', !historic);
         $('[data-historic]').each(function () {
-            $(this).val(historic ? historic[$(this).data('historic')] || '' : $(this).val());
+            $(this).val(historic ? historic[$(this).data('historic')] || '' : '');
         });
         update_format_buttons();
     }
 
+    /** The Archive info fields; the tab only exists for decks with a history (Ketura, 2026-11-03) */
     function read_historic()
     {
-        if(!$('#historic-on').prop('checked')) {
-            return null;
+        if(!$('#historic-fields').length) {
+            return app.deck.get_historic();
         }
         var historic = {};
         $('[data-historic]').each(function () {
@@ -366,6 +370,29 @@
         }
     }
 
+    /** Hand the deck to the historians: saved first, then published for review */
+    function submit_historic()
+    {
+        if(!window.confirm(t('deckbuilder.more.submit_historic_confirm'))) {
+            return;
+        }
+        var go = function () {
+            $.ajax(Routing.generate('deck_submit_historic'), {
+                type: 'POST',
+                data: {id: app.deck.get_id()},
+                dataType: 'json',
+                success: function (response) {
+                    // back with the Archive info tab, to fill in the deck's history
+                    window.location = response.edit_url + '#archive';
+                },
+                error: function () {
+                    $('#save-status').text(t('deckbuilder.info.save_failed')).attr('class', 'rb-save-status is-dirty');
+                }
+            });
+        };
+        return dirty ? save(false, go) : go();
+    }
+
     function more_action(action)
     {
         switch(action) {
@@ -384,6 +411,9 @@
                 break;
             case 'history':
                 $('#tab-header-history').tab('show');
+                break;
+            case 'submit-historic':
+                submit_historic();
                 break;
             case 'delete':
                 $('#delete-deck-id').val(app.deck.get_id());
@@ -435,8 +465,6 @@
         $(document).on('deck.changed', function () {
             on_edit();
             update_format_buttons();
-            app.draw_simulator && app.draw_simulator.reset();
-            app.deck_charts && app.deck_charts.setup();
         });
 
         $('#deck-name').on('input', function () {
@@ -456,15 +484,6 @@
             on_edit();
         });
 
-        $('#historic-on').on('change', function () {
-            $('#historic-fields').prop('disabled', !this.checked);
-            $('.rb-historic-badge').prop('hidden', !this.checked);
-            if(this.checked && !$('[data-historic=author]').val()) {
-                $('[data-historic=author]').val($('[data-historic=author]').attr('placeholder'));
-            }
-            app.deck.set_historic(read_historic());
-            on_edit();
-        });
         $('#historic-fields').on('input change', '[data-historic]', function () {
             app.deck.set_historic(read_historic());
             on_edit();
@@ -584,7 +603,8 @@
             $(window).trigger('resize');
         });
 
-        app.markdown && app.markdown.setup('textarea[name=description_]', '#description-preview');
+        // the Notes tab: tags, starting notes, card annotations, the description's preview
+        app.deck_notes && app.deck_notes.setup(on_edit);
     };
 
     ui.on_dom_loaded = function on_dom_loaded()
@@ -594,7 +614,7 @@
         ui.setup_event_handlers();
         app.deck_editor.setup('#deck', '#deck-toolbar');
         app.pool.setup('#pool-filters', '#pool');
-        app.draw_simulator && app.draw_simulator.on_dom_loaded();
+        app.deck_stats && app.deck_stats.setup();
         app.deck_history && app.deck_history.setup('#history');
     };
 
@@ -618,8 +638,12 @@
             }
         }
         fill_fields();
+        app.deck_history && app.deck_history.render();
         show_visibility();
         show_review();
+        if(window.location.hash === '#archive') {
+            $('#tab-header-archive').tab('show');
+        }
         dirty = !same(app.deck.get_state(), saved_state);
         update_status();
         app.deck_editor.render();

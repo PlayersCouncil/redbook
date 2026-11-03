@@ -36,6 +36,21 @@ trait LotrDeckTrait
     #[ORM\Column(name: 'starting_fellowship', type: 'json', nullable: true)]
     protected ?array $starting = null;
 
+    /** Starting notes (Ketura, 2026-11-03): the bid, as written ("2", "2-3") */
+    #[ORM\Column(name: 'starting_bid', type: 'string', length: 30, nullable: true)]
+    protected ?string $startingBid = null;
+
+    /** Starting notes: what to bid, who to start, the first turn (Markdown) */
+    #[ORM\Column(name: 'starting_notes', type: 'text', nullable: true)]
+    protected ?string $startingNotes = null;
+
+    /**
+     * Card annotations (Ketura, 2026-11-03): notes on single cards, in the deck or not
+     * (rejected options, cards to watch for): [{code, text}]
+     */
+    #[ORM\Column(name: 'annotations', type: 'json', nullable: true)]
+    protected ?array $annotations = null;
+
     /** complete, incomplete or unvalidated, from validation; a column so lists can filter on it (0023) */
     #[ORM\Column(name: 'completeness', type: 'string', length: 12, nullable: false, options: ['default' => 'unvalidated'])]
     protected string $completeness = 'unvalidated';
@@ -93,6 +108,48 @@ trait LotrDeckTrait
         $this->starting = $codes ?: null;
     }
 
+    public function getStartingBid(): ?string
+    {
+        return $this->startingBid;
+    }
+
+    public function setStartingBid(?string $bid): void
+    {
+        $bid = $bid === null ? null : mb_substr(trim(strip_tags($bid)), 0, 30);
+        $this->startingBid = $bid === '' ? null : $bid;
+    }
+
+    public function getStartingNotes(): ?string
+    {
+        return $this->startingNotes;
+    }
+
+    public function setStartingNotes(?string $notes): void
+    {
+        $notes = $notes === null ? null : mb_substr(trim($notes), 0, 20000);
+        $this->startingNotes = $notes === '' ? null : $notes;
+    }
+
+    /** @return array<array{code: string, text: string}> */
+    public function getAnnotations(): array
+    {
+        return $this->annotations ?? [];
+    }
+
+    /** @param array<array{code?: mixed, text?: mixed}>|null $annotations */
+    public function setAnnotations(?array $annotations): void
+    {
+        $clean = [];
+        foreach ($annotations ?? [] as $row) {
+            $code = (string) ($row['code'] ?? '');
+            if (!preg_match('/^\d+_\d+$/', $code) || isset($clean[$code])) {
+                continue;
+            }
+            $clean[$code] = ['code' => $code, 'text' => mb_substr(trim((string) ($row['text'] ?? '')), 0, 5000)];
+        }
+        $this->annotations = $clean ? array_values($clean) : null;
+    }
+
     public function getValidatedAt(): ?DateTimeInterface
     {
         return $this->validatedAt;
@@ -114,6 +171,9 @@ trait LotrDeckTrait
             'validated_at' => $this->validatedAt?->format('c'),
             'completeness' => $this->getCompleteness(),
             'starting' => $this->getStarting(),
+            'starting_bid' => $this->startingBid,
+            'starting_notes' => $this->startingNotes,
+            'annotations' => $this->getAnnotations(),
         ];
     }
 }

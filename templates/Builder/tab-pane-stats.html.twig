@@ -1,0 +1,42 @@
+{# The Stats tab (Ketura, 2026-11-03): test draws and the deck's charts, one per row.
+   app.deck_stats runs it. #}
+<div class="rb-stats" id="deck-stats">
+    <section class="rb-stats-section" aria-labelledby="draw-title">
+        <h3 id="draw-title">{{ 'deckbuilder.statstab.draw_title' | trans }}</h3>
+        <p class="rb-hint">{{ 'deckbuilder.statstab.draw_intro' | trans }}</p>
+        <div class="rb-draw-buttons" role="group" aria-label="{{ 'deckbuilder.statstab.draw_title' | trans }}">
+            <button type="button" class="rb-btn rb-btn-primary" data-draw="opening">{{ 'deckbuilder.statstab.opening' | trans }}</button>
+            <button type="button" class="rb-btn" data-draw="mulligan">{{ 'deckbuilder.statstab.mulligan' | trans }}</button>
+            <span class="rb-draw-sep" aria-hidden="true"></span>
+            <button type="button" class="rb-btn" data-draw="1">{{ 'deckbuilder.statstab.draw_n' | trans({'%count%': 1}) }}</button>
+            <button type="button" class="rb-btn" data-draw="2">{{ 'deckbuilder.statstab.draw_n' | trans({'%count%': 2}) }}</button>
+            <button type="button" class="rb-btn" data-draw="8">{{ 'deckbuilder.statstab.draw_n' | trans({'%count%': 8}) }}</button>
+            <span class="rb-draw-sep" aria-hidden="true"></span>
+            <button type="button" class="rb-btn" data-draw="reset">{{ 'deckbuilder.statstab.reset' | trans }}</button>
+        </div>
+        <div class="rb-draw-status" id="draw-status" aria-live="polite"></div>
+        <div class="rb-draw-hand" id="draw-hand"></div>
+        <div class="rb-draw-odds" id="draw-odds"></div>
+    </section>
+
+    <section class="rb-stats-section">
+        <h3>{{ 'deckbuilder.statstab.twilight' | trans }}</h3>
+        <div class="rb-chart" id="stats-chart-twilight"></div>
+    </section>
+    <section class="rb-stats-section">
+        <h3>{{ 'deckbuilder.statstab.types' | trans }}</h3>
+        <div class="rb-chart" id="stats-chart-types"></div>
+    </section>
+    <section class="rb-stats-section">
+        <h3>{{ 'deckbuilder.statstab.cultures' | trans }}</h3>
+        <div class="rb-chart" id="stats-chart-cultures"></div>
+    </section>
+
+    <section class="rb-stats-section rb-runout" aria-labelledby="runout-title">
+        <h3 id="runout-title">{{ 'deckbuilder.statstab.runout' | trans }}</h3>
+        <p class="rb-hint">{{ 'deckbuilder.statstab.runout_intro' | trans }}</p>
+        <div class="rb-runout-inputs" id="runout-inputs"></div>
+        <div class="rb-chart rb-chart-tall" id="stats-chart-runout"></div>
+        <p class="rb-runout-summary" id="runout-summary" aria-live="polite"></p>
+    </section>
+</div>

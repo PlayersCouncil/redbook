@@ -11,6 +11,8 @@
     <script src="{{ asset('js/app.card_terms.js') }}"></script>
     <script src="{{ asset('js/app.deck_editor.js') }}"></script>
     <script src="{{ asset('js/app.pool.js') }}"></script>
+    <script src="{{ asset('js/app.deck_notes.js') }}"></script>
+    <script src="{{ asset('js/app.deck_stats.js') }}"></script>
     <script src="{{ asset('js/ui.deckedit.js') }}"></script>
     <script type="text/javascript">
       app.deck && app.deck.init({{ deck|json_encode|raw }});
@@ -20,6 +22,8 @@
           publish_url: path('deck_publish_form', {deck_uuid: deck.uuid}),
           view_url: url('deck_view', {deck_uuid: deck.uuid}),
           historian: is_granted('ROLE_HISTORIAN'),
+          published_versions: published_versions,
+          imported_from_archive: imported_from_archive,
           review: review
       }|json_encode|raw }};
     </script>
@@ -80,6 +84,7 @@
                                 <button type="button" role="menuitem" data-action="export-gemp">{{ 'deckbuilder.more.export_gemp' | trans }}</button>
                                 <button type="button" role="menuitem" data-action="export-text">{{ 'deckbuilder.more.export_text' | trans }}</button>
                                 <button type="button" role="menuitem" data-action="history">{{ 'deckbuilder.more.history' | trans }}</button>
+                                {% if not submitted and not deck.user.historic %}<button type="button" role="menuitem" data-action="submit-historic">{{ 'deckbuilder.more.submit_historic' | trans }}</button>{% endif %}
                                 <hr>
                                 <button type="button" role="menuitem" data-action="delete" class="rb-danger">{{ 'deckbuilder.more.delete' | trans }}</button>
                             </div>
@@ -100,30 +105,28 @@
                 <ul class="nav nav-tabs rb-tabs" role="tablist">
                     <li role="presentation" class="active"><a href="#tab-pane-build" aria-controls="tab-pane-build" role="tab" data-toggle="tab">{{ 'decks.edit.tabs.build' | trans }}</a></li>
                     <li role="presentation"><a href="#tab-pane-infos" aria-controls="tab-pane-infos" role="tab" data-toggle="tab">{{ 'decks.edit.tabs.notes' | trans }}</a></li>
-                    <li role="presentation"><a href="#tab-pane-draw" aria-controls="tab-pane-draw" role="tab" data-toggle="tab">{{ 'deckbuilder.tabs.draw' | trans }}</a></li>
-                    <li role="presentation"><a href="#tab-pane-charts" aria-controls="tab-pane-charts" role="tab" data-toggle="tab">{{ 'decks.edit.tabs.charts' | trans }}</a></li>
+                    <li role="presentation"><a href="#tab-pane-stats" aria-controls="tab-pane-stats" role="tab" data-toggle="tab" id="tab-header-stats">{{ 'deckbuilder.tabs.stats' | trans }}</a></li>
                     <li role="presentation"><a href="#tab-pane-history" aria-controls="tab-pane-history" role="tab" data-toggle="tab" id="tab-header-history">{{ 'decks.edit.tabs.history' | trans }}</a></li>
-                    <li role="presentation"><a href="#tab-pane-archive" aria-controls="tab-pane-archive" role="tab" data-toggle="tab" id="tab-header-archive">{{ 'deckbuilder.tabs.archive' | trans }}{% if review and review.status != 'verified' %} <span class="rb-tab-dot" aria-hidden="true"></span>{% endif %}</a></li>
+                    {% if show_archive %}<li role="presentation"><a href="#tab-pane-archive" aria-controls="tab-pane-archive" role="tab" data-toggle="tab" id="tab-header-archive">{{ 'deckbuilder.tabs.archive' | trans }}{% if review and review.status != 'verified' %} <span class="rb-tab-dot" aria-hidden="true"></span>{% endif %}</a></li>{% endif %}
                 </ul>
                 <div class="tab-content rb-tab-content">
                     <div role="tabpanel" class="tab-pane active rb-build-pane" id="tab-pane-build">
                         {% include 'Builder/tab-pane-build.html.twig' %}
                     </div>
-                    <div role="tabpanel" class="tab-pane rb-scroll-pane" id="tab-pane-infos">
+                    <div role="tabpanel" class="tab-pane rb-fixed-pane" id="tab-pane-infos">
                         {% include 'Builder/tab-pane-infos.html.twig' %}
                     </div>
-                    <div role="tabpanel" class="tab-pane rb-scroll-pane" id="tab-pane-draw">
-                        {% include 'Builder/tab-pane-draw.html.twig' %}
-                    </div>
-                    <div role="tabpanel" class="tab-pane rb-scroll-pane" id="tab-pane-charts">
-                        {% include 'Builder/tab-pane-charts.html.twig' %}
+                    <div role="tabpanel" class="tab-pane rb-scroll-pane" id="tab-pane-stats">
+                        {% include 'Builder/tab-pane-stats.html.twig' %}
                     </div>
                     <div role="tabpanel" class="tab-pane rb-scroll-pane" id="tab-pane-history">
                         {% include 'Builder/tab-pane-history.html.twig' %}
                     </div>
+                    {% if show_archive %}
                     <div role="tabpanel" class="tab-pane rb-scroll-pane" id="tab-pane-archive">
                         {% include 'Builder/tab-pane-archive.html.twig' %}
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

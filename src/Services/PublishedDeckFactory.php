@@ -24,6 +24,15 @@ class PublishedDeckFactory
     ) {
     }
 
+    /** The starting fellowship, starting notes and card annotations go with the deck */
+    private function copyNotes(Deck $deck, PublishedDeck $decklist): void
+    {
+        $decklist->setStarting($deck->getStarting());
+        $decklist->setStartingBid($deck->getStartingBid());
+        $decklist->setStartingNotes($deck->getStartingNotes());
+        $decklist->setAnnotations($deck->getAnnotations());
+    }
+
     /**
      * A historian's Save & verify (Ketura, 2026-11-02): the archive decklist takes the
      * corrected deck in place, keeping its id, date, comments and source. The
@@ -56,7 +65,7 @@ class PublishedDeckFactory
             $decklist->getSlots()->add($decklistslot);
         }
         $decklist->updateCultures();
-        $decklist->setStarting($deck->getStarting());
+        $this->copyNotes($deck, $decklist);
         // the deck was validated as it was saved
         $decklist->setValidation($deck->getValidation());
 
@@ -126,7 +135,7 @@ class PublishedDeckFactory
         }
         $decklist->updateCultures();
         if ($deck instanceof Deck) {
-            $decklist->setStarting($deck->getStarting());
+            $this->copyNotes($deck, $decklist);
         }
         if (count($deck->getChildren())) {
             $decklist->setPrecedent($deck->getChildren()[0]);

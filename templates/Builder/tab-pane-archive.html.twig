@@ -64,9 +64,8 @@
 {% endif %}
 
 <section class="rb-historic" id="historic-section" aria-labelledby="historic-title">
-        <h3 id="historic-title">{{ 'deckbuilder.historic.title' | trans }} <span class="rb-historic-badge" hidden>{{ 'deckbuilder.historic.badge' | trans }}</span></h3>
-        <label class="rb-check"><input type="checkbox" id="historic-on"> {{ 'deckbuilder.historic.is_historic' | trans }}</label>
-        <fieldset id="historic-fields" disabled>
+        <h3 id="historic-title">{{ 'deckbuilder.historic.title' | trans }} </h3>
+        <fieldset id="historic-fields">
             {% set f = deck.historic ?? {} %}
             <label class="rb-field rb-wide"><span>{{ 'deckbuilder.historic.author' | trans }}</span><input type="text" data-historic="author" value="{{ f.author ?? '' }}" placeholder="{{ app.user.username }}"></label>
             <label class="rb-field"><span>{{ 'deckbuilder.historic.source' | trans }}</span>

@@ -183,3 +183,60 @@ test('deckbuilder clicks: pool cards add, counts fill, sites collapse, menus flo
   await page.locator('#delete-deck-form [type=submit]').click();
   await expect(page).toHaveURL(/\/decks/);
 });
+
+test('deck notes, stats and history: starting fellowship, tags, annotations, test draw', async ({ page }) => {
+  const deckName = `E2E notes ${runId}`;
+  await page.goto('/deck/new');
+  await page.selectOption('#target_format', 'fotr_block');
+  await page.fill('#name', deckName);
+  await page.locator('form[action$="/deck/build"] button[type=submit]').click();
+  await expect(page).toHaveURL(/\/deck\/edit\//);
+  await waitForCardData(page);
+
+  await pick(page, 'legolas', 'Legolas, Greenleaf', '[data-add]');
+  await pick(page, 'gimli', 'Gimli, Dwarf of Erebor', '[data-add]');
+  await pick(page, 'goblin runner', 'Goblin Runner', '[data-add]');
+  // Legolas starts; the Notes tab lists him with his cost
+  await page.locator('#deck [data-start="1_50"]').click();
+
+  await page.click('a[href="#tab-pane-infos"]');
+  await expect(page.locator('#starting-list')).toContainText('Legolas');
+  await page.fill('#starting-bid', '2-3');
+  await page.fill('#starting-notes', 'Mulligan without **Gimli**');
+  await expect(page.locator('#starting-preview strong')).toHaveText('Gimli');
+  await page.fill('#tag-entry', 'elves');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#tag-input .rb-tag-chip')).toContainText('elves');
+  // a note on a card that isn't in the deck
+  await page.fill('#annot-search', 'the one ring, the ruling');
+  await page.locator('.rb-annot-suggest [data-annotate]').first().click();
+  await page.locator('#annot-list textarea').fill('Cut for the Isildur\'s Bane ring');
+  await expect(page.locator('#annot-list .rb-annot-where')).toContainText('not in the deck');
+
+  await page.click('#btn-save');
+  await expect(page.locator('#save-status')).toContainText('Saved as version');
+  await page.reload();
+  await waitForCardData(page);
+  await page.click('a[href="#tab-pane-infos"]');
+  await expect(page.locator('#starting-bid')).toHaveValue('2-3');
+  await expect(page.locator('#starting-notes')).toHaveValue('Mulligan without **Gimli**');
+  await expect(page.locator('#tag-input .rb-tag-chip')).toContainText('elves');
+  await expect(page.locator('#annot-list textarea')).toHaveValue('Cut for the Isildur\'s Bane ring');
+
+  // the test draw leaves the starting fellowship out of the draw deck
+  await page.click('#tab-header-stats');
+  await page.locator('[data-draw=opening]').click();
+  await expect(page.locator('#draw-hand .rb-draw-card')).toHaveCount(2);
+  await expect(page.locator('#draw-hand .rb-draw-group.is-fp .rb-draw-card')).toHaveCount(1);
+  await expect(page.locator('#draw-hand .rb-draw-group.is-shadow .rb-draw-card')).toHaveCount(1);
+  await expect(page.locator('#stats-chart-runout svg')).toBeVisible();
+
+  await page.click('#tab-header-history');
+  await expect(page.locator('#tab-pane-history .rb-history-saved')).toHaveCount(2);
+  await expect(page.locator('#tab-pane-history .rb-history-saved').first()).toContainText('Goblin Runner');
+
+  await page.click('#btn-more');
+  await page.locator('#menu-more [data-action=delete]').click();
+  await page.locator('#delete-deck-form [type=submit]').click();
+  await expect(page).toHaveURL(/\/decks/);
+});

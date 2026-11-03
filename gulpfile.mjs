@@ -2,6 +2,9 @@ import { dest, series, src } from "gulp";
 import concat from "gulp-concat";
 import { deleteAsync } from "del";
 import rev from "gulp-rev";
+import fs from "node:fs";
+import path from "node:path";
+import yaml from "js-yaml";
 
 export function clean() {
   return Promise.all([
@@ -96,6 +99,8 @@ export function copyPageSpecificJs() {
       "assets/js/app.card_terms.js",
       "assets/js/app.deck_editor.js",
       "assets/js/app.pool.js",
+      "assets/js/app.deck_notes.js",
+      "assets/js/app.deck_stats.js",
       "assets/js/ui.decks.js",
       "assets/js/ui.decklist_edit.js",
       "assets/js/ui.decklist.js",
@@ -109,6 +114,47 @@ export function copyPageSpecificJs() {
     .pipe(dest("public"))
     .pipe(rev.manifest("public/manifest.json", { base: "public", merge: true }))
     .pipe(dest("public"));
+}
+
+/**
+ * The JS translations, straight from translations/messages.*.yml (Ketura, 2026-11-03).
+ * Writes what bazinga:js-translation:dump used to (assets/js/translations/config.js and
+ * messages/<locale>.js), so the front-end build no longer needs PHP: in the image,
+ * a PHP-only change doesn't rebuild the front end. Nested keys are joined with dots,
+ * as Symfony's YAML loader does.
+ */
+export function dumpTranslations(done) {
+  const dir = "assets/js/translations";
+  fs.rmSync(dir, { recursive: true, force: true });
+  fs.mkdirSync(path.join(dir, "messages"), { recursive: true });
+  // as bazinga escapes it: no "</script>" can end the script early
+  const js = (value) => JSON.stringify(String(value)).replace(/<\//g, "<\\/");
+  const flatten = (node, prefix, out) => {
+    for (const [key, value] of Object.entries(node || {})) {
+      const name = prefix ? `${prefix}.${key}` : key;
+      if (value !== null && typeof value === "object") {
+        flatten(value, name, out);
+      } else if (value !== null) {
+        out.push([name, value]);
+      }
+    }
+    return out;
+  };
+  fs.writeFileSync(
+    path.join(dir, "config.js"),
+    "(function (t) {\nt.fallback = 'en';\nt.defaultDomain = 'messages';\n})(Translator);\n",
+  );
+  for (const file of fs.readdirSync("translations").sort()) {
+    const match = file.match(/^messages\.([a-z_A-Z]+)\.ya?ml$/);
+    if (!match) {
+      continue;
+    }
+    const locale = match[1];
+    const rows = flatten(yaml.load(fs.readFileSync(path.join("translations", file), "utf8")), "", []);
+    const body = rows.map(([key, value]) => `t.add(${js(key)}, ${js(value)}, "messages", ${js(locale)});`).join("\n");
+    fs.writeFileSync(path.join(dir, "messages", `${locale}.js`), `(function (t) {\n// ${locale}\n${body}\n})(Translator);\n`);
+  }
+  done();
 }
 
 export function buildTranslationsJs() {
@@ -130,6 +176,7 @@ const build = series(
   series(
     buildCss,
     buildAppJs,
+    dumpTranslations,
     buildTranslationsJs,
     buildVendorJs,
     copyPageSpecificJs,

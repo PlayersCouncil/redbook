@@ -245,6 +245,11 @@ class BuilderController extends AbstractController
         if ($request->request->has('starting')) {
             $data['starting'] = (string) $request->get('starting');
         }
+        foreach (['starting_bid', 'starting_notes', 'annotations'] as $key) {
+            if ($request->request->has($key)) {
+                $data[$key] = (string) $request->get($key);
+            }
+        }
         $deckManager->save($user, $deck, $data, $sourceDeck);
 
         // Save & verify: a historian's correction goes straight onto the archive decklist
@@ -290,6 +295,55 @@ class BuilderController extends AbstractController
         $deck->setShared($request->get('visibility') === 'hidden');
         $this->managerRegistry->getManager()->flush();
         return new JsonResponse(['success' => true, 'shared' => $deck->isShared()]);
+    }
+
+    /**
+     * The tags on the user's own decks, with how many decks carry each, for the Notes
+     * tab's suggestions (Ketura, 2026-11-03). Only the user's own: other people's
+     * private tags aren't theirs to see.
+     */
+    #[Route(path: '/deck/tags', name: 'deck_tags', methods: ['GET'])]
+    public function tagsAction(): JsonResponse
+    {
+        $user = $this->requireUser();
+        $counts = [];
+        foreach ($user->getDecks() as $deck) {
+            foreach (array_unique(preg_split('/\s+/', trim((string) $deck->getTags()), -1, PREG_SPLIT_NO_EMPTY)) as $tag) {
+                $counts[$tag] = ($counts[$tag] ?? 0) + 1;
+            }
+        }
+        arsort($counts);
+        return new JsonResponse(array_map(fn ($tag, $count) => ['tag' => (string) $tag, 'count' => $count], array_keys($counts), $counts));
+    }
+
+    /**
+     * "Submit historical deck" (Ketura, 2026-11-03): the owner hands a deck to the
+     * historians. It's published as it stands, unverified and flagged as submitted, so it
+     * joins the review queue; historians may then edit and verify it. The owner fills in
+     * its history on the Archive info tab.
+     */
+    #[Route(path: '/deck/submit-historic', name: 'deck_submit_historic', methods: ['POST'])]
+    public function submitHistoricAction(Request $request, PublishedDeckFactory $publishedDeckFactory): JsonResponse
+    {
+        $user = $this->requireUser();
+        $deck = $this->managerRegistry->getRepository(Deck::class)->find((int) $request->get('id'))
+            ?? throw new NotFoundHttpException("This deck doesn't exist.");
+        if (!$this->isOwner($deck)) {
+            throw new AccessDeniedHttpException("You don't have access to this deck.");
+        }
+        if ($this->archiveDecklist($deck) !== null) {
+            return new JsonResponse(['success' => true, 'already' => true, 'edit_url' => $this->generateUrl('deck_edit', ['deck_uuid' => $deck->getUuid()])]);
+        }
+        if ($deck->getHistoric() === null) {
+            $deck->setHistoric(DeckManager::normalizeHistoric(['author' => $user instanceof User ? $user->getDisplayName() : '', 'source' => 'other']));
+        }
+        $em = $this->managerRegistry->getManager();
+        $decklist = $publishedDeckFactory->createDecklistFromDeck($deck, $deck->getName(), $deck->getDescriptionMd());
+        $decklist->markUnverified();
+        $decklist->setReviewFlags([['code' => 'submitted', 'detail' => $user instanceof User ? $user->getDisplayName() : '']]);
+        $em->persist($decklist);
+        $em->flush();
+        return new JsonResponse(['success' => true, 'edit_url' => $this->generateUrl('deck_edit', ['deck_uuid' => $deck->getUuid()])]);
     }
 
     /**
@@ -426,7 +480,30 @@ class BuilderController extends AbstractController
             throw new AccessDeniedHttpException('You are not allowed to edit this deck.');
         }
         $archive = $this->isHistorianDeck($deck) ? $this->archiveDecklist($deck) : null;
+        // the Archive info tab: archive decks, and decks with any historical information (Ketura, 2026-11-03)
+        $historic = array_filter($deck->getHistoric() ?? [], fn ($v) => trim((string) $v) !== '');
+        $showArchive = $archive !== null || $historic !== [] || $this->archiveDecklist($deck) !== null;
+        // the published versions, for the History tab's single timeline (Ketura, 2026-11-03)
+        $published = [];
+        foreach ($deck->getChildren() as $child) {
+            $published[] = [
+                'name' => $child->getName(),
+                'version' => $child->getVersion(),
+                'date_creation' => $child->getDateCreation()->format('c'),
+                'url' => $this->generateUrl('decklist_detail', ['decklist_id' => $child->getId(), 'decklist_name' => $child->getNameCanonical()]),
+                'likes' => $child->getNbVotes(),
+                'favorites' => $child->getNbfavorites(),
+                'comments' => $child->getNbcomments(),
+                'review' => $child instanceof PublishedDeck ? $child->getReviewStatus() : null,
+            ];
+        }
+        $imported = $archive?->getSource() !== null
+            || ($this->archiveDecklist($deck)?->getSource() !== null);
         return $this->render('Builder/deckedit.html.twig', [
+            'published_versions' => $published,
+            'imported_from_archive' => $imported,
+            'show_archive' => $showArchive,
+            'submitted' => $this->archiveDecklist($deck) !== null,
             'pagetitle' => 'Deckbuilder',
             'deck' => $deck,
             'archive_decklist' => $archive,
@@ -578,10 +655,14 @@ class BuilderController extends AbstractController
         return $this->isOwner($deck) || $this->isHistorianDeck($deck);
     }
 
+    /** A historic author's deck, or one its owner submitted for review: historians may edit it */
     private function isHistorianDeck(Deck $deck): bool
     {
+        if (!$this->isGranted('ROLE_HISTORIAN')) {
+            return false;
+        }
         $owner = $deck->getUser();
-        return $owner instanceof User && $owner->isHistoric() && $this->isGranted('ROLE_HISTORIAN');
+        return ($owner instanceof User && $owner->isHistoric()) || $this->archiveDecklist($deck) !== null;
     }
 
     /** The decklist the archive import published from this deck */

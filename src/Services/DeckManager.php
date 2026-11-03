@@ -124,6 +124,15 @@ class DeckManager
         $deck->setDescriptionMd($data['description'] ?? $deck->getDescriptionMd() ?? '');
         $deck->setFaction($this->getPlaceholderFaction());
         $deck->setTargetFormat($data['target_format'] ?? ($deck->getTargetFormat() ?: (string) $this->getDefaultFormat()));
+        foreach (['starting_bid' => 'setStartingBid', 'starting_notes' => 'setStartingNotes'] as $key => $setter) {
+            if (array_key_exists($key, $data) && $deck instanceof Deck) {
+                $deck->$setter($data[$key] === null ? null : (string) $data[$key]);
+            }
+        }
+        if (array_key_exists('annotations', $data) && $deck instanceof Deck) {
+            $annotations = is_string($data['annotations']) ? json_decode($data['annotations'], true) : $data['annotations'];
+            $deck->setAnnotations(is_array($annotations) ? $annotations : null);
+        }
         if (array_key_exists('historic', $data) && $deck instanceof Deck) {
             $deck->setHistoric(self::normalizeHistoric($data['historic']));
         }
@@ -268,6 +277,9 @@ class DeckManager
             'target_format' => $source->getTargetFormat(),
             'effective_date' => $source->getEffectiveDate(),
             'starting' => $source instanceof Deck || $source instanceof \App\Entity\PublishedDeck ? $source->getStarting() : [],
+            'starting_bid' => $source instanceof Deck || $source instanceof \App\Entity\PublishedDeck ? $source->getStartingBid() : null,
+            'starting_notes' => $source instanceof Deck || $source instanceof \App\Entity\PublishedDeck ? $source->getStartingNotes() : null,
+            'annotations' => $source instanceof Deck || $source instanceof \App\Entity\PublishedDeck ? $source->getAnnotations() : [],
         ]);
         return $deck;
     }

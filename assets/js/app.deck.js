@@ -48,6 +48,14 @@
     deck.set_historic = function (historic) { data.historic = historic; };
     deck.get_effective_date = function () { return data.effective_date; };
 
+    /* ---- notes (Ketura, 2026-11-03): the bid, starting notes, card annotations ---- */
+    deck.get_starting_bid = function () { return data.starting_bid || ''; };
+    deck.set_starting_bid = function (bid) { data.starting_bid = bid; };
+    deck.get_starting_notes = function () { return data.starting_notes || ''; };
+    deck.set_starting_notes = function (md) { data.starting_notes = md; };
+    deck.get_annotations = function () { return _.map(data.annotations || [], _.clone); };
+    deck.set_annotations = function (rows) { data.annotations = _.map(rows || [], _.clone); };
+
     /* ---- the starting fellowship (Ketura, 2026-11-03): optional marks on companions ---- */
     deck.get_starting = function () { return (data.starting || []).slice(); };
     deck.is_starting = function (code) { return _.contains(data.starting || [], code); };
@@ -70,6 +78,9 @@
             tags: data.tags,
             historic: data.historic || null,
             starting: (data.starting || []).slice().sort(),
+            starting_bid: data.starting_bid || '',
+            starting_notes: data.starting_notes || '',
+            annotations: _.map(data.annotations || [], _.clone),
             content: _.extend({}, content),
             pending: _.keys(pending)
         };
@@ -83,6 +94,9 @@
         data.tags = state.tags;
         data.historic = state.historic || null;
         data.starting = (state.starting || []).slice();
+        data.starting_bid = state.starting_bid || '';
+        data.starting_notes = state.starting_notes || '';
+        data.annotations = _.map(state.annotations || [], _.clone);
         content = _.extend({}, state.content || {});
         pending = {};
         _.each(state.pending || [], function (key) {

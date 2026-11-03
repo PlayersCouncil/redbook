@@ -1,189 +1,98 @@
+/* global app, _, moment, Translator, Routing */
+/**
+ * The History tab (Ketura, 2026-11-03): one timeline, newest first, of the deck's saved
+ * versions (with what changed, and a Restore) and its published versions (with their
+ * likes, favourites and comments). An archive deck's first version reads "Imported from
+ * archive". Unsaved work is a draft in the browser, so it isn't listed here.
+ */
 (function app_deck_history(deck_history, $)
 {
-
     var tbody,
-            clock,
-            snapshots_init = [],
-            snapshots = [],
-            progressbar,
-            timer,
-            ajax_in_process = false,
-            period = 60,
-            changed_since_last_autosave = false;
+        snapshots_init = [],
+        snapshots = [];
 
-    /**
-     * @memberOf deck_history
-     */
-    deck_history.autosave = function autosave()
+    function t(key, params)
     {
-
-        // check if deck has been modified since last autosave
-        if(!changed_since_last_autosave)
-            return;
-
-        // compute diff between last snapshot and current deck
-        var last_snapshot = snapshots[snapshots.length - 1].content;
-        var current_deck = app.deck.get_content();
-
-        changed_since_last_autosave = false;
-
-        var result = app.diff.compute_simple([current_deck, last_snapshot]);
-        if(!result)
-            return;
-
-        var diff = result[0];
-        var diff_json = JSON.stringify(diff);
-        if(diff_json == '[{},{}]')
-            return;
-
-        // send diff to autosave
-        $('#tab-header-history').html("Autosave...");
-        ajax_in_process = true;
-
-        $.ajax(Routing.generate('deck_autosave'), {
-            data: {
-                diff: diff_json,
-                deck_id: app.deck.get_id()
-            },
-            type: 'POST',
-            success: function (data, textStatus, jqXHR)
-            {
-                deck_history.add_snapshot({datecreation: data, variation: diff, content: current_deck, is_saved: false});
-            },
-            error: function (jqXHR, textStatus, errorThrown)
-            {
-                console.log('[' + moment().format('YYYY-MM-DD HH:mm:ss') + '] Error on ' + this.url, textStatus, errorThrown);
-                changed_since_last_autosave = true;
-            },
-            complete: function ()
-            {
-                $('#tab-header-history').html("History");
-                ajax_in_process = false;
-            }
-        });
-
+        return Translator.trans(key, params || {});
     }
 
-    /**
-     * @memberOf deck_history
-     */
-    deck_history.autosave_interval = function autosave_interval()
+    function card_link(key, qty, sign)
     {
-        // if we are in the process of an ajax autosave request, do nothing now
-        if(ajax_in_process)
-            return;
-
-        // making sure we don't go into negatives
-        if(timer < 0)
-            timer = period;
-
-        // update progressbar
-        $(progressbar).css('width', (timer * 100 / period) + '%').attr('aria-valuenow', timer).find('span').text(timer + ' seconds remaining.');
-
-        // timer action
-        if(timer === 0) {
-            deck_history.autosave();
+        var is_rb = key.indexOf('rb:') === 0,
+            code = is_rb ? key.substr(3) : key,
+            card = app.data.cards && app.data.cards.findById(code);
+        if(!card) {
+            return null;
         }
-
-        timer--;
+        return sign + ' ' + (is_rb ? t('deck.ring_bearer') + ':' : qty) + ' <a href="' + card.url + '" class="card-tip" data-code="' + code + '">' + _.escape(card.label) + '</a>';
     }
 
-    /**
-     * @memberOf deck_history
-     */
-    deck_history.add_snapshot = function add_snapshot(snapshot)
+    function saved_row(snapshot, index, page)
     {
-
-        snapshot.date_creation = snapshot.date_creation ? moment(snapshot.date_creation) : moment();
-        snapshots.push(snapshot);
-
         var list = [];
         if(snapshot.variation) {
-            var line = function (sign, qty, key) {
-                var is_rb = key.indexOf('rb:') === 0,
-                    code = is_rb ? key.substr(3) : key,
-                    card = app.data.cards.findById(code);
-                if(!card)
-                    return;
-                list.push(sign + (is_rb ? ' ' + Translator.trans('deck.ring_bearer') + ':' : qty) + ' ' + '<a href="' + Routing.generate('cards_zoom', {card_code: code}) + '" class="card-tip" data-code="' + code + '">' + _.escape(card.label) + '</a>');
-            };
-            _.each(snapshot.variation[0], function (qty, key) { line('+', qty, key); });
-            _.each(snapshot.variation[1], function (qty, key) { line('&minus;', qty, key); });
+            _.each(snapshot.variation[0], function (qty, key) { list.push(card_link(key, qty, '+')); });
+            _.each(snapshot.variation[1], function (qty, key) { list.push(card_link(key, qty, '&minus;')); });
+            list = _.compact(list);
         } else {
-            list.push(Translator.trans('decks.history.firstversion'));
+            list.push(t(page.imported_from_archive ? 'deckbuilder.history.imported' : 'decks.history.firstversion'));
         }
-
-        tbody.prepend('<tr' + (snapshot.is_saved ? '' : ' class="warning"') + '><td>' + snapshot.date_creation.calendar() + (snapshot.is_saved ? '' : ' (' + Translator.trans('decks.history.unsaved') + ')') + '</td><td>' + (snapshot.version || '') + '</td><td>' + list.join('<br>') + '</td><td><a role="button" href="#" data-index="' + (snapshots.length - 1) + '"">' + Translator.trans('decks.history.revert') + '</a></td></tr>');
-
-        timer = -1; // start autosave timer
-
+        return '<tr class="rb-history-saved"><td>' + snapshot.when.calendar() + '</td><td>' + _.escape(snapshot.version || '') + '</td><td>'
+            + (list.length ? list.join('<br>') : '<span class="text-muted">' + t('deckbuilder.history.no_card_changes') + '</span>')
+            + '</td><td><a role="button" href="#" data-index="' + index + '">' + t('decks.history.revert') + '</a></td></tr>';
     }
 
-    /**
-     * @memberOf deck_history
-     */
-    deck_history.load_snapshot = function load_snapshot(event)
+    function published_row(p)
     {
+        return '<tr class="rb-history-published"><td>' + moment(p.date_creation).calendar() + '</td><td>' + _.escape(p.version || '') + '</td><td>'
+            + '<span class="fas fa-share" aria-hidden="true"></span> ' + t('deckbuilder.history.published') + ' <a href="' + p.url + '">' + _.escape(p.name) + '</a>'
+            + (p.review === 'unverified' ? ' <span class="label label-warning">' + t('decklist.review.unverified') + '</span>' : '')
+            + '<span class="rb-history-social">'
+            + '<span title="' + t('deckbuilder.history.likes') + '"><span class="fas fa-heart social-icon-like"></span> ' + (p.likes || 0) + '</span>'
+            + '<span title="' + t('deckbuilder.history.favorites') + '"><span class="fas fa-star social-icon-favorite"></span> ' + (p.favorites || 0) + '</span>'
+            + '<span title="' + t('deckbuilder.history.comments') + '"><span class="fas fa-comment social-icon-comment"></span> ' + (p.comments || 0) + '</span>'
+            + '</span></td><td></td></tr>';
+    }
 
-        var index = $(this).data('index');
-        var snapshot = snapshots[index];
-        if(!snapshot)
+    deck_history.render = function render()
+    {
+        if(!tbody || !app.data.cards) {
             return;
+        }
+        var page = app.deckbuilder_page || {},
+            rows = _.map(snapshots, function (s, i) { return {when: s.when, html: saved_row(s, i, page), order: 0}; })
+                .concat(_.map(page.published_versions || [], function (p) { return {when: moment(p.date_creation), html: published_row(p), order: 1}; }));
+        // newest first; a version published at the moment it was saved sits above that save
+        rows.sort(function (a, b) { return b.when.valueOf() - a.when.valueOf() || b.order - a.order; });
+        tbody.html(_.pluck(rows, 'html').join(''));
+    };
 
-        app.deck.set_content(snapshot.content);
-        changed_since_last_autosave = true;
-
-        // cancel event
+    deck_history.load_snapshot = function load_snapshot()
+    {
+        var snapshot = snapshots[$(this).data('index')];
+        if(snapshot && snapshot.content) {
+            app.deck.set_content(snapshot.content);
+        }
         return false;
-
-    }
-
-    /**
-     * @memberOf deck_history
-     */
-    deck_history.notify_change = function notify_change()
-    {
-        changed_since_last_autosave = true;
-    }
-
-    deck_history.get_unsaved_edits = function get_unsaved_edits()
-    {
-        return _.filter(snapshots, function (snapshot)
-        {
-            return snapshot.is_saved === false;
-        }).sort(function (a, b)
-        {
-            return a.date_creation - b.datecreation;
-        });
-    }
-
-    deck_history.is_changed_since_last_autosave = function is_changed_since_last_autosave()
-    {
-        return changed_since_last_autosave;
-    }
+    };
 
     deck_history.init = function init(data)
     {
-        snapshots_init = data;
-    }
+        snapshots_init = data || [];
+    };
 
-    /**
-     * @memberOf deck_history
-     * @param container
-     */
-    deck_history.setup = function setup_history(container)
+    deck_history.setup = function setup(container)
     {
         tbody = $(container).find('tbody').on('click', 'a[role=button]', deck_history.load_snapshot);
-
-        // Only saved versions: unsaved work is a draft in the browser now, not
-        // autosaved to the server (Ketura, 2026-11-02)
-        snapshots_init.forEach(function (snapshot)
-        {
-            if(snapshot.is_saved !== false) {
-                deck_history.add_snapshot(snapshot);
-            }
+        snapshots = _.map(_.filter(snapshots_init, function (s) { return s.is_saved !== false; }), function (s) {
+            return _.extend({}, s, {when: s.date_creation ? moment(s.date_creation) : moment()});
         });
+        // the rows name cards, so they are drawn once the card data is in (ui.on_all_loaded)
+    };
 
-    }
+    // kept for callers of the old module
+    deck_history.notify_change = function () {};
+    deck_history.get_unsaved_edits = function () { return []; };
+    deck_history.is_changed_since_last_autosave = function () { return false; };
 
 })(app.deck_history = {}, jQuery);

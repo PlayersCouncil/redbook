@@ -54,7 +54,7 @@ class HistorianController extends AbstractController
             'verified' => $verified,
             'sources' => $this->em->createQuery('SELECT DISTINCT s.source FROM ' . PublishedDeckSource::class . ' s ORDER BY s.source')->getSingleColumnResult(),
             'formats' => $this->formats->findBy([], ['position' => 'ASC']),
-            'flag_codes' => ['parse', 'unresolved', 'no_format', 'format_guessed', 'problems'],
+            'flag_codes' => ['submitted', 'parse', 'unresolved', 'no_format', 'format_guessed', 'problems'],
         ]);
     }
 

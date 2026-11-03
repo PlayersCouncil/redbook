@@ -834,6 +834,85 @@ deckbuilder.display_options: Deck display options
 deckbuilder.view.label: Deck view
 deckbuilder.group.label: Group the draw deck by
 deckbuilder.collapse: Collapse
+deckbuilder.tabs.stats: Stats
+deckbuilder.statstab.draw_title: Test draw
+deckbuilder.statstab.draw_intro: "From the draw deck less the starting fellowship. Opening draw and Mulligan start afresh, sorted Free Peoples then Shadow; Draw adds on the right."
+deckbuilder.statstab.opening: Opening draw
+deckbuilder.statstab.mulligan: Mulligan
+deckbuilder.statstab.draw_n: "Draw %count%"
+deckbuilder.statstab.reset: Reset
+deckbuilder.statstab.pile_status: "%count% cards to draw from."
+deckbuilder.statstab.hand_status: "%count% in hand (%fp% Free Peoples, %shadow% Shadow); %left% left to draw."
+deckbuilder.statstab.odds_opening: "Chance of at least one in an opening 8 (of %size%):"
+deckbuilder.statstab.odds_drawn: "Chance of at least one in the %count% drawn (of %size%):"
+deckbuilder.statstab.odds_copies: "{1} with 1 copy|]1,Inf] with %count% copies"
+deckbuilder.statstab.twilight: Twilight cost
+deckbuilder.statstab.twilight_axis: Twilight cost
+deckbuilder.statstab.types: Card types
+deckbuilder.statstab.cultures: Cultures
+deckbuilder.statstab.characters: Characters
+deckbuilder.statstab.companions: Companions
+deckbuilder.statstab.allies: Allies
+deckbuilder.statstab.minions: Minions
+deckbuilder.statstab.other_fp: Free Peoples
+deckbuilder.statstab.other_shadow: Shadow
+deckbuilder.statstab.half_shadow: "Half your Shadow (%count%)"
+deckbuilder.statstab.type.follower: Followers
+deckbuilder.statstab.type.possession: Possessions
+deckbuilder.statstab.type.artifact: Artifacts
+deckbuilder.statstab.type.condition: Conditions
+deckbuilder.statstab.type.event: Events
+deckbuilder.statstab.runout: Running out
+deckbuilder.statstab.runout_intro: "Cards left in each draw deck, site by site, if both players play this many cards and move like this. Both reconcile when the fellowship stays; when it moves again, only Shadow does."
+deckbuilder.statstab.fp_play: "Free Peoples cards played per turn"
+deckbuilder.statstab.shadow_play: "Shadow cards played per move"
+deckbuilder.statstab.their_deck: "Opponent's draw deck"
+deckbuilder.statstab.first: "Goes first:"
+deckbuilder.statstab.you: You
+deckbuilder.statstab.them: Opponent
+deckbuilder.statstab.your_moves: Your moves
+deckbuilder.statstab.their_moves: "Opponent's moves"
+deckbuilder.statstab.turn_n: "Turn %count%"
+deckbuilder.statstab.single: Single move
+deckbuilder.statstab.double: Double move
+deckbuilder.statstab.site: Site
+deckbuilder.statstab.cards_left: Cards left in the draw deck
+deckbuilder.statstab.runs_out: "%who% runs out at site %site%."
+deckbuilder.statstab.cards_at: "%who%: %count% cards left at site %site%."
+deckbuilder.notes.tag_placeholder: "Add a tag…"
+deckbuilder.notes.tag_add: Add a tag
+deckbuilder.notes.tag_remove: "Remove the tag %tag%"
+deckbuilder.notes.tag_new: new tag
+deckbuilder.notes.tag_count: "{1} on 1 of your decks|]1,Inf] on %count% of your decks"
+deckbuilder.notes.starting: Starting notes
+deckbuilder.notes.bid: Bid
+deckbuilder.notes.bid_placeholder: "e.g. 2-3"
+deckbuilder.notes.starting_placeholder: "What to bid, which fellowship to start, what to do on the first turn…"
+deckbuilder.notes.starting_none: "Mark companions with their S in the deck to list your starting fellowship here."
+deckbuilder.notes.starting_fellowship: "Starting fellowship:"
+deckbuilder.notes.starting_twilight: "(twilight %cost%)"
+deckbuilder.notes.preview: Preview
+deckbuilder.notes.annotations: Card annotations
+deckbuilder.notes.annotate: Annotate a card
+deckbuilder.notes.annotate_placeholder: "Annotate a card (in the deck or not)…"
+deckbuilder.notes.annotations_none: "Notes on single cards go here: why it's in, why something else isn't, what to watch for."
+deckbuilder.notes.annotation_for: "Notes on %card%"
+deckbuilder.notes.annotation_remove: Remove this annotation
+deckbuilder.notes.in_deck: in the deck
+deckbuilder.notes.not_in_deck: not in the deck
+deckbuilder.notes.no_card: No card by that name.
+deckbuilder.notes.markdown_hint: "Markdown: **bold**, *italic*, lists, links"
+deckbuilder.history.imported: Imported from archive
+deckbuilder.history.published: Published as
+deckbuilder.history.no_card_changes: "No card changes"
+deckbuilder.history.likes: Likes
+deckbuilder.history.favorites: Favourites
+deckbuilder.history.comments: Comments
+deckbuilder.more.submit_historic: Submit historical deck
+deckbuilder.more.submit_historic_confirm: "Submit this deck to the historians as a historical deck? It will be published, marked unverified, and historians will be able to edit and verify it. You can then fill in its history on the Archive info tab."
+historian.queue.submitted: submitted
+historian.review.flag.submitted: "Submitted by %detail%"
+historian.queue.flag_name.submitted: Submitted
 deckbuilder.starting_on: "Mark %card% as starting fellowship"
 deckbuilder.starting_off: "%card% starts in the fellowship (click to unmark)"
 deckbuilder.expand: Expand

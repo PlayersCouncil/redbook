@@ -1,21 +1,47 @@
-<!-- Notes Form -->
-<div class="row">
-    <div class="col-sm-12">
-        <div class="form-group">
-            <label for="tags_">{{ 'decks.edit.notes.tags.label' | trans }}</label>
-            <input type="text" class="form-control" name="tags_" value="{{ deck.tags }}"></input>
-            <span class="help-block">{{ 'decks.edit.notes.tags.hint' | trans | raw }}</span>
+{# The Notes tab (Ketura, 2026-11-03): tags, starting notes, card annotations and the
+   deck's notes. The pane itself doesn't scroll; the text areas, previews and the
+   annotation list do. app.deck_notes runs it. #}
+<div class="rb-notes" id="deck-notes">
+    <div class="rb-notes-tags">
+        <label for="tag-entry">{{ 'decks.edit.notes.tags.label' | trans }}</label>
+        <div class="rb-tag-input" id="tag-input">
+            <input type="hidden" name="tags_" value="{{ deck.tags }}">
+            <span class="rb-tag-chips"></span>
+            <input type="text" id="tag-entry" autocomplete="off" placeholder="{{ 'deckbuilder.notes.tag_placeholder' | trans }}" aria-label="{{ 'deckbuilder.notes.tag_add' | trans }}">
+            <div class="rb-tag-suggest" role="listbox" hidden></div>
         </div>
-        <div class="form-group">
-            <label for="description_">{{ 'decks.edit.notes.notes.label' | trans }}</label>
-            <textarea class="form-control" rows="20" name="description_" id="description"
-                      placeholder="{{ 'decks.edit.notes.notes.hint' | trans }}">{{ deck.descriptionMd }}</textarea>
+    </div>
+
+    <section class="rb-notes-section rb-notes-start" aria-labelledby="starting-title">
+        <div class="rb-notes-head">
+            <h3 id="starting-title">{{ 'deckbuilder.notes.starting' | trans }}</h3>
+            <label class="rb-bid"><span>{{ 'deckbuilder.notes.bid' | trans }}</span>
+                <input type="text" id="starting-bid" maxlength="30" autocomplete="off" placeholder="{{ 'deckbuilder.notes.bid_placeholder' | trans }}"></label>
         </div>
-        <div class="well text-muted" id="description-preview">
-            <small>Preview. Look <a href="http://daringfireball.net/projects/markdown/dingus">here</a> for a Markdown
-                syntax reference.
-            </small>
+        <div class="rb-starting-list" id="starting-list"></div>
+        <div class="rb-md-pair">
+            <textarea id="starting-notes" placeholder="{{ 'deckbuilder.notes.starting_placeholder' | trans }}" aria-label="{{ 'deckbuilder.notes.starting' | trans }}"></textarea>
+            <div class="rb-md-preview" id="starting-preview" aria-label="{{ 'deckbuilder.notes.preview' | trans }}"></div>
         </div>
-    </div><!-- /.col-sm-12 -->
-</div><!-- /.row -->
-<!-- Notes Form -->
+    </section>
+
+    <section class="rb-notes-section rb-notes-annot" aria-labelledby="annot-title">
+        <div class="rb-notes-head">
+            <h3 id="annot-title">{{ 'deckbuilder.notes.annotations' | trans }}</h3>
+            <div class="rb-annot-add">
+                <input type="search" id="annot-search" autocomplete="off" placeholder="{{ 'deckbuilder.notes.annotate_placeholder' | trans }}" aria-label="{{ 'deckbuilder.notes.annotate' | trans }}">
+                <div class="rb-annot-suggest" role="listbox" hidden></div>
+            </div>
+        </div>
+        <div class="rb-annot-list" id="annot-list"></div>
+    </section>
+
+    <section class="rb-notes-section rb-notes-desc" aria-labelledby="desc-title">
+        <div class="rb-notes-head"><h3 id="desc-title">{{ 'decks.edit.notes.notes.label' | trans }}</h3>
+            <span class="rb-hint">{{ 'deckbuilder.notes.markdown_hint' | trans | raw }}</span></div>
+        <div class="rb-md-pair">
+            <textarea name="description_" id="description" placeholder="{{ 'decks.edit.notes.notes.hint' | trans }}">{{ deck.descriptionMd }}</textarea>
+            <div class="rb-md-preview" id="description-preview" aria-label="{{ 'deckbuilder.notes.preview' | trans }}"></div>
+        </div>
+    </section>
+</div>
