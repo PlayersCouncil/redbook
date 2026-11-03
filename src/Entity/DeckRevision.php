@@ -10,8 +10,8 @@ use Gedmo\Mapping\Annotation as Gedmo;
  * @package App\Entity
  */
 #[ORM\Entity]
-#[ORM\Table(name: 'deckchange')]
-class Deckchange implements DeckchangeInterface
+#[ORM\Table(name: 'deck_revision')]
+class DeckRevision implements DeckRevisionInterface
 {
     /**
      * @var int

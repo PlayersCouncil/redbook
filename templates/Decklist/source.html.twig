@@ -26,8 +26,8 @@
             </div>
         {% endif %}
         <details><summary class="small">{{ 'decklist.source.raw' | trans }}</summary><pre class="small">{{ source.rawDecklist }}</pre></details>
-        {% if app.user and decklist.user.username == 'archive' %}
-            <p><a href="{{ path('decklist_claim_form', {decklist_id: decklist.id}) }}" class="btn btn-sm btn-default">{{ 'decklist.claim.button' | trans }}</a></p>
+        {% if app.user and decklist.user.historic and not app.user.historic %}
+            <p><a href="{{ path('historic_claim_form', {user_id: decklist.user.id}) }}" class="btn btn-sm btn-default">{{ 'claim.button' | trans }}</a></p>
         {% endif %}
         {% if source.comments | length %}
             <h4>{{ 'decklist.source.comments' | trans }}</h4>

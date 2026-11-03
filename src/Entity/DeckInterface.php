@@ -19,24 +19,24 @@ interface DeckInterface extends CommonDeckInterface, JsonSerializable
     public function getTags();
 
     /**
-     * @param DeckslotInterface $slot
+     * @param DeckSlotInterface $slot
      */
-    public function addSlot(DeckslotInterface $slot);
+    public function addSlot(DeckSlotInterface $slot);
 
     /**
-     * @param DeckslotInterface $slot
+     * @param DeckSlotInterface $slot
      */
-    public function removeSlot(DeckslotInterface $slot);
+    public function removeSlot(DeckSlotInterface $slot);
 
     /**
-     * @param DecklistInterface $child
+     * @param PublishedDeckInterface $child
      */
-    public function addChild(DecklistInterface $child);
+    public function addChild(PublishedDeckInterface $child);
 
     /**
-     * @param DecklistInterface $child
+     * @param PublishedDeckInterface $child
      */
-    public function removeChild(DecklistInterface $child);
+    public function removeChild(PublishedDeckInterface $child);
 
     /**
      * @return Collection
@@ -49,7 +49,7 @@ interface DeckInterface extends CommonDeckInterface, JsonSerializable
     public function addDeckChild(DeckInterface $child);
 
     /**
-     * @param DecklistInterface $child
+     * @param PublishedDeckInterface $child
      */
     public function removeDeckChild(DeckInterface $child);
 
@@ -59,14 +59,14 @@ interface DeckInterface extends CommonDeckInterface, JsonSerializable
     public function getDeckChildren();
 
     /**
-     * @param DeckchangeInterface $change
+     * @param DeckRevisionInterface $change
      */
-    public function addChange(DeckchangeInterface $change);
+    public function addChange(DeckRevisionInterface $change);
 
     /**
-     * @param DeckchangeInterface $change
+     * @param DeckRevisionInterface $change
      */
-    public function removeChange(DeckchangeInterface $change);
+    public function removeChange(DeckRevisionInterface $change);
 
     /**
      * @return Collection
@@ -84,12 +84,12 @@ interface DeckInterface extends CommonDeckInterface, JsonSerializable
     public function getLastPack();
 
     /**
-     * @param DecklistInterface|null $parent
+     * @param PublishedDeckInterface|null $parent
      */
-    public function setParent(?DecklistInterface $parent = null);
+    public function setParent(?PublishedDeckInterface $parent = null);
 
     /**
-     * @return DecklistInterface
+     * @return PublishedDeckInterface
      */
     public function getParent();
 

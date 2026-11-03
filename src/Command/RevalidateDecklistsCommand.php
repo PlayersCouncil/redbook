@@ -3,7 +3,7 @@
 namespace App\Command;
 
 use App\Entity\CommonDeckInterface;
-use App\Entity\Decklist;
+use App\Entity\PublishedDeck;
 use App\Services\DeckValidator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -35,7 +35,7 @@ class RevalidateDecklistsCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
         $decklists = $this->em->createQuery(
-            'SELECT d FROM ' . Decklist::class . " d WHERE d.completeness = :unvalidated AND d.targetFormat <> '' ORDER BY d.id"
+            'SELECT d FROM ' . PublishedDeck::class . " d WHERE d.completeness = :unvalidated AND d.targetFormat <> '' ORDER BY d.id"
         )->setParameter('unvalidated', CommonDeckInterface::COMPLETENESS_UNVALIDATED)
             ->setMaxResults((int) $input->getOption('limit'))->getResult();
         $done = 0;

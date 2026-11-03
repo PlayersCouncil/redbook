@@ -15,6 +15,16 @@
     <div class="container">
 
         {% include 'alerts.html.twig' %}
+        {% if decklist.unverified %}
+            <div class="alert alert-warning rb-review-note">
+                {{ 'decklist.review.unverified_note' | trans }}
+                {% if is_granted('ROLE_HISTORIAN') and decklist.parent and decklist.user.historic %}
+                    <a class="btn btn-xs btn-default" target="_blank" href="{{ path('deck_edit', {deck_uuid: decklist.parent.uuid}) }}">{{ 'historian.review.open' | trans }}</a>
+                {% endif %}
+            </div>
+        {% elseif decklist.verified and decklist.reviewedBy %}
+            <p class="small text-muted text-right rb-review-note">{{ 'decklist.review.verified_by' | trans({'%name%': decklist.reviewedBy.displayName, '%date%': decklist.reviewedAt | date('Y-m-d')}) }}</p>
+        {% endif %}
         <div class="row title bg-faction">
             <div class="col-xs-12">
                 <h1 class="decklist-name text-center">

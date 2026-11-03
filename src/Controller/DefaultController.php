@@ -5,7 +5,7 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\BannerAlert;
-use App\Services\DecklistManager;
+use App\Services\PublishedDeckManager;
 use Exception;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,7 +25,7 @@ class DefaultController extends AbstractController
      * @param int $cacheExpiration
      * @param string $gameName
      * @param string $publisherName
-     * @param DecklistManager $decklistManager
+     * @param PublishedDeckManager $decklistManager
      * @return Response
      * @throws Exception
      */
@@ -34,7 +34,7 @@ class DefaultController extends AbstractController
         int $cacheExpiration,
         string $gameName,
         string $publisherName,
-        DecklistManager $decklistManager,
+        PublishedDeckManager $decklistManager,
     ) {
         $response = new Response();
         $response->setPublic();

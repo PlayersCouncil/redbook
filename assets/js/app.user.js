@@ -98,7 +98,10 @@
                 + Routing.generate('user_profile_edit')
                 + '">' + Translator.trans('nav.user.editaccount') + '</a></li><li><a href="'
                 + user.data.public_profile_url
-                + '">' + Translator.trans('nav.user.profile') + '</a></li><li><a href="'
+                + '">' + Translator.trans('nav.user.profile') + '</a></li>'
+                + (user.data.historian ? '<li class="divider"></li><li><a href="' + Routing.generate('historian_review') + '">' + Translator.trans('nav.user.review_queue') + '</a></li>' : '')
+                + (user.data.admin ? '<li><a href="' + Routing.generate('admin_claims') + '">' + Translator.trans('nav.user.claims') + '</a></li>' : '')
+                + '<li class="divider"></li><li><a href="'
                 + Routing.generate('fos_user_security_logout')
                 + '" onclick="app.user.wipe()">' + Translator.trans('nav.user.logout') + '</a></li></ul>');
     };

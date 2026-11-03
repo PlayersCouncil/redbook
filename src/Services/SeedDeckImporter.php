@@ -4,34 +4,48 @@ namespace App\Services;
 
 use App\Classes\DeckContent;
 use App\Entity\Card;
-use App\Entity\Decklist;
-use App\Entity\DecklistPlay;
-use App\Entity\Decklistslot;
-use App\Entity\DecklistSource;
+use App\Entity\Deck;
+use App\Entity\PublishedDeck;
+use App\Entity\PublishedDeckPlay;
+use App\Entity\PublishedDeckSlot;
+use App\Entity\PublishedDeckSource;
 use App\Entity\Format;
 use App\Entity\User;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use FOS\UserBundle\Model\UserManagerInterface;
 use InvalidArgumentException;
+use Ramsey\Uuid\Uuid;
 
 /**
  * Imports a seed-deck batch from the archive scrapes (phase3/06, seed-deck.schema.json).
  *
- * Each deck becomes a published decklist owned by the "archive" user, keyed by
- * (source, sourceId) so a re-import updates it. Gemp validation is stored but
+ * Each author becomes a historic account (one per source and name; Ketura,
+ * 2026-11-02), and each deck a private deck of theirs carrying the Historical Deck
+ * Information, published as a decklist keyed by (source, sourceId) so a re-import
+ * updates it. Imported decklists wait in the historians' review queue as
+ * unverified; a re-import leaves verified ones alone. Gemp validation is stored but
  * informational (historical decks, decision 0019). Nothing the source said is
  * dropped: lines the scraper couldn't map, and blueprint IDs Red Book doesn't
  * know, are kept as unresolved lines and shown on the decklist.
  */
 class SeedDeckImporter
 {
-    public const ARCHIVE_USERNAME = 'archive';
+    /** The single account that owned seeded decks before historic accounts; its decks move on re-import */
+    public const LEGACY_ARCHIVE_USERNAME = 'archive';
 
-    /** @var array<string, Card> */
+    /** Decks per flush; the entity manager is cleared after each so a big batch keeps its memory flat */
+    public const CHUNK = 100;
+
+    /** @var array<string, Card|null> */
     private array $cards = [];
     /** @var array<string, bool> */
     private array $formats = [];
+    /** @var array<string, int> historic key => account id */
+    private array $accounts = [];
+    /** @var array<string, User> historic key => account, until the next clear */
+    private array $accountObjects = [];
+    private ?int $nextHistoricNumber = null;
 
     public function __construct(
         private readonly EntityManagerInterface $em,
@@ -44,46 +58,72 @@ class SeedDeckImporter
     }
 
     /**
-     * @return array{created: int, updated: int, skipped: int, guessed: int, problems: string[]}
+     * @return array{created: int, updated: int, skipped: int, kept: int, guessed: int, flagged: int, accounts: int, problems: string[]}
      */
-    public function import(array $batch, bool $validate = true, bool $dryRun = false): array
+    public function import(array $batch, bool $validate = true, bool $dryRun = false, ?callable $progress = null): array
     {
         $this->checkBatch($batch);
         $source = $batch['source'];
-        $archive = $this->archiveUser();
         foreach ($this->em->getRepository(Format::class)->findAll() as $format) {
             $this->formats[$format->getCode()] = true;
         }
+        $this->accounts = [];
+        $this->accountObjects = [];
+        $this->nextHistoricNumber = null;
 
-        $report = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'guessed' => 0, 'problems' => []];
-        foreach ($batch['decks'] as $i => $deck) {
-            $missing = array_diff(['sourceId', 'sourceUrl', 'title', 'legacyAuthor', 'postedDate', 'drawDeck', 'rawDecklist'], array_keys($deck));
-            if ($missing) {
-                $report['skipped']++;
-                $report['problems'][] = sprintf('deck %d (%s): missing %s', $i, $deck['sourceId'] ?? '?', implode(', ', $missing));
-                continue;
-            }
-            $existing = $this->em->getRepository(DecklistSource::class)->findOneBy(['source' => $source, 'sourceId' => (string) $deck['sourceId']]);
-            $decklist = $existing?->getDecklist() ?? new Decklist();
-            $this->fill($decklist, $deck, $source, $archive, $batch['generator'] ?? null, $validate, $report);
-            $existing ? $report['updated']++ : $report['created']++;
-            if (!$dryRun) {
-                $this->em->persist($decklist);
-                if (($report['created'] + $report['updated']) % 50 === 0) {
-                    $this->em->flush();
+        $report = ['created' => 0, 'updated' => 0, 'skipped' => 0, 'kept' => 0, 'guessed' => 0, 'flagged' => 0, 'accounts' => 0, 'problems' => []];
+        $total = count($batch['decks']);
+        foreach (array_chunk($batch['decks'], self::CHUNK, true) as $chunk) {
+            $this->preloadCards($chunk);
+            foreach ($chunk as $i => $deck) {
+                $missing = array_diff(['sourceId', 'sourceUrl', 'title', 'legacyAuthor', 'postedDate', 'drawDeck', 'rawDecklist'], array_keys($deck));
+                if ($missing) {
+                    $report['skipped']++;
+                    $report['problems'][] = sprintf('deck %d (%s): missing %s', $i, $deck['sourceId'] ?? '?', implode(', ', $missing));
+                    continue;
+                }
+                $existing = $this->em->getRepository(PublishedDeckSource::class)->findOneBy(['source' => $source, 'sourceId' => (string) $deck['sourceId']]);
+                $decklist = $existing?->getDecklist() ?? new PublishedDeck();
+                if ($decklist->isVerified()) {
+                    // a historian has checked it against the source; the scrape doesn't get to undo that
+                    $report['kept']++;
+                    continue;
+                }
+                $owner = $this->historicAccount($source, (string) $deck['legacyAuthor'], $dryRun, $report);
+                $current = $decklist->getUser();
+                if ($current instanceof User && !$current->isHistoric() && $current->getUsername() !== self::LEGACY_ARCHIVE_USERNAME) {
+                    // claimed before historic accounts existed: it stays with that person
+                    $owner = $current;
+                }
+                $this->fill($decklist, $deck, $source, $owner, $batch['generator'] ?? null, $validate, $report);
+                $privateDeck = $this->fillPrivateDeck($decklist, $deck, $source, $owner);
+                $existing ? $report['updated']++ : $report['created']++;
+                if (!$dryRun) {
+                    $this->em->persist($privateDeck);
+                    $this->em->persist($decklist);
                 }
             }
-        }
-        if (!$dryRun) {
-            $this->em->flush();
+            if (!$dryRun) {
+                $this->em->flush();
+                foreach ($this->accountObjects as $key => $account) {
+                    $this->accounts[$key] = $account->getId();
+                }
+                $this->accountObjects = [];
+            }
+            // detach everything, so 6000 decks cost the memory of 100
+            $this->em->clear();
+            $this->cards = [];
+            if ($progress) {
+                $progress(min($total, $report['created'] + $report['updated'] + $report['skipped'] + $report['kept']), $total);
+            }
         }
         return $report;
     }
 
-    private function fill(Decklist $decklist, array $deck, string $sourceCode, User $archive, ?string $generator, bool $validate, array &$report): void
+    private function fill(PublishedDeck $decklist, array $deck, string $sourceCode, User $owner, ?string $generator, bool $validate, array &$report): void
     {
         $isNew = $decklist->getId() === null && $decklist->getSource() === null;
-        $source = $decklist->getSource() ?? new DecklistSource($decklist, $sourceCode, (string) $deck['sourceId']);
+        $source = $decklist->getSource() ?? new PublishedDeckSource($decklist, $sourceCode, (string) $deck['sourceId']);
         $decklist->setSource($source);
 
         $source->setSourceUrl((string) $deck['sourceUrl']);
@@ -133,7 +173,7 @@ class SeedDeckImporter
         if ($format === null && $content) {
             $guess = $this->guesser->guess(
                 $this->guesser->slotsFromContent($content),
-                self::partialDate($deck['effectiveDate'] ?? null) ?? self::partialDate($deck['postedDate'])
+                self::effectiveDate($deck)
             );
             $top = $guess['candidates'][0] ?? null;
             if ($top !== null) {
@@ -150,6 +190,7 @@ class SeedDeckImporter
         $name = mb_substr(trim((string) $deck['title']) ?: 'Untitled', 0, 60);
         $description = self::toMarkdown((string) ($deck['description'] ?? ''), $deck['descriptionFormat'] ?? 'text');
         $posted = self::partialDate($deck['postedDate']) ?? new DateTime('today');
+        $effective = self::effectiveDate($deck) ?? $posted;
 
         $decklist->setName($name);
         $decklist->setNameCanonical($this->texts->slugify($name) . '-1.0');
@@ -161,12 +202,13 @@ class SeedDeckImporter
             $decklist->setNbVotes(0);
             $decklist->setNbfavorites(0);
             $decklist->setNbcomments(0);
-            $decklist->setUser($archive);
         }
+        // the author's historic account (or whoever claimed it)
+        $decklist->setUser($owner);
         $decklist->setDateUpdate(new DateTime());
         $decklist->setFaction($this->deckManager->getPlaceholderFaction());
         $decklist->setTargetFormat($format ?? '');
-        $decklist->setEffectiveDate(self::partialDate($deck['effectiveDate'] ?? null) ?? $posted);
+        $decklist->setEffectiveDate($effective);
         $decklist->setSignature(md5(json_encode($content)));
 
         foreach ($decklist->getSlots()->getSlots() as $slot) {
@@ -177,7 +219,7 @@ class SeedDeckImporter
         foreach ($content as $key => $quantity) {
             [$code, $isRingBearer] = DeckContent::parseKey($key);
             $card = $this->card($code);
-            $slot = new Decklistslot();
+            $slot = new PublishedDeckSlot();
             $slot->setCard($card);
             $slot->setQuantity($quantity);
             $slot->setRole($isRingBearer ? DeckContent::ROLE_RING_BEARER : DeckContent::roleForType($card->getType()->getCode()));
@@ -194,7 +236,7 @@ class SeedDeckImporter
             $decklist->removePlay($play);
         }
         if (!empty($deck['tournament']['name'])) {
-            $play = new DecklistPlay();
+            $play = new PublishedDeckPlay();
             $play->setEventName(mb_substr((string) $deck['tournament']['name'], 0, 255));
             $play->setEventDate(self::partialDate($deck['tournament']['date'] ?? null));
             $play->setPlacing(isset($deck['tournament']['placing']) ? mb_substr((string) $deck['tournament']['placing'], 0, 50) : null);
@@ -208,6 +250,181 @@ class SeedDeckImporter
             $this->validator->validateDeck($decklist);
         } else {
             $decklist->setValidation(null);
+        }
+
+        // for the review queue: what a historian should look at
+        $flags = [];
+        foreach ($deck['parseIssues'] ?? [] as $issue) {
+            $flags[] = ['code' => 'parse', 'detail' => mb_substr((string) $issue, 0, 500)];
+        }
+        if ($unresolved) {
+            $flags[] = ['code' => 'unresolved', 'detail' => (string) count($unresolved)];
+        }
+        if ($format === null) {
+            $flags[] = ['code' => 'no_format'];
+        } elseif ($source->getFormatGuess() !== null) {
+            $flags[] = ['code' => 'format_guessed', 'detail' => $format];
+        }
+        $problems = $decklist->getValidation()?->getRelevantProblems() ?? [];
+        if ($problems) {
+            $flags[] = ['code' => 'problems', 'detail' => implode('; ', array_slice($problems, 0, 5))];
+        }
+        $decklist->setReviewFlags($flags);
+        $decklist->markUnverified();
+        if ($flags) {
+            $report['flagged']++;
+        }
+    }
+
+    /**
+     * The private deck behind the published one: what a historian opens in the
+     * deckbuilder, carrying the Historical Deck Information.
+     */
+    private function fillPrivateDeck(PublishedDeck $decklist, array $deck, string $sourceCode, User $owner): Deck
+    {
+        $private = $decklist->getParent();
+        if (!$private instanceof Deck) {
+            $private = new Deck();
+            $private->setUuid(Uuid::uuid4());
+            $private->setMajorVersion(1);
+            $private->setMinorVersion(0);
+            $private->setDateCreation($decklist->getDateCreation());
+            $decklist->setParent($private);
+            $private->addChild($decklist);
+        }
+        $private->setUser($owner);
+        $private->setName($decklist->getName());
+        $private->setDescriptionMd($decklist->getDescriptionMd());
+        $private->setFaction($decklist->getFaction());
+        $private->setLastPack($decklist->getLastPack());
+        $private->setTargetFormat($decklist->getTargetFormat());
+        $private->setEffectiveDate($decklist->getEffectiveDate());
+        $private->setTags(implode(' ', array_map(fn ($t) => preg_replace('/\s+/', '-', trim((string) $t)), $deck['tags'] ?? [])));
+        $private->setValidation($decklist->getValidation());
+
+        $tournament = $deck['tournament'] ?? [];
+        $private->setHistoric(DeckManager::normalizeHistoric([
+            'author' => $deck['legacyAuthor'],
+            'source' => $sourceCode,
+            'source_url' => $deck['sourceUrl'],
+            'archive_url' => $deck['archiveUrl'] ?? '',
+            'event' => $tournament['name'] ?? '',
+            'placing' => $tournament['placing'] ?? '',
+            'players' => $tournament['players'] ?? '',
+            'date_used' => self::dateUsed($deck) ?? '',
+            'date_posted' => $deck['postedDate'],
+            'date_retrieved' => self::archiveDate($deck['archiveUrl'] ?? null) ?? '',
+            'format_as_written' => $deck['formatAsWritten'] ?? '',
+            'notes' => '',
+        ]));
+
+        $content = [];
+        $cards = [];
+        foreach ($decklist->getSlots() as $slot) {
+            $key = $slot->getRole() === DeckContent::ROLE_RING_BEARER ? DeckContent::RING_BEARER_PREFIX . $slot->getCard()->getCode() : $slot->getCard()->getCode();
+            $content[$key] = $slot->getQuantity();
+            $cards[$slot->getCard()->getCode()] = $slot->getCard();
+        }
+        $this->deckManager->setSlots($private, $content, $cards);
+        return $private;
+    }
+
+    /**
+     * The historic account for an author in a source, made on first sight. Follows
+     * merges, so a claimed author's decks go to the person who claimed them.
+     */
+    private function historicAccount(string $source, string $author, bool $dryRun, array &$report): User
+    {
+        $key = self::historicKey($source, $author);
+        $repository = $this->em->getRepository(User::class);
+        $user = $this->accountObjects[$key]
+            ?? (isset($this->accounts[$key]) ? $repository->find($this->accounts[$key]) : $repository->findOneBy(['historicKey' => $key]));
+        if (!$user instanceof User) {
+            /** @var User $user */
+            $user = $this->userManager->createUser();
+            $number = $this->nextHistoricNumber();
+            $user->setUsername('historic_' . $number);
+            $user->setEmail(sprintf('historic+%d@redbook.invalid', $number));
+            // no password hash matches this, and the account is disabled: nobody logs in as it
+            $user->setPassword('!historic');
+            $user->setEnabled(false);
+            $user->setHistoric(true);
+            $user->setHistoricKey($key);
+            $user->setHistoricSource($source);
+            $user->setDisplayName(mb_substr(trim($author), 0, 100) ?: 'Unknown author');
+            $this->userManager->updateCanonicalFields($user);
+            $report['accounts']++;
+            if (!$dryRun) {
+                $this->em->persist($user);
+            }
+        }
+        $this->accountObjects[$key] = $user;
+        return AccountMerger::resolve($user);
+    }
+
+    private function nextHistoricNumber(): int
+    {
+        if ($this->nextHistoricNumber === null) {
+            $max = $this->em->getConnection()->fetchOne(
+                "SELECT MAX(CAST(SUBSTRING(username, 10) AS UNSIGNED)) FROM user WHERE username LIKE 'historic\\_%'"
+            );
+            $this->nextHistoricNumber = (int) $max + 1;
+        }
+        return $this->nextHistoricNumber++;
+    }
+
+    /** One historic account per source and author name, ignoring case and spacing */
+    public static function historicKey(string $source, string $author): string
+    {
+        $name = mb_strtolower(trim(preg_replace('/\s+/u', ' ', $author)));
+        return mb_substr($source . ':' . ($name === '' ? '?' : $name), 0, 255);
+    }
+
+    /** When the deck was played or built: its effective date, else its event, else when it was posted */
+    public static function dateUsed(array $deck): ?string
+    {
+        foreach ([$deck['effectiveDate'] ?? null, $deck['tournament']['date'] ?? null, $deck['postedDate'] ?? null] as $date) {
+            if (is_string($date) && self::partialDate($date) !== null) {
+                return $date;
+            }
+        }
+        return null;
+    }
+
+    /** The card pool date: the end of the Date Used's period (Ketura, 2026-11-02) */
+    public static function effectiveDate(array $deck): ?DateTime
+    {
+        $used = self::dateUsed($deck);
+        return $used === null ? null : DeckManager::endOfPeriod($used);
+    }
+
+    /** The day a Wayback Machine snapshot was taken, from its URL */
+    public static function archiveDate(?string $url): ?string
+    {
+        if ($url && preg_match('#web\.archive\.org/web/(\d{4})(\d{2})(\d{2})#', $url, $m) && checkdate((int) $m[2], (int) $m[3], (int) $m[1])) {
+            return "$m[1]-$m[2]-$m[3]";
+        }
+        return null;
+    }
+
+    /** One query for every card the chunk mentions */
+    private function preloadCards(array $decks): void
+    {
+        $codes = [];
+        foreach ($decks as $deck) {
+            foreach (array_merge([$deck['ringBearer'] ?? null, $deck['ring'] ?? null, $deck['map'] ?? null], $deck['sites'] ?? [], array_column($deck['drawDeck'] ?? [], 'card')) as $code) {
+                if (is_string($code) && $code !== '') {
+                    $codes[$code] = true;
+                }
+            }
+        }
+        if ($codes) {
+            foreach ($this->em->getRepository(Card::class)->findBy(['code' => array_keys($codes)]) as $card) {
+                $this->cards[$card->getCode()] = $card;
+            }
+            foreach (array_keys($codes) as $code) {
+                $this->cards[$code] ??= null;
+            }
         }
     }
 
@@ -230,24 +447,6 @@ class SeedDeckImporter
         if (!is_array($batch['decks'] ?? null)) {
             throw new InvalidArgumentException('The batch has no decks array');
         }
-    }
-
-    /** The user that owns seeded decklists until someone claims them; it can't log in */
-    public function archiveUser(): User
-    {
-        $user = $this->userManager->findUserByUsername(self::ARCHIVE_USERNAME);
-        if ($user instanceof User) {
-            return $user;
-        }
-        /** @var User $user */
-        $user = $this->userManager->createUser();
-        $user->setUsername(self::ARCHIVE_USERNAME);
-        $user->setEmail('archive@redbook.invalid');
-        $user->setPlainPassword(bin2hex(random_bytes(24)));
-        $user->setEnabled(false);
-        $user->setResume('Decks from the decktech.net and Lothlorien archives, kept until their authors claim them.');
-        $this->userManager->updateUser($user);
-        return $user;
     }
 
     /** "2003-08-14", "2003-08" or "2003" as a date (the first day of the period) */

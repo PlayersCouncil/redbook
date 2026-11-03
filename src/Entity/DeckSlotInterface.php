@@ -5,7 +5,7 @@ namespace App\Entity;
 /**
  * @package App\Entity
  */
-interface DeckslotInterface extends SlotInterface
+interface DeckSlotInterface extends SlotInterface
 {
     /**
      * @param int $id

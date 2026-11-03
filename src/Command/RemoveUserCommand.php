@@ -4,7 +4,7 @@ namespace App\Command;
 
 use Symfony\Component\Console\Attribute\AsCommand;
 use App\Entity\Deck;
-use App\Entity\Decklist;
+use App\Entity\PublishedDeck;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
@@ -53,7 +53,7 @@ class RemoveUserCommand extends Command
         $output->writeln('Deleting' . count($decks) . ' decks.');
 
         foreach ($decks as $deck) {
-            $children = $this->entityManager->getRepository(Decklist::class)->findBy([ 'parent' => $deck ]);
+            $children = $this->entityManager->getRepository(PublishedDeck::class)->findBy([ 'parent' => $deck ]);
             foreach ($children as $child) {
                 $child->setParent(null);
             }
@@ -62,12 +62,12 @@ class RemoveUserCommand extends Command
 
         $output->writeln("Decks deleted.");
 
-        $decklists = $this->entityManager->getRepository(Decklist::class)->findBy([ 'user' => $user ]);
+        $decklists = $this->entityManager->getRepository(PublishedDeck::class)->findBy([ 'user' => $user ]);
 
         $output->writeln('Deleting ' . count($decklists) . ' decklists.');
 
         foreach ($decklists as $decklist) {
-            $successors = $this->entityManager->getRepository(Decklist::class)->findBy([
+            $successors = $this->entityManager->getRepository(PublishedDeck::class)->findBy([
                 'precedent' => $decklist
             ]);
             foreach ($successors as $successor) {

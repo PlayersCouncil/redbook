@@ -20,20 +20,20 @@
 
 {% macro username(user) %}
     <a href="{{ path('user_profile_public', {user_id:user.id,user_name:user.username|e('url')}) }}"
-       class="username fg-{{ user.color }}">{{ user.username }}</a>
+       class="username fg-{{ user.color }}">{{ user.displayName }}</a>{% if user.historic %}<span class="label label-default rb-user-historic" title="{{ 'user.historic.badge_title' | trans }}">{{ 'user.historic.badge' | trans }}</span>{% endif %}
     {% if user.role('ROLE_ADMIN') %}
         <span class="fas fa-user-tie admin" title="Administrator"></span>
     {% endif %}
-    <small title="User Reputation">{{ user.reputation }}</small>
+    {% if not user.historic %}<small title="User Reputation">{{ user.reputation }}</small>{% endif %}
 {% endmacro %}
 
 {% macro username_colorless(user) %}
     <a href="{{ path('user_profile_public', {user_id:user.id,user_name:user.username|e('url')}) }}"
-       class="username">{{ user.username }}</a>
+       class="username">{{ user.displayName }}</a>{% if user.historic %}<span class="label label-default rb-user-historic" title="{{ 'user.historic.badge_title' | trans }}">{{ 'user.historic.badge' | trans }}</span>{% endif %}
     {% if user.role('ROLE_ADMIN') %}
         <span class="fas fa-user-tie admin" title="Administrator"></span>
     {% endif %}
-    <small title="User Reputation">{{ user.reputation }}</small>
+    {% if not user.historic %}<small title="User Reputation">{{ user.reputation }}</small>{% endif %}
 {% endmacro %}
 
 {% macro decklist_social_icons(decklist) %}

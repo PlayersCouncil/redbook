@@ -29,6 +29,8 @@ nav:
     loginregister: Login or register
     editaccount: Edit account
     profile: Public profile
+    review_queue: Archive review queue
+    claims: Claims on historic accounts
     logout: Logout
 
 forms:
@@ -734,20 +736,28 @@ decklist.source.unresolved: "Lines in the original that couldn't be matched to a
 decklist.source.raw: The decklist as originally posted
 decklist.source.comments: Comments from the original thread
 decklist.source.archived_label: (archived)
-decklist.claim.button: This is my deck
-decklist.claim.title: Claim an archived deck
-decklist.claim.intro: "If you posted this deck on the original site, ask for it to be moved to your account. An admin will check and approve it; the deck keeps a note of where it came from."
-decklist.claim.message: "How can we tell it's yours? (your name on the original site, anything else that helps)"
-decklist.claim.submit: Send the request
-decklist.claim.sent: "Your request has been sent. An admin will look at it."
-decklist.claim.pending: "You've already asked for this deck; an admin will look at it."
-decklist.claim.admin_title: Claims on archived decks
-decklist.claim.decklist: Decklist
-decklist.claim.user: Asked by
-decklist.claim.approve: Approve
-decklist.claim.reject: Reject
-decklist.claim.none: No requests waiting.
-decklist.claim.recent: Recently decided
+claim.button: This is me
+claim.title: "Claim %name%"
+claim.intro: "If you posted as %name% on %source%, ask for this account to be merged into yours. An admin will check and approve it. Its %count% published decks become yours, they keep a note of where they came from, and %name% is listed on your profile as another name you've used."
+claim.message: "How can we tell it's you? (your name on the original site, anything else that helps)"
+claim.submit: Send the request
+claim.sent: "Your request has been sent. An admin will look at it."
+claim.pending: "You've already asked for this account; an admin will look at it."
+claim.already_claimed: "This account has already been claimed."
+claim.admin_title: Claims on historic accounts
+claim.historic: Historic account
+claim.user: Asked by
+claim.approve: Approve and merge
+claim.reject: Reject
+claim.none: No requests waiting.
+claim.recent: Recently decided
+user.historic.badge: historic
+user.historic.badge_title: "An author from the deck archives. They can claim this account."
+user.historic.intro: "%name% posted decks on %source%. Their decks were brought here from the archives."
+user.aliases: Also known as
+user.display_name: Display name
+user.display_name_help: "Shown on your decks and comments. Your username is only for logging in."
+user.display_name_taken: "Someone already goes by %name%. Choose another display name."
 decklist.publish.format_unknown: "Not known yet: choose the format for its era"
 nav.pc_errata: PC errata
 nav.wiki: The PC wiki
@@ -928,3 +938,53 @@ deckbuilder.sort.twilight: Twilight
 deckbuilder.sort.strength: Strength
 deckbuilder.sort.set: Set and number
 deckbuilder.sort.site: "Site number, shadow number"
+decklist.review.unverified: unverified
+decklist.review.unverified_title: "Brought in from the archives and not yet checked against the original by a historian."
+decklist.review.unverified_note: "This deck was brought in from the archives and hasn't been checked against the original yet. Some cards may be missing or wrong."
+decklist.review.verified_by: "Checked against the original by %name% on %date%."
+historian.review.panel_title: Archive review
+historian.review.unverified: "Not yet checked against the original"
+historian.review.verified_by: "Verified by %name% on %date%"
+historian.review.view_published: Published deck
+historian.review.save_verify: Save & verify
+historian.review.save_update: Save & update published deck
+historian.review.save_verify_hint: "Saves, copies the deck onto its published version, and marks it checked by you."
+historian.review.verified_now: "Saved as version %version% and verified."
+historian.review.original: "Original list from %source%"
+historian.review.unresolved: "Lines the import couldn't match to a card:"
+historian.review.open: Open in the deckbuilder
+historian.review.flag.unresolved: "{1} 1 line not matched to a card|]1,Inf] %count% lines not matched to cards"
+historian.review.flag.format_guessed: "Format guessed: %detail%"
+historian.review.flag.no_format: No format
+historian.review.flag.problems: "Gemp: %detail%"
+historian.review.flag.parse: "Import: %detail%"
+historian.queue.title: Archive review queue
+historian.queue.intro: "Decks brought in from the archives, to be checked against their original posts. Open one to correct it in the deckbuilder, then Save & verify."
+historian.queue.unverified: To check
+historian.queue.verified: Verified
+historian.queue.empty: Nothing here.
+historian.queue.claimed: claimed
+historian.queue.pages: Pages
+historian.queue.previous: Previous
+historian.queue.next: Next
+historian.queue.page_of: "Page %page% of %pages%"
+historian.queue.filter.q: Deck name
+historian.queue.filter.author: Author
+historian.queue.filter.source: Source
+historian.queue.filter.event: Event
+historian.queue.filter.format: Format
+historian.queue.filter.from: Used from
+historian.queue.filter.to: Used until
+historian.queue.filter.attention: Needs attention
+historian.queue.filter.attention_yes: Flagged by the import
+historian.queue.filter.attention_no: Nothing flagged
+historian.queue.filter.flag: Flag
+historian.queue.filter.reviewer: Verified by
+historian.queue.filter.any: Any
+historian.queue.filter.apply: Filter
+historian.queue.filter.clear: Clear
+historian.queue.flag_name.parse: Import note
+historian.queue.flag_name.unresolved: Unmatched lines
+historian.queue.flag_name.no_format: No format
+historian.queue.flag_name.format_guessed: Format guessed
+historian.queue.flag_name.problems: Gemp problems

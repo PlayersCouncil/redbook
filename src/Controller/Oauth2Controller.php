@@ -5,11 +5,11 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\DeckInterface;
-use App\Entity\Decklist;
+use App\Entity\PublishedDeck;
 use App\Entity\Faction;
 use App\Entity\Tournament;
 use App\Entity\UserInterface;
-use App\Services\DecklistFactory;
+use App\Services\PublishedDeckFactory;
 use App\Services\DeckManager;
 use Exception;
 use Ramsey\Uuid\Uuid;
@@ -187,7 +187,7 @@ class Oauth2Controller extends AbstractController
      */
     #[Route(path: '/api/oauth2/deck/save/{id}', name: 'api_oauth2_save_deck', methods: ['PUT'], requirements: ['id' => '\d+'])]
     #[OA\Tag(name: 'Protected')]
-    #[OA\RequestBody(content: new OA\MediaType(mediaType: 'application/x-www-form-urlencoded', schema: new OA\Schema(required: ['name'], properties: [new OA\Property(property: 'name', type: 'string', description: 'Name of the Deck'), new OA\Property(property: 'decklist_id', type: 'integer', description: 'Identifier of the Decklist from which the Deck is copied'), new OA\Property(property: 'description_md', type: 'string', description: 'Description of the Decklist in Markdown'), new OA\Property(property: 'target_format', type: 'string', description: 'Gemp format code'), new OA\Property(property: 'effective_date', type: 'string', description: 'YYYY-MM-DD'), new OA\Property(property: 'tags', type: 'string', description: 'Space-separated list of tags'), new OA\Property(property: 'slots', type: 'string', description: 'Content as a JSON object of blueprint ID => quantity; the Ring-bearer as "rb:" + blueprint ID')])))]
+    #[OA\RequestBody(content: new OA\MediaType(mediaType: 'application/x-www-form-urlencoded', schema: new OA\Schema(required: ['name'], properties: [new OA\Property(property: 'name', type: 'string', description: 'Name of the Deck'), new OA\Property(property: 'decklist_id', type: 'integer', description: 'Identifier of the published deck from which the Deck is copied'), new OA\Property(property: 'description_md', type: 'string', description: 'Description of the published deck in Markdown'), new OA\Property(property: 'target_format', type: 'string', description: 'Gemp format code'), new OA\Property(property: 'effective_date', type: 'string', description: 'YYYY-MM-DD'), new OA\Property(property: 'tags', type: 'string', description: 'Space-separated list of tags'), new OA\Property(property: 'slots', type: 'string', description: 'Content as a JSON object of blueprint ID => quantity; the Ring-bearer as "rb:" + blueprint ID')])))]
     #[OA\Response(response: 200, description: 'Returned when successful')]
     public function saveDeckAction($id, Request $request, DeckManager $deckManager)
     {
@@ -252,14 +252,14 @@ class Oauth2Controller extends AbstractController
      *
      * @param int $id
      * @param Request $request
-     * @param DecklistFactory $decklistFactory
+     * @param PublishedDeckFactory $decklistFactory
      * @return Response $response
      */
     #[Route(path: '/api/oauth2/deck/publish/{id}', name: 'api_oauth2_publish_deck', methods: ['PUT'], requirements: ['id' => '\d+'])]
     #[OA\Tag(name: 'Protected')]
-    #[OA\RequestBody(content: new OA\MediaType(mediaType: 'application/x-www-form-urlencoded', schema: new OA\Schema(properties: [new OA\Property(property: 'description_md', type: 'string', description: 'Description of the Decklist in Markdown'), new OA\Property(property: 'tournament_id', type: 'integer', description: 'Identifier of the Tournament type of the Decklist'), new OA\Property(property: 'precedent_id', type: 'integer', description: 'Identifier of the Predecessor of the Decklist')])))]
+    #[OA\RequestBody(content: new OA\MediaType(mediaType: 'application/x-www-form-urlencoded', schema: new OA\Schema(properties: [new OA\Property(property: 'description_md', type: 'string', description: 'Description of the published deck in Markdown'), new OA\Property(property: 'tournament_id', type: 'integer', description: 'Identifier of the Tournament type of the published deck'), new OA\Property(property: 'precedent_id', type: 'integer', description: 'Identifier of the Predecessor of the published deck')])))]
     #[OA\Response(response: 200, description: 'Returned when successful')]
-    public function publishDeckAction($id, Request $request, DecklistFactory $decklistFactory)
+    public function publishDeckAction($id, Request $request, PublishedDeckFactory $decklistFactory)
     {
         /* @var DeckInterface $deck */
         $deck = $this->managerRegistry->getRepository(Deck::class)->find($id);
@@ -290,7 +290,7 @@ class Oauth2Controller extends AbstractController
             }
         }
         $precedent = $precedent_id
-            ? $this->managerRegistry->getRepository(Decklist::class)->find($precedent_id)
+            ? $this->managerRegistry->getRepository(PublishedDeck::class)->find($precedent_id)
             : null;
 
         try {

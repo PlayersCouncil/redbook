@@ -1,0 +1,111 @@
+{% extends 'base.html.twig' %}
+{% import 'macros.html.twig' as macros %}
+
+{% macro row(decklist, format_names) %}
+    {% set source = decklist.source %}
+    <li class="rb-queue-row">
+        <div class="rb-queue-main">
+            {% if decklist.parent %}
+                <a class="rb-queue-name" href="{{ path('deck_edit', {deck_uuid: decklist.parent.uuid}) }}" target="_blank" rel="noopener">{{ decklist.name }}</a>
+            {% else %}
+                <a class="rb-queue-name" href="{{ path('decklist_detail', {decklist_id: decklist.id, decklist_name: decklist.nameCanonical}) }}" target="_blank" rel="noopener">{{ decklist.name }}</a>
+            {% endif %}
+            <a class="rb-queue-public" href="{{ path('decklist_detail', {decklist_id: decklist.id, decklist_name: decklist.nameCanonical}) }}" target="_blank" rel="noopener" title="{{ 'historian.review.view_published' | trans }}"><span class="fas fa-external-link-alt" aria-hidden="true"></span><span class="sr-only">{{ 'historian.review.view_published' | trans }}</span></a>
+        </div>
+        <div class="rb-queue-meta">
+            <span>{{ decklist.user.displayName }}{% if not decklist.user.historic %} <span class="text-muted">({{ 'historian.queue.claimed' | trans }})</span>{% endif %}</span>
+            {% if source %}<span>{{ source.source }}</span>{% endif %}
+            <span>{{ decklist.effectiveDate ? decklist.effectiveDate | date('Y-m-d') : '' }}</span>
+            <span>{{ decklist.targetFormat ? (format_names[decklist.targetFormat] ?? decklist.targetFormat) : ('historian.review.flag.no_format' | trans) }}</span>
+            {% for play in decklist.plays %}<span>{{ play.eventName }}{% if play.placing %} &middot; {{ play.placing }}{% endif %}</span>{% endfor %}
+        </div>
+        {% if decklist.verified %}
+            <div class="rb-queue-verified">{{ 'historian.review.verified_by' | trans({'%name%': decklist.reviewedBy ? decklist.reviewedBy.displayName : '?', '%date%': decklist.reviewedAt | date('Y-m-d')}) }}</div>
+        {% elseif decklist.reviewFlags | length %}
+            <ul class="rb-review-flags">
+                {% for flag in decklist.reviewFlags %}
+                    <li class="rb-flag rb-flag-{{ flag.code }}" title="{{ flag.detail ?? '' }}">
+                        {%- if flag.code == 'unresolved' -%}
+                            {{ 'historian.review.flag.unresolved' | trans({'%count%': flag.detail}) }}
+                        {%- elseif flag.code == 'no_format' -%}
+                            {{ 'historian.review.flag.no_format' | trans }}
+                        {%- else -%}
+                            {{ ('historian.review.flag.' ~ flag.code) | trans({'%detail%': flag.detail ?? ''}) }}
+                        {%- endif -%}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </li>
+{% endmacro %}
+
+{% macro pager(list, param, filters) %}
+    {% if list.pages > 1 %}
+        <nav class="rb-queue-pager" aria-label="{{ 'historian.queue.pages' | trans }}">
+            {% set query = app.request.query.all %}
+            {% if list.page > 1 %}<a href="{{ path('historian_review', query | merge({(param): list.page - 1})) }}">&larr; {{ 'historian.queue.previous' | trans }}</a>{% endif %}
+            <span>{{ 'historian.queue.page_of' | trans({'%page%': list.page, '%pages%': list.pages}) }}</span>
+            {% if list.page < list.pages %}<a href="{{ path('historian_review', query | merge({(param): list.page + 1})) }}">{{ 'historian.queue.next' | trans }} &rarr;</a>{% endif %}
+        </nav>
+    {% endif %}
+{% endmacro %}
+
+{% block body %}
+    {% import _self as queue %}
+    {% set format_names = {} %}
+    {% for format in formats %}{% set format_names = format_names | merge({(format.code): format.name}) %}{% endfor %}
+    <div class="main white container rb-review-page">
+        {% include 'alerts.html.twig' %}
+        <h1>{{ 'historian.queue.title' | trans }}</h1>
+        <p class="text-muted">{{ 'historian.queue.intro' | trans }}</p>
+
+        <form class="rb-queue-filters" method="get" action="{{ path('historian_review') }}">
+            <label><span>{{ 'historian.queue.filter.q' | trans }}</span><input type="search" name="q" value="{{ filters.q }}"></label>
+            <label><span>{{ 'historian.queue.filter.author' | trans }}</span><input type="search" name="author" value="{{ filters.author }}"></label>
+            <label><span>{{ 'historian.queue.filter.source' | trans }}</span>
+                <select name="source"><option value="">{{ 'historian.queue.filter.any' | trans }}</option>
+                    {% for source in sources %}<option value="{{ source }}"{% if filters.source == source %} selected{% endif %}>{{ source }}</option>{% endfor %}
+                </select></label>
+            <label><span>{{ 'historian.queue.filter.event' | trans }}</span><input type="search" name="event" value="{{ filters.event }}"></label>
+            <label><span>{{ 'historian.queue.filter.format' | trans }}</span>
+                <select name="format"><option value="">{{ 'historian.queue.filter.any' | trans }}</option>
+                    <option value="-"{% if filters.format == '-' %} selected{% endif %}>{{ 'historian.review.flag.no_format' | trans }}</option>
+                    {% for format in formats %}<option value="{{ format.code }}"{% if filters.format == format.code %} selected{% endif %}>{{ format.name }}</option>{% endfor %}
+                </select></label>
+            <label><span>{{ 'historian.queue.filter.from' | trans }}</span><input type="date" name="from" value="{{ filters.from }}"></label>
+            <label><span>{{ 'historian.queue.filter.to' | trans }}</span><input type="date" name="to" value="{{ filters.to }}"></label>
+            <label><span>{{ 'historian.queue.filter.attention' | trans }}</span>
+                <select name="attention">
+                    <option value="">{{ 'historian.queue.filter.any' | trans }}</option>
+                    <option value="yes"{% if filters.attention == 'yes' %} selected{% endif %}>{{ 'historian.queue.filter.attention_yes' | trans }}</option>
+                    <option value="no"{% if filters.attention == 'no' %} selected{% endif %}>{{ 'historian.queue.filter.attention_no' | trans }}</option>
+                </select></label>
+            <label><span>{{ 'historian.queue.filter.flag' | trans }}</span>
+                <select name="flag"><option value="">{{ 'historian.queue.filter.any' | trans }}</option>
+                    {% for code in flag_codes %}<option value="{{ code }}"{% if filters.flag == code %} selected{% endif %}>{{ ('historian.queue.flag_name.' ~ code) | trans }}</option>{% endfor %}
+                </select></label>
+            <label><span>{{ 'historian.queue.filter.reviewer' | trans }}</span><input type="search" name="reviewer" value="{{ filters.reviewer }}"></label>
+            <div class="rb-queue-filter-actions">
+                <button type="submit" class="btn btn-primary btn-sm">{{ 'historian.queue.filter.apply' | trans }}</button>
+                <a href="{{ path('historian_review') }}" class="btn btn-default btn-sm">{{ 'historian.queue.filter.clear' | trans }}</a>
+            </div>
+        </form>
+
+        <div class="row">
+            <section class="col-md-6 rb-queue-col" aria-labelledby="queue-unverified">
+                <h2 id="queue-unverified">{{ 'historian.queue.unverified' | trans }} <span class="badge">{{ unverified.total }}</span></h2>
+                <ol class="rb-queue">
+                    {% for decklist in unverified.items %}{{ queue.row(decklist, format_names) }}{% else %}<li class="text-muted">{{ 'historian.queue.empty' | trans }}</li>{% endfor %}
+                </ol>
+                {{ queue.pager(unverified, 'upage', filters) }}
+            </section>
+            <section class="col-md-6 rb-queue-col" aria-labelledby="queue-verified">
+                <h2 id="queue-verified">{{ 'historian.queue.verified' | trans }} <span class="badge">{{ verified.total }}</span></h2>
+                <ol class="rb-queue">
+                    {% for decklist in verified.items %}{{ queue.row(decklist, format_names) }}{% else %}<li class="text-muted">{{ 'historian.queue.empty' | trans }}</li>{% endfor %}
+                </ol>
+                {{ queue.pager(verified, 'vpage', filters) }}
+            </section>
+        </div>
+    </div>
+{% endblock %}

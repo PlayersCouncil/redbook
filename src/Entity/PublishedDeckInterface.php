@@ -8,7 +8,7 @@ use JsonSerializable;
 /**
  * @package App\Entity
  */
-interface DecklistInterface extends CommonDeckInterface, JsonSerializable
+interface PublishedDeckInterface extends CommonDeckInterface, JsonSerializable
 {
     /**
      * @param string $nameCanonical
@@ -71,14 +71,14 @@ interface DecklistInterface extends CommonDeckInterface, JsonSerializable
     public function getNbComments();
 
     /**
-     * @param DecklistslotInterface $slot
+     * @param PublishedDeckSlotInterface $slot
      */
-    public function addSlot(DecklistslotInterface $slot);
+    public function addSlot(PublishedDeckSlotInterface $slot);
 
     /**
-     * @param DecklistslotInterface $slot
+     * @param PublishedDeckSlotInterface $slot
      */
-    public function removeSlot(DecklistslotInterface $slot);
+    public function removeSlot(PublishedDeckSlotInterface $slot);
 
     /**
      * @param CommentInterface $comment
@@ -96,14 +96,14 @@ interface DecklistInterface extends CommonDeckInterface, JsonSerializable
     public function getComments();
 
     /**
-     * @param DecklistInterface $successor
+     * @param PublishedDeckInterface $successor
      */
-    public function addSuccessor(DecklistInterface $successor);
+    public function addSuccessor(PublishedDeckInterface $successor);
 
     /**
-     * @param DecklistInterface $successor
+     * @param PublishedDeckInterface $successor
      */
-    public function removeSuccessor(DecklistInterface $successor);
+    public function removeSuccessor(PublishedDeckInterface $successor);
 
     /**
      * @return Collection
@@ -146,12 +146,12 @@ interface DecklistInterface extends CommonDeckInterface, JsonSerializable
     public function getParent();
 
     /**
-     * @param DecklistInterface|null $precedent
+     * @param PublishedDeckInterface|null $precedent
      */
-    public function setPrecedent(?DecklistInterface $precedent = null);
+    public function setPrecedent(?PublishedDeckInterface $precedent = null);
 
     /**
-     * @return Decklist
+     * @return PublishedDeck
      */
     public function getPrecedent();
 

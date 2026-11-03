@@ -1,21 +1,21 @@
 {% extends 'base.html.twig' %}
+{% import 'macros.html.twig' as macros %}
 {% block body %}
     <div class="main white container">
         {% include 'alerts.html.twig' %}
-        <h1>{{ 'decklist.claim.title' | trans }}</h1>
-        <p><a href="{{ path('decklist_detail', {decklist_id: decklist.id, decklist_name: decklist.nameCanonical}) }}">{{ decklist.name }}</a>
-            &mdash; {{ 'decklist.source.title' | trans({'%author%': decklist.source.legacyAuthor}) }}</p>
+        <h1>{{ 'claim.title' | trans({'%name%': historic.displayName}) }}</h1>
+        <p>{{ macros.username(historic) }}</p>
         {% if pending %}
-            <div class="alert alert-info">{{ 'decklist.claim.pending' | trans }}</div>
+            <div class="alert alert-info">{{ 'claim.pending' | trans }}</div>
         {% else %}
-            <p>{{ 'decklist.claim.intro' | trans }}</p>
+            <p>{{ 'claim.intro' | trans({'%name%': historic.displayName, '%source%': historic.historicSource, '%count%': nb_decklists}) }}</p>
             <form method="post">
-                <input type="hidden" name="_token" value="{{ csrf_token('claim' ~ decklist.id) }}">
+                <input type="hidden" name="_token" value="{{ csrf_token('claim' ~ historic.id) }}">
                 <div class="form-group">
-                    <label for="message">{{ 'decklist.claim.message' | trans }}</label>
+                    <label for="message">{{ 'claim.message' | trans }}</label>
                     <textarea class="form-control" id="message" name="message" rows="4" maxlength="2000"></textarea>
                 </div>
-                <button type="submit" class="btn btn-primary">{{ 'decklist.claim.submit' | trans }}</button>
+                <button type="submit" class="btn btn-primary">{{ 'claim.submit' | trans }}</button>
             </form>
         {% endif %}
     </div>

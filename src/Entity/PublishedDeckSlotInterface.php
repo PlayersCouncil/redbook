@@ -5,7 +5,7 @@ namespace App\Entity;
 /**
  * @package App\Entity
  */
-interface DecklistslotInterface extends SlotInterface
+interface PublishedDeckSlotInterface extends SlotInterface
 {
     /**
      * @param int $id
@@ -18,12 +18,12 @@ interface DecklistslotInterface extends SlotInterface
     public function getId();
 
     /**
-     * @param Decklist $decklist
+     * @param PublishedDeck $decklist
      */
-    public function setDecklist(?Decklist $decklist = null);
+    public function setDecklist(?PublishedDeck $decklist = null);
 
     /**
-     * @return Decklist
+     * @return PublishedDeck
      */
     public function getDecklist();
 }

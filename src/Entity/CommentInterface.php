@@ -61,12 +61,12 @@ interface CommentInterface
     public function getUser();
 
     /**
-     * @param DecklistInterface $decklist
+     * @param PublishedDeckInterface $decklist
      */
-    public function setDecklist(?DecklistInterface $decklist = null);
+    public function setDecklist(?PublishedDeckInterface $decklist = null);
 
     /**
-     * @return DecklistInterface
+     * @return PublishedDeckInterface
      */
     public function getDecklist();
 }

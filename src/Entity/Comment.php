@@ -48,10 +48,10 @@ class Comment implements CommentInterface
     protected $user;
 
     /**
-     * @var Decklist
+     * @var PublishedDeck
      */
-    #[ORM\ManyToOne(targetEntity: Decklist::class, inversedBy: 'comments')]
-    #[ORM\JoinColumn(name: 'decklist_id', referencedColumnName: 'id')]
+    #[ORM\ManyToOne(targetEntity: PublishedDeck::class, inversedBy: 'comments')]
+    #[ORM\JoinColumn(name: 'published_deck_id', referencedColumnName: 'id')]
     protected $decklist;
 
     /**
@@ -137,7 +137,7 @@ class Comment implements CommentInterface
     /**
      * @inheritdoc
      */
-    public function setDecklist(?DecklistInterface $decklist = null)
+    public function setDecklist(?PublishedDeckInterface $decklist = null)
     {
         $this->decklist = $decklist;
     }

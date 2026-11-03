@@ -7,7 +7,7 @@ use DateTime;
 /**
  * @package App\Entity
  */
-interface DeckchangeInterface
+interface DeckRevisionInterface
 {
     /**
      * @param int $id

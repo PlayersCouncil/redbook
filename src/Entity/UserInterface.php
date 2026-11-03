@@ -153,14 +153,14 @@ interface UserInterface extends SymfonyUserInterface
     public function getDecks();
 
     /**
-     * @param DecklistInterface $decklist
+     * @param PublishedDeckInterface $decklist
      */
-    public function addDecklist(DecklistInterface $decklist);
+    public function addDecklist(PublishedDeckInterface $decklist);
 
     /**
-     * @param DecklistInterface $decklist
+     * @param PublishedDeckInterface $decklist
      */
-    public function removeDecklist(DecklistInterface $decklist);
+    public function removeDecklist(PublishedDeckInterface $decklist);
 
     /**
      * @return Collection
@@ -213,14 +213,14 @@ interface UserInterface extends SymfonyUserInterface
     public function getReviews();
 
     /**
-     * @param DecklistInterface $favorite
+     * @param PublishedDeckInterface $favorite
      */
-    public function addFavorite(DecklistInterface $favorite);
+    public function addFavorite(PublishedDeckInterface $favorite);
 
     /**
-     * @param DecklistInterface $favorite
+     * @param PublishedDeckInterface $favorite
      */
-    public function removeFavorite(DecklistInterface $favorite);
+    public function removeFavorite(PublishedDeckInterface $favorite);
 
     /**
      * @return Collection
@@ -228,14 +228,14 @@ interface UserInterface extends SymfonyUserInterface
     public function getFavorites();
 
     /**
-     * @param DecklistInterface $vote
+     * @param PublishedDeckInterface $vote
      */
-    public function addVote(DecklistInterface $vote);
+    public function addVote(PublishedDeckInterface $vote);
 
     /**
-     * @param DecklistInterface $vote
+     * @param PublishedDeckInterface $vote
      */
-    public function removeVote(DecklistInterface $vote);
+    public function removeVote(PublishedDeckInterface $vote);
 
     /**
      * @return Collection

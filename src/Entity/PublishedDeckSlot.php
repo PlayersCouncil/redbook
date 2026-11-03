@@ -8,8 +8,8 @@ use Doctrine\ORM\Mapping as ORM;
  * @package App\Entity
  */
 #[ORM\Entity]
-#[ORM\Table(name: 'decklistslot')]
-class Decklistslot implements DecklistslotInterface
+#[ORM\Table(name: 'published_deck_slot')]
+class PublishedDeckSlot implements PublishedDeckSlotInterface
 {
     use SlotRoleTrait;
 
@@ -28,10 +28,10 @@ class Decklistslot implements DecklistslotInterface
     protected $quantity;
 
     /**
-     * @var Decklist
+     * @var PublishedDeck
      */
-    #[ORM\ManyToOne(targetEntity: Decklist::class, inversedBy: 'slots')]
-    #[ORM\JoinColumn(name: 'decklist_id', referencedColumnName: 'id')]
+    #[ORM\ManyToOne(targetEntity: PublishedDeck::class, inversedBy: 'slots')]
+    #[ORM\JoinColumn(name: 'published_deck_id', referencedColumnName: 'id')]
     protected $decklist;
 
     /**
@@ -76,7 +76,7 @@ class Decklistslot implements DecklistslotInterface
     /**
      * @inheritdoc
      */
-    public function setDecklist(?Decklist $decklist = null)
+    public function setDecklist(?PublishedDeck $decklist = null)
     {
         $this->decklist = $decklist;
     }

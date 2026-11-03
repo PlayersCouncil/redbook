@@ -7,7 +7,7 @@
         <td>
             <a href="{{ path('decklist_detail', {decklist_id: decklist.id, decklist_name: decklist.nameCanonical}) }}">{{ decklist.name }}</a>
             <div class="small text-muted">
-                {% if decklist.source and decklist.user.username == 'archive' %}{{ decklist.source.legacyAuthor }}{% else %}{{ macros.username_colorless(decklist.user) }}{% endif %}
+                {{ macros.username_colorless(decklist.user) }}
                 &middot; {{ decklist.targetFormat }}
                 &middot; {% for row in decklist.cultures | slice(0, 3) %}{{ row.culture.name }}{% if not loop.last %}, {% endif %}{% endfor %}
             </div>

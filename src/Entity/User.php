@@ -99,6 +99,34 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
     /**
      * @var Collection
      */
+    /** Shown instead of the username everywhere (Ketura, 2026-11-02); null shows the username */
+    #[ORM\Column(name: 'display_name', type: 'string', length: 100, nullable: true)]
+    protected ?string $displayName = null;
+
+    /**
+     * A historic account: the author of archived decks, who can't log in until they
+     * claim it (the claim merges it into their own account).
+     */
+    #[ORM\Column(name: 'historic', type: 'boolean', nullable: false, options: ['default' => false])]
+    protected bool $historic = false;
+
+    /** For a historic account: source and name, the key the archive import finds it by */
+    #[ORM\Column(name: 'historic_key', type: 'string', length: 255, nullable: true, unique: true)]
+    protected ?string $historicKey = null;
+
+    /** For a historic account: the archive it came from (decktech, decipher-forums…) */
+    #[ORM\Column(name: 'historic_source', type: 'string', length: 50, nullable: true)]
+    protected ?string $historicSource = null;
+
+    /** Other names this person posted under: [{name, source}], from merged accounts */
+    #[ORM\Column(name: 'aliases', type: 'json', nullable: true)]
+    protected ?array $aliases = null;
+
+    /** Set when this account was merged into another (a claim, or a historian's dedupe) */
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'merged_into_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    protected ?User $mergedInto = null;
+
     #[ORM\OneToMany(targetEntity: Deck::class, mappedBy: 'user', cascade: ['remove'])]
     #[ORM\OrderBy(['dateUpdate' => 'DESC'])]
     protected $decks;
@@ -106,7 +134,7 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
     /**
      * @var Collection
      */
-    #[ORM\OneToMany(targetEntity: Decklist::class, mappedBy: 'user')]
+    #[ORM\OneToMany(targetEntity: PublishedDeck::class, mappedBy: 'user')]
     protected $decklists;
 
     /**
@@ -133,13 +161,13 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
     /**
      * @var Collection
      */
-    #[ORM\ManyToMany(targetEntity: Decklist::class, mappedBy: 'favorites', cascade: ['remove'])]
+    #[ORM\ManyToMany(targetEntity: PublishedDeck::class, mappedBy: 'favorites', cascade: ['remove'])]
     protected $favorites;
 
     /**
      * @var Collection
      */
-    #[ORM\ManyToMany(targetEntity: Decklist::class, mappedBy: 'votes', cascade: ['remove'])]
+    #[ORM\ManyToMany(targetEntity: PublishedDeck::class, mappedBy: 'votes', cascade: ['remove'])]
     protected $votes;
 
     /**
@@ -399,7 +427,7 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
     /**
      * @inheritdoc
      */
-    public function addDecklist(DecklistInterface $decklist)
+    public function addDecklist(PublishedDeckInterface $decklist)
     {
         $this->decklists->add($decklist);
     }
@@ -407,7 +435,7 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
     /**
      * @inheritdoc
      */
-    public function removeDecklist(DecklistInterface $decklist)
+    public function removeDecklist(PublishedDeckInterface $decklist)
     {
         $this->decklists->removeElement($decklist);
     }
@@ -495,7 +523,7 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
     /**
      * @inheritdoc
      */
-    public function addFavorite(DecklistInterface $favorite)
+    public function addFavorite(PublishedDeckInterface $favorite)
     {
         $favorite->addFavorite($this);
         $this->favorites->add($favorite);
@@ -504,7 +532,7 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
     /**
      * @inheritdoc
      */
-    public function removeFavorite(DecklistInterface $favorite)
+    public function removeFavorite(PublishedDeckInterface $favorite)
     {
         $favorite->removeFavorite($this);
         $this->favorites->removeElement($favorite);
@@ -521,7 +549,7 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
     /**
      * @inheritdoc
      */
-    public function addVote(DecklistInterface $vote)
+    public function addVote(PublishedDeckInterface $vote)
     {
         $vote->addVote($this);
         $this->votes->add($vote);
@@ -530,7 +558,7 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
     /**
      * @inheritdoc
      */
-    public function removeVote(DecklistInterface $vote)
+    public function removeVote(PublishedDeckInterface $vote)
     {
         $vote->removeVote($this);
         $this->votes->removeElement($vote);
@@ -619,6 +647,78 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
     /**
      * @inheritdoc
      */
+    public function getDisplayName(): string
+    {
+        return $this->displayName !== null && $this->displayName !== '' ? $this->displayName : (string) $this->getUsername();
+    }
+
+    public function getRawDisplayName(): ?string
+    {
+        return $this->displayName;
+    }
+
+    public function setDisplayName(?string $displayName): void
+    {
+        $displayName = $displayName === null ? null : trim($displayName);
+        $this->displayName = $displayName === '' ? null : $displayName;
+    }
+
+    public function isHistoric(): bool
+    {
+        return $this->historic;
+    }
+
+    public function setHistoric(bool $historic): void
+    {
+        $this->historic = $historic;
+    }
+
+    public function getHistoricKey(): ?string
+    {
+        return $this->historicKey;
+    }
+
+    public function setHistoricKey(?string $historicKey): void
+    {
+        $this->historicKey = $historicKey;
+    }
+
+    public function getHistoricSource(): ?string
+    {
+        return $this->historicSource;
+    }
+
+    public function setHistoricSource(?string $historicSource): void
+    {
+        $this->historicSource = $historicSource;
+    }
+
+    /** @return array<array{name: string, source: ?string}> */
+    public function getAliases(): array
+    {
+        return $this->aliases ?? [];
+    }
+
+    public function addAlias(string $name, ?string $source): void
+    {
+        foreach ($this->getAliases() as $alias) {
+            if (mb_strtolower($alias['name']) === mb_strtolower($name) && $alias['source'] === $source) {
+                return;
+            }
+        }
+        $this->aliases = array_merge($this->getAliases(), [['name' => $name, 'source' => $source]]);
+    }
+
+    public function getMergedInto(): ?User
+    {
+        return $this->mergedInto;
+    }
+
+    public function setMergedInto(?User $user): void
+    {
+        $this->mergedInto = $user;
+    }
+
     public function getMaxNbDecks()
     {
         return 2 * (100 + floor($this->reputation / 10)) + 100;

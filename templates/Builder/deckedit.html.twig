@@ -19,7 +19,8 @@
           published: deck.children|length > 0,
           publish_url: path('deck_publish_form', {deck_uuid: deck.uuid}),
           view_url: url('deck_view', {deck_uuid: deck.uuid}),
-          historian: is_granted('ROLE_ADMIN')
+          historian: is_granted('ROLE_HISTORIAN'),
+          review: review
       }|json_encode|raw }};
     </script>
 {% endblock %}
@@ -83,7 +84,40 @@
                         <span class="rb-save-status" id="save-status" aria-live="polite"></span>
                     </div>
 
-                    <details class="rb-historic" id="historic-section">
+                    {% if review %}
+                        {% set source = archive_decklist.source %}
+                        <section class="rb-review is-{{ review.status }}" id="review-panel" aria-labelledby="review-title">
+                            <div class="rb-review-head">
+                                <h3 id="review-title">{{ 'historian.review.panel_title' | trans }}</h3>
+                                <span class="rb-review-status" id="review-status"></span>
+                                <a href="{{ review.url }}" target="_blank" rel="noopener" class="rb-review-link">{{ 'historian.review.view_published' | trans }}</a>
+                            </div>
+                            <ul class="rb-review-flags" id="review-flags"></ul>
+                            <div class="rb-actions">
+                                <button type="button" class="rb-btn rb-btn-primary" id="btn-save-verify">{{ 'historian.review.save_verify' | trans }}</button>
+                                <span class="rb-review-hint">{{ 'historian.review.save_verify_hint' | trans }}</span>
+                            </div>
+                            {% if source %}
+                                <details class="rb-review-original"{% if review.status != 'verified' %} open{% endif %}>
+                                    <summary>{{ 'historian.review.original' | trans({'%source%': source.source}) }}
+                                        <a href="{{ source.sourceUrl }}" target="_blank" rel="nofollow noopener">{{ 'decklist.source.original' | trans }}</a>{% if source.archiveUrl %}
+                                        &middot; <a href="{{ source.archiveUrl }}" target="_blank" rel="nofollow noopener">{{ 'decklist.source.archived' | trans }}</a>{% endif %}</summary>
+                                    {% if source.unresolved | length %}
+                                        <div class="rb-review-unresolved">
+                                            <strong>{{ 'historian.review.unresolved' | trans }}</strong>
+                                            <ul>{% for line in source.unresolved %}<li><code>{{ line.line }}</code>{% if line.count is defined and line.count > 1 %} &times;{{ line.count }}{% endif %}{% if line.section is defined and line.section %} <span class="text-muted">{{ line.section }}</span>{% endif %}{% if line.reason is defined and line.reason %} <em>({{ line.reason }})</em>{% endif %}</li>{% endfor %}</ul>
+                                        </div>
+                                    {% endif %}
+                                    {% if source.formatGuess %}
+                                        <p class="small">{{ 'decklist.source.format_guessed' | trans({'%format%': archive_decklist.targetFormat}) }} {{ source.formatGuess.reasons | join('; ') }}.</p>
+                                    {% endif %}
+                                    <pre class="rb-review-raw">{{ source.rawDecklist }}</pre>
+                                </details>
+                            {% endif %}
+                        </section>
+                    {% endif %}
+
+                    <details class="rb-historic" id="historic-section"{% if review %} open{% endif %}>
                         <summary>{{ 'deckbuilder.historic.title' | trans }} <span class="rb-historic-badge" hidden>{{ 'deckbuilder.historic.badge' | trans }}</span></summary>
                         <label class="rb-check"><input type="checkbox" id="historic-on"> {{ 'deckbuilder.historic.is_historic' | trans }}</label>
                         <fieldset id="historic-fields" disabled>
@@ -92,7 +126,9 @@
                             <label class="rb-field"><span>{{ 'deckbuilder.historic.source' | trans }}</span>
                                 <select data-historic="source">
                                     <option value="">{{ 'deckbuilder.historic.choose' | trans }}</option>
-                                    {% for code, label in {'decipher-forums': 'Decipher forums', 'decktech': 'DeckTech.net', 'gpn': 'GamePlayersNetwork', 'lotr-online-tcg': 'LOTR Online TCG forums', 'tlhh': 'The Last Homely House', 'other': 'deckbuilder.historic.other' | trans} %}
+                                    {% set sources = {'decipher-forums': 'Decipher forums', 'decktech': 'DeckTech.net', 'gpn': 'GamePlayersNetwork', 'lotr-online-tcg-forums': 'LOTR Online TCG forums', 'tlhh': 'The Last Homely House', 'other': 'deckbuilder.historic.other' | trans} %}
+                                    {% if f.source is defined and f.source and sources[f.source] is not defined %}<option value="{{ f.source }}" selected>{{ f.source }}</option>{% endif %}
+                                    {% for code, label in sources %}
                                         <option value="{{ code }}"{% if (f.source ?? '') == code %} selected{% endif %}>{{ label }}</option>
                                     {% endfor %}
                                 </select>

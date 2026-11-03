@@ -7,14 +7,26 @@
         {% include 'alerts.html.twig' %}
         <div class="jumbotron background-{{ user.color }}-10">
             <h1>
-                <span class="{{ user.color }}">{{ user.username }}</span>
+                <span class="{{ user.color }}">{{ user.displayName }}</span>
+                {% if user.historic %}<span class="label label-default rb-user-historic" title="{{ 'user.historic.badge_title' | trans }}">{{ 'user.historic.badge' | trans }}</span>{% endif %}
                 {% if user.role('ROLE_ADMIN') %}
                     <span class="fas fa-user-tie admin" title="Administrator"></span>
                 {% endif %}
-                <small>{{ user.reputation }}</small>
+                {% if not user.historic %}<small>{{ user.reputation }}</small>{% endif %}
             </h1>
+            {% if user.aliases | length %}
+                <p class="small">{{ 'user.aliases' | trans }}:
+                    {% for alias in user.aliases %}{{ alias.name }}{% if alias.source %} <span class="text-muted">({{ alias.source }})</span>{% endif %}{% if not loop.last %}, {% endif %}{% endfor %}</p>
+            {% endif %}
             <p>
+                {% if user.historic %}
+                    {{ 'user.historic.intro' | trans({'%name%': user.displayName, '%source%': user.historicSource}) }}
+                    {% if app.user and not app.user.historic %}
+                        <a href="{{ path('historic_claim_form', {user_id: user.id}) }}" class="btn btn-sm btn-default">{{ 'claim.button' | trans }}</a>
+                    {% endif %}
+                {% else %}
                 Member since {{ user.dateCreation|date('Y-m-d') }}.
+                {% endif %}
             <div>
                 {% if user.decklists|length > 1 %}
                     <a href="{{ path('decklists_list',{type:'find',page:1,author:user.username}) }}">{{ user.decklists|length }}

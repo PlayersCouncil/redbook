@@ -11,14 +11,14 @@ use Doctrine\ORM\Mapping as ORM;
  * to its author.
  */
 #[ORM\Entity]
-#[ORM\Table(name: 'decklist_source')]
-#[ORM\UniqueConstraint(name: 'decklist_source_idx', columns: ['source', 'source_id'])]
-class DecklistSource
+#[ORM\Table(name: 'published_deck_source')]
+#[ORM\UniqueConstraint(name: 'published_deck_source_idx', columns: ['source', 'source_id'])]
+class PublishedDeckSource
 {
     #[ORM\Id]
-    #[ORM\OneToOne(targetEntity: Decklist::class, inversedBy: 'source')]
-    #[ORM\JoinColumn(name: 'decklist_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
-    protected Decklist $decklist;
+    #[ORM\OneToOne(targetEntity: PublishedDeck::class, inversedBy: 'source')]
+    #[ORM\JoinColumn(name: 'published_deck_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+    protected PublishedDeck $decklist;
 
     /** decktech, lothlorien, ... */
     #[ORM\Column(name: 'source', type: 'string', length: 30, nullable: false)]
@@ -70,14 +70,14 @@ class DecklistSource
     #[ORM\Column(name: 'batch', type: 'string', length: 255, nullable: true)]
     protected ?string $batch = null;
 
-    public function __construct(Decklist $decklist, string $source, string $sourceId)
+    public function __construct(PublishedDeck $decklist, string $source, string $sourceId)
     {
         $this->decklist = $decklist;
         $this->source = $source;
         $this->sourceId = $sourceId;
     }
 
-    public function getDecklist(): Decklist { return $this->decklist; }
+    public function getDecklist(): PublishedDeck { return $this->decklist; }
     public function getSource(): string { return $this->source; }
     public function getSourceId(): string { return $this->sourceId; }
     public function getSourceUrl(): string { return $this->sourceUrl; }

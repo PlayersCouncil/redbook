@@ -13,7 +13,9 @@ security:
                 - legacy_sha512
 
     role_hierarchy:
-        ROLE_ADMIN:       ROLE_USER
+        # Historians check and correct archive decks (Ketura, 2026-11-02)
+        ROLE_HISTORIAN:   ROLE_USER
+        ROLE_ADMIN:       [ROLE_USER, ROLE_HISTORIAN]
         ROLE_SUPER_ADMIN: ROLE_ADMIN
 
     providers:
@@ -61,6 +63,7 @@ security:
         - { path: ^/remind, roles: PUBLIC_ACCESS }
         - { path: ^/oauth/v2/authorize, roles: IS_AUTHENTICATED_REMEMBERED }
         - { path: ^/admin/, roles: ROLE_ADMIN }
+        - { path: ^/historian/, roles: ROLE_HISTORIAN }
         - { path: ^/api/public, roles: PUBLIC_ACCESS }
         - { path: ^/api/oauth2/user, roles: IS_AUTHENTICATED_FULLY }
         - { path: ^/api/oauth2/decks, roles: ROLE_READ_DECK }

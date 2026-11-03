@@ -2,7 +2,7 @@
 
 namespace App\Entity;
 
-use App\Repository\DecklistRepository;
+use App\Repository\PublishedDeckRepository;
 use App\Classes\SlotCollectionDecorator;
 use DateTime;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -12,10 +12,11 @@ use JsonSerializable;
 use Doctrine\ORM\Mapping as ORM;
 use stdClass;
 
-#[ORM\Entity(repositoryClass: DecklistRepository::class)]
-#[ORM\Table(name: 'decklist')]
-#[ORM\Index(name: 'decklist_format_idx', columns: ['target_format', 'completeness', 'half'])]
-class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
+#[ORM\Entity(repositoryClass: PublishedDeckRepository::class)]
+#[ORM\Table(name: 'published_deck')]
+#[ORM\Index(name: 'published_deck_format_idx', columns: ['target_format', 'completeness', 'half'])]
+#[ORM\Index(name: 'published_deck_review_idx', columns: ['review_status', 'reviewed_at'])]
+class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDeckInterface
 {
     use LotrDeckTrait;
 
@@ -23,18 +24,44 @@ class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
     #[ORM\Column(name: 'half', type: 'string', length: 12, nullable: true)]
     protected ?string $half = null;
 
-    /** @var Collection<int, DecklistCulture> */
-    #[ORM\OneToMany(targetEntity: DecklistCulture::class, mappedBy: 'decklist', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    /** @var Collection<int, PublishedDeckCulture> */
+    #[ORM\OneToMany(targetEntity: PublishedDeckCulture::class, mappedBy: 'decklist', cascade: ['persist', 'remove'], orphanRemoval: true)]
     protected $cultures;
 
-    /** @var Collection<int, DecklistPlay> */
-    #[ORM\OneToMany(targetEntity: DecklistPlay::class, mappedBy: 'decklist', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    /** @var Collection<int, PublishedDeckPlay> */
+    #[ORM\OneToMany(targetEntity: PublishedDeckPlay::class, mappedBy: 'decklist', cascade: ['persist', 'remove'], orphanRemoval: true)]
     #[ORM\OrderBy(['eventDate' => 'DESC'])]
     protected $plays;
 
+    public const REVIEW_UNVERIFIED = 'unverified';
+    public const REVIEW_VERIFIED = 'verified';
+
+    /**
+     * Archive decks wait for a historian to check them against the source
+     * (Ketura, 2026-11-02); null for decks people publish themselves.
+     */
+    #[ORM\Column(name: 'review_status', type: 'string', length: 12, nullable: true)]
+    protected ?string $reviewStatus = null;
+
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'reviewed_by_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    protected ?User $reviewedBy = null;
+
+    #[ORM\Column(name: 'reviewed_at', type: 'datetime', nullable: true)]
+    protected ?\DateTimeInterface $reviewedAt = null;
+
+    /**
+     * What the import couldn't settle, for the review queue: a list of codes
+     * (unresolved, format_guessed, problems, no_format, parse) and their details.
+     *
+     * @var array<array{code: string, detail?: string}>|null
+     */
+    #[ORM\Column(name: 'review_flags', type: 'json', nullable: true)]
+    protected ?array $reviewFlags = null;
+
     /** Set for decklists seeded from the archive (phase3/06) */
-    #[ORM\OneToOne(targetEntity: DecklistSource::class, mappedBy: 'decklist', cascade: ['persist', 'remove'])]
-    protected ?DecklistSource $source = null;
+    #[ORM\OneToOne(targetEntity: PublishedDeckSource::class, mappedBy: 'decklist', cascade: ['persist', 'remove'])]
+    protected ?PublishedDeckSource $source = null;
 
     /**
      * @var int
@@ -115,7 +142,7 @@ class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
     /**
      * @var Collection
      */
-    #[ORM\OneToMany(targetEntity: Decklistslot::class, mappedBy: 'decklist', cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: PublishedDeckSlot::class, mappedBy: 'decklist', cascade: ['persist', 'remove'])]
     protected $slots;
 
     /**
@@ -128,7 +155,7 @@ class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
     /**
      * @var Collection
      */
-    #[ORM\OneToMany(targetEntity: Decklist::class, mappedBy: 'precedent')]
+    #[ORM\OneToMany(targetEntity: PublishedDeck::class, mappedBy: 'precedent')]
     #[ORM\OrderBy(['dateCreation' => 'ASC'])]
     protected $successors;
 
@@ -167,10 +194,10 @@ class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
     protected $parent;
 
     /**
-     * @var DecklistInterface
+     * @var PublishedDeckInterface
      */
-    #[ORM\ManyToOne(targetEntity: Decklist::class, inversedBy: 'successors')]
-    #[ORM\JoinColumn(name: 'precedent_decklist_id', referencedColumnName: 'id')]
+    #[ORM\ManyToOne(targetEntity: PublishedDeck::class, inversedBy: 'successors')]
+    #[ORM\JoinColumn(name: 'precedent_published_deck_id', referencedColumnName: 'id')]
     protected $precedent;
 
     /**
@@ -184,14 +211,14 @@ class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
      * @var Collection
      */
     #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'favorites')]
-    #[ORM\JoinTable(name: 'favorite', joinColumns: [new ORM\JoinColumn(name: 'decklist_id', referencedColumnName: 'id')], inverseJoinColumns: [new ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id')])]
+    #[ORM\JoinTable(name: 'favorite', joinColumns: [new ORM\JoinColumn(name: 'published_deck_id', referencedColumnName: 'id')], inverseJoinColumns: [new ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id')])]
     protected $favorites;
 
     /**
      * @var Collection
      */
     #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'votes')]
-    #[ORM\JoinTable(name: 'vote', joinColumns: [new ORM\JoinColumn(name: 'decklist_id', referencedColumnName: 'id')], inverseJoinColumns: [new ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id')])]
+    #[ORM\JoinTable(name: 'vote', joinColumns: [new ORM\JoinColumn(name: 'published_deck_id', referencedColumnName: 'id')], inverseJoinColumns: [new ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id')])]
     protected $votes;
 
     /**
@@ -219,7 +246,7 @@ class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
         $this->half = $half;
     }
 
-    /** @return Collection<int, DecklistCulture> */
+    /** @return Collection<int, PublishedDeckCulture> */
     public function getCultures(): Collection
     {
         return $this->cultures;
@@ -241,33 +268,83 @@ class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
             }
         }
         foreach ($counts as ['culture' => $culture, 'count' => $count]) {
-            $this->cultures->add(new DecklistCulture($this, $culture, $count));
+            $this->cultures->add(new PublishedDeckCulture($this, $culture, $count));
         }
     }
 
-    /** @return Collection<int, DecklistPlay> */
+    /** @return Collection<int, PublishedDeckPlay> */
     public function getPlays(): Collection
     {
         return $this->plays;
     }
 
-    public function addPlay(DecklistPlay $play): void
+    public function addPlay(PublishedDeckPlay $play): void
     {
         $play->setDecklist($this);
         $this->plays->add($play);
     }
 
-    public function removePlay(DecklistPlay $play): void
+    public function removePlay(PublishedDeckPlay $play): void
     {
         $this->plays->removeElement($play);
     }
 
-    public function getSource(): ?DecklistSource
+    public function getReviewStatus(): ?string
+    {
+        return $this->reviewStatus;
+    }
+
+    public function isUnverified(): bool
+    {
+        return $this->reviewStatus === self::REVIEW_UNVERIFIED;
+    }
+
+    public function isVerified(): bool
+    {
+        return $this->reviewStatus === self::REVIEW_VERIFIED;
+    }
+
+    public function getReviewedBy(): ?User
+    {
+        return $this->reviewedBy;
+    }
+
+    public function getReviewedAt(): ?\DateTimeInterface
+    {
+        return $this->reviewedAt;
+    }
+
+    public function markUnverified(): void
+    {
+        $this->reviewStatus = self::REVIEW_UNVERIFIED;
+        $this->reviewedBy = null;
+        $this->reviewedAt = null;
+    }
+
+    public function markVerified(User $by): void
+    {
+        $this->reviewStatus = self::REVIEW_VERIFIED;
+        $this->reviewedBy = $by;
+        $this->reviewedAt = new DateTime();
+    }
+
+    /** @return array<array{code: string, detail?: string}> */
+    public function getReviewFlags(): array
+    {
+        return $this->reviewFlags ?? [];
+    }
+
+    public function setReviewFlags(?array $flags): void
+    {
+        $this->reviewFlags = $flags ?: null;
+    }
+
+    public function getSource(): ?PublishedDeckSource
     {
         return $this->source;
     }
 
-    public function setSource(?DecklistSource $source): void
+    public function setSource(?PublishedDeckSource $source): void
     {
         $this->source = $source;
     }
@@ -459,7 +536,7 @@ class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
     /**
      * @inheritdoc
      */
-    public function addSlot(DecklistslotInterface $slot)
+    public function addSlot(PublishedDeckSlotInterface $slot)
     {
         $this->slots->add($slot);
     }
@@ -467,7 +544,7 @@ class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
     /**
      * @inheritdoc
      */
-    public function removeSlot(DecklistslotInterface $slot)
+    public function removeSlot(PublishedDeckSlotInterface $slot)
     {
         $this->slots->removeElement($slot);
     }
@@ -499,7 +576,7 @@ class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
     /**
      * @inheritdoc
      */
-    public function addSuccessor(DecklistInterface $successor)
+    public function addSuccessor(PublishedDeckInterface $successor)
     {
         $this->successors->add($successor);
     }
@@ -507,7 +584,7 @@ class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
     /**
      * @inheritdoc
      */
-    public function removeSuccessor(DecklistInterface $successor)
+    public function removeSuccessor(PublishedDeckInterface $successor)
     {
         $this->successors->removeElement($successor);
     }
@@ -611,7 +688,7 @@ class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
     /**
      * @inheritdoc
      */
-    public function setPrecedent(?DecklistInterface $precedent = null)
+    public function setPrecedent(?PublishedDeckInterface $precedent = null)
     {
         $this->precedent = $precedent;
     }
@@ -721,7 +798,7 @@ class Decklist extends CommonDeck implements JsonSerializable, DecklistInterface
             'gemp' => $slots->toGempString(),
             'version' => $this->getVersion(),
             'half' => $this->half,
-            'plays' => array_map(fn (DecklistPlay $play) => $play->serialize(), $this->plays->toArray()),
+            'plays' => array_map(fn (PublishedDeckPlay $play) => $play->serialize(), $this->plays->toArray()),
             'legacy_author' => $this->source?->getLegacyAuthor(),
         ] + $this->lotrDeckJson();
     }

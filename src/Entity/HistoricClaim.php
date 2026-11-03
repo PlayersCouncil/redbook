@@ -7,13 +7,14 @@ use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * A registered user's request to own a seeded decklist (phase3/06). An admin
- * approves or rejects it; approval moves the decklist to the user.
+ * A request to claim a historic account (Ketura, 2026-11-02): a registered user says
+ * "that archive author is me", an admin approves, and the historic account is merged
+ * into theirs, decks, published decks and name (as an alias) together.
  */
 #[ORM\Entity]
-#[ORM\Table(name: 'decklist_claim')]
-#[ORM\Index(name: 'decklist_claim_status_idx', columns: ['status'])]
-class DecklistClaim
+#[ORM\Table(name: 'historic_claim')]
+#[ORM\Index(name: 'historic_claim_status_idx', columns: ['status'])]
+class HistoricClaim
 {
     public const STATUS_PENDING = 'pending';
     public const STATUS_APPROVED = 'approved';
@@ -21,18 +22,19 @@ class DecklistClaim
 
     #[ORM\Column(name: 'id', type: 'integer')]
     #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: 'IDENTITY')]
+    #[ORM\GeneratedValue(strategy: 'AUTO')]
     protected $id;
 
-    #[ORM\ManyToOne(targetEntity: Decklist::class)]
-    #[ORM\JoinColumn(name: 'decklist_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
-    protected Decklist $decklist;
+    /** The historic account being claimed */
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'historic_user_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+    protected User $historicUser;
 
+    /** The person claiming it */
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     protected User $user;
 
-    /** Why the user is the author: "I posted as Gandalf99 on decktech" */
     #[ORM\Column(name: 'message', type: 'text', nullable: true)]
     protected ?string $message = null;
 
@@ -49,16 +51,16 @@ class DecklistClaim
     #[ORM\JoinColumn(name: 'decided_by_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
     protected ?User $decidedBy = null;
 
-    public function __construct(Decklist $decklist, User $user, ?string $message)
+    public function __construct(User $historicUser, User $user, ?string $message)
     {
-        $this->decklist = $decklist;
+        $this->historicUser = $historicUser;
         $this->user = $user;
         $this->message = $message;
         $this->dateCreation = new DateTime();
     }
 
     public function getId() { return $this->id; }
-    public function getDecklist(): Decklist { return $this->decklist; }
+    public function getHistoricUser(): User { return $this->historicUser; }
     public function getUser(): User { return $this->user; }
     public function getMessage(): ?string { return $this->message; }
     public function getStatus(): string { return $this->status; }

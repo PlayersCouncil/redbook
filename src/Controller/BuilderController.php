@@ -5,11 +5,12 @@ namespace App\Controller;
 use App\Classes\DeckContent;
 use App\Entity\BannerAlert;
 use App\Entity\Deck;
-use App\Entity\Deckchange;
+use App\Entity\DeckRevision;
 use App\Entity\DeckInterface;
-use App\Entity\Decklist;
+use App\Entity\PublishedDeck;
 use App\Entity\Format;
 use App\Entity\Tournament;
+use App\Entity\User;
 use App\Entity\UserInterface;
 use App\Repository\FormatRepository;
 use App\Services\DeckImportService;
@@ -17,6 +18,7 @@ use App\Services\DeckManager;
 use App\Services\DeckValidator;
 use App\Services\Diff;
 use App\Services\FormatGuesser;
+use App\Services\PublishedDeckFactory;
 use App\Services\Gemp\GempClient;
 use App\Services\Gemp\GempRejectedException;
 use App\Services\Gemp\GempUnavailableException;
@@ -176,7 +178,7 @@ class BuilderController extends AbstractController
     }
 
     #[Route(path: '/deck/save', name: 'deck_save', methods: ['POST'])]
-    public function saveAction(Request $request, DeckManager $deckManager, TranslatorInterface $translator): Response
+    public function saveAction(Request $request, DeckManager $deckManager, TranslatorInterface $translator, PublishedDeckFactory $publishedDeckFactory): Response
     {
         $user = $this->requireUser();
         $em = $this->managerRegistry->getManager();
@@ -186,7 +188,7 @@ class BuilderController extends AbstractController
         $sourceDeck = null;
         if ($id) {
             $deck = $em->getRepository(Deck::class)->find($id);
-            if (!$deck || $user->getId() != $deck->getUser()->getId()) {
+            if (!$deck || !$this->canEdit($deck)) {
                 throw new AccessDeniedHttpException("You don't have access to this deck.");
             }
             $sourceDeck = $deck;
@@ -241,6 +243,17 @@ class BuilderController extends AbstractController
             $data['historic'] = $request->get('historic');
         }
         $deckManager->save($user, $deck, $data, $sourceDeck);
+
+        // Save & verify: a historian's correction goes straight onto the archive decklist
+        $verified = null;
+        if ($request->get('verify') && $id && $this->isHistorianDeck($deck)) {
+            $verified = $this->archiveDecklist($deck);
+            if ($verified === null) {
+                throw new BadRequestHttpException('This deck has no archive decklist to verify');
+            }
+            $publishedDeckFactory->refreshFromDeck($verified, $deck);
+            $verified->markVerified($user);
+        }
         $em->flush();
 
         if ($request->get('format') === 'json') {
@@ -252,6 +265,7 @@ class BuilderController extends AbstractController
                 'version' => $deck->getVersion(),
                 'deck' => $deck->jsonSerialize(),
                 'edit_url' => $this->generateUrl('deck_edit', ['deck_uuid' => $deck->getUuid()]),
+                'review' => $verified === null ? null : $this->reviewInfo($verified),
             ]);
         }
         return $this->redirectToRoute('deck_view', ['deck_uuid' => $deck->getUuid()]);
@@ -403,14 +417,17 @@ class BuilderController extends AbstractController
     #[Route(path: '/deck/edit/{deck_uuid}', name: 'deck_edit', methods: ['GET'], requirements: ['deck_uuid' => self::UUID])]
     public function editAction(string $deck_uuid): Response
     {
-        $user = $this->requireUser();
+        $this->requireUser();
         $deck = $this->findDeck($deck_uuid);
-        if ($user->getId() != $deck->getUser()->getId()) {
+        if (!$this->canEdit($deck)) {
             throw new AccessDeniedHttpException('You are not allowed to edit this deck.');
         }
+        $archive = $this->isHistorianDeck($deck) ? $this->archiveDecklist($deck) : null;
         return $this->render('Builder/deckedit.html.twig', [
             'pagetitle' => 'Deckbuilder',
             'deck' => $deck,
+            'archive_decklist' => $archive,
+            'review' => $archive === null ? null : $this->reviewInfo($archive),
             'formats' => $this->formats->findSelectable(),
             'format' => $this->formats->findOneByCode($deck->getTargetFormat()),
         ]);
@@ -487,7 +504,7 @@ class BuilderController extends AbstractController
     public function copyAction(int $decklist_id, DeckManager $deckManager, TranslatorInterface $translator): Response
     {
         $user = $this->requireUser();
-        $decklist = $this->managerRegistry->getRepository(Decklist::class)->find($decklist_id)
+        $decklist = $this->managerRegistry->getRepository(PublishedDeck::class)->find($decklist_id)
             ?? throw new NotFoundHttpException('No such decklist');
         if (count($user->getDecks()) >= $user->getMaxNbDecks()) {
             $this->addFlash('error', $translator->trans('decks.save.outOfSlots'));
@@ -525,7 +542,7 @@ class BuilderController extends AbstractController
         }
         $date = new \DateTime();
         if (count($diff[0]) || count($diff[1])) {
-            $change = new Deckchange();
+            $change = new DeckRevision();
             $change->setDeck($deck);
             $change->setVariation(json_encode($diff));
             $change->setIsSaved(false);
@@ -551,6 +568,41 @@ class BuilderController extends AbstractController
             ?? throw new NotFoundHttpException("This deck doesn't exist.");
     }
 
+    /** The owner, or a historian on a historic author's deck */
+    private function canEdit(Deck $deck): bool
+    {
+        return $this->isOwner($deck) || $this->isHistorianDeck($deck);
+    }
+
+    private function isHistorianDeck(Deck $deck): bool
+    {
+        $owner = $deck->getUser();
+        return $owner instanceof User && $owner->isHistoric() && $this->isGranted('ROLE_HISTORIAN');
+    }
+
+    /** The decklist the archive import published from this deck */
+    private function archiveDecklist(Deck $deck): ?PublishedDeck
+    {
+        foreach ($deck->getChildren() as $child) {
+            if ($child instanceof PublishedDeck && $child->getReviewStatus() !== null) {
+                return $child;
+            }
+        }
+        return null;
+    }
+
+    private function reviewInfo(PublishedDeck $decklist): array
+    {
+        return [
+            'decklist_id' => $decklist->getId(),
+            'url' => $this->generateUrl('decklist_detail', ['decklist_id' => $decklist->getId(), 'decklist_name' => $decklist->getNameCanonical()]),
+            'status' => $decklist->getReviewStatus(),
+            'reviewed_by' => $decklist->getReviewedBy()?->getDisplayName(),
+            'reviewed_at' => $decklist->getReviewedAt()?->format('Y-m-d'),
+            'flags' => $decklist->getReviewFlags(),
+        ];
+    }
+
     private function isOwner(DeckInterface $deck): bool
     {
         $user = $this->getUser();
@@ -561,7 +613,7 @@ class BuilderController extends AbstractController
     private function findViewableDeck(string $uuid): Deck
     {
         $deck = $this->findDeck($uuid);
-        if (!$this->isOwner($deck) && !$deck->isShared() && !$deck->getUser()->getIsShareDecks()) {
+        if (!$this->canEdit($deck) && !$deck->isShared() && !$deck->getUser()->getIsShareDecks()) {
             throw new AccessDeniedHttpException('You are not allowed to view this deck. Its owner can share it by link.');
         }
         return $deck;

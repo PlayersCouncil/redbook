@@ -91,20 +91,20 @@ class Deck extends CommonDeck implements DeckInterface
     /**
      * @var Collection
      */
-    #[ORM\OneToMany(targetEntity: Deckslot::class, mappedBy: 'deck', cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: DeckSlot::class, mappedBy: 'deck', cascade: ['persist', 'remove'])]
     protected $slots;
 
     /**
      * @var Collection
      */
-    #[ORM\OneToMany(targetEntity: Decklist::class, mappedBy: 'parent')]
+    #[ORM\OneToMany(targetEntity: PublishedDeck::class, mappedBy: 'parent')]
     #[ORM\OrderBy(['dateCreation' => 'DESC'])]
     protected $children;
 
     /**
      * @var Collection
      */
-    #[ORM\OneToMany(targetEntity: Deckchange::class, mappedBy: 'deck', cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: DeckRevision::class, mappedBy: 'deck', cascade: ['persist', 'remove'])]
     #[ORM\OrderBy(['dateCreation' => 'DESC', 'isSaved' => 'DESC'])]
     protected $changes;
 
@@ -130,10 +130,10 @@ class Deck extends CommonDeck implements DeckInterface
     protected $lastPack;
 
     /**
-     * @var DecklistInterface
+     * @var PublishedDeckInterface
      */
-    #[ORM\ManyToOne(targetEntity: Decklist::class, inversedBy: 'children')]
-    #[ORM\JoinColumn(name: 'parent_decklist_id', referencedColumnName: 'id')]
+    #[ORM\ManyToOne(targetEntity: PublishedDeck::class, inversedBy: 'children')]
+    #[ORM\JoinColumn(name: 'parent_published_deck_id', referencedColumnName: 'id')]
     protected $parent;
 
 
@@ -294,7 +294,7 @@ class Deck extends CommonDeck implements DeckInterface
     /**
      * @inheritdoc
      */
-    public function addSlot(DeckslotInterface $slot)
+    public function addSlot(DeckSlotInterface $slot)
     {
         $this->slots->add($slot);
     }
@@ -302,7 +302,7 @@ class Deck extends CommonDeck implements DeckInterface
     /**
      * @inheritdoc
      */
-    public function removeSlot(DeckslotInterface $slot)
+    public function removeSlot(DeckSlotInterface $slot)
     {
         $this->slots->removeElement($slot);
     }
@@ -310,7 +310,7 @@ class Deck extends CommonDeck implements DeckInterface
     /**
      * @inheritdoc
      */
-    public function addChild(DecklistInterface $child)
+    public function addChild(PublishedDeckInterface $child)
     {
         $this->children->add($child);
     }
@@ -318,7 +318,7 @@ class Deck extends CommonDeck implements DeckInterface
     /**
      * @inheritdoc
      */
-    public function removeChild(DecklistInterface $child)
+    public function removeChild(PublishedDeckInterface $child)
     {
         $this->children->removeElement($child);
     }
@@ -358,7 +358,7 @@ class Deck extends CommonDeck implements DeckInterface
     /**
      * @inheritdoc
      */
-    public function addChange(DeckchangeInterface $change)
+    public function addChange(DeckRevisionInterface $change)
     {
         $this->changes->add($change);
     }
@@ -366,7 +366,7 @@ class Deck extends CommonDeck implements DeckInterface
     /**
      * @inheritdoc
      */
-    public function removeChange(DeckchangeInterface $change)
+    public function removeChange(DeckRevisionInterface $change)
     {
         $this->changes->removeElement($change);
     }
@@ -430,7 +430,7 @@ class Deck extends CommonDeck implements DeckInterface
     /**
      * @inheritdoc
      */
-    public function setParent(?DecklistInterface $parent = null)
+    public function setParent(?PublishedDeckInterface $parent = null)
     {
         $this->parent = $parent;
     }
@@ -516,13 +516,13 @@ class Deck extends CommonDeck implements DeckInterface
 
         /*
          * Saved changes, with the newest at position 0
-         * @var DeckchangeInterface[] $savedChanges
+         * @var DeckRevisionInterface[] $savedChanges
          */
         $savedChanges = [];
 
         /*
          * Unsaved changes, with the oldest at position 0
-         * @var DeckchangeInterface[] $unsavedChanges
+         * @var DeckRevisionInterface[] $unsavedChanges
          */
         $unsavedChanges = [];
 

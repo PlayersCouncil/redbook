@@ -756,7 +756,7 @@ abbr.legality.banned {
    and the deck on the left, card filters and pool on the right; each part
    scrolls on its own on a desktop, the page scrolls on a phone.
    ====================================================================== */
-.rb-builder {
+.rb-builder, .rb-review-page {
     --rb-ink: #221F1A; --rb-muted: #6B645A; --rb-line: #DDD6C8; --rb-line-strong: #C9C0AE;
     --rb-soft: #FBFAF6; --rb-tan: #ECE5D6; --rb-blue: #1D5FAD; --rb-blue-soft: #EEF3F9;
     --rb-red: #B42318; --rb-red-dark: #6E140E; --rb-yellow: #E8B931; --rb-grey: #B9AFA0;
@@ -849,6 +849,29 @@ abbr.legality.banned {
 #historic-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin: 0; padding: 10px 12px 12px; border: 0; min-width: 0; }
 #historic-fields[disabled] { opacity: .45; }
 #historic-fields .rb-wide { grid-column: span 2; }
+
+/* the historian's review of an archive deck */
+.rb-review { border: 1px solid #E2C78F; border-radius: 8px; background: #FBF4E4; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.rb-review.is-verified { border-color: #9CC79B; background: #EDF6EC; }
+.rb-review-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.rb-review-head h3 { margin: 0; font-size: 14px; font-weight: 700; }
+.rb-review-status { flex: 1 1 auto; font-size: 13px; color: #6A4A10; }
+.rb-review.is-verified .rb-review-status { color: var(--rb-good); }
+.rb-review-link { font-size: 13px; }
+.rb-review-flags { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0; padding: 0; list-style: none; }
+.rb-review-flags[hidden] { display: none; }
+.rb-flag { padding: 1px 8px; border-radius: 10px; background: #fff; border: 1px solid #E2C78F; font-size: 12px; color: #6A4A10; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-flag-problems, .rb-flag-no_format { border-color: #E3A49C; color: #8E1C12; }
+.rb-review-hint { flex: 1 1 160px; font-size: 12px; color: var(--rb-muted); }
+.rb-review-original > summary { cursor: pointer; font-size: 13px; font-weight: 700; }
+.rb-review-original > summary a { font-weight: 400; margin-left: 6px; }
+.rb-review-unresolved { margin: 8px 0; font-size: 13px; }
+.rb-review-unresolved ul { margin: 4px 0 0; padding-left: 20px; }
+.rb-review-raw { margin: 8px 0 0; max-height: 260px; overflow: auto; font-size: 12px; white-space: pre-wrap; background: #fff; }
+
+/* historic accounts and unverified archive decks, site-wide */
+.rb-user-historic { margin-left: 4px; font-size: 10px; font-weight: 600; vertical-align: middle; background: #8C8273; letter-spacing: .02em; }
+.rb-unverified-badge { margin-left: 6px; font-size: 10px; font-weight: 600; vertical-align: middle; }
 
 /* ---- the deck ("green") ---- */
 .rb-deck-top { display: flex; gap: 14px; align-items: flex-start; }
@@ -1014,3 +1037,18 @@ abbr.legality.banned {
     /* the pool fits its page to the space, so the bottom pager is only for phones */
     .rb-pager-bottom { display: none; }
 }
+
+/* the historians' review queue */
+.rb-review-page h2 { font-size: 18px; margin: 18px 0 8px; }
+.rb-queue-filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px 12px; padding: 12px; border: 1px solid var(--rb-line); border-radius: 8px; background: var(--rb-soft); }
+.rb-queue-filters label { display: flex; flex-direction: column; gap: 2px; margin: 0; font-size: 12px; font-weight: 600; color: var(--rb-muted); }
+.rb-queue-filters input, .rb-queue-filters select { height: 32px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; color: var(--rb-ink); font-size: 13px; font-weight: 400; min-width: 0; }
+.rb-queue-filter-actions { display: flex; align-items: flex-end; gap: 6px; }
+.rb-queue { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--rb-line); }
+.rb-queue-row { padding: 8px 4px; border-bottom: 1px solid var(--rb-line); display: flex; flex-direction: column; gap: 3px; }
+.rb-queue-main { display: flex; align-items: baseline; gap: 8px; }
+.rb-queue-name { font-weight: 700; color: var(--rb-ink); }
+.rb-queue-public { font-size: 11px; color: var(--rb-muted); }
+.rb-queue-meta { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; color: var(--rb-muted); }
+.rb-queue-verified { font-size: 12px; color: var(--rb-good); }
+.rb-queue-pager { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; font-size: 13px; }

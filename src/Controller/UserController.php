@@ -5,7 +5,7 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Card;
-use App\Entity\Decklist;
+use App\Entity\PublishedDeck;
 use App\Entity\Faction;
 use App\Entity\User;
 use App\Entity\UserInterface;
@@ -50,6 +50,11 @@ class UserController extends AbstractController
         if (! $user) {
             throw new NotFoundHttpException("No such user.");
         }
+        if ($user->getMergedInto() !== null) {
+            // a claimed or merged historic account: its decks live with the person now
+            $into = \App\Services\AccountMerger::resolve($user);
+            return $this->redirectToRoute('user_profile_public', ['user_id' => $into->getId(), 'user_name' => $into->getUsername()], 301);
+        }
 
         return $this->render('User/profile_public.html.twig', array(
                 'user' => $user
@@ -79,7 +84,7 @@ class UserController extends AbstractController
      * @return RedirectResponse
      */
     #[Route(path: '/user/profile_save', name: 'user_profile_save', methods: ['POST'])]
-    public function saveProfileAction(Request $request, SessionInterface $session)
+    public function saveProfileAction(Request $request, SessionInterface $session, \Symfony\Contracts\Translation\TranslatorInterface $translator)
     {
         /* @var UserInterface $user */
         $user = $this->getUser();
@@ -96,6 +101,20 @@ class UserController extends AbstractController
 
             $user->setUsername($username);
         }
+
+        // display names are unique among real accounts, ignoring case; historic accounts don't count (Ketura, 2026-11-02)
+        $displayName = trim(strip_tags((string) $request->get('display_name')));
+        $displayName = mb_substr(preg_replace('/\s+/u', ' ', $displayName), 0, 100);
+        $shown = mb_strtolower($displayName !== '' ? $displayName : $user->getUsername());
+        $taken = (int) $em->createQuery(
+            'SELECT COUNT(u) FROM App\Entity\User u WHERE u.id != :id AND u.historic = false AND u.mergedInto IS NULL
+             AND (LOWER(u.displayName) = :name OR (u.displayName IS NULL AND u.usernameCanonical = :name))'
+        )->setParameters(['id' => $user->getId(), 'name' => $shown])->getSingleScalarResult();
+        if ($taken > 0) {
+            $session->getFlashBag()->set('error', $translator->trans('user.display_name_taken', ['%name%' => $displayName ?: $user->getUsername()]));
+            return $this->redirectToRoute('user_profile_edit');
+        }
+        $user->setDisplayName($displayName);
 
         $email = filter_var($request->get('email'), FILTER_SANITIZE_STRING);
         if ($email !== $user->getEmail()) {
@@ -153,13 +172,16 @@ class UserController extends AbstractController
                     'name' => $user->getUserIdentifier(),
                     'faction' => $user->getColor(),
                     'donation' => $user->getDonation(),
+                    'display_name' => $user->getDisplayName(),
+                    'historian' => $this->isGranted('ROLE_HISTORIAN'),
+                    'admin' => $this->isGranted('ROLE_ADMIN'),
             );
 
             if (isset($decklist_id)) {
                 /* @var EntityManager $em */
                 $em = $this->managerRegistry->getManager();
-                /* @var DecklistInterface $decklist */
-                $decklist = $em->getRepository(Decklist::class)->find($decklist_id);
+                /* @var PublishedDeckInterface $decklist */
+                $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
 
                 if ($decklist) {
                     $decklist_id = $decklist->getId();
@@ -168,15 +190,15 @@ class UserController extends AbstractController
 
                     $content['is_liked'] = (bool) $dbh->executeQuery("SELECT
                         count(*)
-                        from decklist d
-                        join vote v on v.decklist_id=d.id
+                        from published_deck d
+                        join vote v on v.published_deck_id=d.id
                         where v.user_id=?
                         and d.id=?", array($user_id, $decklist_id))->fetchOne();
 
                     $content['is_favorite'] = (bool) $dbh->executeQuery("SELECT
                         count(*)
-                        from decklist d
-                        join favorite f on f.decklist_id=d.id
+                        from published_deck d
+                        join favorite f on f.published_deck_id=d.id
                         where f.user_id=?
                         and d.id=?", array($user_id, $decklist_id))->fetchOne();
 

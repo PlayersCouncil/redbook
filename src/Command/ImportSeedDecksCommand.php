@@ -33,12 +33,27 @@ class ImportSeedDecksCommand extends Command
         $path = $input->getArgument('batch');
         $json = $path === '-' ? stream_get_contents(STDIN) : (is_file($path) ? file_get_contents($path) : null);
         $batch = is_string($json) ? json_decode($json, true) : null;
+        unset($json);
+        // a decoded batch takes about five times its file size, and stays in memory for the whole import
+        $limit = (string) ini_get('memory_limit');
+        if ($limit !== '-1' && $this->bytes($limit) < 1024 ** 3) {
+            ini_set('memory_limit', '1G');
+        }
         if (!is_array($batch)) {
             $io->error("$path isn't a JSON file");
             return Command::FAILURE;
         }
         try {
-            $report = $this->importer->import($batch, !$input->getOption('no-validate'), (bool) $input->getOption('dry-run'));
+            $bar = $io->createProgressBar(count($batch['decks'] ?? []));
+            $report = $this->importer->import($batch, !$input->getOption('no-validate'), (bool) $input->getOption('dry-run'),
+                function (int $done) use ($bar, $output) {
+                    $bar->setProgress($done);
+                    if ($output->isVerbose()) {
+                        $output->write(sprintf(' %d MB (peak %d MB)', memory_get_usage() >> 20, memory_get_peak_usage() >> 20));
+                    }
+                });
+            $bar->finish();
+            $io->newLine(2);
         } catch (\InvalidArgumentException $e) {
             $io->error($e->getMessage());
             return Command::FAILURE;
@@ -46,8 +61,22 @@ class ImportSeedDecksCommand extends Command
         foreach ($report['problems'] as $problem) {
             $io->warning($problem);
         }
-        $io->success(sprintf('%s%d decklists created, %d updated, %d skipped; %d formats guessed',
-            $input->getOption('dry-run') ? '(dry run) ' : '', $report['created'], $report['updated'], $report['skipped'], $report['guessed']));
+        $io->success(sprintf(
+            '%s%d decklists created, %d updated, %d skipped, %d left alone (already verified); %d new historic accounts; %d formats guessed; %d flagged for review',
+            $input->getOption('dry-run') ? '(dry run) ' : '',
+            $report['created'], $report['updated'], $report['skipped'], $report['kept'], $report['accounts'], $report['guessed'], $report['flagged']
+        ));
         return Command::SUCCESS;
+    }
+
+    private function bytes(string $limit): int
+    {
+        $value = (int) $limit;
+        return match (strtolower(substr(trim($limit), -1))) {
+            'g' => $value * 1024 ** 3,
+            'm' => $value * 1024 ** 2,
+            'k' => $value * 1024,
+            default => $value,
+        };
     }
 }

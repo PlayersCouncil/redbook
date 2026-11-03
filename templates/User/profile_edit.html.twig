@@ -27,6 +27,13 @@
                             </div>
 
                             <div class="form-group">
+                                <label for="display_name">{{ 'user.display_name' | trans }}</label>
+                                <input type="text" name="display_name" id="display_name" value="{{ user.rawDisplayName }}"
+                                       placeholder="{{ user.username }}" maxlength="100" class="form-control">
+                                <p class="help-block">{{ 'user.display_name_help' | trans }}</p>
+                            </div>
+
+                            <div class="form-group">
                                 <label for="email">Email</label>
                                 <input type="text" name="email" id="email" value="{{ user.email }}"
                                        class="form-control">

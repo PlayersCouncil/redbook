@@ -2,10 +2,9 @@
 
 namespace App\Controller;
 
-use App\Entity\Decklist;
-use App\Entity\DecklistClaim;
+use App\Entity\HistoricClaim;
 use App\Entity\User;
-use App\Services\SeedDeckImporter;
+use App\Services\AccountMerger;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,44 +14,53 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
- * Claiming archived decklists (phase3/06): a registered user asks for a seeded
- * decklist, an admin approves, and the decklist moves to the user. Its source
- * details stay with it.
+ * Claiming a historic account (Ketura, 2026-11-02): a registered user says "that
+ * archive author is me", an admin approves, and the historic account is merged into
+ * theirs: its decks and published decks become theirs, and its name an alias.
  */
 class ClaimController extends AbstractController
 {
-    public function __construct(private readonly EntityManagerInterface $em)
-    {
+    public function __construct(
+        private readonly EntityManagerInterface $em,
+        private readonly AccountMerger $merger,
+    ) {
     }
 
-    #[Route(path: '/decklist/claim/{decklist_id}', name: 'decklist_claim_form', methods: ['GET', 'POST'], requirements: ['decklist_id' => '\d+'])]
+    #[Route(path: '/claim/{user_id}', name: 'historic_claim_form', methods: ['GET', 'POST'], requirements: ['user_id' => '\d+'])]
     #[IsGranted('IS_AUTHENTICATED_REMEMBERED')]
-    public function claimAction(int $decklist_id, Request $request, TranslatorInterface $translator): Response
+    public function claimAction(int $user_id, Request $request, TranslatorInterface $translator): Response
     {
         /** @var User $user */
         $user = $this->getUser();
-        $decklist = $this->em->getRepository(Decklist::class)->find($decklist_id)
-            ?? throw $this->createNotFoundException('Decklist not found');
-        if ($decklist->getSource() === null || $decklist->getUser()->getUsername() !== SeedDeckImporter::ARCHIVE_USERNAME) {
-            throw $this->createAccessDeniedException('Only archived decklists can be claimed');
+        $historic = $this->em->getRepository(User::class)->find($user_id);
+        if (!$historic instanceof User || !$historic->isHistoric()) {
+            throw $this->createNotFoundException('Historic account not found');
         }
-        $pending = $this->em->getRepository(DecklistClaim::class)->findOneBy(['decklist' => $decklist, 'user' => $user, 'status' => DecklistClaim::STATUS_PENDING]);
+        if ($historic->getMergedInto() !== null) {
+            $this->addFlash('notice', $translator->trans('claim.already_claimed'));
+            return $this->redirectToRoute('user_profile_public', ['user_id' => $historic->getId(), 'user_name' => $historic->getUsername()]);
+        }
+        if ($user->isHistoric()) {
+            throw $this->createAccessDeniedException();
+        }
+        $pending = $this->em->getRepository(HistoricClaim::class)->findOneBy(['historicUser' => $historic, 'user' => $user, 'status' => HistoricClaim::STATUS_PENDING]);
 
         if ($request->isMethod('POST') && $pending === null) {
-            if (!$this->isCsrfTokenValid('claim' . $decklist_id, (string) $request->request->get('_token'))) {
+            if (!$this->isCsrfTokenValid('claim' . $user_id, (string) $request->request->get('_token'))) {
                 throw $this->createAccessDeniedException('Invalid form');
             }
             $message = mb_substr(trim(strip_tags((string) $request->request->get('message'))), 0, 2000);
-            $this->em->persist(new DecklistClaim($decklist, $user, $message ?: null));
+            $this->em->persist(new HistoricClaim($historic, $user, $message ?: null));
             $this->em->flush();
-            $this->addFlash('notice', $translator->trans('decklist.claim.sent'));
-            return $this->redirectToRoute('decklist_detail', ['decklist_id' => $decklist_id, 'decklist_name' => $decklist->getNameCanonical()]);
+            $this->addFlash('notice', $translator->trans('claim.sent'));
+            return $this->redirectToRoute('user_profile_public', ['user_id' => $historic->getId(), 'user_name' => $historic->getUsername()]);
         }
 
         return $this->render('Claim/claim.html.twig', [
-            'pagetitle' => $translator->trans('decklist.claim.title'),
-            'decklist' => $decklist,
+            'pagetitle' => $translator->trans('claim.title', ['%name%' => $historic->getDisplayName()]),
+            'historic' => $historic,
             'pending' => $pending,
+            'nb_decklists' => $this->em->getRepository(\App\Entity\PublishedDeck::class)->count(['user' => $historic]),
         ]);
     }
 
@@ -60,10 +68,11 @@ class ClaimController extends AbstractController
     #[IsGranted('ROLE_ADMIN')]
     public function listAction(TranslatorInterface $translator): Response
     {
+        $repository = $this->em->getRepository(HistoricClaim::class);
         return $this->render('Claim/admin.html.twig', [
-            'pagetitle' => $translator->trans('decklist.claim.admin_title'),
-            'pending' => $this->em->getRepository(DecklistClaim::class)->findBy(['status' => DecklistClaim::STATUS_PENDING], ['dateCreation' => 'ASC']),
-            'recent' => $this->em->getRepository(DecklistClaim::class)->findBy(['status' => [DecklistClaim::STATUS_APPROVED, DecklistClaim::STATUS_REJECTED]], ['dateDecision' => 'DESC'], 30),
+            'pagetitle' => $translator->trans('claim.admin_title'),
+            'pending' => $repository->findBy(['status' => HistoricClaim::STATUS_PENDING], ['dateCreation' => 'ASC']),
+            'recent' => $repository->findBy(['status' => [HistoricClaim::STATUS_APPROVED, HistoricClaim::STATUS_REJECTED]], ['dateDecision' => 'DESC'], 30),
         ]);
     }
 
@@ -76,22 +85,17 @@ class ClaimController extends AbstractController
         }
         /** @var User $admin */
         $admin = $this->getUser();
-        $claim = $this->em->getRepository(DecklistClaim::class)->find($claim_id)
+        $claim = $this->em->getRepository(HistoricClaim::class)->find($claim_id)
             ?? throw $this->createNotFoundException('Claim not found');
         if (!$claim->isPending()) {
             return $this->redirectToRoute('admin_claims');
         }
-        if ($request->request->get('decision') === 'approve') {
-            $claim->decide(DecklistClaim::STATUS_APPROVED, $admin);
-            $claim->getDecklist()->setUser($claim->getUser());
-            // the other requests for the same decklist are settled by this one
-            foreach ($this->em->getRepository(DecklistClaim::class)->findBy(['decklist' => $claim->getDecklist(), 'status' => DecklistClaim::STATUS_PENDING]) as $other) {
-                if ($other !== $claim) {
-                    $other->decide(DecklistClaim::STATUS_REJECTED, $admin);
-                }
-            }
+        if ($request->request->get('decision') === 'approve' && $claim->getHistoricUser()->getMergedInto() === null) {
+            $claim->decide(HistoricClaim::STATUS_APPROVED, $admin);
+            // the other requests for the same account are settled by the merge
+            $this->merger->merge($claim->getHistoricUser(), $claim->getUser(), $admin);
         } else {
-            $claim->decide(DecklistClaim::STATUS_REJECTED, $admin);
+            $claim->decide(HistoricClaim::STATUS_REJECTED, $admin);
         }
         $this->em->flush();
         return $this->redirectToRoute('admin_claims');

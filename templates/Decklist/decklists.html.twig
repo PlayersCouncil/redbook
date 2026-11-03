@@ -109,21 +109,19 @@
                                         </small>
                                         <a class="decklist-name"
                                            href="{{ path('decklist_detail', { 'decklist_id': decklist.id, 'decklist_name': decklist.nameCanonical|e('url') }) }}">{{ decklist.name }}</a>
+                                        {% if decklist.unverified %}<span class="label label-warning rb-unverified-badge" title="{{ 'decklist.review.unverified_title' | trans }}">{{ 'decklist.review.unverified' | trans }}</span>{% endif %}
                                     </h4>
                                     <h5>
                                         <time class="pull-right"
                                               datetime="{{ decklist.dateCreation|date('c') }}">{{ decklist.dateCreation|date('M d') }}</time>
                                         <span class="username">
-                                            {% if decklist.source and decklist.user.username == 'archive' %}
-                                            <span class="legacy-author">{{ decklist.source.legacyAuthor }}</span> <small class="text-muted">{{ 'decklist.source.archived_label' | trans }}</small>
-                                            {% else %}
                                             <a href="{{ path('user_profile_public', {user_id:decklist.user.id,user_name:decklist.user.username|e('url')}) }}"
-                                               class="{{ decklist.user.color }}">{{ decklist.user.username }}</a>
+                                               class="{{ decklist.user.color }}">{{ decklist.user.displayName }}</a>
+                                            {% if decklist.user.historic %}<span class="label label-default rb-user-historic" title="{{ 'user.historic.badge_title' | trans }}">{{ 'user.historic.badge' | trans }}</span>{% endif %}
                                             {% if decklist.user.role('ROLE_ADMIN') %}
                                                 <span class="fas fa-user-tie admin" title="Administrator"></span>
                                             {% endif %}
-                                            <small class="reputation">{{ decklist.user.reputation }}</small>
-                                            {% endif %}
+                                            {% if not decklist.user.historic %}<small class="reputation">{{ decklist.user.reputation }}</small>{% endif %}
                                         </span>
                                         {% if decklist.tournament %}
                                             <span class="text-success" style="margin-left:1em">

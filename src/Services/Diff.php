@@ -4,7 +4,7 @@ namespace App\Services;
 
 use App\Classes\SlotCollectionInterface;
 use App\Classes\SlotCollectionDecorator;
-use App\Entity\Deckslot;
+use App\Entity\DeckSlot;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -85,7 +85,7 @@ class Diff
             $minimum = min($quantities);
 
             // we create a slot for this
-            $slot = new Deckslot();
+            $slot = new DeckSlot();
             $slot->setCard($card);
             $slot->setQuantity($minimum);
             $slot->setRole($role);

@@ -3,12 +3,12 @@
 namespace App\Services;
 
 use App\Entity\Card;
-use App\Entity\Decklist;
-use App\Entity\Decklistslot;
+use App\Entity\PublishedDeck;
+use App\Entity\PublishedDeckSlot;
 use App\Entity\Card as CardEntity;
 use App\Entity\CommonDeckInterface;
 use App\Entity\Culture;
-use App\Entity\DecklistCulture;
+use App\Entity\PublishedDeckCulture;
 use Doctrine\ORM\QueryBuilder;
 use App\Entity\UserInterface;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -23,7 +23,7 @@ use Symfony\Component\Routing\RouterInterface;
  * The job of this class is to find and return decklists
  * @author alsciende
  */
-class DecklistManager
+class PublishedDeckManager
 {
     /** Hide incomplete decks and halves unless the filters ask for them (decision 0023) */
     protected bool $browsing = true;
@@ -100,7 +100,7 @@ class DecklistManager
             $qb->andWhere('d.targetFormat = :format')->setParameter('format', $filters['format']);
         }
         foreach ($filters['culture'] ?? [] as $i => $code) {
-            $qb->andWhere("EXISTS (SELECT dc$i FROM " . DecklistCulture::class . " dc$i JOIN dc$i.culture cu$i WHERE dc$i.decklist = d AND cu$i.code = :culture$i)")
+            $qb->andWhere("EXISTS (SELECT dc$i FROM " . PublishedDeckCulture::class . " dc$i JOIN dc$i.culture cu$i WHERE dc$i.decklist = d AND cu$i.code = :culture$i)")
                 ->setParameter("culture$i", $code);
         }
         if (!empty($filters['from'])) {
@@ -144,7 +144,7 @@ class DecklistManager
     {
         $qb = $this->doctrine->createQueryBuilder();
         $qb->select('d');
-        $qb->from(Decklist::class, 'd');
+        $qb->from(PublishedDeck::class, 'd');
         $this->applyFilters($qb);
         $qb->setFirstResult($this->start);
         $qb->setMaxResults($this->limit);
@@ -281,7 +281,7 @@ class DecklistManager
             $qb->innerJoin('d.user', 'u');
             $joinTables[] = 'd.user';
             $qb->leftJoin('d.source', 'src');
-            $qb->andWhere('u.username = :username OR src.legacyAuthor = :username');
+            $qb->andWhere('u.username = :username OR u.displayName = :username OR src.legacyAuthor = :username');
             $qb->setParameter('username', $author_name);
         }
         if (!empty($decklist_name)) {
@@ -316,7 +316,7 @@ class DecklistManager
                 $sub = $this->doctrine->createQueryBuilder();
                 $sub->select("c");
                 $sub->from(Card::class, "c");
-                $sub->innerJoin(Decklistslot::class, 's', 'WITH', 's.card = c');
+                $sub->innerJoin(PublishedDeckSlot::class, 's', 'WITH', 's.card = c');
                 $sub->where('s.decklist = d');
                 $sub->andWhere($sub->expr()->notIn('c.pack', $packs));
 

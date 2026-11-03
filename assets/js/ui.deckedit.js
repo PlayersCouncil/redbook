@@ -137,10 +137,11 @@
 
     /* ---- save, revert ---- */
 
-    function payload(copy)
+    function payload(copy, verify)
     {
         var historic = app.deck.get_historic();
         return {
+            verify: verify ? 1 : 0,
             id: app.deck.get_id(),
             copy: copy ? 1 : 0,
             format: 'json',
@@ -153,13 +154,13 @@
         };
     }
 
-    function save(copy, done)
+    function save(copy, done, verify)
     {
-        $('#btn-save').prop('disabled', true);
+        $('#btn-save, #btn-save-verify').prop('disabled', true);
         $('#save-status').text(t('deckbuilder.info.saving')).attr('class', 'rb-save-status');
         $.ajax(Routing.generate('deck_save'), {
             type: 'POST',
-            data: payload(copy),
+            data: payload(copy, verify),
             dataType: 'json',
             success: function (response) {
                 if(copy) {
@@ -172,13 +173,18 @@
                 saved_version = response.version;
                 app.deck.changed();
                 dirty = false;
-                status_note = t('deckbuilder.info.saved_now', {version: saved_version});
+                status_note = t(verify ? 'historian.review.verified_now' : 'deckbuilder.info.saved_now', {version: saved_version});
+                if(response.review) {
+                    page.review = response.review;
+                    show_review();
+                }
                 update_status();
+                $('#btn-save-verify').prop('disabled', false);
                 done && done();
             },
             error: function () {
                 $('#save-status').text(t('deckbuilder.info.save_failed')).attr('class', 'rb-save-status is-dirty');
-                $('#btn-save').prop('disabled', false);
+                $('#btn-save, #btn-save-verify').prop('disabled', false);
             }
         });
     }
@@ -192,6 +198,39 @@
         dirty = false;
         status_note = t('deckbuilder.info.reverted', {version: saved_version});
         update_status();
+    }
+
+    /* ---- the historian's review of an archive deck (Ketura, 2026-11-02) ---- */
+
+    function flag_text(flag)
+    {
+        var detail = flag.detail || '';
+        switch(flag.code) {
+            case 'unresolved':
+                return Translator.transChoice('historian.review.flag.unresolved', parseInt(detail, 10) || 0, {count: detail});
+            case 'format_guessed':
+            case 'problems':
+            case 'parse':
+                return t('historian.review.flag.' + flag.code, {detail: detail});
+            default:
+                return t('historian.review.flag.' + flag.code);
+        }
+    }
+
+    function show_review()
+    {
+        var review = page.review;
+        if(!review) {
+            return;
+        }
+        $('#review-panel').attr('class', 'rb-review is-' + review.status);
+        $('#review-status').text(review.status === 'verified'
+            ? t('historian.review.verified_by', {name: review.reviewed_by || '?', date: review.reviewed_at || ''})
+            : t('historian.review.unverified'));
+        $('#review-flags').html(_.map(review.flags || [], function (flag) {
+            return '<li class="rb-flag rb-flag-' + _.escape(flag.code) + '">' + _.escape(flag_text(flag)) + '</li>';
+        }).join('')).prop('hidden', review.status === 'verified' || !(review.flags || []).length);
+        $('#btn-save-verify').text(t(review.status === 'verified' ? 'historian.review.save_update' : 'historian.review.save_verify'));
     }
 
     /* ---- fields ---- */
@@ -407,6 +446,7 @@
         });
 
         $('#btn-save').on('click', function () { save(false); });
+        $('#btn-save-verify').on('click', function () { save(false, null, true); });
         $('#btn-revert').on('click', revert);
 
         $('#btn-visibility').on('click', function (event) {
@@ -528,6 +568,7 @@
         }
         fill_fields();
         show_visibility();
+        show_review();
         dirty = !same(app.deck.get_state(), saved_state);
         update_status();
         app.deck_editor.render();

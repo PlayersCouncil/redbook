@@ -9,16 +9,16 @@ use App\Entity\Comment;
 use App\Entity\CommentInterface;
 use App\Entity\Cycle;
 use App\Entity\Deck;
-use App\Entity\Decklist;
-use App\Entity\DecklistInterface;
+use App\Entity\PublishedDeck;
+use App\Entity\PublishedDeckInterface;
 use App\Entity\Culture;
-use App\Entity\DecklistPlay;
+use App\Entity\PublishedDeckPlay;
 use App\Repository\FormatRepository;
 use App\Entity\Tournament;
 use App\Entity\User;
 use App\Services\CardsData;
-use App\Services\DecklistFactory;
-use App\Services\DecklistManager;
+use App\Services\PublishedDeckFactory;
+use App\Services\PublishedDeckManager;
 use App\Services\DeckValidator;
 use App\Services\Texts;
 use DateTime;
@@ -61,7 +61,7 @@ class SocialController extends AbstractController
      *
      * @param TranslatorInterface $translator
      * @param SessionInterface $session
-     * @param DecklistFactory $decklistFactory
+     * @param PublishedDeckFactory $decklistFactory
      * @param string $deck_uuid
      * @return RedirectResponse|Response
      * @throws NoResultException
@@ -71,7 +71,7 @@ class SocialController extends AbstractController
     public function publishFormAction(
         TranslatorInterface $translator,
         SessionInterface $session,
-        DecklistFactory $decklistFactory,
+        PublishedDeckFactory $decklistFactory,
         FormatRepository $formats,
         $deck_uuid
     ) {
@@ -98,7 +98,7 @@ class SocialController extends AbstractController
         }
 
         $query = $em->createQuery(
-            "SELECT COUNT(d) FROM App\Entity\Decklist d WHERE d.dateCreation>:date AND d.user=:user"
+            "SELECT COUNT(d) FROM App\Entity\PublishedDeck d WHERE d.dateCreation>:date AND d.user=:user"
         );
         $query->setParameter('date', $yesterday);
         $query->setParameter('user', $user);
@@ -112,9 +112,9 @@ class SocialController extends AbstractController
 
         $new_content = json_encode($deck->getSlots()->getContent());
         $new_signature = md5($new_content);
-        $old_decklists = $em->getRepository(Decklist::class)->findBy(['signature' => $new_signature]);
+        $old_decklists = $em->getRepository(PublishedDeck::class)->findBy(['signature' => $new_signature]);
 
-        /* @var DecklistInterface $decklist */
+        /* @var PublishedDeckInterface $decklist */
         foreach ($old_decklists as $decklist) {
             if (json_encode($decklist->getSlots()->getContent()) == $new_content) {
                 $url = $this->generateUrl(
@@ -154,7 +154,7 @@ class SocialController extends AbstractController
      *
      *
      * @param Request $request
-     * @param DecklistFactory $decklistFactory
+     * @param PublishedDeckFactory $decklistFactory
      * @param TranslatorInterface $translator
      * @return RedirectResponse|Response
      * @throws NonUniqueResultException
@@ -162,7 +162,7 @@ class SocialController extends AbstractController
      * @throws OptimisticLockException
      */
     #[Route(path: '/decklist/create', name: 'decklist_create', methods: ['POST'])]
-    public function createAction(Request $request, DecklistFactory $decklistFactory, TranslatorInterface $translator)
+    public function createAction(Request $request, PublishedDeckFactory $decklistFactory, TranslatorInterface $translator)
     {
         /* @var $em EntityManager */
         $em = $this->managerRegistry->getManager();
@@ -181,7 +181,7 @@ class SocialController extends AbstractController
         }
 
         $query = $em->createQuery(
-            "SELECT COUNT(d) FROM App\Entity\Decklist d WHERE d.dateCreation>:date AND d.user=:user"
+            "SELECT COUNT(d) FROM App\Entity\PublishedDeck d WHERE d.dateCreation>:date AND d.user=:user"
         );
         $query->setParameter('date', $yesterday);
         $query->setParameter('user', $user);
@@ -220,7 +220,7 @@ class SocialController extends AbstractController
                 $precedent_id = null;
             }
         }
-        $precedent = $precedent_id ? $em->getRepository(Decklist::class)->find($precedent_id) : null;
+        $precedent = $precedent_id ? $em->getRepository(PublishedDeck::class)->find($precedent_id) : null;
 
         try {
             $decklist = $decklistFactory->createDecklistFromDeck(
@@ -271,9 +271,9 @@ class SocialController extends AbstractController
             throw $this->createAccessDeniedException("Anonymous access denied");
         }
 
-        $decklist = $em->getRepository(Decklist::class)->find($decklist_id);
+        $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
         if (!$decklist) {
-            throw $this->createNotFoundException("Decklist not found");
+            throw $this->createNotFoundException("Published deck not found");
         }
 
         if (
@@ -319,9 +319,9 @@ class SocialController extends AbstractController
             throw $this->createAccessDeniedException("Anonymous access denied");
         }
 
-        $decklist = $em->getRepository(Decklist::class)->find($decklist_id);
+        $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
         if (!$decklist) {
-            throw $this->createNotFoundException("Decklist not found");
+            throw $this->createNotFoundException("Published deck not found");
         }
 
         if (
@@ -351,7 +351,7 @@ class SocialController extends AbstractController
             }
         }
         $precedent = ($precedent_id && $precedent_id != $decklist_id)
-            ? $em->getRepository(Decklist::class)->find($precedent_id)
+            ? $em->getRepository(PublishedDeck::class)->find($precedent_id)
             : null;
 
         $decklist->setName($name);
@@ -403,8 +403,8 @@ class SocialController extends AbstractController
             throw new UnauthorizedHttpException("You must be logged in for this operation.");
         }
 
-        /* @var DecklistInterface $decklist */
-        $decklist = $em->getRepository(Decklist::class)->find($decklist_id);
+        /* @var PublishedDeckInterface $decklist */
+        $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
         if (!$decklist || $decklist->getUser()->getId() != $user->getId()) {
             throw new UnauthorizedHttpException("You don't have access to this decklist.");
         }
@@ -421,7 +421,7 @@ class SocialController extends AbstractController
         }
 
         $successor_decklists = $decklist->getSuccessors();
-        /* @var DecklistInterface $successor_decklist */
+        /* @var PublishedDeckInterface $successor_decklist */
         foreach ($successor_decklists as $successor_decklist) {
             $successor_decklist->setPrecedent($precedent);
         }
@@ -541,7 +541,7 @@ class SocialController extends AbstractController
      *
      * @param Request $request
      * @param TranslatorInterface $translator
-     * @param DecklistManager $decklistManager
+     * @param PublishedDeckManager $decklistManager
      * @param CardsData $cardsData
      * @param int $cacheExpiration
      * @param string $type
@@ -552,7 +552,7 @@ class SocialController extends AbstractController
     public function listAction(
         Request $request,
         TranslatorInterface $translator,
-        DecklistManager $decklistManager,
+        PublishedDeckManager $decklistManager,
         CardsData $cardsData,
         FormatRepository $formats,
         int $cacheExpiration,
@@ -653,7 +653,7 @@ class SocialController extends AbstractController
         $response->setPublic();
         $response->setMaxAge($cacheExpiration);
 
-        $decklistRepo = $this->managerRegistry->getManager()->getRepository(Decklist::class);
+        $decklistRepo = $this->managerRegistry->getManager()->getRepository(PublishedDeck::class);
 
         $decklist = $decklistRepo->find($decklist_id);
         if (!$decklist) {
@@ -712,8 +712,8 @@ class SocialController extends AbstractController
 
         $decklist_id = filter_var($request->get('id'), FILTER_SANITIZE_NUMBER_INT);
 
-        /* @var DecklistInterface $decklist */
-        $decklist = $em->getRepository(Decklist::class)->find($decklist_id);
+        /* @var PublishedDeckInterface $decklist */
+        $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
         if (!$decklist) {
             throw new NotFoundHttpException('Wrong id');
         }
@@ -724,8 +724,8 @@ class SocialController extends AbstractController
         $is_favorite = $dbh->executeQuery(
             "SELECT
                 count(*)
-                from decklist d
-                join favorite f on f.decklist_id=d.id
+                from published_deck d
+                join favorite f on f.published_deck_id=d.id
                 where f.user_id=?
                 and d.id=?",
             array(
@@ -779,7 +779,7 @@ class SocialController extends AbstractController
 
         $decklist_id = filter_var($request->get('id'), FILTER_SANITIZE_NUMBER_INT);
         $decklist = $this->managerRegistry
-            ->getRepository(Decklist::class)
+            ->getRepository(PublishedDeck::class)
             ->find($decklist_id);
 
         $comment_text = trim($request->get('comment'));
@@ -937,10 +937,10 @@ class SocialController extends AbstractController
 
         $decklist_id = filter_var($request->get('id'), FILTER_SANITIZE_NUMBER_INT);
 
-        $decklist = $em->getRepository(Decklist::class)->find($decklist_id);
+        $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
 
         if ($decklist->getUser()->getId() != $user->getId()) {
-            $query = $em->getRepository(Decklist::class)
+            $query = $em->getRepository(PublishedDeck::class)
                 ->createQueryBuilder('d')
                 ->innerJoin('d.votes', 'u')
                 ->where('d.id = :decklist_id')
@@ -983,26 +983,26 @@ class SocialController extends AbstractController
                 l.id,
                 (
                     SELECT COUNT(s.id)
-                    FROM decklistslot s
+                    FROM published_deck_slot s
                     WHERE (
-                        s.decklist_id=l.id
+                        s.published_deck_id=l.id
                         AND s.card_id NOT IN (
                             SELECT t.card_id
-                            FROM decklistslot t
-                            WHERE t.decklist_id=?
+                            FROM published_deck_slot t
+                            WHERE t.published_deck_id=?
                         )
                     )
                     OR
                     (
-                        s.decklist_id=?
+                        s.published_deck_id=?
                         AND s.card_id NOT IN (
                             SELECT t.card_id
-                            FROM decklistslot t
-                            WHERE t.decklist_id=l.id
+                            FROM published_deck_slot t
+                            WHERE t.published_deck_id=l.id
                         )
                     )
                 ) difference
-                 FROM decklist l
+                 FROM published_deck l
                 WHERE l.id!=?
                 ORDER BY difference ASC
                 LIMIT 0,$number",
@@ -1024,7 +1024,7 @@ class SocialController extends AbstractController
                     d.nb_votes,
                     d.nb_favorites,
                     d.nb_comments
-                    from decklist d
+                    from published_deck d
                     where d.id=?
                     ",
                 array(
@@ -1053,8 +1053,8 @@ class SocialController extends AbstractController
         /* @var EntityManager $em */
         $em = $this->managerRegistry->getManager();
 
-        /* @var DecklistInterface $decklist */
-        $decklist = $em->getRepository(Decklist::class)->find($decklist_id);
+        /* @var PublishedDeckInterface $decklist */
+        $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
         if (!$decklist) {
             throw new NotFoundHttpException("Unable to find decklist.");
         }
@@ -1095,7 +1095,7 @@ class SocialController extends AbstractController
      * play_event[], play_date[], play_tier[], play_placing[], play_players[], play_url[].
      * The submitted rows replace the decklist's records.
      */
-    private function applyPlays(Decklist $decklist, Request $request): void
+    private function applyPlays(PublishedDeck $decklist, Request $request): void
     {
         $form = $request->request->all();
         if (!isset($form['play_event'])) {
@@ -1110,7 +1110,7 @@ class SocialController extends AbstractController
             if ($event === '') {
                 continue;
             }
-            $play = new DecklistPlay();
+            $play = new PublishedDeckPlay();
             $play->setEventName($event);
             $play->setEventDate($this->dateFrom($form['play_date'][$i] ?? null));
             $tierId = (int) ($form['play_tier'][$i] ?? 0);
@@ -1158,7 +1158,7 @@ class SocialController extends AbstractController
                 d.name decklist_name,
                 d.name_canonical decklist_name_canonical
                 from comment c
-                join decklist d on c.decklist_id=d.id
+                join published_deck d on c.published_deck_id=d.id
                 where c.user_id=?
                 order by date_creation desc
                 limit $start, $limit",
@@ -1255,7 +1255,7 @@ class SocialController extends AbstractController
                 u.id user_id,
                 u.username author
                 from comment c
-                join decklist d on c.decklist_id=d.id
+                join published_deck d on c.published_deck_id=d.id
                 join user u on c.user_id=u.id
                 order by date_creation desc
                 limit $start, $limit",

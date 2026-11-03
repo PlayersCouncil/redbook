@@ -7,7 +7,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Card;
 use App\Entity\CardInterface;
 use App\Entity\Cycle;
-use App\Entity\Decklist;
+use App\Entity\PublishedDeck;
 use App\Entity\Format;
 use App\Entity\Pack;
 use App\Entity\PackInterface;
@@ -395,7 +395,7 @@ class ApiController extends AbstractController
     }
 
     /**
-     * One Decklist
+     * One PublishedDeck
      *
      * Get the description of a decklist as a JSON object.
      *
@@ -423,9 +423,9 @@ class ApiController extends AbstractController
             return $response;
         }
 
-        /* @var DecklistInterface $decklist */
-        $decklist = $this->managerRegistry->getRepository(Decklist::class)->find($decklist_id);
-        if (!$decklist instanceof Decklist) {
+        /* @var PublishedDeckInterface $decklist */
+        $decklist = $this->managerRegistry->getRepository(PublishedDeck::class)->find($decklist_id);
+        if (!$decklist instanceof PublishedDeck) {
             throw $this->createNotFoundException();
         }
 
@@ -485,7 +485,7 @@ class ApiController extends AbstractController
         $criteria->where($expr->gte('dateCreation', $start));
         $criteria->andWhere($expr->lt('dateCreation', $end));
 
-        $decklists = $this->managerRegistry->getRepository(Decklist::class)->matching($criteria);
+        $decklists = $this->managerRegistry->getRepository(PublishedDeck::class)->matching($criteria);
         if (!$decklists) {
             die();
         }
@@ -533,9 +533,9 @@ class ApiController extends AbstractController
         $response->setMaxAge($cacheExpiration);
         $response->headers->add(array('Access-Control-Allow-Origin' => '*'));
 
-        $decklists = $this->managerRegistry->getRepository(Decklist::class)->findAll();
+        $decklists = $this->managerRegistry->getRepository(PublishedDeck::class)->findAll();
         $lastModified = null;
-        /* @var DecklistInterface $decklist */
+        /* @var PublishedDeckInterface $decklist */
         foreach ($decklists as $decklist) {
             if (!$lastModified || $lastModified < $decklist->getDateUpdate()) {
                 $lastModified = $decklist->getDateUpdate();

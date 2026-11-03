@@ -4,7 +4,7 @@ namespace App\Command;
 
 use Symfony\Component\Console\Attribute\AsCommand;
 use App\Entity\Deck;
-use App\Entity\Decklist;
+use App\Entity\PublishedDeck;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -38,13 +38,13 @@ class DeleteDecklistCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $decklist_id = $input->getArgument('decklist_id');
-        $decklist = $this->entityManager->getRepository(Decklist::class)->find($decklist_id);
+        $decklist = $this->entityManager->getRepository(PublishedDeck::class)->find($decklist_id);
 
-        $successors = $this->entityManager->getRepository(Decklist::class)->findBy(array(
+        $successors = $this->entityManager->getRepository(PublishedDeck::class)->findBy(array(
                 'precedent' => $decklist
         ));
         foreach ($successors as $successor) {
-            /* @var DecklistInterface $successor */
+            /* @var PublishedDeckInterface $successor */
             $successor->setPrecedent(null);
         }
 
@@ -60,7 +60,7 @@ class DeleteDecklistCommand extends Command
         $this->entityManager->remove($decklist);
         $this->entityManager->flush();
 
-        $output->writeln("Decklist deleted");
+        $output->writeln("Published deck deleted");
 
         return Command::SUCCESS;
     }

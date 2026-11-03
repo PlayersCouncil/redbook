@@ -8,8 +8,8 @@ use Doctrine\ORM\Mapping as ORM;
  * @package App\Entity
  */
 #[ORM\Entity]
-#[ORM\Table(name: 'deckslot')]
-class Deckslot implements DeckslotInterface
+#[ORM\Table(name: 'deck_slot')]
+class DeckSlot implements DeckSlotInterface
 {
     use SlotRoleTrait;
 

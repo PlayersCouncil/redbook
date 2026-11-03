@@ -10,18 +10,18 @@ use Doctrine\ORM\Mapping as ORM;
  * each shows card versions as of its own date (decision 0021).
  */
 #[ORM\Entity]
-#[ORM\Table(name: 'decklist_play')]
-#[ORM\Index(name: 'decklist_play_date_idx', columns: ['event_date'])]
-class DecklistPlay
+#[ORM\Table(name: 'published_deck_play')]
+#[ORM\Index(name: 'published_deck_play_date_idx', columns: ['event_date'])]
+class PublishedDeckPlay
 {
     #[ORM\Column(name: 'id', type: 'integer')]
     #[ORM\Id]
     #[ORM\GeneratedValue(strategy: 'IDENTITY')]
     protected $id;
 
-    #[ORM\ManyToOne(targetEntity: Decklist::class, inversedBy: 'plays')]
-    #[ORM\JoinColumn(name: 'decklist_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
-    protected Decklist $decklist;
+    #[ORM\ManyToOne(targetEntity: PublishedDeck::class, inversedBy: 'plays')]
+    #[ORM\JoinColumn(name: 'published_deck_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+    protected PublishedDeck $decklist;
 
     #[ORM\Column(name: 'event_name', type: 'string', length: 255, nullable: false)]
     protected string $eventName = '';
@@ -52,8 +52,8 @@ class DecklistPlay
     protected ?string $url = null;
 
     public function getId() { return $this->id; }
-    public function getDecklist(): Decklist { return $this->decklist; }
-    public function setDecklist(Decklist $decklist): void { $this->decklist = $decklist; }
+    public function getDecklist(): PublishedDeck { return $this->decklist; }
+    public function setDecklist(PublishedDeck $decklist): void { $this->decklist = $decklist; }
     public function getEventName(): string { return $this->eventName; }
     public function setEventName(string $eventName): void { $this->eventName = $eventName; }
     public function getEventDate(): ?DateTimeInterface { return $this->eventDate; }

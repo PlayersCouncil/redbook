@@ -1,6 +1,6 @@
 {% import "macros.html.twig" as macros %}
 
 <h3 class="username">
-    {% if decklist.source and decklist.user.username == 'archive' %}{{ decklist.source.legacyAuthor }} <small>{{ 'decklist.source.archived_label' | trans }}</small>{% else %}{{ macros.username(decklist.user) }}{% endif %}
+    {{ macros.username(decklist.user) }}
 </h3>
 <div id="deck-description">{{ decklist.descriptionHtml|raw }}</div>

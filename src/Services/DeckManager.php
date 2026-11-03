@@ -5,10 +5,10 @@ namespace App\Services;
 use App\Classes\DeckContent;
 use App\Entity\Card;
 use App\Entity\Deck;
-use App\Entity\Deckchange;
+use App\Entity\DeckRevision;
 use App\Entity\DeckInterface;
-use App\Entity\Decklist;
-use App\Entity\Deckslot;
+use App\Entity\PublishedDeck;
+use App\Entity\DeckSlot;
 use App\Entity\Faction;
 use App\Entity\Format;
 use App\Entity\UserInterface;
@@ -110,13 +110,16 @@ class DeckManager
     public function save(UserInterface $user, DeckInterface $deck, array $data, ?DeckInterface $sourceDeck = null): void
     {
         if (!empty($data['decklist_id'])) {
-            $decklist = $this->em->getRepository(Decklist::class)->find($data['decklist_id']);
+            $decklist = $this->em->getRepository(PublishedDeck::class)->find($data['decklist_id']);
             if ($decklist) {
                 $deck->setParent($decklist);
             }
         }
 
-        $deck->setUser($user);
+        if ($deck->getUser() === null) {
+            // a historian saving a historic author's deck doesn't take it over (Ketura, 2026-11-02)
+            $deck->setUser($user);
+        }
         $deck->setName(trim((string) ($data['name'] ?? '')) ?: 'Untitled deck');
         $deck->setDescriptionMd($data['description'] ?? $deck->getDescriptionMd() ?? '');
         $deck->setFaction($this->getPlaceholderFaction());
@@ -165,7 +168,7 @@ class DeckManager
                 $this->em->remove($change);
             }
             if (count($listings[0]) || count($listings[1])) {
-                $change = new Deckchange();
+                $change = new DeckRevision();
                 $change->setDeck($deck);
                 $change->setVariation(json_encode($listings));
                 $change->setIsSaved(true);
@@ -193,7 +196,7 @@ class DeckManager
             if (!isset($cards[$code]) || $quantity < 1) {
                 continue;
             }
-            $slot = new Deckslot();
+            $slot = new DeckSlot();
             $slot->setCard($cards[$code]);
             $slot->setQuantity($quantity);
             $slot->setRole($isRingBearer ? DeckContent::ROLE_RING_BEARER : DeckContent::roleForType($cards[$code]->getType()->getCode()));
@@ -272,6 +275,6 @@ class DeckManager
 
     public function getUnsavedChanges(DeckInterface $deck): array
     {
-        return $this->em->getRepository(Deckchange::class)->findBy(['deck' => $deck, 'isSaved' => false]);
+        return $this->em->getRepository(DeckRevision::class)->findBy(['deck' => $deck, 'isSaved' => false]);
     }
 }

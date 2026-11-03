@@ -1,35 +1,36 @@
 {% extends 'base.html.twig' %}
+{% import 'macros.html.twig' as macros %}
 {% block body %}
     <div class="main white container">
         {% include 'alerts.html.twig' %}
-        <h1>{{ 'decklist.claim.admin_title' | trans }}</h1>
+        <h1>{{ 'claim.admin_title' | trans }}</h1>
         <table class="table">
-            <thead><tr><th>{{ 'decklist.claim.decklist' | trans }}</th><th>{{ 'decklist.claim.user' | trans }}</th><th>{{ 'decklist.claim.message' | trans }}</th><th></th></tr></thead>
+            <thead><tr><th>{{ 'claim.historic' | trans }}</th><th>{{ 'claim.user' | trans }}</th><th>{{ 'claim.message' | trans }}</th><th></th></tr></thead>
             <tbody>
             {% for claim in pending %}
-                {% set d = claim.decklist %}
+                {% set h = claim.historicUser %}
                 <tr>
-                    <td><a href="{{ path('decklist_detail', {decklist_id: d.id, decklist_name: d.nameCanonical}) }}">{{ d.name }}</a>
-                        <div class="small text-muted">{{ d.source.legacyAuthor }} &middot; {{ d.source.source }} &middot; {{ claim.dateCreation | date('Y-m-d') }}</div></td>
-                    <td>{{ claim.user.username }}<div class="small text-muted">{{ claim.user.email }}</div></td>
+                    <td>{{ macros.username(h) }}
+                        <div class="small text-muted">{{ h.historicSource }} &middot; {{ h.decklists | length }} decks &middot; {{ claim.dateCreation | date('Y-m-d') }}</div></td>
+                    <td>{{ macros.username(claim.user) }}<div class="small text-muted">{{ claim.user.username }} &middot; {{ claim.user.email }}</div></td>
                     <td class="small">{{ claim.message }}</td>
                     <td class="text-right">
                         <form method="post" action="{{ path('admin_claim_decide', {claim_id: claim.id}) }}" style="display:inline">
                             <input type="hidden" name="_token" value="{{ csrf_token('decide' ~ claim.id) }}">
-                            <button name="decision" value="approve" class="btn btn-xs btn-success">{{ 'decklist.claim.approve' | trans }}</button>
-                            <button name="decision" value="reject" class="btn btn-xs btn-default">{{ 'decklist.claim.reject' | trans }}</button>
+                            <button name="decision" value="approve" class="btn btn-xs btn-success">{{ 'claim.approve' | trans }}</button>
+                            <button name="decision" value="reject" class="btn btn-xs btn-default">{{ 'claim.reject' | trans }}</button>
                         </form>
                     </td>
                 </tr>
             {% else %}
-                <tr><td colspan="4" class="text-muted">{{ 'decklist.claim.none' | trans }}</td></tr>
+                <tr><td colspan="4" class="text-muted">{{ 'claim.none' | trans }}</td></tr>
             {% endfor %}
             </tbody>
         </table>
         {% if recent %}
-            <h3>{{ 'decklist.claim.recent' | trans }}</h3>
+            <h3>{{ 'claim.recent' | trans }}</h3>
             <ul class="small">
-                {% for claim in recent %}<li>{{ claim.dateDecision | date('Y-m-d') }}: {{ claim.user.username }} &rarr; {{ claim.decklist.name }} ({{ claim.status }}{% if claim.decidedBy %}, {{ claim.decidedBy.username }}{% endif %})</li>{% endfor %}
+                {% for claim in recent %}<li>{{ claim.dateDecision | date('Y-m-d') }}: {{ claim.user.displayName }} &rarr; {{ claim.historicUser.displayName }} ({{ claim.historicUser.historicSource }}) &middot; {{ claim.status }}{% if claim.decidedBy %}, {{ claim.decidedBy.displayName }}{% endif %}</li>{% endfor %}
             </ul>
         {% endif %}
     </div>

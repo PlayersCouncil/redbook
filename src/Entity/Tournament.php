@@ -30,7 +30,7 @@ class Tournament implements TournamentInterface
     /**
      * @var Collection
      */
-    #[ORM\OneToMany(targetEntity: Decklist::class, mappedBy: 'tournament')]
+    #[ORM\OneToMany(targetEntity: PublishedDeck::class, mappedBy: 'tournament')]
     protected $decklists;
 
     /**
@@ -98,7 +98,7 @@ class Tournament implements TournamentInterface
     /**
      * @inheritdoc
      */
-    public function addDecklist(DecklistInterface $decklist)
+    public function addDecklist(PublishedDeckInterface $decklist)
     {
         $this->decklists->add($decklist);
     }
@@ -106,7 +106,7 @@ class Tournament implements TournamentInterface
     /**
      * @inheritdoc
      */
-    public function removeDecklist(DecklistInterface $decklist)
+    public function removeDecklist(PublishedDeckInterface $decklist)
     {
         $this->decklists->removeElement($decklist);
     }
