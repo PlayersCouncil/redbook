@@ -492,9 +492,41 @@ class CardsData
         }
 
 
+        // revisions after the printed card, for [[3_38.1]] links in the browser (app.cardlinks.js)
+        $revisions = $this->revisionsByCode()[$card->getCode()] ?? null;
+        if ($revisions) {
+            $cardinfo['revisions'] = $revisions;
+        }
+
         $cardinfo['work_in_progress'] = $card->getPack()->getWorkInProgress();
-        $cardinfo['dateUpdate'] = $card->getDateUpdate()->format('c');
+        // the browser keeps cards until dateUpdate changes: the suffix changes when the
+        // card's JSON gains a field, so cached copies refresh (2: revisions)
+        $cardinfo['dateUpdate'] = $card->getDateUpdate()->format('c') . '/2';
         return $cardinfo;
+    }
+
+    /** When the card JSON last gained or lost a field: the cards API's Last-Modified is never older */
+    public const JSON_CHANGED = '2026-11-04T00:00:00+00:00';
+
+    private ?array $revisionsByCode = null;
+
+    /** @return array<string, list<array{n: int, pc: bool, image: ?string}>> every card's later revisions, in one query */
+    private function revisionsByCode(): array
+    {
+        if ($this->revisionsByCode === null) {
+            $this->revisionsByCode = [];
+            $rows = $this->doctrine->getManager()->createQuery(
+                'SELECT c.code, v.revision, v.issuer, v.imageUrl FROM App\Entity\CardVersion v JOIN v.card c WHERE v.revision > 0 ORDER BY v.revision'
+            )->getArrayResult();
+            foreach ($rows as $row) {
+                $this->revisionsByCode[$row['code']][] = [
+                    'n' => (int) $row['revision'],
+                    'pc' => $row['issuer'] === \App\Entity\CardVersion::ISSUER_PC,
+                    'image' => $row['imageUrl'],
+                ];
+            }
+        }
+        return $this->revisionsByCode;
     }
 
     public function syntax($query)

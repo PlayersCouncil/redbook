@@ -4,7 +4,8 @@
         <h4>{{ 'card.versions.title' | trans }}</h4>
         <ol class="list-unstyled">
             {% for version in card.versions %}
-                <li>
+                {# [[3_38.1]] links land here #}
+                <li id="v{{ version.revision }}">
                     {% if version.revision == 0 %}
                         {{ 'card.versions.printed' | trans }}
                     {% else %}

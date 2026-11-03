@@ -20,11 +20,18 @@ class Texts
      * Texts constructor.
      * @param string $kernelProjectDirectory
      */
-    public function __construct(string $kernelProjectDirectory)
+    public function __construct(string $kernelProjectDirectory, private readonly ?CardLinker $cardLinker = null)
     {
         $config = HTMLPurifier_Config::create(array('Cache.SerializerPath' => $kernelProjectDirectory));
-        $def = $config->getHTMLDefinition(true);
-        $def->addAttribute('a', 'data-code', 'Text');
+        // bump when the definition changes, or the serializer cache keeps the old one
+        $config->set('HTML.DefinitionID', 'redbook-texts');
+        $config->set('HTML.DefinitionRev', 2);
+        // null when the serializer cache already has this revision
+        if ($def = $config->maybeGetRawHTMLDefinition()) {
+            $def->addAttribute('a', 'data-code', 'Text');
+            // a [[card.1]] link hovers that revision's image
+            $def->addAttribute('a', 'data-image', 'URI');
+        }
         $this->purifier = new HTMLPurifier($config);
         $this->parsedown = new Parsedown();
     }
@@ -73,7 +80,12 @@ class Texts
      */
     public function markdown($string)
     {
-        return $this->purify($this->imgResponsive($this->transform($string)));
+        if (!$this->cardLinker) {
+            return $this->purify($this->imgResponsive($this->transform($string)));
+        }
+        // [[card]] links (Ketura, 2026-11-03): kept out of markdown's way, then put back
+        [$string, $links] = $this->cardLinker->protect((string) $string);
+        return $this->purify($this->cardLinker->restore($this->imgResponsive($this->transform($string)), $links));
     }
 
     /**

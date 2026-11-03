@@ -204,9 +204,20 @@ test('deck notes, stats and history: starting fellowship, tags, annotations, tes
   await page.fill('#starting-bid', '2-3');
   await page.fill('#starting-notes', 'Mulligan without **Gimli**');
   await expect(page.locator('#starting-preview strong')).toHaveText('Gimli');
+  // [[card]] links in the preview, the same forms the server resolves
+  await page.fill('#description', 'Like [[HTTWC]], [[3R38]] and [[3_38.1]]; `[[3_38]]` stays code.');
+  await expect(page.locator('#description-preview a.rb-cardlink[data-code="3_38"]')).toHaveCount(2);
+  await expect(page.locator('#description-preview a.rb-cardlink[href$="/card/53_38#v1"]')).toHaveCount(1);
+  await expect(page.locator('#description-preview code')).toHaveText('[[3_38]]');
   await page.fill('#tag-entry', 'elves');
   await page.keyboard.press('Enter');
   await expect(page.locator('#tag-input .rb-tag-chip')).toContainText('elves');
+  // + Pick from deck, then a card in the deck: annotated, and the deck is untouched
+  await page.click('#annot-pick');
+  await page.locator('#deck .rb-line[data-code="1_178"], #deck .rb-tile[data-code="1_178"]').first().click();
+  await expect(page.locator('#annot-list .rb-annot[data-code="1_178"]')).toBeVisible();
+  expect(await page.evaluate(() => (window as any).app.deck.get_content()['1_178'])).toBe(1);
+  await page.locator('#annot-list [data-unannotate="1_178"]').click();
   // a note on a card that isn't in the deck
   await page.fill('#annot-search', 'the one ring, the ruling');
   await page.locator('.rb-annot-suggest [data-annotate]').first().click();

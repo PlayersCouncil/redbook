@@ -296,7 +296,9 @@ class ApiController extends AbstractController
         $lastModifiedCard = $cardsRepo->findBy([], ['dateUpdate' => 'DESC'], 1);
         if (count($lastModifiedCard)) {
             $lastModified = $lastModifiedCard[0]->getDateUpdate();
-            $response->setLastModified($lastModified);
+            // the JSON's own shape changes count too, or browsers keep the old copy
+            $shapeChanged = new \DateTime(CardsData::JSON_CHANGED);
+            $response->setLastModified($lastModified > $shapeChanged ? $lastModified : $shapeChanged);
             if ($response->isNotModified($request)) {
                 return $response;
             }

@@ -8,18 +8,19 @@
  * come. The odds line is the chance of holding at least one copy of a card, by how many
  * copies the deck runs, in the cards drawn so far.
  *
- * Charts, one per row, with Free Peoples and Shadow always split (never side by side):
- * the twilight curve (Free Peoples up, Shadow down), card types and cultures (Free
- * Peoples left, Shadow right). Free Peoples are light tan, Shadow a mid purple. The
- * type chart folds companions, allies and minions into Characters and marks half the
- * Shadow side: at least half of it should be minions.
+ * Charts, one per row, with Free Peoples left of zero and Shadow right of it on the same
+ * line (never side by side), the axis reaching just past the longest bar both ways:
+ * twilight cost, card types and cultures. Free Peoples are light tan, Shadow a mid
+ * purple. The type chart folds companions, allies and minions into Characters and
+ * marks half the Shadow side: at least half of it should be minions.
  *
  * The run-out chart estimates how many cards each player has left in their draw deck
  * site by site, from movement patterns (S single move, D double move) and how many
  * cards each plays per turn (Free Peoples) and per move (Shadow). The model: both
  * draw 8; the Free Peoples player plays their cards once a turn, the Shadow player
- * once per move; when the fellowship stays, both reconcile (draw back up to 8); when
- * it moves again only the Shadow player does. No discards, no card draw from effects.
+ * once per move, ramping up to the full number by site 4 (half at site 2); when the
+ * fellowship stays, both reconcile (draw back up to 8); when it moves again only the
+ * Shadow player does. No discards, no card draw from effects.
  */
 (function app_deck_stats(stats, $)
 {
@@ -118,8 +119,57 @@
         render_odds();
     }
 
+    function log_choose(n, k)
+    {
+        if(k < 0 || k > n) {
+            return -Infinity;
+        }
+        var sum = 0;
+        for(var i = 1; i <= k; i++) {
+            sum += Math.log(n - k + i) - Math.log(i);
+        }
+        return sum;
+    }
+
+    /**
+     * The chance of drawing exactly these cards, in any order (Ketura, 2026-11-03): with
+     * K copies of a card in the pile and k of them in hand, it's the product of C(K, k)
+     * over the cards drawn, out of C(pile, hand size)
+     */
+    function hand_chance()
+    {
+        var size = library.length + drawn;
+        if(!hand.length || !size) {
+            return null;
+        }
+        var held = _.countBy(hand, 'code'),
+            pile = _.countBy(draw_pile(), 'code'),
+            log_p = -log_choose(size, hand.length);
+        _.each(held, function (k, code) {
+            log_p += log_choose(pile[code] || k, k);
+        });
+        return Math.exp(log_p);
+    }
+
+    function render_chance()
+    {
+        var p = hand_chance();
+        if(p === null) {
+            $('#draw-chance').empty();
+            return;
+        }
+        var percent = p * 100,
+            one_in = Math.round(1 / p).toLocaleString();
+        // tiny chances read better as "1 in 111,591,867" than as a percentage
+        $('#draw-chance').html('<span class="rb-odds-label">' + t('deckbuilder.statstab.hand_chance') + '</span> '
+            + (percent >= 0.01
+                ? '<strong>' + (percent >= 1 ? percent.toFixed(1) : percent.toPrecision(2)) + '%</strong> <span class="rb-hint">' + t('deckbuilder.statstab.one_in', {count: one_in}) + '</span>'
+                : '<strong>' + t('deckbuilder.statstab.one_in_short', {count: one_in}) + '</strong>'));
+    }
+
     function render_odds()
     {
+        render_chance();
         var size = library.length + drawn,
             n = drawn || Math.min(8, size);
         if(!size || !app.hypergeometric) {
@@ -153,6 +203,39 @@
 
     function abs_label() { return Math.abs(this.value); }
 
+    /**
+     * A split chart's value axis: zero in the middle and both sides reaching just past
+     * the longest bar, so no side is padded out to the next round number (Ketura, 2026-11-03)
+     */
+    function split_axis(values, extra)
+    {
+        var top = _.max([1].concat(_.map(values, Math.abs))),
+            edge = top + Math.max(1, Math.ceil(top * 0.04));
+        return _.extend({title: {text: null}, min: -edge, max: edge, startOnTick: false, endOnTick: false, allowDecimals: false,
+            tickPositioner: function () {
+                var step = edge > 30 ? 10 : edge > 12 ? 5 : edge > 6 ? 2 : 1,
+                    ticks = [];
+                for(var v = -Math.floor(edge / step) * step; v <= edge; v += step) {
+                    ticks.push(v);
+                }
+                return ticks;
+            },
+            labels: {formatter: abs_label}, plotLines: [{value: 0, width: 1, color: '#999', zIndex: 4}]}, extra || {});
+    }
+
+    /** the sums of each row's stack, both sides, for split_axis */
+    function stack_totals(series)
+    {
+        var fp = [], shadow = [];
+        _.each(series, function (s) {
+            _.each(s.data, function (v, i) {
+                var list = v < 0 ? fp : shadow;
+                list[i] = (list[i] || 0) + v;
+            });
+        });
+        return _.compact(fp.concat(shadow));
+    }
+
     function base(type, height)
     {
         return {
@@ -160,28 +243,30 @@
             title: {text: null},
             credits: {enabled: false},
             legend: {enabled: true, itemStyle: {fontWeight: 'normal'}},
-            plotOptions: {series: {stacking: 'normal', borderWidth: 0, groupPadding: 0.08, pointPadding: 0.04, animation: false}},
+            // one stack per row: Free Peoples to the left of zero, Shadow to the right, on the same line
+            plotOptions: {series: {stacking: 'normal', borderWidth: 0, groupPadding: 0.1, pointPadding: 0.04, animation: false}},
             tooltip: {formatter: function () { return '<b>' + this.series.name + '</b><br>' + this.x + ': ' + Math.abs(this.y); }}
         };
     }
 
     function chart_twilight(draw)
     {
-        var max = _.max([4].concat(_.map(draw, function (c) { return c.twilight || 0; }))),
+        var max = _.max([0].concat(_.map(draw, function (c) { return c.twilight || 0; }))),
             costs = _.range(0, max + 1),
             count = function (side) {
                 return _.map(costs, function (cost) {
                     var n = _.reduce(draw, function (sum, c) { return sum + ((c.side === 'shadow') === (side === 'shadow') && (c.twilight || 0) === cost ? c.indeck : 0); }, 0);
-                    return side === 'shadow' ? -n : n;
+                    return side === 'shadow' ? n : -n;
                 });
-            };
-        $('#stats-chart-twilight').highcharts(_.extend(base('column', 280), {
-            xAxis: {categories: costs, title: {text: t('deckbuilder.statstab.twilight_axis')}},
-            yAxis: {title: {text: null}, allowDecimals: false, labels: {formatter: abs_label}, plotLines: [{value: 0, width: 1, color: '#999'}]},
-            series: [
+            },
+            series = [
                 {name: t('side.free_peoples'), color: FP, data: count('free_peoples')},
                 {name: t('side.shadow'), color: SHADOW, data: count('shadow')}
-            ]
+            ];
+        $('#stats-chart-twilight').highcharts(_.extend(base('bar', 70 + costs.length * 26), {
+            xAxis: {categories: costs, title: {text: t('deckbuilder.statstab.twilight_axis')}, reversed: true},
+            yAxis: split_axis(stack_totals(series)),
+            series: series
         }));
     }
 
@@ -207,26 +292,31 @@
         });
         var keys = _.filter(ORDER, function (key) { var r = rows[key]; return key === 'characters' || r.companion + r.ally + r.fp + r.minion + r.shadow > 0; }),
             label = function (key) { return key === 'characters' ? t('deckbuilder.statstab.characters') : t('deckbuilder.statstab.type.' + key); },
-            series = function (field, negative) { return _.map(keys, function (key) { return negative ? -rows[key][field] : rows[key][field]; }); },
-            half = totals.shadow / 2;
-        $('#stats-chart-types').highcharts(_.extend(base('bar', 60 + keys.length * 44), {
+            values = function (field, negative) { return _.map(keys, function (key) { return negative ? -rows[key][field] : rows[key][field]; }); },
+            half = totals.shadow / 2,
+            series = [
+                {name: t('deckbuilder.statstab.companions'), color: FP, data: values('companion', true)},
+                {name: t('deckbuilder.statstab.allies'), color: FP_LIGHT, borderColor: FP, borderWidth: 1, data: values('ally', true)},
+                {name: t('deckbuilder.statstab.other_fp'), color: '#C4AC78', data: values('fp', true), showInLegend: false},
+                {name: t('deckbuilder.statstab.minions'), color: SHADOW, data: values('minion', false)},
+                {name: t('deckbuilder.statstab.other_shadow'), color: '#A88DC0', data: values('shadow', false), showInLegend: false}
+            ];
+        $('#stats-chart-types').highcharts(_.extend(base('bar', 60 + keys.length * 40), {
             xAxis: {categories: _.map(keys, label), title: {text: null}},
-            yAxis: {title: {text: null}, allowDecimals: false, labels: {formatter: abs_label},
-                plotLines: [{value: 0, width: 1, color: '#999'}].concat(half ? [{
-                    // at least half of the Shadow side should be minions (Ketura, 2026-11-03)
-                    value: half, width: 2, color: '#4B2F66', dashStyle: 'Dot', zIndex: 5,
-                    label: {text: t('deckbuilder.statstab.half_shadow', {count: half}), style: {color: '#4B2F66', fontSize: '11px'}, align: 'right', rotation: 0, y: 12, x: -4}
-                }] : [])},
-            series: [
-                {name: t('deckbuilder.statstab.companions'), color: FP, data: series('companion', true), stack: 'fp'},
-                {name: t('deckbuilder.statstab.allies'), color: FP_LIGHT, borderColor: FP, borderWidth: 1, data: series('ally', true), stack: 'fp'},
-                {name: t('deckbuilder.statstab.other_fp'), color: '#C4AC78', data: series('fp', true), stack: 'fp', showInLegend: false},
-                {name: t('deckbuilder.statstab.minions'), color: SHADOW, data: series('minion', false), stack: 'shadow'},
-                {name: t('deckbuilder.statstab.other_shadow'), color: '#A88DC0', data: series('shadow', false), stack: 'shadow', showInLegend: false}
-            ]
+            // the dotted line: at least half of the Shadow side should be minions (Ketura, 2026-11-03)
+            yAxis: split_axis(stack_totals(series).concat([half]), half ? {plotLines: [
+                {value: 0, width: 1, color: '#999', zIndex: 4},
+                {value: half, width: 2, color: '#4B2F66', dashStyle: 'Dot', zIndex: 5}
+            ]} : {}),
+            series: series
         }));
     }
 
+    /**
+     * Cultures (Ketura, 2026-11-03): Free Peoples cultures named on the left axis, Shadow
+     * cultures on a right axis, each side biggest first, so Gondor and Isengard can share
+     * a line. A culture on both sides (Gollum) gets one line for both, after the rest.
+     */
     function chart_cultures(draw)
     {
         var cultures = {};
@@ -235,14 +325,37 @@
             cultures[code] = cultures[code] || {name: c.culture_name || t('deck.no_culture'), fp: 0, shadow: 0};
             cultures[code][c.side === 'shadow' ? 'shadow' : 'fp'] += c.indeck;
         });
-        var list = _.sortBy(_.values(cultures), function (c) { return -(c.fp + c.shadow); });
-        $('#stats-chart-cultures').highcharts(_.extend(base('bar', 60 + Math.max(1, list.length) * 34), {
-            xAxis: {categories: _.pluck(list, 'name'), title: {text: null}},
-            yAxis: {title: {text: null}, allowDecimals: false, labels: {formatter: abs_label}, plotLines: [{value: 0, width: 1, color: '#999'}]},
-            series: [
-                {name: t('side.free_peoples'), color: FP, data: _.map(list, function (c) { return -c.fp; })},
-                {name: t('side.shadow'), color: SHADOW, data: _.map(list, function (c) { return c.shadow; })}
-            ]
+        var all = _.values(cultures),
+            biggest = function (side) { return function (c) { return -c[side]; }; },
+            fp_only = _.sortBy(_.filter(all, function (c) { return c.fp && !c.shadow; }), biggest('fp')),
+            shadow_only = _.sortBy(_.filter(all, function (c) { return c.shadow && !c.fp; }), biggest('shadow')),
+            both = _.sortBy(_.filter(all, function (c) { return c.fp && c.shadow; }), function (c) { return -(c.fp + c.shadow); }),
+            top = Math.max(fp_only.length, shadow_only.length),
+            rows = Math.max(1, top + both.length),
+            left = [], right = [], fp = [], shadow = [];
+        for(var i = 0; i < rows; i++) {
+            var l = i < top ? fp_only[i] : both[i - top],
+                r = i < top ? shadow_only[i] : both[i - top];
+            left.push(l ? l.name : '');
+            right.push(r ? r.name : '');
+            fp.push(l ? -l.fp : 0);
+            shadow.push(r ? r.shadow : 0);
+        }
+        var series = [
+            {name: t('side.free_peoples'), color: FP, data: fp},
+            {name: t('side.shadow'), color: SHADOW, data: shadow}
+        ];
+        $('#stats-chart-cultures').highcharts(_.extend(base('bar', 70 + rows * 30), {
+            xAxis: [
+                {categories: left, title: {text: null}},
+                {categories: right, title: {text: null}, opposite: true, linkedTo: 0}
+            ],
+            yAxis: split_axis(stack_totals(series)),
+            tooltip: {formatter: function () {
+                var names = this.y < 0 ? left : right;
+                return '<b>' + names[this.point.x] + '</b><br>' + this.series.name + ': ' + Math.abs(this.y);
+            }},
+            series: series
         }));
     }
 
@@ -265,6 +378,15 @@
             moves++;
         }
         return out;
+    }
+
+    /**
+     * Shadow ramps up (Ketura, 2026-11-03): the full number from site 4 on, about half at
+     * site 2, three quarters at site 3, as the twilight pool grows
+     */
+    function shadow_plays(site)
+    {
+        return Math.round(runout.shadow_play * Math.min(1, site / 4));
     }
 
     function simulate(your_deck)
@@ -293,7 +415,7 @@
             var moves = token === 'D' ? 2 : 1;
             for(var m = 1; m <= moves; m++) {
                 fp.site += 1;
-                play(shadow, runout.shadow_play);
+                play(shadow, shadow_plays(fp.site));
                 if(m < moves) {
                     // moving again: only the Shadow player reconciles
                     reconcile(shadow);
@@ -338,17 +460,42 @@
             + '<div class="rb-runout-row"><span class="rb-runout-who" style="color:' + THEM + '">' + t('deckbuilder.statstab.their_moves') + '</span>' + pattern_html('them') + '</div>');
     }
 
+    /**
+     * The run-out chart. Each line ends with a grey guide back to the axis saying how many
+     * cards remain; when the two ends are close, yours is the one labelled and drawn on top.
+     */
     function chart_runout(your_deck)
     {
         var result = simulate(your_deck),
-            series = [
-                {name: t('deckbuilder.statstab.you'), color: YOU, data: result.you.points},
-                {name: t('deckbuilder.statstab.them'), color: THEM, data: result.them.points, dashStyle: 'ShortDash'}
-            ];
+            you_end = _.last(result.you.points),
+            them_end = _.last(result.them.points),
+            top = Math.max(result.you.points[0][1], result.them.points[0][1], 1),
+            close = Math.abs(you_end[1] - them_end[1]) < top * 0.08,
+            guide = function (end, color, labelled, z) {
+                if(!end[1]) {
+                    return null;
+                }
+                return {
+                    // labelled under the line, ending at the final dot, clear of where the lines come down from
+                    type: 'line', data: [{x: 1, y: end[1]}, {x: end[0], y: end[1], dataLabels: {enabled: labelled}}],
+                    color: '#9A9A9A', lineWidth: 1, dashStyle: 'Dash', marker: {enabled: false}, enableMouseTracking: false,
+                    showInLegend: false, zIndex: z,
+                    dataLabels: {enabled: false, align: 'right', verticalAlign: 'top', x: -8, y: 2, crop: false, overflow: 'none',
+                        style: {color: color, fontWeight: '600', fontSize: '11px', textShadow: 'none'},
+                        formatter: function () { return Translator.transChoice('deckbuilder.statstab.cards_remain', end[1], {count: end[1]}); }}
+                };
+            },
+            series = _.compact([
+                guide(them_end, THEM, !close, 1),
+                guide(you_end, YOU, true, 2),
+                {name: t('deckbuilder.statstab.them'), color: THEM, data: result.them.points, dashStyle: 'ShortDash', zIndex: 3},
+                {name: t('deckbuilder.statstab.you'), color: YOU, data: result.you.points, zIndex: 4, lineWidth: 3}
+            ]);
         $('#stats-chart-runout').highcharts({
             chart: {type: 'line', height: 300, backgroundColor: 'transparent', style: {fontFamily: 'inherit'}},
             title: {text: null},
             credits: {enabled: false},
+            legend: {reversed: true},
             xAxis: {min: 1, max: 9, tickInterval: 1, title: {text: t('deckbuilder.statstab.site')}},
             yAxis: {min: 0, allowDecimals: false, title: {text: t('deckbuilder.statstab.cards_left')}},
             tooltip: {formatter: function () { return '<b>' + this.series.name + '</b><br>' + t('deckbuilder.statstab.site') + ' ' + this.x + ': ' + this.y; }},
@@ -362,6 +509,22 @@
                 : t('deckbuilder.statstab.cards_at', {who: who, count: end[1], site: end[0]});
         };
         $('#runout-summary').text(say(t('deckbuilder.statstab.you'), result.you) + ' ' + say(t('deckbuilder.statstab.them'), result.them));
+    }
+
+    /** Redraws the run-out part only, keeping the pane where it was scrolled to (Ketura, 2026-11-03) */
+    function refresh_runout()
+    {
+        var pane = $('#deck-stats').parents().filter(function () { return this.scrollHeight > this.clientHeight && /(auto|scroll)/.test($(this).css('overflow-y')); }).first(),
+            scrolled = pane.scrollTop(),
+            focused = document.activeElement && $(document.activeElement).closest('#runout-inputs').length
+                ? $(document.activeElement).attr('data-runout') || null : null,
+            pile = draw_pile().length;
+        render_runout_inputs(pile);
+        chart_runout(pile);
+        pane.scrollTop(scrolled);
+        if(focused) {
+            $('#runout-inputs [data-runout="' + focused + '"]').focus();
+        }
     }
 
     /* ---- refresh ---- */
@@ -393,16 +556,16 @@
                 tokens = runout[who].slice();
             tokens[$(this).data('turn')] = $(this).data('step');
             runout[who] = normalize(tokens);
-            stats.refresh();
+            refresh_runout();
         });
         root.on('click', '[data-first]', function () {
             runout.first = $(this).data('first');
-            stats.refresh();
+            refresh_runout();
         });
         root.on('change', '[data-runout]', function () {
             var value = parseInt($(this).val(), 10);
             runout[$(this).data('runout')] = isNaN(value) ? null : value;
-            stats.refresh();
+            refresh_runout();
         });
         $('a[href="#tab-pane-stats"]').on('shown.bs.tab', function () {
             stats.refresh();

@@ -3,7 +3,6 @@
 <div class="rb-stats" id="deck-stats">
     <section class="rb-stats-section" aria-labelledby="draw-title">
         <h3 id="draw-title">{{ 'deckbuilder.statstab.draw_title' | trans }}</h3>
-        <p class="rb-hint">{{ 'deckbuilder.statstab.draw_intro' | trans }}</p>
         <div class="rb-draw-buttons" role="group" aria-label="{{ 'deckbuilder.statstab.draw_title' | trans }}">
             <button type="button" class="rb-btn rb-btn-primary" data-draw="opening">{{ 'deckbuilder.statstab.opening' | trans }}</button>
             <button type="button" class="rb-btn" data-draw="mulligan">{{ 'deckbuilder.statstab.mulligan' | trans }}</button>
@@ -16,6 +15,7 @@
         </div>
         <div class="rb-draw-status" id="draw-status" aria-live="polite"></div>
         <div class="rb-draw-hand" id="draw-hand"></div>
+        <div class="rb-draw-chance" id="draw-chance" aria-live="polite"></div>
         <div class="rb-draw-odds" id="draw-odds"></div>
     </section>
 

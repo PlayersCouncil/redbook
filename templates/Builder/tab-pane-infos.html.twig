@@ -4,11 +4,14 @@
 <div class="rb-notes" id="deck-notes">
     <div class="rb-notes-tags">
         <label for="tag-entry">{{ 'decks.edit.notes.tags.label' | trans }}</label>
+        {# the entry box at a set width; the chosen tags fill the room to its right (Ketura, 2026-11-03) #}
         <div class="rb-tag-input" id="tag-input">
             <input type="hidden" name="tags_" value="{{ deck.tags }}">
-            <span class="rb-tag-chips"></span>
-            <input type="text" id="tag-entry" autocomplete="off" placeholder="{{ 'deckbuilder.notes.tag_placeholder' | trans }}" aria-label="{{ 'deckbuilder.notes.tag_add' | trans }}">
-            <div class="rb-tag-suggest" role="listbox" hidden></div>
+            <div class="rb-tag-entry">
+                <input type="text" id="tag-entry" autocomplete="off" placeholder="{{ 'deckbuilder.notes.tag_placeholder' | trans }}" aria-label="{{ 'deckbuilder.notes.tag_add' | trans }}">
+                <div class="rb-tag-suggest" role="listbox" hidden></div>
+            </div>
+            <div class="rb-tag-chips" aria-live="polite"></div>
         </div>
     </div>
 
@@ -28,6 +31,8 @@
     <section class="rb-notes-section rb-notes-annot" aria-labelledby="annot-title">
         <div class="rb-notes-head">
             <h3 id="annot-title">{{ 'deckbuilder.notes.annotations' | trans }}</h3>
+            {# + then a click on a card in the deck; the search is for cards that aren't in it #}
+            <button type="button" class="rb-btn rb-btn-small rb-annot-pick" id="annot-pick" aria-pressed="false">{{ 'deckbuilder.notes.pick' | trans }}</button>
             <div class="rb-annot-add">
                 <input type="search" id="annot-search" autocomplete="off" placeholder="{{ 'deckbuilder.notes.annotate_placeholder' | trans }}" aria-label="{{ 'deckbuilder.notes.annotate' | trans }}">
                 <div class="rb-annot-suggest" role="listbox" hidden></div>

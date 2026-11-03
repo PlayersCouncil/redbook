@@ -22,7 +22,7 @@
 
     function md(text)
     {
-        return typeof marked === 'function' ? marked(text || '') : _.escape(text || '');
+        return app.markdown ? app.markdown.render(text) : _.escape(text || '');
     }
 
     /* ---- tags ---- */
@@ -186,7 +186,44 @@
         $('#annot-search').val('');
         $('.rb-annot-suggest').prop('hidden', true).empty();
         render_annotations();
-        $('#annot-list [data-annotation="' + code + '"]').focus();
+        var row = $('#annot-list .rb-annot[data-code="' + code + '"]');
+        row.addClass('is-new');
+        row.find('textarea').focus();
+        if(row[0]) {
+            row[0].scrollIntoView({block: 'nearest'});
+        }
+    }
+
+    /* ---- + then a card in the deck (Ketura, 2026-11-03) ---- */
+
+    var picking = false;
+
+    function set_picking(on)
+    {
+        picking = !!on;
+        $('#annot-pick').attr('aria-pressed', picking ? 'true' : 'false');
+        $('#deck').toggleClass('rb-picking', picking);
+    }
+
+    /** While picking, a click on a deck card annotates it and does nothing else */
+    function pick_click(event)
+    {
+        if(!picking) {
+            return;
+        }
+        var target = $(event.target);
+        if(target.closest('#annot-pick').length) {
+            return;
+        }
+        var item = target.closest('#deck .rb-line[data-code], #deck .rb-tile[data-code]');
+        if(item.length) {
+            event.preventDefault();
+            event.stopPropagation();
+            set_picking(false);
+            add_annotation(item.data('code') + '');
+        } else if(!target.closest('#deck').length) {
+            set_picking(false);
+        }
     }
 
     /* ---- the whole tab ---- */
@@ -256,6 +293,18 @@
         });
 
         // annotations
+        root.on('click', '#annot-pick', function () {
+            set_picking(!picking);
+        });
+        document.addEventListener('click', pick_click, true);
+        $(document).on('keydown', function (event) {
+            if(picking && event.key === 'Escape') {
+                set_picking(false);
+            }
+        });
+        $('a[data-toggle=tab]').on('shown.bs.tab', function () {
+            set_picking(false);
+        });
         root.on('input focus', '#annot-search', show_annotation_suggestions);
         root.on('keydown', '#annot-search', function (event) {
             if(event.key === 'Enter') {

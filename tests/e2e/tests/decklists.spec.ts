@@ -30,7 +30,8 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await page.click('#menu-visibility [data-visibility=published]');
   await expect(page).toHaveURL(/\/deck\/publish\//);
   await page.fill('#name', decklistName);
-  await page.fill('#descriptionMd', 'Published by the **smoke test**.');
+  // [[card]] links resolve when the text is saved (Ketura, 2026-11-03)
+  await page.fill('#descriptionMd', 'Published by the **smoke test**. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');
   await page.fill('input[name="play_event[]"]', `E2E Regionals ${runId}`);
   await page.fill('input[name="play_placing[]"]', '1st');
   await snap(page, 'publish form');
@@ -39,6 +40,10 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await expect(page).toHaveURL(/\/decklist\/view\/(\d+)\//);
   await expect(page.locator('h1')).toContainText(decklistName);
   await expect(page.locator('body')).toContainText('Published by the smoke test.');
+  await expect(page.locator('a.rb-cardlink[data-code="3_38"]')).toHaveText('Aragorn, Heir to the White City');
+  await expect(page.locator('a.rb-cardlink[href$="/card/53_38#v1"]')).toHaveAttribute('data-image', /LOTR-EN03S038\.1/);
+  await expect(page.locator('a.rb-cardlink.is-ambiguous')).toHaveText('Gandalf');
+  await expect(page.locator('.rb-cardlink.is-missing')).toHaveText('[[Nobody At All]]');
   await expect(page.locator('.deck-validation')).toContainText('Legal in Fellowship Block');
   await expect(page.locator('.decklist-plays')).toContainText(`E2E Regionals ${runId}`);
   await expect(page.locator('.deck-content')).toContainText('Ring-bearer');

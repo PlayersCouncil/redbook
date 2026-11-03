@@ -672,7 +672,7 @@ decks.build.errors.noformat: "Choose a format for the deck."
 decks.build.newname_format: "New %format% deck"
 decks.build.format_hint: "Gemp checks the deck against this format. You can change it later."
 decks.build.name_hint: "Optional; you can name it later"
-decks.import.title: Import decks
+decks.import.title: Import Decks
 decks.import.intro: "Paste a deck as a card list (one card per line, with optional sections) or as a Gemp deck string. Separate several decks with a line of ===."
 decks.import.or_gemp: "or a Gemp deck string:"
 decks.import.paste: Decks as text
@@ -829,14 +829,13 @@ deckbuilder.historic.date_retrieved: Date Retrieved
 deckbuilder.historic.date_hint: "YYYY, YYYY-MM or YYYY-MM-DD"
 deckbuilder.historic.format_as_written: Format as written
 deckbuilder.historic.notes: Archival Notes
-deckbuilder.tabs.draw: Test draw
+deckbuilder.tabs.draw: Test Draw
 deckbuilder.display_options: Deck display options
 deckbuilder.view.label: Deck view
 deckbuilder.group.label: Group the draw deck by
 deckbuilder.collapse: Collapse
 deckbuilder.tabs.stats: Stats
-deckbuilder.statstab.draw_title: Test draw
-deckbuilder.statstab.draw_intro: "From the draw deck less the starting fellowship. Opening draw and Mulligan start afresh, sorted Free Peoples then Shadow; Draw adds on the right."
+deckbuilder.statstab.draw_title: Test Draw
 deckbuilder.statstab.opening: Opening draw
 deckbuilder.statstab.mulligan: Mulligan
 deckbuilder.statstab.draw_n: "Draw %count%"
@@ -845,10 +844,14 @@ deckbuilder.statstab.pile_status: "%count% cards to draw from."
 deckbuilder.statstab.hand_status: "%count% in hand (%fp% Free Peoples, %shadow% Shadow); %left% left to draw."
 deckbuilder.statstab.odds_opening: "Chance of at least one in an opening 8 (of %size%):"
 deckbuilder.statstab.odds_drawn: "Chance of at least one in the %count% drawn (of %size%):"
+deckbuilder.statstab.hand_chance: "Chances this hand is drawn:"
+deckbuilder.statstab.one_in: "(about 1 in %count%)"
+deckbuilder.statstab.one_in_short: "about 1 in %count%"
+deckbuilder.statstab.cards_remain: "{0} No cards remain|{1} 1 card remains|]1,Inf] %count% cards remain"
 deckbuilder.statstab.odds_copies: "{1} with 1 copy|]1,Inf] with %count% copies"
-deckbuilder.statstab.twilight: Twilight cost
-deckbuilder.statstab.twilight_axis: Twilight cost
-deckbuilder.statstab.types: Card types
+deckbuilder.statstab.twilight: Twilight Cost
+deckbuilder.statstab.twilight_axis: Twilight Cost
+deckbuilder.statstab.types: Card Types
 deckbuilder.statstab.cultures: Cultures
 deckbuilder.statstab.characters: Characters
 deckbuilder.statstab.companions: Companions
@@ -856,14 +859,13 @@ deckbuilder.statstab.allies: Allies
 deckbuilder.statstab.minions: Minions
 deckbuilder.statstab.other_fp: Free Peoples
 deckbuilder.statstab.other_shadow: Shadow
-deckbuilder.statstab.half_shadow: "Half your Shadow (%count%)"
 deckbuilder.statstab.type.follower: Followers
 deckbuilder.statstab.type.possession: Possessions
 deckbuilder.statstab.type.artifact: Artifacts
 deckbuilder.statstab.type.condition: Conditions
 deckbuilder.statstab.type.event: Events
-deckbuilder.statstab.runout: Running out
-deckbuilder.statstab.runout_intro: "Cards left in each draw deck, site by site, if both players play this many cards and move like this. Both reconcile when the fellowship stays; when it moves again, only Shadow does."
+deckbuilder.statstab.runout: Running Out
+deckbuilder.statstab.runout_intro: "Cards left in each draw deck, site by site, if both players play this many cards and move like this. Shadow ramps up: about half the number at site 2, all of it from site 4. Both reconcile when the fellowship stays; when it moves again, only Shadow does."
 deckbuilder.statstab.fp_play: "Free Peoples cards played per turn"
 deckbuilder.statstab.shadow_play: "Shadow cards played per move"
 deckbuilder.statstab.their_deck: "Opponent's draw deck"
@@ -884,7 +886,7 @@ deckbuilder.notes.tag_add: Add a tag
 deckbuilder.notes.tag_remove: "Remove the tag %tag%"
 deckbuilder.notes.tag_new: new tag
 deckbuilder.notes.tag_count: "{1} on 1 of your decks|]1,Inf] on %count% of your decks"
-deckbuilder.notes.starting: Starting notes
+deckbuilder.notes.starting: Starting Notes
 deckbuilder.notes.bid: Bid
 deckbuilder.notes.bid_placeholder: "e.g. 2-3"
 deckbuilder.notes.starting_placeholder: "What to bid, which fellowship to start, what to do on the first turn…"
@@ -892,10 +894,11 @@ deckbuilder.notes.starting_none: "Mark companions with their S in the deck to li
 deckbuilder.notes.starting_fellowship: "Starting fellowship:"
 deckbuilder.notes.starting_twilight: "(twilight %cost%)"
 deckbuilder.notes.preview: Preview
-deckbuilder.notes.annotations: Card annotations
+deckbuilder.notes.annotations: Card Annotations
 deckbuilder.notes.annotate: Annotate a card
-deckbuilder.notes.annotate_placeholder: "Annotate a card (in the deck or not)…"
-deckbuilder.notes.annotations_none: "Notes on single cards go here: why it's in, why something else isn't, what to watch for."
+deckbuilder.notes.annotate_placeholder: "Search for other cards…"
+deckbuilder.notes.pick: "+ Pick from deck"
+deckbuilder.notes.annotations_none: "Notes on single cards go here: why it's in, why something else isn't, what to watch for. Use + Pick from deck and click a card in the deck, or search for any other card."
 deckbuilder.notes.annotation_for: "Notes on %card%"
 deckbuilder.notes.annotation_remove: Remove this annotation
 deckbuilder.notes.in_deck: in the deck
@@ -1035,7 +1038,7 @@ decklist.review.unverified: unverified
 decklist.review.unverified_title: "Brought in from the archives and not yet checked against the original by a historian."
 decklist.review.unverified_note: "This deck was brought in from the archives and hasn't been checked against the original yet. Some cards may be missing or wrong."
 decklist.review.verified_by: "Checked against the original by %name% on %date%."
-historian.review.panel_title: Archive review
+historian.review.panel_title: Archive Review
 historian.review.unverified: "Not yet checked against the original"
 historian.review.verified_by: "Verified by %name% on %date%"
 historian.review.view_published: Published deck
@@ -1044,7 +1047,7 @@ historian.review.save_update: Save & update published deck
 historian.review.save_verify_hint: "Saves, copies the deck onto its published version, and marks it checked by you."
 historian.review.verified_now: "Saved as version %version% and verified."
 historian.review.original: "Original post on %source%"
-historian.review.unresolved: "Lines the import couldn't match to a card:"
+historian.review.unresolved: "Lines the Import Couldn't Match to a Card"
 historian.review.open: Open in the deckbuilder
 historian.review.flag.unresolved: "{1} 1 line not matched to a card|]1,Inf] %count% lines not matched to cards"
 historian.review.flag.format_guessed: "Format guessed: %detail%"
@@ -1081,7 +1084,7 @@ historian.queue.flag_name.unresolved: Unmatched lines
 historian.queue.flag_name.no_format: No format
 historian.queue.flag_name.format_guessed: Format guessed
 historian.queue.flag_name.problems: Gemp problems
-deckbuilder.tabs.archive: Archive info
+deckbuilder.tabs.archive: Archive Info
 historian.review.raw: The list as posted
 historian.review.unresolved_hint: "Click a line to search the card pool for it, or a card to add a copy to the deck."
 historian.review.search_title: "Search the card pool for this line"
