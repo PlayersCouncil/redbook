@@ -408,6 +408,8 @@
         return '<div class="rb-search"><span class="rb-search-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5l3.5 3.5"/></svg></span>'
             + '<input type="search" id="filter-text" autocomplete="off" placeholder="' + t('deckbuilder.filters.search_placeholder') + '" aria-label="' + t('deckbuilder.filters.search') + '">'
             + '<a href="#" class="rb-search-tips smart-filter-help">' + t('deckbuilder.filters.search_tips') + '</a></div>'
+            // the search stays put; the rest scrolls under it (Ketura, 2026-11-03)
+            + '<div class="rb-filters-scroll">'
             + '<div class="rb-row rb-row-sets">' + select('block', t('deckbuilder.filters.block'), [], t('deckbuilder.filters.any_in_format'), 'rb-block')
             + select('set', t('deckbuilder.filters.set'), [], t('deckbuilder.filters.any_in_format'), 'rb-set') + '</div>'
             + '<div class="rb-row rb-row-side"><div class="rb-seg" role="group" aria-label="' + t('deckbuilder.filters.side') + '">'
@@ -416,6 +418,8 @@
             + '<div class="rb-cultures" role="group" aria-label="' + t('deckbuilder.filters.cultures') + '">'
             + _.map(FP_CULTURES, culture_button).join('') + '<span class="rb-culture-sep" aria-hidden="true"></span>'
             + _.map(SHADOW_CULTURES, culture_button).join('') + '</div>'
+            // More filters opens below its own button, in the Showing band
+            + '<section class="rb-showing" aria-label="' + t('deckbuilder.filters.showing') + '"></section>'
             + '<div class="rb-more" hidden>'
             + '<div class="rb-more-cols"><fieldset><legend>' + t('deckbuilder.filters.is_or_has') + '</legend>'
             + '<label class="rb-field rb-inline"><span>' + t('deckbuilder.filters.unique') + '</span><select data-field="unique"><option value="">' + t('deckbuilder.filters.any') + '</option><option value="yes">' + t('deckbuilder.filters.yes') + '</option><option value="no">' + t('deckbuilder.filters.no') + '</option></select></label>'
@@ -440,7 +444,7 @@
             + '<label class="rb-field"><span>' + t('deckbuilder.filters.lore') + '</span><input type="text" data-field="lore"></label>'
             + select('rarity', t('deckbuilder.filters.rarity'), options.rarities)
             + '</div></div>'
-            + '<section class="rb-showing" aria-label="' + t('deckbuilder.filters.showing') + '"></section>';
+            + '</div>';
     }
 
     /** Block and Set list only what the format allows; a chosen block narrows the sets */
@@ -627,6 +631,33 @@
         return columns * rows;
     }
 
+    /**
+     * Cards per page from the grid as drawn: its real column count, and as many
+     * rows of its real tile height as fit the pool's height. Desktop only (the pool
+     * has a fixed height there); null when there's nothing to measure.
+     */
+    function fitted_size()
+    {
+        if(!window.matchMedia('(min-width: 992px)').matches) {
+            return null;
+        }
+        var grid = pool_el.find('.rb-pool-grid, .rb-pool-list').first(),
+            first = grid.children().first();
+        if(!grid.length || !first.length) {
+            return null;
+        }
+        var style = window.getComputedStyle(grid[0]),
+            columns = style.gridTemplateColumns.split(' ').filter(function (c) { return c && c !== 'none'; }).length || 1,
+            row_gap = parseFloat(style.rowGap) || 0,
+            item_h = first.outerHeight(),
+            space = pool_el.innerHeight() - pool_el.find('.rb-pool-head').outerHeight(true)
+                - (parseFloat(pool_el.css('padding-top')) || 0) - (parseFloat(pool_el.css('padding-bottom')) || 0) - 4;
+        if(!item_h || space <= 0) {
+            return null;
+        }
+        return columns * Math.max(1, Math.floor((space + row_gap) / (item_h + row_gap)));
+    }
+
     /* ---- refresh ---- */
 
     var refresh = pool.refresh = function refresh(reset_page)
@@ -646,6 +677,12 @@
         if(size !== last_page_size) {
             last_page_size = size;
             pool_el.html(pool_html(cards, size));
+        }
+        // then trust the grid the browser actually drew: whole rows that fill the pool (Ketura, 2026-11-03)
+        var fitted = fitted_size();
+        if(fitted && fitted !== last_page_size) {
+            last_page_size = fitted;
+            pool_el.html(pool_html(cards, fitted));
         }
         var format = app.deck.get_format(),
             chips = active_chips(),
@@ -765,6 +802,11 @@
         filters_el.on('click', '.rb-more-toggle', function () {
             more_open = !more_open;
             filters_el.find('.rb-more').prop('hidden', !more_open);
+            if(more_open) {
+                // the band with its button at the top, the extra filters right below it
+                var scroller = filters_el.find('.rb-filters-scroll');
+                scroller.scrollTop(scroller.scrollTop() + filters_el.find('.rb-showing').position().top - scroller.position().top);
+            }
             refresh(false);
         });
         filters_el.on('click', '.rb-chip[data-remove]', function () {

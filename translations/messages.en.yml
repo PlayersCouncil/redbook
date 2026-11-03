@@ -641,6 +641,7 @@ deck:
   effective_date_hint: "When the deck was, or will be, played. Card versions and errata are shown as of this date."
   ring_bearer: Ring-bearer
   ring: The One Ring
+  ring_short: Ring
   map: Map
   adventure_deck: Adventure deck
   no_culture: No culture
@@ -832,8 +833,11 @@ deckbuilder.tabs.draw: Test draw
 deckbuilder.display_options: Deck display options
 deckbuilder.view.label: Deck view
 deckbuilder.group.label: Group the draw deck by
-deckbuilder.sites_collapse: "Shrink the sites to their titles"
-deckbuilder.sites_expand: "Show the sites whole"
+deckbuilder.collapse: Collapse
+deckbuilder.expand: Expand
+deckbuilder.view.list_short: List
+deckbuilder.view.thumb_short: Thumbs
+deckbuilder.view.half_short: Half
 deckbuilder.view.list: List view
 deckbuilder.view.thumb: Thumbnail view
 deckbuilder.view.half: Half-thumbnail view

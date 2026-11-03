@@ -36,12 +36,11 @@
                 <section class="rb-info" id="deck-info" aria-label="{{ 'deckbuilder.info.label' | trans }}">
                     <div class="rb-draft-banner" id="draft-banner" hidden></div>
 
-                    <label class="rb-field rb-name-field">
-                        <span>{{ 'deckbuilder.info.name' | trans }}</span>
-                        <input type="text" id="deck-name" value="{{ deck.name }}" autocomplete="off">
-                    </label>
-
-                    <div class="rb-format-row">
+                    <div class="rb-title-row">
+                        <label class="rb-field rb-name-field">
+                            <span>{{ 'deckbuilder.info.name' | trans }}</span>
+                            <input type="text" id="deck-name" value="{{ deck.name }}" autocomplete="off">
+                        </label>
                         <label class="rb-field rb-format-field">
                             <span>{{ 'deck.target_format' | trans }}</span>
                             <select id="deck-format">
@@ -53,10 +52,12 @@
                                 {% if not listed %}<option value="{{ deck.targetFormat }}" selected>{{ format ? format.name : deck.targetFormat }}</option>{% endif %}
                             </select>
                         </label>
+                    </div>
+                    <div class="rb-format-row">
                         <button type="button" class="rb-btn" id="btn-suggest-format" hidden>{{ 'deck.suggest_format' | trans }}</button>
                         <button type="button" class="rb-btn" id="btn-convert-pc" hidden title="{{ 'deck.convert_hint' | trans }}"></button>
-                        <div class="rb-popover" id="format-suggestions" role="dialog" aria-label="{{ 'deckbuilder.info.suggestions' | trans }}" hidden></div>
                     </div>
+                    <div class="rb-popover" id="format-suggestions" role="dialog" aria-label="{{ 'deckbuilder.info.suggestions' | trans }}" hidden></div>
 
                     <div class="rb-validation" id="deck-validation" role="status" aria-live="polite"></div>
 

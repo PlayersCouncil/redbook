@@ -783,13 +783,17 @@ abbr.legality.banned {
     /* the builder fills the space between navbar and footer; only its panes scroll */
     #wrapper.rb-fill > .rb-builder { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
     .rb-builder-row { flex: 1 1 auto; min-height: 0; }
-    .rb-col-left, .rb-col-right { display: flex; flex-direction: column; min-height: 0; }
+    /* fixed halves: nothing inside (a tab, a view) may change the page's width (Ketura, 2026-11-03) */
+    #wrapper.rb-fill > .rb-builder { width: 100%; }
+    .rb-col-left, .rb-col-right { display: flex; flex-direction: column; min-height: 0; flex: 0 0 50%; max-width: 50%; min-width: 0; }
+    .rb-info, .rb-deck, .rb-scroll-pane, .rb-filters-scroll, .rb-pool { scrollbar-gutter: stable; }
     .rb-info { flex: 0 0 auto; max-height: 62%; overflow-y: auto; }
     .rb-deck { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
     .rb-tab-content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
     .rb-tab-content > .tab-pane.active { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
     .rb-scroll-pane.active { overflow-y: auto; padding-top: 10px; }
-    .rb-build-pane .rb-filters { flex: 0 0 auto; max-height: 58%; overflow-y: auto; }
+    .rb-build-pane .rb-filters { flex: 0 0 auto; max-height: 58%; overflow: hidden; }
+    .rb-filters-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
     .rb-build-pane .rb-pool { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 }
 .rb-deck { border-top: 1px solid var(--rb-line); padding: 10px 2px 12px 0; }
@@ -825,9 +829,12 @@ abbr.legality.banned {
 /* ---- deck information ("pink") ---- */
 .rb-info { display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; }
 .rb-name-field input { height: 40px; font-size: 20px; font-weight: 700; }
-.rb-format-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; position: relative; }
-.rb-format-field { flex: 1 1 220px; }
-.rb-format-field select { height: 36px; font-size: 14px; }
+/* name and format on one row, the format a quarter of it (Ketura, 2026-11-03) */
+.rb-title-row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); gap: 10px; align-items: end; }
+.rb-format-field select { height: 40px; font-size: 13px; min-width: 0; width: 100%; }
+.rb-format-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rb-format-row:not(:has(> button:not([hidden]))) { display: none; }
+@media (max-width: 480px) { .rb-title-row { grid-template-columns: minmax(0, 1fr); } }
 #btn-suggest-format { border-color: var(--rb-fp); background: var(--rb-blue-soft); color: #1F4670; font-weight: 600; height: 36px; }
 #btn-convert-pc { height: 36px; }
 .rb-popover { position: absolute; top: 62px; right: 0; z-index: 30; width: 330px; max-width: 100%; padding: 8px; border: 1px solid var(--rb-line-strong); border-radius: 8px; background: #fff; box-shadow: 0 6px 20px rgba(34, 31, 26, .18); display: flex; flex-direction: column; gap: 4px; }
@@ -885,10 +892,11 @@ abbr.legality.banned {
 .rb-deck-top-right { flex: 1 1 0; min-width: 0; }
 .rb-display-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border: 1px solid var(--rb-line); border-radius: 8px; background: var(--rb-soft); }
 /* the deck's view and grouping, above its scrolling area */
-.rb-deck-toolbar { flex: 0 0 auto; display: flex; gap: 8px; padding: 8px 0; border-top: 1px solid var(--rb-line); }
-.rb-deck-toolbar .rb-display-opts { min-width: 0; }
-.rb-deck-toolbar .rb-display-opts:first-child { flex: 0 0 136px; }
-.rb-deck-toolbar .rb-display-opts:last-child { flex: 0 1 240px; }
+.rb-deck-toolbar { flex: 0 0 auto; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 8px 0; border-top: 1px solid var(--rb-line); }
+.rb-deck-toolbar .rb-display-opts { flex: 0 1 auto; min-width: 0; display: flex; }
+.rb-deck-toolbar .rb-opt { flex: 0 0 auto; gap: 5px; padding: 0 10px; font-size: 13px; }
+.rb-deck-toolbar .rb-opt svg { flex: 0 0 auto; }
+@media (max-width: 480px) { .rb-deck-toolbar .rb-opt span { display: none; } }
 .rb-deck-toolbar:empty { display: none; }
 .rb-deck-toolbar + .rb-deck { border-top: 0; padding-top: 2px; }
 .rb-opt { height: 30px; padding: 0 2px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; color: var(--rb-ink); font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center; cursor: pointer; }
@@ -922,6 +930,7 @@ abbr.legality.banned {
 .rb-sides { display: flex; flex-wrap: wrap; gap: 0 28px; }
 .rb-side { flex: 1 1 420px; min-width: 0; margin-top: 12px; }
 .rb-side-head { margin: 0; padding-bottom: 3px; font-size: 17px; font-weight: 700; border-bottom: 2px solid currentColor; }
+.rb-sides { margin-top: 6px; }
 .rb-side-free_peoples .rb-side-head { color: var(--rb-fp); }
 .rb-side-shadow .rb-side-head { color: var(--rb-shadow); }
 .rb-group { margin-top: 10px; }
@@ -953,12 +962,14 @@ abbr.legality.banned {
 /* ---- card filters ("orange") ---- */
 .rb-tabs { margin-bottom: 0; }
 .rb-filters { display: flex; flex-direction: column; gap: 8px; padding: 10px 2px 10px 0; }
+.rb-filters-scroll { display: flex; flex-direction: column; gap: 8px; }
 .rb-search { position: relative; display: flex; align-items: center; gap: 8px; }
 .rb-search input { flex: 1 1 auto; height: 38px; padding-left: 34px; font-size: 14px; }
 .rb-search-icon { position: absolute; left: 10px; top: 10px; color: var(--rb-muted); }
 .rb-search-tips { font-size: 12px; white-space: nowrap; }
 .rb-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
-.rb-row-sets { display: grid; grid-template-columns: 2fr 3fr; }
+.rb-row-sets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rb-row-sets select { min-width: 0; width: 100%; }
 .rb-row-side .rb-type { flex: 1 1 140px; }
 .rb-seg { display: flex; border: 1px solid var(--rb-line-strong); border-radius: 6px; overflow: hidden; }
 .rb-seg button { height: 32px; padding: 0 10px; border: 0; border-right: 1px solid var(--rb-line); background: #fff; font-size: 13px; font-weight: 500; color: var(--rb-ink); cursor: pointer; }
@@ -1093,16 +1104,23 @@ abbr.legality.banned {
 /* a click anywhere on a pool card adds it */
 .rb-pool-tile, .rb-pool-row { cursor: pointer; }
 
-/* the Adventure Deck, collapsed to its sites' title strips (Ketura, 2026-11-03) */
-.rb-collapse { margin-left: auto; width: 26px; height: 26px; padding: 0; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; color: var(--rb-ink); display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.rb-collapse:hover { border-color: var(--rb-ink); }
-.rb-thumbs-sites.is-collapsed { gap: 3px 6px; }
-.rb-thumbs-sites.is-collapsed .rb-tile-img,
-.rb-thumbs-sites.is-collapsed .rb-tile-empty { aspect-ratio: 497 / 64; border-radius: 4px; }
-.rb-thumbs-sites.is-collapsed .rb-tile-img img { object-position: top; }
-.rb-thumbs-sites.is-collapsed .rb-site-num { top: 50%; transform: translateY(-50%); left: 2px; min-width: 15px; height: 15px; font-size: 10px; }
-/* the X goes beside the number, leaving the shadow number (top right of a site) in view */
-.rb-thumbs-sites.is-collapsed .rb-tile-x { top: 50%; left: 19px; right: auto; transform: translateY(-50%); }
-.rb-deck-top.is-collapsed .rb-deck-top-left { gap: 4px; }
-.rb-thumbs-sites.is-collapsed .rb-tile-x button { width: 18px; height: 18px; }
-.rb-thumbs-sites.is-collapsed .rb-tile-empty .rb-plus { width: 20px; height: 20px; font-size: 14px; }
+/* collapsible deck sections (Ketura, 2026-11-03): the whole heading is the toggle */
+.rb-section-toggle { width: 100%; display: flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.rb-section-label { flex: 1 1 auto; min-width: 0; }
+.rb-collapse { flex: 0 0 auto; width: 24px; height: 24px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; color: var(--rb-ink); display: inline-flex; align-items: center; justify-content: center; }
+.rb-section-toggle:hover .rb-collapse { border-color: var(--rb-ink); }
+.rb-deck-head { margin: 0 0 8px; font-size: 18px; font-weight: 700; }
+/* collapsed: Ring-bearer and Ring share one line above the sites, so the sites get the width */
+.rb-deck-top.is-collapsed { flex-direction: column; gap: 6px; }
+.rb-deck-top.is-collapsed .rb-deck-top-left { flex: 0 0 auto; width: 100%; flex-direction: row; flex-wrap: wrap; gap: 2px 24px; }
+.rb-deck-top.is-collapsed .rb-deck-top-right { width: 100%; }
+.rb-deck-top.is-collapsed .rb-slot:not(.rb-sites) { flex: 1 1 260px; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.rb-deck-top.is-collapsed .rb-slot:not(.rb-sites) .rb-slot-head { flex: 0 0 auto; margin: 0; }
+.rb-deck-top.is-collapsed .rb-slot:not(.rb-sites) .rb-line, .rb-deck-top.is-collapsed .rb-slot:not(.rb-sites) .rb-empty { flex: 1 1 auto; min-width: 0; }
+.rb-deck-top.is-collapsed .rb-slot:not(.rb-sites) .rb-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-side.is-collapsed .rb-side-head { border-bottom-style: dashed; }
+/* collapsed sites: list lines in three columns */
+.rb-site-list.is-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 10px; }
+.rb-site-list.is-columns .rb-line { min-width: 0; }
+.rb-site-list.is-columns .rb-name, .rb-site-list.is-columns .rb-choose { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 600px) { .rb-site-list.is-columns { grid-template-columns: minmax(0, 1fr); } }

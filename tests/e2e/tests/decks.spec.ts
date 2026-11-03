@@ -135,14 +135,20 @@ test('deckbuilder clicks: pool cards add, counts fill, sites collapse, menus flo
   await expect(page.locator('#deck')).toContainText('Gimli');
   await expect(page.locator('#cardModal')).not.toBeVisible();
 
-  // the view buttons sit above the deck's scrolling area; the Adventure Deck collapses to strips
+  // the view buttons sit above the deck's scrolling area; the totals heading collapses the top part
   await page.locator('#deck-toolbar [data-view=thumb]').click();
-  await page.locator('#deck .rb-sites .rb-collapse').click();
-  await expect(page.locator('#deck .rb-thumbs-sites.is-collapsed')).toBeVisible();
+  await expect(page.locator('#deck .rb-deck-head')).toContainText('Draw Deck (3), Adventure Deck (0)');
+  await page.locator('#deck .rb-deck-head .rb-section-toggle').click();
   await expect(page.locator('#deck .rb-deck-top.is-collapsed')).toBeVisible();
-  await snap(page, 'collapsed adventure deck');
-  await page.locator('#deck .rb-sites .rb-collapse').click();
-  await expect(page.locator('#deck .rb-thumbs-sites.is-collapsed')).toHaveCount(0);
+  await expect(page.locator('#deck .rb-site-list.is-columns')).toBeVisible();
+  await snap(page, 'collapsed deck top');
+  await page.locator('#deck .rb-deck-head .rb-section-toggle').click();
+  await expect(page.locator('#deck .rb-deck-top.is-collapsed')).toHaveCount(0);
+  // Free Peoples collapses away entirely, and back
+  await page.locator('#deck .rb-side-free_peoples .rb-section-toggle').click();
+  await expect(page.locator('#deck .rb-side-free_peoples .rb-tile')).toHaveCount(0);
+  await page.locator('#deck .rb-side-free_peoples .rb-section-toggle').click();
+  await expect(page.locator('#deck .rb-side-free_peoples .rb-tile').first()).toBeVisible();
   await page.locator('#deck-toolbar [data-view=list]').click();
 
   // menus hang off the window, so the deck information pane can't cut them off

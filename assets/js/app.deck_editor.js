@@ -4,7 +4,9 @@
  *
  * - Display options in a toolbar above the deck's scrolling area: list / thumbnails /
  *   half-thumbnails, and grouping by culture, type or none.
- * - In the picture views the Adventure Deck collapses to its sites' title strips.
+ * - A heading with the deck's totals collapses its top part: the Ring-bearer, Ring
+ *   and map to one line each, the sites to list lines in three columns. Free
+ *   Peoples and Shadow collapse away entirely from their own headings.
  * - Every draw-deck card has X 1 2 3 4: X takes it out of the deck but keeps the
  *   line (the X becomes Trash, which deletes the line), and numbers above the
  *   format's limit are disabled.
@@ -22,6 +24,12 @@
             list: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5h12M3 9h12M3 13.5h12"/></svg>',
             thumb: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2" width="5.5" height="14" rx="1"/><rect x="10" y="2" width="5.5" height="14" rx="1"/></svg>',
             half: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="2" width="5.5" height="6.5" rx="1"/><rect x="10" y="2" width="5.5" height="6.5" rx="1"/><rect x="2.5" y="9.5" width="5.5" height="6.5" rx="1"/><rect x="10" y="9.5" width="5.5" height="6.5" rx="1"/></svg>',
+            // generic marks for the groupings (Ketura, 2026-11-03): a banner, mixed shapes, none
+            culture: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 14.5V1.5M3.5 2.5h9l-2.2 3 2.2 3h-9"/></svg>',
+            type: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" aria-hidden="true"><circle cx="4.5" cy="4.5" r="2.6"/><rect x="9" y="2" width="5" height="5" rx=".6"/><path d="M4.5 9.2l2.9 4.9H1.6z"/><path d="M11.5 9l2.6 2.6-2.6 2.6-2.6-2.6z"/></svg>',
+            none: '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M3.8 12.2l8.4-8.4"/></svg>',
+            chevron_up: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7.5l3-3 3 3"/></svg>',
+            chevron_down: '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4.5l3 3 3-3"/></svg>',
             x: '<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8"/></svg>',
             trash: '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.7 9.5h6.6L12 4M6.8 6.5v4.5M9.2 6.5v4.5"/></svg>'
         };
@@ -48,17 +56,17 @@
     function display_options()
     {
         var v = view(), g = grouping(),
-            vbtn = function (code, label) {
+            vbtn = function (code) {
                 return '<button type="button" class="rb-opt rb-opt-view' + (v === code ? ' active' : '') + '" data-view="' + code + '" aria-pressed="' + (v === code)
-                    + '" aria-label="' + label + '" title="' + label + '">' + ICONS[code] + '</button>';
+                    + '" title="' + t('deckbuilder.view.' + code) + '">' + ICONS[code] + '<span>' + t('deckbuilder.view.' + code + '_short') + '</span></button>';
             },
             gbtn = function (code, label) {
                 return '<button type="button" class="rb-opt rb-opt-group' + (g === code ? ' active' : '') + '" data-group="' + code + '" aria-pressed="' + (g === code)
-                    + '" title="' + t('deckbuilder.group.' + code + '_hint') + '">' + label + '</button>';
+                    + '" title="' + t('deckbuilder.group.' + code + '_hint') + '">' + ICONS[code] + '<span>' + label + '</span></button>';
             };
         // one row above the deck's scrolling area, so it never scrolls away (Ketura, 2026-11-03)
         return '<div class="rb-display-opts" role="group" aria-label="' + t('deckbuilder.view.label') + '">'
-            + vbtn('list', t('deckbuilder.view.list')) + vbtn('thumb', t('deckbuilder.view.thumb')) + vbtn('half', t('deckbuilder.view.half'))
+            + vbtn('list') + vbtn('thumb') + vbtn('half')
             + '</div><div class="rb-display-opts" role="group" aria-label="' + t('deckbuilder.group.label') + '">'
             + gbtn('culture', t('deckbuilder.group.culture')) + gbtn('type', t('deckbuilder.group.type')) + gbtn('none', t('deckbuilder.group.none'))
             + '</div>';
@@ -146,7 +154,7 @@
             return html + '<div class="rb-empty">&mdash;</div></div>';
         }
         // collapsed, the Ring-bearer, Ring and map are one line each, like the list view
-        if(v === 'list' || (v !== 'list' && sites_collapsed())) {
+        if(v === 'list' || sites_collapsed()) {
             html += _.map(slots, function (s) { return line(s, problems); }).join('');
         } else {
             html += '<div class="rb-thumbs rb-thumbs-single' + (v === 'half' ? ' is-half' : '') + '">'
@@ -157,9 +165,24 @@
 
     /* ---- the Adventure Deck ---- */
 
+    /** Collapsed sections, remembered per browser: top (Ring-bearer, Ring, sites), free_peoples, shadow */
+    function collapsed(section)
+    {
+        return app.config.get('deck-collapsed-' + section) === '1';
+    }
+
     function sites_collapsed()
     {
-        return app.config.get('deck-sites-collapsed') === true || app.config.get('deck-sites-collapsed') === '1';
+        return collapsed('top');
+    }
+
+    /** A section header that is one big toggle, chevron and all (Ketura, 2026-11-03) */
+    function section_toggle(section, label_html, extra_class)
+    {
+        var shut = collapsed(section);
+        return '<button type="button" class="rb-section-toggle' + (extra_class ? ' ' + extra_class : '') + '" data-collapse="' + section + '" aria-expanded="' + !shut + '">'
+            + '<span class="rb-section-label">' + label_html + '</span>'
+            + '<span class="rb-collapse" title="' + t(shut ? 'deckbuilder.expand' : 'deckbuilder.collapse') + '">' + (shut ? ICONS.chevron_down : ICONS.chevron_up) + '</span></button>';
     }
 
     function adventure_deck(problems)
@@ -170,13 +193,10 @@
             live = _.reject(sites, 'pending'),
             count = live.length,
             v = view(),
-            // in the picture views the sites can shrink to their title strips (Ketura, 2026-11-03)
-            collapsed = v !== 'list' && sites_collapsed(),
-            toggle = v === 'list' ? '' : '<button type="button" class="rb-collapse" aria-expanded="' + !collapsed + '" title="'
-                + t(collapsed ? 'deckbuilder.sites_expand' : 'deckbuilder.sites_collapse') + '" aria-label="' + t(collapsed ? 'deckbuilder.sites_expand' : 'deckbuilder.sites_collapse') + '">'
-                + '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + (collapsed ? 'M3 4.5l3 3 3-3' : 'M3 7.5l3-3 3 3') + '"/></svg></button>',
+            // collapsed, the sites are list lines in three columns (Ketura, 2026-11-03)
+            shut = sites_collapsed(),
             html = '<div class="rb-slot rb-sites"><div class="rb-slot-head"><h3>' + t('deckbuilder.adventure_deck', {count: count}) + '</h3>'
-                + (count < 9 ? plus('sites', t('deckbuilder.find_sites')) : '') + toggle + '</div>';
+                + (count < 9 ? plus('sites', t('deckbuilder.find_sites')) : '') + '</div>';
 
         var rows = [];
         if(numbered) {
@@ -195,8 +215,8 @@
             rows = _.map(sites, function (s) { return {n: '', slot: s}; });
         }
 
-        if(v === 'list') {
-            html += '<div class="rb-site-list">' + _.map(rows, function (row) {
+        if(v === 'list' || shut) {
+            html += '<div class="rb-site-list' + (shut ? ' is-columns' : '') + '">' + _.map(rows, function (row) {
                 if(!row.slot) {
                     return '<div class="rb-line rb-site-empty"><span class="rb-site-n">' + row.n + '</span>'
                         + plus('site', t('deckbuilder.find_site', {number: row.n}), ' data-site="' + row.n + '"')
@@ -206,7 +226,7 @@
                     + '<span class="rb-site-n">' + row.n + '</span>' + x_or_trash(row.slot) + name_html(row.slot.card) + '</div>';
             }).join('') + (!rows.length ? '<div class="rb-empty">&mdash;</div>' : '') + '</div>';
         } else {
-            html += '<div class="rb-thumbs rb-thumbs-sites' + (collapsed ? ' is-collapsed' : '') + '">' + _.map(rows, function (row) {
+            html += '<div class="rb-thumbs rb-thumbs-sites">' + _.map(rows, function (row) {
                 if(!row.slot) {
                     return '<div class="rb-tile rb-tile-site rb-tile-empty">' + plus('site', t('deckbuilder.find_site', {number: row.n}), ' data-site="' + row.n + '"')
                         + '<span class="rb-site-num">' + row.n + '</span></div>';
@@ -267,7 +287,12 @@
     {
         var v = view(),
             g = grouping(),
-            html = '<section class="rb-side rb-side-' + side + '"><h3 class="rb-side-head">' + t('side.' + side) + ' (' + count(slots) + ')</h3>';
+            shut = collapsed(side),
+            html = '<section class="rb-side rb-side-' + side + (shut ? ' is-collapsed' : '') + '"><h3 class="rb-side-head">'
+                + section_toggle(side, _.escape(t('side.' + side)) + ' (' + count(slots) + ')') + '</h3>';
+        if(shut) {
+            return html + '</section>';
+        }
         if(!slots.length) {
             return html + '<div class="rb-empty">&mdash;</div></section>';
         }
@@ -301,14 +326,23 @@
             v = view(),
             fp = _.filter(draw, function (s) { return s.card.side !== 'shadow'; }),
             shadow = _.filter(draw, function (s) { return s.card.side === 'shadow'; }),
-            html = '<div class="rb-deck-top view-' + v + (v !== 'list' && sites_collapsed() ? ' is-collapsed' : '') + '"><div class="rb-deck-top-left">'
+            rb = app.deck.get_cards('ring_bearer'),
+            ring = app.deck.get_cards('ring'),
+            map = app.deck.get_cards('map'),
+            totals = [t('deckbuilder.draw_deck', {count: count(draw)}),
+                t('deckbuilder.adventure_deck', {count: _.reject(app.deck.get_cards('site'), 'pending').length})]
+                .concat(_.reject(rb, 'pending').length ? [t('deck.ring_bearer')] : [])
+                .concat(_.reject(ring, 'pending').length ? [t('deck.ring_short')] : [])
+                .concat(_.reject(map, 'pending').length ? [t('deck.map')] : []),
+            // the totals head the deck and collapse its top part (Ketura, 2026-11-03)
+            html = '<h2 class="rb-deck-head">' + section_toggle('top', _.map(totals, _.escape).join(', ')) + '</h2>'
+                + '<div class="rb-deck-top view-' + v + (sites_collapsed() ? ' is-collapsed' : '') + '"><div class="rb-deck-top-left">'
                 + single_slot('ring_bearer', t('deck.ring_bearer'), 'ring_bearer', t('deckbuilder.find_ring_bearer'), problems)
                 + single_slot('ring', t('deck.ring'), 'ring', t('deckbuilder.find_ring'), problems);
         if(app.deck.get_cards('map').length || (format && format.uses_maps)) {
             html += single_slot('map', t('deck.map'), 'map', t('deckbuilder.find_map'), problems);
         }
         html += '</div><div class="rb-deck-top-right">' + adventure_deck(problems) + '</div></div>'
-            + '<h2 class="rb-draw-head">' + t('deckbuilder.draw_deck', {count: count(draw)}) + '</h2>'
             + '<div class="rb-sides">' + side_html('free_peoples', fp, problems) + side_html('shadow', shadow, problems) + '</div>';
         $(container).removeClass('deck-loading').html(html);
         if(toolbar) {
@@ -330,8 +364,9 @@
             app.config.set('deck-group', $(this).data('group'));
             editor.render();
         });
-        container.on('click', '.rb-collapse', function () {
-            app.config.set('deck-sites-collapsed', sites_collapsed() ? '0' : '1');
+        container.on('click', '[data-collapse]', function () {
+            var section = $(this).data('collapse');
+            app.config.set('deck-collapsed-' + section, collapsed(section) ? '0' : '1');
             editor.render();
         });
         container.on('click', '.rb-n:not([disabled])', function () {
