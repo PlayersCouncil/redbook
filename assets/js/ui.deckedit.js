@@ -1,262 +1,459 @@
 /* global app, _, Translator, Routing */
 /**
- * The deckbuilder page (phase3/03): the deck on the left, the card pool and
- * tools on the right. The deck lives in app.deck; every change re-renders the
- * deck, refreshes the pool's controls and asks Gemp for validation (debounced).
+ * The deckbuilder page (Ketura's region design, 2026-11-02).
+ *
+ * Deck information ("pink"): name; format, with Suggest only while no format is
+ * chosen and Convert only in a PC format when there is errata to convert; Gemp's
+ * verdict; Save / Revert / Visibility / More; Historical Deck Information.
+ *
+ * Saving (Ketura, 2026-11-02): every change is kept as a draft in this browser
+ * (localStorage); Save records a version on the server and clears the draft;
+ * Revert throws the draft away. A draft started from an older version is offered
+ * back, never applied silently.
+ *
+ * The deck list is app.deck_editor; the filters and card pool are app.pool.
  */
 (function ui_deckedit(ui, $)
 {
-    var ROW_LIMIT = 200,
-        sort = {key: 'label', dir: 1},
-        filter_text = '';
+    var page = {},
+        saved_state = null,
+        saved_version = null,
+        dirty = false,
+        status_note = null,
+        draft_key = null,
+        draft_timer = null,
+        visibility = 'private';
 
-    function format()
+    function t(key, params)
     {
-        return app.deck.get_format();
+        return Translator.trans(key, params || {});
     }
 
-    /* ---- filters ---- */
+    /* ---- the browser draft ---- */
 
-    ui.build_culture_buttons = function build_culture_buttons()
+    function storage()
     {
-        var cultures = {};
-        app.data.cards.find({}).forEach(function (card) {
-            if(card.culture_code) {
-                cultures[card.culture_code] = card.culture_name;
-            }
-        });
-        var html = _.map(_.sortBy(_.keys(cultures), function (c) { return cultures[c]; }), function (code) {
-            return '<label class="btn btn-default btn-xs" title="' + _.escape(cultures[code]) + '"><input type="checkbox" name="' + code + '">' + _.escape(cultures[code]) + '</label>';
-        }).join('');
-        $('[data-filter=culture_code]').html(html);
-    };
-
-    ui.build_type_buttons = function build_type_buttons()
-    {
-        var types = {};
-        app.data.cards.find({}).forEach(function (card) {
-            types[card.type_code] = card.type_name;
-        });
-        var html = _.map(_.sortBy(_.keys(types), function (t) { return types[t]; }), function (code) {
-            return '<label class="btn btn-default btn-xs"><input type="checkbox" name="' + code + '">' + _.escape(types[code]) + '</label>';
-        }).join('');
-        $('[data-filter=type_code]').html(html);
-    };
-
-    function checked(filter)
-    {
-        return $('[data-filter=' + filter + '] input:checked').map(function () { return this.name; }).get();
-    }
-
-    /** The cards the pool shows: the format's sets unless "show all sets", then the filters */
-    ui.get_pool = function get_pool()
-    {
-        var f = format(),
-            sets = f && !app.config.get('show-all-sets') && f.sets && f.sets.length ? f.sets : null,
-            show_errata = app.config.get('show-errata') && (!f || f.pc_errata),
-            sides = checked('side'),
-            cultures = checked('culture_code'),
-            types = checked('type_code'),
-            only_deck = app.config.get('show-only-deck'),
-            hide_banned = app.config.get('hide-banned'),
-            query = app.smart_filter.get_query({});
-
-        var cards = app.data.cards.find(query);
-        var content = app.deck.get_content();
-        return _.filter(cards, function (card) {
-            var in_deck = content[card.code] || content['rb:' + card.code];
-            if(only_deck) {
-                return !!in_deck;
-            }
-            if(in_deck) {
-                return true;
-            }
-            if(card.kind === 'errata' && !show_errata) {
-                return false;
-            }
-            if(sets && sets.indexOf(card.pack_code) === -1) {
-                return false;
-            }
-            if(sides.length && sides.indexOf(card.side || 'none') === -1) {
-                return false;
-            }
-            if(cultures.length && cultures.indexOf(card.culture_code) === -1) {
-                return false;
-            }
-            if(types.length && types.indexOf(card.type_code) === -1) {
-                return false;
-            }
-            if(hide_banned && f && app.data.format_limit(f, card.code) === 'banned') {
-                return false;
-            }
-            return true;
-        });
-    };
-
-    /* ---- the pool table ---- */
-
-    function quantity_control(card)
-    {
-        var role = app.deck.role_for_card(card),
-            qty = app.deck.get_quantity(card.code),
-            html = '';
-        if(role === 'draw') {
-            var max = app.card_modal.max_quantity(card);
-            html += '<div class="btn-group btn-group-xs" data-toggle="buttons">';
-            for(var i = 0; i <= max; i++) {
-                html += '<label class="btn btn-default' + (i === qty ? ' active' : '') + '"><input type="radio" name="qty-' + card.code + '" value="' + i + '">' + i + '</label>';
-            }
-            html += '</div>';
-            if(card.type_code === 'companion') {
-                var is_rb = app.deck.get_ring_bearer_code() === card.code;
-                html += ' <button type="button" class="btn btn-xs ' + (is_rb ? 'btn-primary' : 'btn-default') + ' btn-ring-bearer" title="'
-                    + Translator.trans('deck.ring_bearer') + '">RB</button>';
-            }
-        } else {
-            html += '<label class="btn btn-xs ' + (qty ? 'btn-primary' : 'btn-default') + ' btn-toggle-card"><input type="checkbox"'
-                + (qty ? ' checked' : '') + ' style="display:none"> ' + (qty ? Translator.trans('deck.in_deck') : Translator.trans('deck.add')) + '</label>';
+        try {
+            return window.localStorage;
+        } catch (e) {
+            return null;
         }
-        return html;
     }
 
-    function row(card)
+    function read_draft()
     {
-        var f = format(),
-            limit = f ? app.data.format_limit(f, card.code) : null,
-            stats = card.type_code === 'site'
-                ? (card.site_number ? Translator.trans('card.info.site') + ' ' + card.site_number : '') + (card.shadow_number !== null && card.shadow_number !== undefined ? ' (' + card.shadow_number + ')' : '')
-                : [card.strength, card.vitality].filter(function (v) { return v !== null && v !== undefined; }).join('/');
-        return '<tr data-code="' + card.code + '" class="' + (limit === 'banned' ? 'danger' : '') + '">'
-            + '<td class="pool-qty">' + quantity_control(card) + '</td>'
-            + '<td><a class="card card-tip" data-code="' + card.code + '" href="' + card.url + '">'
-            + (card.is_unique ? '&bull;' : '') + _.escape(card.label) + '</a>'
-            + (card.kind === 'errata' ? ' <span class="label label-info">PC</span>' : '')
-            + (limit ? ' <span class="label label-' + (limit === 'banned' ? 'danger' : 'warning') + '">' + Translator.trans('formats.list.' + limit) + '</span>' : '')
-            + ' <span class="text-muted small">' + _.escape(card.coll_info || card.code) + '</span></td>'
-            + '<td>' + (card.type_code === 'site' ? '' : (card.twilight !== null && card.twilight !== undefined ? card.twilight : '')) + '</td>'
-            + '<td>' + stats + '</td>'
-            + '<td>' + _.escape(card.type_name) + '</td>'
-            + '<td>' + _.escape(card.culture_name || '') + '</td>'
-            + '</tr>';
+        var s = storage();
+        if(!s || !draft_key) {
+            return null;
+        }
+        try {
+            return JSON.parse(s.getItem(draft_key) || 'null');
+        } catch (e) {
+            return null;
+        }
     }
 
-    ui.refresh_list = function refresh_list()
+    function write_draft()
     {
-        var pool = ui.get_pool();
-        pool.sort(function (a, b) {
-            var x = a[sort.key], y = b[sort.key];
-            if(x === y) {
-                return a.label.localeCompare(b.label);
+        var s = storage();
+        if(!s || !draft_key) {
+            return;
+        }
+        try {
+            if(dirty) {
+                s.setItem(draft_key, JSON.stringify({base_version: saved_version, saved_at: new Date().toISOString(), state: app.deck.get_state()}));
+            } else {
+                s.removeItem(draft_key);
             }
-            if(x === null || x === undefined) { return 1; }
-            if(y === null || y === undefined) { return -1; }
-            return (typeof x === 'string' ? x.localeCompare(y) : x - y) * sort.dir;
+        } catch (e) {
+            // a full or blocked storage just means no draft
+        }
+    }
+
+    function discard_draft()
+    {
+        var s = storage();
+        try {
+            s && draft_key && s.removeItem(draft_key);
+        } catch (e) {
+            // nothing to do
+        }
+    }
+
+    function same(a, b)
+    {
+        return JSON.stringify(normalize(a)) === JSON.stringify(normalize(b));
+    }
+
+    function normalize(state)
+    {
+        var sorted = {};
+        _.each(_.keys(state.content || {}).sort(), function (k) { sorted[k] = state.content[k]; });
+        return {
+            name: state.name || '', target_format: state.target_format || '', description_md: state.description_md || '',
+            tags: state.tags || '', historic: state.historic || null, content: sorted, pending: (state.pending || []).slice().sort()
+        };
+    }
+
+    /** After any edit: work out whether there is anything unsaved, keep the draft */
+    function on_edit()
+    {
+        dirty = !same(app.deck.get_state(), saved_state);
+        status_note = null;
+        update_status();
+        clearTimeout(draft_timer);
+        draft_timer = setTimeout(write_draft, 300);
+    }
+
+    function update_status()
+    {
+        var el = $('#save-status');
+        if(dirty) {
+            el.text(t('deckbuilder.info.unsaved')).attr('class', 'rb-save-status is-dirty');
+        } else {
+            el.text(status_note || t('deckbuilder.info.saved_version', {version: saved_version})).attr('class', 'rb-save-status is-saved');
+        }
+        $('#btn-save').prop('disabled', !dirty);
+        $('#btn-revert').prop('disabled', !dirty);
+    }
+
+    function offer_old_draft(draft)
+    {
+        var banner = $('#draft-banner');
+        banner.html('<span>' + t('deckbuilder.draft.old', {version: _.escape(draft.base_version), when: moment(draft.saved_at).fromNow()}) + '</span> '
+            + '<button type="button" class="rb-btn rb-btn-small" data-draft="restore">' + t('deckbuilder.draft.restore') + '</button> '
+            + '<button type="button" class="rb-btn rb-btn-small" data-draft="discard">' + t('deckbuilder.draft.discard') + '</button>').prop('hidden', false);
+        banner.one('click', '[data-draft]', function () {
+            if($(this).data('draft') === 'restore') {
+                app.deck.set_state(draft.state);
+                fill_fields();
+                app.deck.changed();
+            } else {
+                discard_draft();
+            }
+            banner.prop('hidden', true).empty();
         });
-        $('#collection-table').html(_.map(pool.slice(0, ROW_LIMIT), row).join(''));
-        $('#collection-more').text(pool.length > ROW_LIMIT ? Translator.trans('decks.edit.build.more', {shown: ROW_LIMIT, total: pool.length}) : '');
-    };
+    }
 
-    ui.refresh_deck = function refresh_deck()
+    /* ---- save, revert ---- */
+
+    function payload(copy)
     {
-        app.deck.display('#deck', {editable: true});
-        app.draw_simulator && app.draw_simulator.reset();
-        app.deck_charts && app.deck_charts.setup();
-        var f = format();
-        $('#btn-convert-pc').toggle(!!(f && f.pc_errata));
-    };
+        var historic = app.deck.get_historic();
+        return {
+            id: app.deck.get_id(),
+            copy: copy ? 1 : 0,
+            format: 'json',
+            name: app.deck.get_name() || '',
+            content: app.deck.get_json(),
+            target_format: app.deck.get_format_code() || '',
+            description: app.deck.get_description_md() || '',
+            tags: app.deck.get_tags() || '',
+            historic: historic ? JSON.stringify(historic) : ''
+        };
+    }
 
-    /* ---- events ---- */
-
-    ui.on_deck_changed = function on_deck_changed()
+    function save(copy, done)
     {
-        ui.refresh_deck();
-        ui.refresh_list();
-        app.deck_history && app.deck_history.notify_change();
-    };
+        $('#btn-save').prop('disabled', true);
+        $('#save-status').text(t('deckbuilder.info.saving')).attr('class', 'rb-save-status');
+        $.ajax(Routing.generate('deck_save'), {
+            type: 'POST',
+            data: payload(copy),
+            dataType: 'json',
+            success: function (response) {
+                if(copy) {
+                    window.location = response.edit_url;
+                    return;
+                }
+                discard_draft();
+                app.deck.init(response.deck);
+                saved_state = app.deck.get_state();
+                saved_version = response.version;
+                app.deck.changed();
+                dirty = false;
+                status_note = t('deckbuilder.info.saved_now', {version: saved_version});
+                update_status();
+                done && done();
+            },
+            error: function () {
+                $('#save-status').text(t('deckbuilder.info.save_failed')).attr('class', 'rb-save-status is-dirty');
+                $('#btn-save').prop('disabled', false);
+            }
+        });
+    }
+
+    function revert()
+    {
+        app.deck.set_state(saved_state);
+        discard_draft();
+        fill_fields();
+        app.deck.changed();
+        dirty = false;
+        status_note = t('deckbuilder.info.reverted', {version: saved_version});
+        update_status();
+    }
+
+    /* ---- fields ---- */
+
+    function fill_fields()
+    {
+        $('#deck-name').val(app.deck.get_name() || '');
+        $('#deck-format').val(app.deck.get_format_code() || '');
+        $('textarea[name=description_]').val(app.deck.get_description_md() || '');
+        $('input[name=tags_]').val(app.deck.get_tags() || '');
+        var historic = app.deck.get_historic();
+        $('#historic-on').prop('checked', !!historic);
+        $('#historic-fields').prop('disabled', !historic);
+        $('.rb-historic-badge').prop('hidden', !historic);
+        $('[data-historic]').each(function () {
+            $(this).val(historic ? historic[$(this).data('historic')] || '' : $(this).val());
+        });
+        update_format_buttons();
+    }
+
+    function read_historic()
+    {
+        if(!$('#historic-on').prop('checked')) {
+            return null;
+        }
+        var historic = {};
+        $('[data-historic]').each(function () {
+            historic[$(this).data('historic')] = $(this).val();
+        });
+        return historic;
+    }
+
+    /** Suggest only without a format; Convert only in a PC format with errata to convert */
+    function update_format_buttons()
+    {
+        var format = app.deck.get_format(),
+            code = app.deck.get_format_code();
+        $('#btn-suggest-format').prop('hidden', !!code);
+        if(code) {
+            $('#format-suggestions').prop('hidden', true);
+        }
+        var convertible = 0;
+        if(format && format.pc_errata && app.data.cards) {
+            var sets = format.sets || [],
+                errata_of = {};
+            app.data.cards.find({kind: 'errata'}).forEach(function (card) {
+                if(card.errataOf_code && (!sets.length || sets.indexOf(card.pack_code) !== -1)) {
+                    errata_of[card.errataOf_code] = true;
+                }
+            });
+            _.each(app.deck.get_content(), function (qty, key) {
+                var code = key.indexOf('rb:') === 0 ? key.substr(3) : key;
+                if(errata_of[code]) {
+                    convertible += key.indexOf('rb:') === 0 ? 1 : qty;
+                }
+            });
+        }
+        $('#btn-convert-pc').prop('hidden', !convertible).text(Translator.transChoice('deckbuilder.info.convert', convertible, {count: convertible}));
+    }
+
+    /* ---- visibility ---- */
+
+    function show_visibility()
+    {
+        var icons = {
+                'private': '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>',
+                hidden: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5l3-3M5 8l-1.5 1.5a2.1 2.1 0 0 0 3 3L8 11M11 8l1.5-1.5a2.1 2.1 0 0 0-3-3L8 5"/></svg>',
+                published: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c2 2 2 10 0 12M8 2c-2 2-2 10 0 12"/></svg>'
+            },
+            shown = page.published ? 'published' : visibility;
+        $('#btn-visibility').html(icons[shown] + ' <span>' + t('deckbuilder.visibility.' + shown) + '</span> <span aria-hidden="true">&#9662;</span>')
+            .attr('title', t('deckbuilder.visibility.label'));
+        $('#menu-visibility [data-visibility]').each(function () {
+            var on = $(this).data('visibility') === shown;
+            $(this).attr('aria-checked', on).toggleClass('active', on);
+        });
+    }
+
+    function set_visibility(choice)
+    {
+        if(choice === 'published') {
+            // publishing works on the saved deck
+            var go = function () { window.location = page.publish_url; };
+            return dirty ? save(false, go) : go();
+        }
+        $.ajax(Routing.generate('deck_visibility'), {
+            type: 'POST',
+            data: {id: app.deck.get_id(), visibility: choice},
+            dataType: 'json',
+            success: function () {
+                visibility = choice;
+                show_visibility();
+            }
+        });
+    }
+
+    /* ---- menus ---- */
+
+    function close_menus()
+    {
+        $('.rb-menu').prop('hidden', true);
+        $('[aria-haspopup=menu]').attr('aria-expanded', 'false');
+    }
+
+    function toggle_menu(button, menu)
+    {
+        var open = $(menu).prop('hidden');
+        close_menus();
+        $(menu).prop('hidden', !open);
+        $(button).attr('aria-expanded', open ? 'true' : 'false');
+    }
+
+    function more_action(action)
+    {
+        switch(action) {
+            case 'copy':
+                save(true);
+                break;
+            case 'link':
+                copy_text(page.view_url);
+                $('#save-status').text(visibility === 'private' && !page.published ? t('deckbuilder.more.link_private') : t('deckbuilder.more.link_copied'));
+                break;
+            case 'export-gemp':
+                app.ui.export_gemp(app.deck);
+                break;
+            case 'export-text':
+                app.ui.export_plaintext(app.deck);
+                break;
+            case 'history':
+                $('#tab-header-history').tab('show');
+                break;
+            case 'delete':
+                $('#delete-deck-id').val(app.deck.get_id());
+                $('#delete-deck-name').text(app.deck.get_name());
+                discard_draft();
+                $('#deleteModal').modal('show');
+                break;
+        }
+    }
+
+    function copy_text(text)
+    {
+        if(navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text);
+            return;
+        }
+        var area = $('<textarea>').val(text).appendTo('body').select();
+        try {
+            document.execCommand('copy');
+        } catch (e) {
+            // nothing more to try
+        }
+        area.remove();
+    }
+
+    /* ---- format suggestions ---- */
+
+    function show_format_suggestions(response)
+    {
+        var pop = $('#format-suggestions');
+        if(!response.suggestions.length) {
+            pop.html('<p class="rb-muted">' + t('deck.suggest_none') + '</p>').prop('hidden', false);
+            return;
+        }
+        pop.html('<div class="rb-muted">' + t('deckbuilder.info.suggest_intro') + '</div>' + _.map(response.suggestions, function (s) {
+            var gemp = s.gemp === null ? '' : (s.gemp.valid ? t('deck.suggest_legal') : t('deck.suggest_problems', {count: s.gemp.problems}));
+            return '<button type="button" class="rb-suggestion" data-format="' + s.code + '" data-name="' + _.escape(s.name) + '">'
+                + '<strong>' + _.escape(s.name) + '</strong><span>' + _.escape(gemp) + '</span>'
+                + '<small>' + _.map(s.reasons, _.escape).join('; ') + '</small></button>';
+        }).join('')).prop('hidden', false);
+    }
+
+    /* ---- wiring ---- */
 
     ui.setup_event_handlers = function setup_event_handlers()
     {
-        $(document).on('deck.changed', ui.on_deck_changed);
-
-        $('#collection-table').on('change', 'input[type=radio]', function () {
-            app.deck.set_quantity($(this).closest('tr').data('code'), parseInt($(this).val(), 10));
-        });
-        $('#collection-table').on('click', '.btn-toggle-card', function (event) {
-            event.preventDefault();
-            var code = $(this).closest('tr').data('code');
-            app.deck.set_quantity(code, app.deck.get_quantity(code) ? 0 : 1);
-        });
-        $('#collection-table').on('click', '.btn-ring-bearer', function () {
-            var code = $(this).closest('tr').data('code');
-            app.deck.set_ring_bearer(app.deck.get_ring_bearer_code() === code ? null : code);
+        $(document).on('deck.changed', function () {
+            on_edit();
+            update_format_buttons();
+            app.draw_simulator && app.draw_simulator.reset();
+            app.deck_charts && app.deck_charts.setup();
         });
 
-        $('#deck').on('click', '.deck-card-minus, .deck-card-plus', function (event) {
-            event.preventDefault();
-            var key = $(this).closest('.deck-card').data('key') + '',
-                delta = $(this).hasClass('deck-card-plus') ? 1 : -1;
-            if(key.indexOf('rb:') === 0) {
-                app.deck.set_ring_bearer(null);
-                return;
-            }
-            var card = app.data.cards.findById(key);
-            app.deck.set_quantity(key, Math.max(0, Math.min(app.card_modal.max_quantity(card), app.deck.get_quantity(key) + delta)));
+        $('#deck-name').on('input', function () {
+            app.deck.set_name($(this).val());
+            on_edit();
         });
-
-        $('#cardModal').on('change', '.modal-qty input[type=radio]', function () {
-            app.deck.set_quantity($('#cardModal').data('code'), parseInt($(this).val(), 10));
-            $('#cardModal').modal('hide');
-        });
-
-        $('#filter-text').on('input', _.debounce(function () {
-            filter_text = $(this).val();
-            app.smart_filter.update(filter_text);
-            ui.refresh_list();
-        }, 250));
-
-        $('[data-filter]').on('change', 'input', function () {
-            $(this).closest('label').toggleClass('active', this.checked);
-            ui.refresh_list();
-        });
-
-        $('#config-options').on('change', 'input', function () {
-            app.config.set(this.name, this.checked);
-            ui.refresh_list();
-        });
-        $('#config-options').on('click', 'a', function (event) {
-            event.stopPropagation();
-        });
-
-        $('#collection').on('click', 'thead a[data-sort]', function (event) {
-            event.preventDefault();
-            var key = $(this).data('sort');
-            sort = {key: key, dir: sort.key === key ? -sort.dir : 1};
-            ui.refresh_list();
-        });
-
         $('#deck-format').on('change', function () {
             app.deck.set_format_code($(this).val());
             app.deck.changed();
+        });
+        $('textarea[name=description_]').on('input', function () {
+            app.deck.set_description_md($(this).val());
+            on_edit();
+        });
+        $('input[name=tags_]').on('input', function () {
+            app.deck.set_tags($(this).val());
+            on_edit();
+        });
+
+        $('#historic-on').on('change', function () {
+            $('#historic-fields').prop('disabled', !this.checked);
+            $('.rb-historic-badge').prop('hidden', !this.checked);
+            if(this.checked && !$('[data-historic=author]').val()) {
+                $('[data-historic=author]').val($('[data-historic=author]').attr('placeholder'));
+            }
+            app.deck.set_historic(read_historic());
+            on_edit();
+        });
+        $('#historic-fields').on('input change', '[data-historic]', function () {
+            app.deck.set_historic(read_historic());
+            on_edit();
+        });
+
+        $('#btn-save').on('click', function () { save(false); });
+        $('#btn-revert').on('click', revert);
+
+        $('#btn-visibility').on('click', function (event) {
+            event.stopPropagation();
+            toggle_menu(this, '#menu-visibility');
+        });
+        $('#menu-visibility').on('click', '[data-visibility]', function () {
+            close_menus();
+            set_visibility($(this).data('visibility'));
+        });
+        $('#btn-more').on('click', function (event) {
+            event.stopPropagation();
+            toggle_menu(this, '#menu-more');
+        });
+        $('#menu-more').on('click', '[data-action]', function () {
+            close_menus();
+            more_action($(this).data('action'));
+        });
+        $(document).on('click', function (event) {
+            if(!$(event.target).closest('.rb-menu, .rb-popover, #btn-suggest-format').length) {
+                close_menus();
+                $('#format-suggestions').prop('hidden', true);
+            }
+        }).on('keydown', function (event) {
+            if(event.key === 'Escape') {
+                close_menus();
+                $('#format-suggestions').prop('hidden', true);
+            }
         });
 
         $('#btn-suggest-format').on('click', function () {
             var button = $(this).prop('disabled', true);
             $.ajax(Routing.generate('deck_suggest_format'), {
                 type: 'POST',
-                data: {content: app.deck.get_json(), effective_date: $('#deck-effective-date').val()},
+                data: {content: app.deck.get_json(), effective_date: app.deck.get_effective_date()},
                 dataType: 'json',
-                success: ui.show_format_suggestions,
+                success: show_format_suggestions,
                 complete: function () { button.prop('disabled', false); }
             });
         });
-        $('#format-suggestions').on('click', 'a[data-format]', function (event) {
-            event.preventDefault();
+        $('#format-suggestions').on('click', '[data-format]', function () {
             var code = $(this).data('format');
             if(!$('#deck-format option[value="' + code + '"]').length) {
                 $('#deck-format').append($('<option>').val(code).text($(this).data('name')));
             }
             $('#deck-format').val(code).trigger('change');
-            $('#format-suggestions').empty();
+            $('#format-suggestions').prop('hidden', true);
         });
 
         $('#btn-convert-pc').on('click', function () {
@@ -269,7 +466,7 @@
                     app.deck.set_content(response.content);
                 },
                 error: function () {
-                    app.ui.insert_alert_message('warning', Translator.trans('deck.convert_failed'));
+                    app.ui.insert_alert_message('warning', t('deck.convert_failed'));
                 },
                 complete: function () {
                     button.prop('disabled', false);
@@ -277,62 +474,68 @@
             });
         });
 
-        $('#save_form').on('submit', ui.on_submit_form);
-        $('#btn-cancel-edits').on('click', function () {
-            $('#deck-cancel-edits').val(1);
+        // the + buttons in the deck list point the pool at the Build tab
+        $(document).on('deckbuilder.find', function () {
+            $('a[href="#tab-pane-build"]').tab('show');
+        });
+        $('a[data-toggle=tab]').on('shown.bs.tab', function () {
+            $(window).trigger('resize');
         });
 
         app.markdown && app.markdown.setup('textarea[name=description_]', '#description-preview');
     };
 
-    /** The ranked guesses, with their reasons and (for the first few) Gemp's verdict */
-    ui.show_format_suggestions = function show_format_suggestions(response)
+    /** The columns fill the window below the header; each part scrolls on its own */
+    function fit_columns()
     {
-        if(!response.suggestions.length) {
-            $('#format-suggestions').html('<p class="text-muted">' + Translator.trans('deck.suggest_none') + '</p>');
-            return;
+        var row = $('.rb-builder-row');
+        if(row.length) {
+            document.documentElement.style.setProperty('--rb-top', Math.round(row.offset().top + 14) + 'px');
         }
-        var html = '<ol class="format-suggestions">' + _.map(response.suggestions, function (s) {
-            var gemp = s.gemp === null ? '' : ' <span class="label label-' + (s.gemp.valid ? 'success">' + Translator.trans('deck.suggest_legal')
-                : 'warning">' + Translator.trans('deck.suggest_problems', {count: s.gemp.problems})) + '</span>';
-            return '<li><strong>' + _.escape(s.name) + '</strong>' + gemp
-                + ' <a href="#" data-format="' + s.code + '" data-name="' + _.escape(s.name) + '">' + Translator.trans('deck.suggest_pick') + '</a>'
-                + '<br><span class="text-muted">' + _.map(s.reasons, _.escape).join('; ') + '</span></li>';
-        }).join('') + '</ol>';
-        $('#format-suggestions').html(html);
-    };
-
-    ui.on_submit_form = function on_submit_form()
-    {
-        var form = $('#save_form');
-        form.find('input[name=content]').val(app.deck.get_json());
-        form.find('input[name=description]').val($('textarea[name=description_]').val());
-        form.find('input[name=tags]').val($('input[name=tags_]').val());
-        $(window).off('beforeunload');
-    };
+    }
 
     ui.on_dom_loaded = function on_dom_loaded()
     {
+        page = app.deckbuilder_page || {};
+        fit_columns();
+        $(window).on('resize', _.debounce(fit_columns, 100));
+        visibility = app.deck.is_shared() ? 'hidden' : 'private';
         ui.setup_event_handlers();
+        app.deck_editor.setup('#deck');
+        app.pool.setup('#pool-filters', '#pool');
         app.draw_simulator && app.draw_simulator.on_dom_loaded();
         app.deck_history && app.deck_history.setup('#history');
-        $('#config-options input').each(function () {
-            this.checked = !!app.config.get(this.name);
-        });
     };
 
     ui.on_data_loaded = function on_data_loaded()
     {
-        ui.build_culture_buttons();
-        ui.build_type_buttons();
+        app.pool.on_data_loaded();
     };
 
     ui.on_all_loaded = function on_all_loaded()
     {
-        ui.refresh_deck();
-        ui.refresh_list();
+        draft_key = 'redbook.draft.' + app.deck.get_uuid();
+        saved_state = app.deck.get_state();
+        saved_version = app.deck.get_version();
+
+        var draft = read_draft();
+        if(draft && draft.state) {
+            if(draft.base_version === saved_version) {
+                app.deck.set_state(draft.state);
+            } else {
+                offer_old_draft(draft);
+            }
+        }
+        fill_fields();
+        show_visibility();
+        dirty = !same(app.deck.get_state(), saved_state);
+        update_status();
+        app.deck_editor.render();
+        app.pool.refresh(true);
         app.deck.display_validation('#deck-validation');
-        app.deck.validate();
+        if(app.deck.get_format_code()) {
+            app.deck.validate();
+        }
     };
 
 })(app.ui, jQuery);

@@ -6,7 +6,8 @@
     var locale_changed = false;
 
     var fdb = new ForerunnerDB();
-    var database = fdb.db('redbook');
+    // "redbook2": sets gained their block (cycle_code), so browsers drop the older copy
+    var database = fdb.db('redbook2');
 
     data.db = database;
 
@@ -41,6 +42,27 @@
             }
         }
         return null;
+    };
+
+    // Ketura's culture icons (public/images/cultures), named by culture code
+    var CULTURE_FILES = {uruk_hai: 'uruk'};
+
+    /** The culture's icon, for a CSS mask so it takes the text colour; null for none */
+    data.cultureIcon = function cultureIcon(code) {
+        if(!code || code === 'the_one_ring') {
+            return null;
+        }
+        return '/images/cultures/' + (CULTURE_FILES[code] || code) + '.svg';
+    };
+
+    /** A span showing a culture's icon in the current text colour */
+    data.cultureIconHtml = function cultureIconHtml(code, name) {
+        var url = data.cultureIcon(code);
+        if(!url) {
+            return '';
+        }
+        return '<span class="culture-icon" role="img" aria-label="' + _.escape(name || code) + '" title="' + _.escape(name || code)
+            + '" style="--icon:url(' + url + ')"></span>';
     };
 
     function onCollectionUpdate(updated) {
@@ -139,7 +161,8 @@
         });
 
         $.ajax({
-            url: Routing.generate('api_packs'),
+            // v=2: a new URL so a browser's cached copy (without blocks) isn't reused
+            url: Routing.generate('api_packs', {v: 2}),
             success: parse_packs,
             error: function (jqXHR, textStatus, errorThrown) {
                 console.log('error when requesting packs', errorThrown);

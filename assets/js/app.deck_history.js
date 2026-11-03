@@ -174,13 +174,14 @@
     deck_history.setup = function setup_history(container)
     {
         tbody = $(container).find('tbody').on('click', 'a[role=button]', deck_history.load_snapshot);
-        progressbar = $(container).find('.progress-bar');
 
-        clock = setInterval(deck_history.autosave_interval, 1000);
-
+        // Only saved versions: unsaved work is a draft in the browser now, not
+        // autosaved to the server (Ketura, 2026-11-02)
         snapshots_init.forEach(function (snapshot)
         {
-            deck_history.add_snapshot(snapshot);
+            if(snapshot.is_saved !== false) {
+                deck_history.add_snapshot(snapshot);
+            }
         });
 
     }

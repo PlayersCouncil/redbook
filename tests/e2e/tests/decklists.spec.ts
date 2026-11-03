@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { test, expect, runId, snap } from '../helpers/test';
+import { test, expect, runId, snap, waitForCardData } from '../helpers/test';
 import { storageFor } from '../helpers/users';
 
 // Publishing a deck as a decklist, and what other users can do with it:
@@ -23,10 +23,11 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await page.fill('#content', `${deckName}\n${gemp}`);
   await page.click('form[action$="/deck/fileimport"] button[type=submit]');
   await expect(page).toHaveURL(/\/deck\/edit\//);
-  await page.locator('#save_form button[type=submit].btn-success').click();
-  await expect(page).toHaveURL(/\/deck\/view\//);
+  await waitForCardData(page);
 
-  await page.click('#btn-publish');
+  // Publish is the deckbuilder's Visibility menu (Ketura, 2026-11-02)
+  await page.click('#btn-visibility');
+  await page.click('#menu-visibility [data-visibility=published]');
   await expect(page).toHaveURL(/\/deck\/publish\//);
   await page.fill('#name', decklistName);
   await page.fill('#descriptionMd', 'Published by the **smoke test**.');

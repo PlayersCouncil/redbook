@@ -36,6 +36,55 @@ class DeckManager
         return $user->getDecks();
     }
 
+    /** The Historical Deck Information fields a deck keeps */
+    public const HISTORIC_FIELDS = [
+        'author', 'source', 'source_url', 'archive_url', 'event', 'placing', 'players',
+        'date_used', 'date_posted', 'date_retrieved', 'format_as_written', 'notes',
+    ];
+
+    /**
+     * Keeps the known fields, trimmed and without markup; null when the deck isn't historic.
+     */
+    public static function normalizeHistoric(mixed $historic): ?array
+    {
+        if (is_string($historic)) {
+            $historic = json_decode($historic, true);
+        }
+        if (!is_array($historic)) {
+            return null;
+        }
+        $clean = [];
+        foreach (self::HISTORIC_FIELDS as $field) {
+            $value = trim(strip_tags((string) ($historic[$field] ?? '')));
+            $clean[$field] = mb_substr($value, 0, $field === 'notes' ? 5000 : 500);
+        }
+        return $clean;
+    }
+
+    /**
+     * The last day of a possibly partial date: "2004" is 31 December, "2004-07" is
+     * 31 July (Ketura, 2026-11-02: a month-only date counts as the end of the month).
+     */
+    public static function endOfPeriod(string $date): ?DateTime
+    {
+        if (!preg_match('/^(\d{4})(?:-(\d{1,2}))?(?:-(\d{1,2}))?$/', trim($date), $m)) {
+            return null;
+        }
+        $year = (int) $m[1];
+        if (!isset($m[2]) || $m[2] === '') {
+            return new DateTime(sprintf('%04d-12-31', $year));
+        }
+        $month = (int) $m[2];
+        if ($month < 1 || $month > 12) {
+            return null;
+        }
+        if (!isset($m[3]) || $m[3] === '') {
+            return (new DateTime(sprintf('%04d-%02d-01', $year, $month)))->modify('last day of this month');
+        }
+        $day = (int) $m[3];
+        return checkdate($month, $day, $year) ? new DateTime(sprintf('%04d-%02d-%02d', $year, $month, $day)) : null;
+    }
+
     /** The "_" placeholder faction every deck carries (decision 0018) */
     public function getPlaceholderFaction(): Faction
     {
@@ -72,11 +121,19 @@ class DeckManager
         $deck->setDescriptionMd($data['description'] ?? $deck->getDescriptionMd() ?? '');
         $deck->setFaction($this->getPlaceholderFaction());
         $deck->setTargetFormat($data['target_format'] ?? ($deck->getTargetFormat() ?: (string) $this->getDefaultFormat()));
+        if (array_key_exists('historic', $data) && $deck instanceof Deck) {
+            $deck->setHistoric(self::normalizeHistoric($data['historic']));
+        }
         $effective = $data['effective_date'] ?? null;
         if (is_string($effective) && $effective !== '') {
             $effective = DateTime::createFromFormat('!Y-m-d', $effective) ?: null;
         }
-        $deck->setEffectiveDate($effective instanceof DateTimeInterface ? $effective : ($deck->getId() ? $deck->getEffectiveDate() : new DateTime('today')));
+        if (!$effective instanceof DateTimeInterface) {
+            // A historic deck's cards are as of its Date Used; an ordinary deck's follow today (Ketura, 2026-11-02)
+            $historic = $deck instanceof Deck ? $deck->getHistoric() : null;
+            $effective = self::endOfPeriod((string) ($historic['date_used'] ?? '')) ?? new DateTime('today');
+        }
+        $deck->setEffectiveDate($effective);
         if (isset($data['shared'])) {
             $deck->setShared((bool) $data['shared']);
         }

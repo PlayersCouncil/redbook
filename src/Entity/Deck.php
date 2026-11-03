@@ -56,6 +56,15 @@ class Deck extends CommonDeck implements DeckInterface
     protected bool $shared = false;
 
     /**
+     * Historical Deck Information (Ketura, 2026-11-02): null for an ordinary deck, else the
+     * fields of a historic one (author, source, source_url, archive_url, event, placing,
+     * players, date_used, date_posted, date_retrieved, format_as_written, notes). A stopgap
+     * until historic accounts and the events table exist; date_used drives the effective date.
+     */
+    #[ORM\Column(name: 'historic', type: 'json', nullable: true)]
+    protected ?array $historic = null;
+
+    /**
      * @var string|null
      */
     #[ORM\Column(name: 'tags', type: 'string', length: 4000, nullable: true)]
@@ -241,6 +250,21 @@ class Deck extends CommonDeck implements DeckInterface
     public function setShared(bool $shared): void
     {
         $this->shared = $shared;
+    }
+
+    public function getHistoric(): ?array
+    {
+        return $this->historic;
+    }
+
+    public function setHistoric(?array $historic): void
+    {
+        $this->historic = $historic;
+    }
+
+    public function isHistoric(): bool
+    {
+        return $this->historic !== null;
     }
 
     /**
@@ -610,6 +634,7 @@ class Deck extends CommonDeck implements DeckInterface
             'version' => $this->getVersion(),
             'tags' => $this->getTags(),
             'shared' => $this->shared,
+            'historic' => $this->historic,
         ] + $this->lotrDeckJson();
     }
 

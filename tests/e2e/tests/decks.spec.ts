@@ -11,12 +11,18 @@ test.use({ storageState: storageFor('author') });
 
 const fixture = (name: string) => fs.readFileSync(path.join(__dirname, '..', 'fixtures', name), 'utf8');
 
-/** Filters the card pool, clicks a control on the row for the card, and waits for the deck to show it */
-async function pick(page, filter: string, card: string, control: string) {
+/**
+ * Searches the card pool (list view), clicks a button on the card's row (+ adds a
+ * copy, the ring button makes a Ring-bearer) and waits for the deck to show it
+ */
+async function pick(page, filter: string, card: string, control: '[data-add]' | '[data-rb]') {
+  if (await page.locator('[data-pool-view=list][aria-pressed=false]').count()) {
+    await page.click('[data-pool-view=list]');
+  }
   await page.fill('#filter-text', filter);
-  const row = page.locator('#collection-table tr', { hasText: card }).first();
+  const row = page.locator('.rb-pool-row', { hasText: card }).first();
   await row.locator(control).first().click();
-  await expect(page.locator('#deck')).toContainText(card);
+  await expect(page.locator('#deck')).toContainText(card.split(',')[0]);
 }
 
 test('build a deck: target format, Gemp checklist, convert to PC, save, delete', async ({ page }) => {
@@ -35,28 +41,35 @@ test('build a deck: target format, Gemp checklist, convert to PC, save, delete',
   await expect(checklist).toContainText("Deck doesn't have a Ring-bearer");
   await expect(checklist).toContainText("Deck doesn't have a One Ring");
 
-  await pick(page, 'frodo', 'Frodo, Son of Drogo', '.btn-ring-bearer');
+  // In a PC format the pool shows the errata, so Legolas is 51_50 from the start
+  await page.selectOption('#deck-format', 'fotr_block');
+  await pick(page, 'frodo', 'Frodo, Son of Drogo', '[data-rb]');
   await expect(checklist).not.toContainText("Ring-bearer", { timeout: 15_000 });
-  await pick(page, 'ruling', 'The One Ring, The Ruling Ring', '.btn-toggle-card');
-  await pick(page, 'bag', 'Bag End', '.btn-toggle-card');
-  await pick(page, 'legolas', 'Legolas, Greenleaf', 'label:has-text("2")');
-  await expect(page.locator('#deck')).toContainText('2x');
-  await expect(page.locator('#deck')).toContainText('Legolas, Greenleaf');
+  await pick(page, 'ruling', 'The One Ring, The Ruling Ring', '[data-add]');
+  await pick(page, 'bag', 'Bag End', '[data-add]');
+  await pick(page, 'legolas', 'Legolas, Greenleaf', '[data-add]');
+  await page.locator('#deck .rb-line[data-code="1_50"] .rb-n[data-qty="2"]').click();
+  await expect(page.locator('#deck .rb-line[data-code="1_50"] .rb-n.active')).toHaveText('2');
   await expect(checklist).toContainText('below minimum number of cards: 2<60');
+  await expect(page.locator('#save-status')).toContainText('Unsaved changes');
   await snap(page, 'deck in progress with the checklist');
 
-  // Suggest a format: Fellowship sites and set 1 cards
+  // Suggest a format only shows without one: Fellowship sites and set 1 cards
+  await page.selectOption('#deck-format', '');
   await page.click('#btn-suggest-format');
-  await expect(page.locator('#format-suggestions li').first()).toContainText('Fellowship sites');
+  await expect(page.locator('#format-suggestions .rb-suggestion').first()).toContainText('Fellowship sites');
   await snap(page, 'format suggestions');
 
-  // Convert to PC errata: Legolas 1_50 becomes 51_50
+  // Convert to PC errata shows in a PC format with errata to convert: Legolas 1_50 becomes 51_50
+  await page.selectOption('#deck-format', 'pc_fotr_block');
   await page.click('#btn-convert-pc');
-  await expect(page.locator('#deck .deck-card[data-key="51_50"]')).toBeVisible();
+  await expect(page.locator('#deck .rb-line[data-code="51_50"]')).toBeVisible();
   await snap(page, 'after convert to PC');
 
-  await page.locator('#save_form button[type=submit].btn-success').click();
-  await expect(page).toHaveURL(/\/deck\/view\//);
+  // Save records a version and stays in the deckbuilder
+  await page.click('#btn-save');
+  await expect(page.locator('#save-status')).toContainText('Saved as version');
+  await page.goto(await page.evaluate(() => (window as any).app.deckbuilder_page.view_url));
   await expect(page.locator('h1')).toContainText(deckName);
   await expect(page.locator('.deck-validation')).toContainText('below minimum number of cards');
   await snap(page, 'saved deck');
@@ -77,9 +90,8 @@ test('import a Gemp deck string and export it back unchanged', async ({ page }) 
   await page.click('form[action$="/deck/fileimport"] button[type=submit]');
   await expect(page).toHaveURL(/\/deck\/edit\//);
   await waitForCardData(page);
-  await expect(page.locator('#deck-validation')).toContainText('Legal in Fellowship Block');
-  await page.locator('#save_form button[type=submit].btn-success').click();
-  await expect(page).toHaveURL(/\/deck\/view\//);
+  await expect(page.locator('#deck-validation')).toContainText('Deck is valid for Fellowship Block');
+  await page.goto(await page.evaluate(() => (window as any).app.deckbuilder_page.view_url));
   await expect(page.locator('body')).toContainText('Draw deck: 60');
   await expect(page.locator('#btn-publish')).toBeVisible();
   await snap(page, 'imported deck');

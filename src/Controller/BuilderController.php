@@ -221,21 +221,58 @@ class BuilderController extends AbstractController
         if (!is_array($content)) {
             throw new BadRequestHttpException('Deck content missing');
         }
-        $format = $this->selectableFormat((string) $request->get('target_format'));
+        $requestedFormat = (string) $request->get('target_format');
+        $format = $this->selectableFormat($requestedFormat);
+        // "Choose a format…" is a real choice in the deckbuilder: no format, so Suggest shows
+        $targetFormat = $format?->getCode()
+            ?? (($request->request->has('target_format') && $requestedFormat === '') ? '' : ($deck->getTargetFormat() ?: null));
 
-        $deckManager->save($user, $deck, [
+        $data = [
             'name' => strip_tags((string) $request->get('name')),
             'description' => trim((string) $request->get('description')),
             'tags' => strip_tags((string) $request->get('tags')),
             'content' => $content,
-            'target_format' => $format?->getCode() ?? ($deck->getTargetFormat() ?: null),
+            'target_format' => $targetFormat,
             'effective_date' => $request->get('effective_date') ?: null,
             'decklist_id' => (int) $request->get('decklist_id') ?: null,
             'shared' => $request->request->has('shared') ? (bool) $request->get('shared') : null,
-        ], $sourceDeck);
+        ];
+        if ($request->request->has('historic')) {
+            $data['historic'] = $request->get('historic');
+        }
+        $deckManager->save($user, $deck, $data, $sourceDeck);
         $em->flush();
 
+        if ($request->get('format') === 'json') {
+            // The deckbuilder saves in place (Ketura, 2026-11-02: Save records a version; drafts stay in the browser)
+            return new JsonResponse([
+                'success' => true,
+                'id' => $deck->getId(),
+                'uuid' => (string) $deck->getUuid(),
+                'version' => $deck->getVersion(),
+                'deck' => $deck->jsonSerialize(),
+                'edit_url' => $this->generateUrl('deck_edit', ['deck_uuid' => $deck->getUuid()]),
+            ]);
+        }
         return $this->redirectToRoute('deck_view', ['deck_uuid' => $deck->getUuid()]);
+    }
+
+    /**
+     * Private or Hidden (anyone with the link) from the deckbuilder's Visibility
+     * menu; Published goes through the publish form.
+     */
+    #[Route(path: '/deck/visibility', name: 'deck_visibility', methods: ['POST'])]
+    public function visibilityAction(Request $request): JsonResponse
+    {
+        $user = $this->requireUser();
+        $deck = $this->managerRegistry->getRepository(Deck::class)->find((int) $request->get('id'))
+            ?? throw new NotFoundHttpException("This deck doesn't exist.");
+        if ($user->getId() != $deck->getUser()->getId()) {
+            throw new AccessDeniedHttpException("You don't have access to this deck.");
+        }
+        $deck->setShared($request->get('visibility') === 'hidden');
+        $this->managerRegistry->getManager()->flush();
+        return new JsonResponse(['success' => true, 'shared' => $deck->isShared()]);
     }
 
     /**

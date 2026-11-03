@@ -1,53 +1,5 @@
-{# The card pool: filters, then a table of cards with deck controls (phase3/03) #}
-<div class="row">
-    <div class="col-sm-12 text-right" style="margin-bottom:10px">
-        <div class="btn-group">
-            <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
-                {{ 'decks.edit.build.options.label' | trans }} <span class="caret"></span>
-            </button>
-            <ul class="dropdown-menu pull-right" id="config-options">
-                {% for option in ['show-all-sets', 'show-errata', 'show-only-deck', 'hide-banned'] %}
-                    <li><a href="#"><label><input type="checkbox" name="{{ option }}"> {{ ('decks.edit.build.options.' ~ option) | trans }}</label></a></li>
-                {% endfor %}
-            </ul>
-        </div>
-        <button class="btn btn-default btn-xs smart-filter-help" type="button">{{ 'decks.edit.build.help' | trans }}</button>
-    </div>
+{# The card filters ("orange") and card pool ("navy"); app.pool draws both once the card data is in #}
+<div class="rb-filters" id="pool-filters" aria-label="{{ 'deckbuilder.filters.label' | trans }}">
+    <div class="deck-loading"><i class="fas fa-spinner fa-spin fa-2x"></i></div>
 </div>
-<div class="row">
-    <div class="col-sm-12" style="margin-bottom:10px">
-        <input type="text" class="form-control" id="filter-text" placeholder="{{ 'decks.edit.build.searchhint' | trans }}" tabindex="1">
-    </div>
-    <div class="col-sm-12" style="margin-bottom:6px">
-        <div class="btn-group btn-group-justified" data-filter="side" data-toggle="buttons">
-            {% for side in ['free_peoples', 'shadow'] %}
-                <label class="btn btn-default btn-sm"><input type="checkbox" name="{{ side }}"> {{ ('side.' ~ side) | trans }}</label>
-            {% endfor %}
-            <label class="btn btn-default btn-sm"><input type="checkbox" name="none"> {{ 'deck.ring_and_sites' | trans }}</label>
-        </div>
-    </div>
-    <div class="col-sm-12" style="margin-bottom:6px">
-        <div class="btn-group filter-buttons" data-filter="culture_code" data-toggle="buttons"></div>
-    </div>
-    <div class="col-sm-12" style="margin-bottom:10px">
-        <div class="btn-group filter-buttons" data-filter="type_code" data-toggle="buttons"></div>
-    </div>
-</div>
-<div class="row" id="collection">
-    <div class="col-sm-12">
-        <table class="table table-condensed table-hover" style="margin-bottom:10px">
-            <thead>
-            <tr>
-                <th style="min-width:110px">{{ 'card.info.quantity' | trans }}</th>
-                <th><a href="#" data-sort="label">{{ 'card.info.name' | trans }}</a></th>
-                <th><a href="#" data-sort="twilight" title="{{ 'card.info.twilight' | trans }}">{{ 'card.info.short.twilight' | trans }}</a></th>
-                <th title="{{ 'card.info.strength' | trans }} / {{ 'card.info.vitality' | trans }}">{{ 'card.info.short.strvit' | trans }}</th>
-                <th><a href="#" data-sort="type_code">{{ 'card.info.type' | trans }}</a></th>
-                <th><a href="#" data-sort="culture_code">{{ 'card.info.culture' | trans }}</a></th>
-            </tr>
-            </thead>
-            <tbody id="collection-table" class="collection"></tbody>
-        </table>
-        <p class="text-muted small" id="collection-more"></p>
-    </div>
-</div>
+<div class="rb-pool" id="pool" aria-label="{{ 'deckbuilder.pool.label' | trans }}"></div>

@@ -213,16 +213,22 @@
         return list;
     }
 
-    $(function ()
+    /** The syntax help on a "Search tips" link; also for links drawn after the page loads */
+    smart_filter.setup_help = function setup_help(elements)
     {
-        $('.smart-filter-help').tooltip({
+        $(elements || '.smart-filter-help').tooltip({
             container: 'body',
-            delay: 1000,
+            delay: 300,
             html: true,
             placement: 'bottom',
             title: smart_filter.get_help(),
-            trigger: 'hover'
-        });
+            trigger: 'hover focus click'
+        }).on('click', function (event) { event.preventDefault(); });
+    };
+
+    $(function ()
+    {
+        smart_filter.setup_help();
     })
 
 })(app.smart_filter = {}, jQuery);

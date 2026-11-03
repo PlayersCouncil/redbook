@@ -12,6 +12,8 @@
     var RB = 'rb:',
         data = {},
         content = {},
+        // keys X'd in the deckbuilder: still shown (a Trash button deletes them), but not part of the deck
+        pending = {},
         validation = null,
         validation_available = true,
         validate_timer = null,
@@ -27,19 +29,88 @@
     {
         data = json || {};
         content = _.extend({}, data.slots || {});
+        pending = {};
         validation = data.validation || null;
         validation_available = !!data.validated_at || !data.id;
     };
 
     deck.get_id = function () { return data.id; };
     deck.get_uuid = function () { return data.uuid; };
+    deck.get_version = function () { return data.version; };
+    deck.is_shared = function () { return !!data.shared; };
     deck.get_name = function () { return data.name; };
+    deck.set_name = function (name) { data.name = name; };
     deck.get_description_md = function () { return data.description_md; };
+    deck.set_description_md = function (md) { data.description_md = md; };
     deck.get_tags = function () { return data.tags; };
+    deck.set_tags = function (tags) { data.tags = tags; };
+    deck.get_historic = function () { return data.historic || null; };
+    deck.set_historic = function (historic) { data.historic = historic; };
     deck.get_effective_date = function () { return data.effective_date; };
     deck.get_format_code = function () { return data.target_format; };
     deck.set_format_code = function (code) { data.target_format = code; };
     deck.get_format = function () { return app.data.findFormat(data.target_format); };
+
+    /** Everything the deckbuilder edits, for the browser draft (Ketura, 2026-11-02) */
+    deck.get_state = function get_state()
+    {
+        return {
+            name: data.name,
+            target_format: data.target_format,
+            description_md: data.description_md,
+            tags: data.tags,
+            historic: data.historic || null,
+            content: _.extend({}, content),
+            pending: _.keys(pending)
+        };
+    };
+
+    deck.set_state = function set_state(state)
+    {
+        data.name = state.name;
+        data.target_format = state.target_format;
+        data.description_md = state.description_md;
+        data.tags = state.tags;
+        data.historic = state.historic || null;
+        content = _.extend({}, state.content || {});
+        pending = {};
+        _.each(state.pending || [], function (key) {
+            if(content[key]) {
+                pending[key] = true;
+            }
+        });
+    };
+
+    /* ---- X then Trash (Ketura, 2026-11-02): an X'd card stays listed but leaves the deck ---- */
+
+    deck.is_pending = function is_pending(key)
+    {
+        return !!pending[key];
+    };
+
+    deck.set_pending = function set_pending(key, on)
+    {
+        if(on && content[key]) {
+            pending[key] = true;
+        } else {
+            delete pending[key];
+        }
+        deck.changed();
+    };
+
+    /** Trash: deletes the line for good */
+    deck.remove = function remove(key)
+    {
+        delete pending[key];
+        delete content[key];
+        deck.changed();
+    };
+
+    /** Cards the deck actually holds: what is saved and validated */
+    function live_content()
+    {
+        return _.omit(content, _.keys(pending));
+    }
 
     deck.role_for_card = function role_for_card(card)
     {
@@ -51,20 +122,21 @@
         }
     };
 
-    /** @return {Object} a copy of the content map */
+    /** @return {Object} a copy of the content map, without X'd cards */
     deck.get_content = function get_content()
     {
-        return _.extend({}, content);
+        return live_content();
     };
 
     deck.get_json = function get_json()
     {
-        return JSON.stringify(content);
+        return JSON.stringify(live_content());
     };
 
     deck.set_content = function set_content(new_content)
     {
         content = {};
+        pending = {};
         _.each(new_content || {}, function (qty, key) {
             qty = parseInt(qty, 10);
             if(qty > 0) {
@@ -74,10 +146,34 @@
         deck.changed();
     };
 
-    /** Copies of a card outside the Ring-bearer slot */
+    /** Copies of a card outside the Ring-bearer slot (0 while it is X'd) */
     deck.get_quantity = function get_quantity(code)
     {
+        return pending[code] ? 0 : (content[code] || 0);
+    };
+
+    /** Copies as listed, X'd or not */
+    deck.get_listed_quantity = function get_listed_quantity(code)
+    {
         return content[code] || 0;
+    };
+
+    /**
+     * The most copies the format allows: 1 for the Ring, sites and maps, else the
+     * format's limit lists (R-listed 1, limit2, limit3) under its maximum.
+     */
+    deck.max_quantity = function max_quantity(card)
+    {
+        if(deck.role_for_card(card) !== 'draw') {
+            return 1;
+        }
+        var format = deck.get_format(),
+            max = format ? format.maximum_same_name || 4 : 4,
+            limit = format ? app.data.format_limit(format, card.code) : null;
+        if(limit === 'restricted') { return 1; }
+        if(limit === 'limit2') { return Math.min(max, 2); }
+        if(limit === 'limit3') { return Math.min(max, 3); }
+        return max;
     };
 
     /**
@@ -96,12 +192,37 @@
             });
             qty = 1;
         }
+        delete pending[code];
         if(qty > 0) {
             content[code] = qty;
         } else {
             delete content[code];
         }
         deck.changed();
+    };
+
+    /** Adds one copy, up to the format's limit; replaces the Ring, a map, or the site with the same number */
+    deck.add_one = function add_one(code)
+    {
+        var card = app.data.cards.findById(code);
+        if(!card) {
+            return;
+        }
+        var role = deck.role_for_card(card),
+            format = deck.get_format();
+        if(role === 'site' && card.site_number && format && format.numbered_sites) {
+            _.each(deck.get_cards('site'), function (other) {
+                if(other.card.site_number === card.site_number && other.card.code !== code) {
+                    delete content[other.key];
+                    delete pending[other.key];
+                }
+            });
+        }
+        if(role !== 'draw') {
+            deck.set_quantity(code, 1);
+            return;
+        }
+        deck.set_quantity(code, Math.min(deck.max_quantity(card), deck.get_quantity(code) + 1));
     };
 
     deck.get_ring_bearer_code = function get_ring_bearer_code()
@@ -116,6 +237,7 @@
         _.each(_.keys(content), function (k) {
             if(k.indexOf(RB) === 0) {
                 delete content[k];
+                delete pending[k];
             }
         });
         if(code) {
@@ -140,7 +262,7 @@
             }
             var card_role = is_rb ? 'ring_bearer' : deck.role_for_card(card);
             if(card_role === role) {
-                list.push({key: key, card: card, qty: qty});
+                list.push({key: key, card: card, qty: qty, pending: !!pending[key]});
             }
         });
         return list.sort(function (a, b) {
@@ -157,7 +279,7 @@
     /** The draw deck as cards with an "indeck" count (for the charts and the draw simulator) */
     deck.get_draw_deck = function get_draw_deck()
     {
-        return _.map(deck.get_cards('draw'), function (slot) {
+        return _.map(_.reject(deck.get_cards('draw'), 'pending'), function (slot) {
             return _.extend({}, slot.card, {indeck: slot.qty});
         });
     };
@@ -165,7 +287,7 @@
     function count(slots, side)
     {
         return _.reduce(slots, function (sum, slot) {
-            return sum + (!side || slot.card.side === side ? slot.qty : 0);
+            return sum + (!slot.pending && (!side || slot.card.side === side) ? slot.qty : 0);
         }, 0);
     }
 
@@ -177,7 +299,7 @@
     deck.get_cultures = function get_cultures()
     {
         var cultures = {};
-        _.each(deck.get_cards('draw'), function (slot) {
+        _.each(_.reject(deck.get_cards('draw'), 'pending'), function (slot) {
             var code = slot.card.culture_code;
             if(code) {
                 cultures[code] = cultures[code] || {code: code, name: slot.card.culture_name, count: 0};
@@ -204,6 +326,12 @@
             return;
         }
         clearTimeout(validate_timer);
+        if(!data.target_format) {
+            // no format chosen yet: nothing for Gemp to check against
+            validation = null;
+            deck.display_validation('#deck-validation');
+            return;
+        }
         validate_timer = setTimeout(deck.validate, 900);
         $('#deck-validation').addClass('deck-validation-pending');
     };
@@ -212,6 +340,11 @@
     {
         if(validate_request) {
             validate_request.abort();
+        }
+        if(!data.target_format) {
+            validation = null;
+            deck.display_validation('#deck-validation');
+            return;
         }
         validate_request = $.ajax(Routing.generate('deck_validate'), {
             type: 'POST',
@@ -234,9 +367,55 @@
         return !!validation && (validation.valid || validation.valid_with_errata === true);
     };
 
+    /** The problems that matter: with errata applied when the format has errata */
+    deck.get_problems = function get_problems()
+    {
+        if(!validation || deck.is_valid()) {
+            return [];
+        }
+        return validation.problems_with_errata || validation.problems || [];
+    };
+
+    function plain(name)
+    {
+        return (name || '').replace(/[••]/g, '').trim().toLowerCase();
+    }
+
+    /**
+     * Cards Gemp's problems name. Gemp writes a card's full name after the last ": "
+     * ("Card is X-listed: •Aragorn, Ranger of the North"); a card matches by its full
+     * label or, for the copies check (which names by title), by its title.
+     * @return {Object} card code => true
+     */
+    deck.get_problem_codes = function get_problem_codes()
+    {
+        var names = {};
+        _.each(deck.get_problems(), function (problem) {
+            var at = problem.lastIndexOf(': ');
+            if(at !== -1) {
+                names[plain(problem.substr(at + 2).replace(/\.$/, ''))] = true;
+            }
+        });
+        var codes = {};
+        if(_.isEmpty(names)) {
+            return codes;
+        }
+        _.each(content, function (qty, key) {
+            var code = key.indexOf(RB) === 0 ? key.substr(RB.length) : key,
+                card = app.data.cards.findById(code);
+            if(card && (names[plain(card.label)] || names[plain(card.name)])) {
+                codes[code] = true;
+            }
+        });
+        return codes;
+    };
+
     deck.display_validation = function display_validation(container)
     {
         var html;
+        if($(container).hasClass('rb-validation')) {
+            return display_validation_box(container);
+        }
         if(!validation_available || !validation) {
             html = '<div class="alert alert-warning">' + Translator.trans('deck.validation.unavailable') + '</div>';
         } else if(deck.is_valid()) {
@@ -254,6 +433,35 @@
         }
         $(container).html(html);
     };
+
+    /**
+     * The deckbuilder's Gemp box (Ketura, 2026-11-02): red and scrollable (about
+     * three lines) while there are problems, one green line once the deck is valid.
+     * Gemp's sentences are shown as they are until Gemp returns problem codes.
+     */
+    function display_validation_box(container)
+    {
+        var box = $(container).removeClass('is-none is-bad is-good is-unavailable'),
+            html;
+        if(!data.target_format) {
+            box.addClass('is-none');
+            html = '<div class="rb-validation-line">' + Translator.trans('deckbuilder.validation.no_format') + '</div>';
+        } else if(!validation_available || !validation) {
+            box.addClass('is-unavailable');
+            html = '<div class="rb-validation-line">' + Translator.trans('deck.validation.unavailable') + '</div>';
+        } else if(deck.is_valid()) {
+            box.addClass('is-good');
+            html = '<div class="rb-validation-line"><span class="fas fa-check"></span> '
+                + Translator.trans('deckbuilder.validation.valid', {format: _.escape(validation.format_name)}) + '</div>';
+        } else {
+            var problems = deck.get_problems();
+            box.addClass('is-bad');
+            html = '<div class="rb-validation-head">' + Translator.transChoice('deckbuilder.validation.problems', problems.length, {count: problems.length, format: _.escape(validation.format_name)}) + '</div>'
+                + '<ul class="rb-validation-list">' + _.map(problems, function (p) { return '<li>' + _.escape(p) + '</li>'; }).join('') + '</ul>';
+        }
+        box.html(html);
+        $(document).trigger('deck.validated');
+    }
 
     /* ---- display ---- */
 
@@ -393,7 +601,7 @@
     {
         var codes = function (role) {
             var list = [];
-            _.each(deck.get_cards(role), function (s) {
+            _.each(_.reject(deck.get_cards(role), 'pending'), function (s) {
                 for(var i = 0; i < s.qty; i++) { list.push(s.card.code); }
             });
             return list;

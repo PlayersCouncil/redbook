@@ -760,3 +760,171 @@ deck.suggest_pick: Use this
 deck.suggest_legal: legal in Gemp
 deck.suggest_problems: "%count% problems in Gemp"
 decks.import.guess_format: "Guess from the cards"
+# ---- The deckbuilder (Ketura's region design, 2026-11-02) ----
+deckbuilder.deck_label: The deck
+deckbuilder.info.label: Deck information
+deckbuilder.info.name: Deck name
+deckbuilder.info.choose_format: "Choose a format…"
+deckbuilder.info.suggestions: Suggested formats
+deckbuilder.info.suggest_intro: "From the sites, sets and date (best first)"
+deckbuilder.info.convert: "{1} Convert 1 card to PC errata|]1,Inf] Convert %count% cards to PC errata"
+deckbuilder.info.save: Save
+deckbuilder.info.revert: Revert
+deckbuilder.info.more: More
+deckbuilder.info.saving: "Saving…"
+deckbuilder.info.unsaved: "Unsaved changes · draft kept in this browser"
+deckbuilder.info.saved_version: "Saved · version %version%"
+deckbuilder.info.saved_now: "Saved as version %version%"
+deckbuilder.info.reverted: "Reverted to version %version%"
+deckbuilder.info.save_failed: "Couldn't save just now; your changes are still here. Try again."
+deckbuilder.draft.old: "There's an unsaved draft of this deck from version %version% (%when%), but the deck has been saved since."
+deckbuilder.draft.restore: Restore the draft
+deckbuilder.draft.discard: Discard it
+deckbuilder.validation.no_format: "Choose a format and Gemp will check the deck against it."
+deckbuilder.validation.valid: "Deck is valid for %format%."
+deckbuilder.validation.problems: "{1} Gemp found 1 problem in %format%|]1,Inf] Gemp found %count% problems in %format%"
+deckbuilder.visibility.label: Who can see this deck
+deckbuilder.visibility.private: Private
+deckbuilder.visibility.private_hint: Only you can see this deck.
+deckbuilder.visibility.hidden: Hidden
+deckbuilder.visibility.hidden_hint: "Anyone with the link can view it. Not listed anywhere."
+deckbuilder.visibility.published: Published
+deckbuilder.visibility.published_hint: "Listed publicly for others to find, rate and comment on. Published versions stay public."
+deckbuilder.more.copy: Save as a copy
+deckbuilder.more.link: Copy link
+deckbuilder.more.link_copied: Link copied.
+deckbuilder.more.link_private: "Link copied. It only works for others once the deck is Hidden or Published."
+deckbuilder.more.export_gemp: Export for Gemp
+deckbuilder.more.export_text: Export as text
+deckbuilder.more.history: Version history
+deckbuilder.more.delete: Delete deck
+deckbuilder.history.intro: "Each Save is a version. Choosing Revert on one loads it into the editor; Save to keep it."
+deckbuilder.historic.title: Historical Deck Information
+deckbuilder.historic.badge: Historic deck
+deckbuilder.historic.is_historic: This is a historic deck
+deckbuilder.historic.author: Author
+deckbuilder.historic.source: Source
+deckbuilder.historic.choose: "Choose…"
+deckbuilder.historic.other: Other
+deckbuilder.historic.source_url: Source URL
+deckbuilder.historic.archive_url: Archive URL
+deckbuilder.historic.event: Event
+deckbuilder.historic.event_hint: "Event name, and where"
+deckbuilder.historic.placing: Placing
+deckbuilder.historic.players: Players
+deckbuilder.historic.date_used: Date Used
+deckbuilder.historic.date_posted: Date Posted
+deckbuilder.historic.date_retrieved: Date Retrieved
+deckbuilder.historic.date_hint: "YYYY, YYYY-MM or YYYY-MM-DD"
+deckbuilder.historic.format_as_written: Format as written
+deckbuilder.historic.notes: Archival Notes
+deckbuilder.tabs.draw: Test draw
+deckbuilder.display_options: Deck display options
+deckbuilder.view.list: List view
+deckbuilder.view.thumb: Thumbnail view
+deckbuilder.view.half: Half-thumbnail view
+deckbuilder.group.culture: Culture
+deckbuilder.group.type: Type
+deckbuilder.group.none: None
+deckbuilder.group.culture_hint: Group by culture
+deckbuilder.group.type_hint: Group by card type
+deckbuilder.group.none_hint: No grouping
+deckbuilder.adventure_deck: "Adventure Deck (%count%)"
+deckbuilder.draw_deck: "Draw Deck (%count%)"
+deckbuilder.find_ring_bearer: Show Ring-bearer candidates in the card pool
+deckbuilder.find_ring: Show Rings in the card pool
+deckbuilder.find_map: Show maps in the card pool
+deckbuilder.find_sites: "Show all sites in the card pool, by site number"
+deckbuilder.find_site: "Show site %number% options in the card pool"
+deckbuilder.choose_site: "Choose site %number%"
+deckbuilder.remove: "Take %card% out of the deck"
+deckbuilder.remove_hint: "Take out of the deck (the line stays until you delete it)"
+deckbuilder.trash: "Delete %card% from the list"
+deckbuilder.trash_hint: Delete from the list
+deckbuilder.copies_of: "Copies of %card%"
+deckbuilder.n_copies: "{1} 1 copy|]1,Inf] %count% copies"
+deckbuilder.over_limit: "More than the format allows"
+deckbuilder.filters.label: Card filters
+deckbuilder.filters.search: Search cards
+deckbuilder.filters.search_placeholder: "Search card names (accents optional)"
+deckbuilder.filters.search_tips: Search tips
+deckbuilder.filters.block: Block
+deckbuilder.filters.set: Set
+deckbuilder.filters.any_in_format: Any in format
+deckbuilder.filters.any: Any
+deckbuilder.filters.all: All
+deckbuilder.filters.side: Side
+deckbuilder.filters.side_sites: "Sites & Ring"
+deckbuilder.filters.type: Type
+deckbuilder.filters.cultures: Cultures
+deckbuilder.filters.culture: Culture
+deckbuilder.filters.more: More filters
+deckbuilder.filters.is_or_has: Is or has
+deckbuilder.filters.unique: Unique
+deckbuilder.filters.yes: "Yes"
+deckbuilder.filters.no: "No"
+deckbuilder.filters.race: Race
+deckbuilder.filters.item_class: Item class
+deckbuilder.filters.phase: Phase
+deckbuilder.filters.keyword: Keyword
+deckbuilder.filters.signet: Signet
+deckbuilder.filters.can_bear: Can bear the Ring
+deckbuilder.filters.stats: Stats
+deckbuilder.filters.quick: Quick Search
+deckbuilder.filters.mentions: Mentions in its text
+deckbuilder.filters.game_text: Game text contains
+deckbuilder.filters.lore: Lore contains
+deckbuilder.filters.rarity: Rarity
+deckbuilder.filters.showing: Showing
+deckbuilder.filters.format_sets: "%format% sets"
+deckbuilder.filters.all_sets: All sets
+deckbuilder.filters.format_hint: "Set by the deck's format"
+deckbuilder.filters.count: "{0} No cards|{1} 1 card|]1,Inf] %count% cards"
+deckbuilder.filters.clear_all: Clear all
+deckbuilder.filters.remove: "Remove the %filter% filter"
+deckbuilder.filters.ring_bearers: Ring-bearer candidates
+deckbuilder.filters.sites: Sites
+deckbuilder.filters.site: "Site %number%"
+deckbuilder.filters.unique_yes: Unique
+deckbuilder.filters.unique_no: Not unique
+deckbuilder.filters.phase_chip: "Phase: %phase%"
+deckbuilder.filters.keyword_chip: "Keyword: %keyword%"
+deckbuilder.filters.signet_chip: "Signet: %signet%"
+deckbuilder.filters.mentions_chip: "Mentions %what%"
+deckbuilder.filters.text_chip: "Text: %text%"
+deckbuilder.filters.lore_chip: "Lore: %text%"
+deckbuilder.stats.twilight: Twilight
+deckbuilder.stats.strength: Strength
+deckbuilder.stats.vitality: Vitality
+deckbuilder.stats.resistance: Resistance
+deckbuilder.stats.site_number: Site number
+deckbuilder.stats.compare: "%stat% comparison"
+deckbuilder.stats.hint: "Twilight is a site's shadow number. Enter +2 to find cards that give +2."
+deckbuilder.pool.label: Card pool
+deckbuilder.pool.sort: Sort
+deckbuilder.pool.view: Pool view
+deckbuilder.pool.range: "%from%–%to% of %total%"
+deckbuilder.pool.range_none: "0 cards"
+deckbuilder.pool.page: "Page %page% of %pages%"
+deckbuilder.pool.prev: Previous page
+deckbuilder.pool.next: Next page
+deckbuilder.pool.none: No cards match these filters.
+deckbuilder.pool.add: Add a copy
+deckbuilder.pool.add_card: "Add %card%"
+deckbuilder.pool.add_another: "%count% in your deck: add another"
+deckbuilder.pool.at_limit: Already at the limit
+deckbuilder.pool.in_deck_site: Already in your deck
+deckbuilder.pool.banned_add: "Banned in this format (you can still add it)"
+deckbuilder.pool.replaces: "Replaces %card%"
+deckbuilder.pool.banned: Banned
+deckbuilder.pool.max: "Max %count%"
+deckbuilder.pool.site: "Site %number%"
+deckbuilder.pool.make_rb: Make Ring-bearer
+deckbuilder.pool.make_rb_card: "Make %card% the Ring-bearer"
+deckbuilder.sort.name: Name
+deckbuilder.sort.culture: Culture
+deckbuilder.sort.type: Type
+deckbuilder.sort.twilight: Twilight
+deckbuilder.sort.strength: Strength
+deckbuilder.sort.set: Set and number
+deckbuilder.sort.site: "Site number, shadow number"

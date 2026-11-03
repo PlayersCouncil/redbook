@@ -87,6 +87,9 @@ class ApiController extends AbstractController
                 "code" => $pack->getCode(),
                 "position" => $pack->getPosition(),
                 "cycle_position" => $pack->getCycle()->getPosition(),
+                // the block, for the deckbuilder's Block filter
+                "cycle_code" => $pack->getCycle()->getCode(),
+                "cycle_name" => $pack->getCycle()->getName(),
                 "available" => $pack->getDateRelease() ? $pack->getDateRelease()->format('Y-m-d') : '',
                 "known" => intval($real),
                 "total" => $max,
