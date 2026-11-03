@@ -990,7 +990,7 @@ historian.queue.flag_name.format_guessed: Format guessed
 historian.queue.flag_name.problems: Gemp problems
 deckbuilder.tabs.archive: Archive info
 historian.review.raw: The list as posted
-historian.review.unresolved_hint: "Click a card to add a copy to the deck, or search for the line in the card pool."
-historian.review.search: search
+historian.review.unresolved_hint: "Click a line to search the card pool for it, or a card to add a copy to the deck."
+historian.review.search_title: "Search the card pool for this line"
 historian.review.added: "Added %name%"
 historian.review.guessed: "{1} 1 line matched by a loose rule|]1,Inf] %count% lines matched by a loose rule"

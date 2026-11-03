@@ -1062,7 +1062,9 @@ abbr.legality.banned {
 .rb-review-sources { margin: 0; font-size: 13px; }
 .rb-review-unresolved ul { list-style: none; padding-left: 0; }
 .rb-review-unresolved li { padding: 5px 0; border-top: 1px solid #EBDDBB; }
-.rb-link-btn { margin-left: 6px; padding: 0; border: 0; background: none; color: var(--rb-blue); font-size: 12px; text-decoration: underline; cursor: pointer; }
+.rb-line-search { padding: 0; border: 0; background: none; color: #A3238B; font-family: Menlo, Consolas, monospace; font-size: 12.5px; text-align: left; text-decoration: underline dotted; cursor: pointer; }
+.rb-line-search .fas { font-size: 10px; color: var(--rb-muted); }
+.rb-line-search:hover { color: var(--rb-blue); text-decoration-style: solid; }
 .rb-candidates { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
 .rb-candidate { padding: 2px 8px; border: 1px solid var(--rb-line-strong); border-radius: 12px; background: #fff; color: var(--rb-ink); font-size: 12px; cursor: pointer; }
 .rb-candidate:hover { border-color: var(--rb-blue); color: var(--rb-blue); }

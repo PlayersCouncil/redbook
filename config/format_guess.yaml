@@ -10,7 +10,6 @@ introduced:
   fotr_block: 2001-11-06        # set 1
   ttt_block: 2002-11-06         # set 4
   towers_standard: 2002-11-06   # Towers sites, from set 4
-  ts_reflections: 2004-05-12    # needs Reflections (set 9)
   king_block: 2003-11-05        # set 7
   rotk_sta: 2003-11-05          # King Standard, from set 7
   movie: 2004-07-14             # sets 1-10, so after Mount Doom
@@ -22,6 +21,12 @@ introduced:
   pre-hunters_expanded: 2006-06-09
   # Fan formats (Ketura, 2026-11-02: never guess these for archive-era decks)
   multipath: 2015-01-01         # Pre-Shadows Multipath, a fan format from around 2015
+  ts_reflections: 2015-01-01    # Enhanced Towers Standard, a fan format (it adds sets 14 and 16)
+  french: 2024-01-01
+  movie_czech: 2026-01-01
+  expanded_czech: 2026-01-01
+  # open has no date: it was the original format (Standard came later as its
+  # counterpart); the archivist is working out finer format details for decks like these
 
 # How likely a deck is to be for each format, all else equal. Higher wins;
 # unlisted formats count as 1. Ketura's order for King-path decks: Movie Block,

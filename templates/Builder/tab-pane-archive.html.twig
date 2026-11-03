@@ -26,9 +26,8 @@
                     <ul>
                         {% for line in source.unresolved %}
                             <li>
-                                <code>{{ line.line }}</code>{% if line.count is defined and line.count > 1 %} &times;{{ line.count }}{% endif %}
+                                <button type="button" class="rb-line-search" data-archive-search="{{ line.line }}" title="{{ 'historian.review.search_title' | trans }}"><span class="fas fa-search" aria-hidden="true"></span> {{ line.line }}</button>{% if line.count is defined and line.count > 1 %} &times;{{ line.count }}{% endif %}
                                 {% if line.section is defined and line.section %}<span class="text-muted">{{ line.section }}</span>{% endif %}
-                                <button type="button" class="rb-link-btn" data-archive-search="{{ line.line }}">{{ 'historian.review.search' | trans }}</button>
                                 {% if line.candidates is defined and line.candidates | length %}
                                     <div class="rb-candidates">
                                         {% for code in line.candidates %}
