@@ -11,9 +11,10 @@ console() {
     runuser -u www-data -- php bin/console "$@"
 }
 
-# var/ may be a host bind mount (sessions) created as root
+# var/ may be a host bind mount (sessions) created as root. var/seed-decks is a
+# read-only mount of the archive batches; chown would fail there, so skip it.
 mkdir -p var/cache var/log var/sessions
-chown -R www-data:www-data var
+find var -path var/seed-decks -prune -o -exec chown www-data:www-data {} +
 
 # OAuth2 signing keys (config/packages/league_oauth2_server.yaml). Created on
 # first start; var/oauth is a host bind mount so they survive rebuilds.
