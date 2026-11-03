@@ -950,7 +950,7 @@ historian.review.save_verify: Save & verify
 historian.review.save_update: Save & update published deck
 historian.review.save_verify_hint: "Saves, copies the deck onto its published version, and marks it checked by you."
 historian.review.verified_now: "Saved as version %version% and verified."
-historian.review.original: "Original list from %source%"
+historian.review.original: "Original post on %source%"
 historian.review.unresolved: "Lines the import couldn't match to a card:"
 historian.review.open: Open in the deckbuilder
 historian.review.flag.unresolved: "{1} 1 line not matched to a card|]1,Inf] %count% lines not matched to cards"
@@ -988,3 +988,9 @@ historian.queue.flag_name.unresolved: Unmatched lines
 historian.queue.flag_name.no_format: No format
 historian.queue.flag_name.format_guessed: Format guessed
 historian.queue.flag_name.problems: Gemp problems
+deckbuilder.tabs.archive: Archive info
+historian.review.raw: The list as posted
+historian.review.unresolved_hint: "Click a card to add a copy to the deck, or search for the line in the card pool."
+historian.review.search: search
+historian.review.added: "Added %name%"
+historian.review.guessed: "{1} 1 line matched by a loose rule|]1,Inf] %count% lines matched by a loose rule"

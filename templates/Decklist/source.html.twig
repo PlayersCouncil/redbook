@@ -6,8 +6,9 @@
     <div class="panel-body">
         <p>
             {{ 'decklist.source.from' | trans({'%source%': source.source}) }}
-            <a href="{{ source.sourceUrl }}" rel="nofollow noopener" target="_blank">{{ 'decklist.source.original' | trans }}</a>{% if source.archiveUrl %}
-            &middot; <a href="{{ source.archiveUrl }}" rel="nofollow noopener" target="_blank">{{ 'decklist.source.archived' | trans }}</a>{% endif %}
+            {# the original sites are long gone; the Wayback copy is the link that works (Ketura, 2026-11-02) #}
+            {% if source.archiveUrl %}<a href="{{ source.archiveUrl }}" rel="nofollow noopener" target="_blank">{{ 'decklist.source.archived' | trans }}</a>
+            {% else %}<a href="{{ source.sourceUrl }}" rel="nofollow noopener" target="_blank">{{ 'decklist.source.original' | trans }}</a>{% endif %}
             {% if source.postedDateText %}&middot; {{ 'decklist.source.posted' | trans({'%date%': source.postedDateText}) }}{% endif %}
             {% if source.formatAsWritten %}&middot; {{ 'decklist.source.format' | trans({'%format%': source.formatAsWritten}) }}{% endif %}
         </p>

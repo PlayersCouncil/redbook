@@ -136,9 +136,11 @@ class SeedDeckImporter
         $source->setRatings($deck['ratings'] ?? null);
         $source->setComments($deck['comments'] ?? []);
         $source->setBatch($generator);
+        $source->setParse(is_array($deck['parse'] ?? null) ? $deck['parse'] : null);
+        $source->setRelated(is_array($deck['related'] ?? null) ? $deck['related'] : null);
 
         // the content, with anything unknown kept as an unresolved line
-        $unresolved = $deck['unresolved'] ?? [];
+        $unresolved = array_map([self::class, 'withCandidates'], $deck['unresolved'] ?? []);
         $content = [];
         $add = function (?string $code, string $section, int $count = 1, bool $ringBearer = false) use (&$content, &$unresolved) {
             if ($code === null || $code === '') {
@@ -254,7 +256,10 @@ class SeedDeckImporter
 
         // for the review queue: what a historian should look at
         $flags = [];
-        foreach ($deck['parseIssues'] ?? [] as $issue) {
+        foreach (array_merge($deck['parse']['issues'] ?? [], $deck['parseIssues'] ?? []) as $issue) {
+            if (preg_match('/^\d+ of \d+ lines? unresolved$/', (string) $issue)) {
+                continue; // the unresolved flag below says the same
+            }
             $flags[] = ['code' => 'parse', 'detail' => mb_substr((string) $issue, 0, 500)];
         }
         if ($unresolved) {
@@ -405,6 +410,30 @@ class SeedDeckImporter
             return "$m[1]-$m[2]-$m[3]";
         }
         return null;
+    }
+
+    /**
+     * An unmatched line with the cards it might be, for the deckbuilder's one-click
+     * fixes: the batch's own candidates, or the blueprint IDs an "ambiguous: 1_306
+     * Pippin, Friend to Frodo, 1_307 ..." reason names.
+     */
+    public static function withCandidates(mixed $line): mixed
+    {
+        if (!is_array($line)) {
+            return $line;
+        }
+        $candidates = $line['candidates'] ?? null;
+        if (!is_array($candidates)) {
+            preg_match_all('/(?<![\w])(\d+_\d+)(?![\w])/', (string) ($line['reason'] ?? ''), $m);
+            $candidates = $m[1];
+        }
+        $candidates = array_values(array_unique(array_filter(array_map('strval', $candidates), fn ($c) => preg_match('/^\d+_\d+$/', $c))));
+        if ($candidates) {
+            $line['candidates'] = $candidates;
+        } else {
+            unset($line['candidates']);
+        }
+        return $line;
     }
 
     /** One query for every card the chunk mentions */

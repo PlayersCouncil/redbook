@@ -842,8 +842,7 @@ abbr.legality.banned {
 .rb-save-status.is-saved { color: #4F6B3A; }
 .rb-draft-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #E2C78F; border-radius: 6px; background: #FBF4E4; color: #6A4A10; }
 .rb-historic { border: 1px solid var(--rb-line); border-radius: 8px; background: var(--rb-soft); }
-.rb-historic > summary { padding: 8px 12px; font-size: 14px; font-weight: 700; cursor: pointer; }
-.rb-historic[open] > summary { border-bottom: 1px solid var(--rb-line); }
+.rb-historic > h3 { margin: 0; padding: 8px 12px; font-size: 14px; font-weight: 700; border-bottom: 1px solid var(--rb-line); }
 .rb-historic > .rb-check { margin: 10px 12px 0; }
 .rb-historic-badge { margin-left: 8px; padding: 2px 8px; border-radius: 10px; background: #E8E1D2; font-size: 11px; color: #4A443B; }
 #historic-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin: 0; padding: 10px 12px 12px; border: 0; min-width: 0; }
@@ -1055,3 +1054,20 @@ abbr.legality.banned {
 
 /* archived comments are plain text: keep their line breaks */
 .archived-comment-text { white-space: pre-line; }
+
+/* the deckbuilder's Archive info tab */
+.rb-archive-pane { display: flex; flex-direction: column; gap: 14px; padding: 12px 2px; }
+.rb-tab-dot { display: inline-block; width: 7px; height: 7px; margin-left: 4px; border-radius: 50%; background: #D08A00; vertical-align: middle; }
+.rb-review h4 { margin: 4px 0; font-size: 13px; font-weight: 700; }
+.rb-review-sources { margin: 0; font-size: 13px; }
+.rb-review-unresolved ul { list-style: none; padding-left: 0; }
+.rb-review-unresolved li { padding: 5px 0; border-top: 1px solid #EBDDBB; }
+.rb-link-btn { margin-left: 6px; padding: 0; border: 0; background: none; color: var(--rb-blue); font-size: 12px; text-decoration: underline; cursor: pointer; }
+.rb-candidates { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.rb-candidate { padding: 2px 8px; border: 1px solid var(--rb-line-strong); border-radius: 12px; background: #fff; color: var(--rb-ink); font-size: 12px; cursor: pointer; }
+.rb-candidate:hover { border-color: var(--rb-blue); color: var(--rb-blue); }
+.rb-candidate small { color: var(--rb-muted); }
+.rb-candidate.is-added { border-color: #9CC79B; background: #EDF6EC; }
+.rb-candidate.is-added::after { content: " \2713 " attr(data-count); color: var(--rb-good); font-weight: 700; }
+.rb-review-guessed > summary { cursor: pointer; font-size: 13px; font-weight: 700; }
+.rb-review-guessed ul { margin: 4px 0 0; padding-left: 18px; font-size: 13px; }

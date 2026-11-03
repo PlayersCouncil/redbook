@@ -1,0 +1,95 @@
+{# The deckbuilder's Archive info tab (Ketura, 2026-11-02): a historian's review of an
+   archive deck, and the deck's Historical Deck Information. Variables: deck,
+   review, archive_decklist, card_names (blueprint ID => name) #}
+<div class="rb-archive-pane">
+{% if review %}
+    {% set source = archive_decklist.source %}
+    <section class="rb-review is-{{ review.status }}" id="review-panel" aria-labelledby="review-title">
+        <div class="rb-review-head">
+            <h3 id="review-title">{{ 'historian.review.panel_title' | trans }}</h3>
+            <span class="rb-review-status" id="review-status"></span>
+            <a href="{{ review.url }}" target="_blank" rel="noopener" class="rb-review-link">{{ 'historian.review.view_published' | trans }}</a>
+        </div>
+        <ul class="rb-review-flags" id="review-flags"></ul>
+        <div class="rb-actions">
+            <button type="button" class="rb-btn rb-btn-primary" id="btn-save-verify">{{ 'historian.review.save_verify' | trans }}</button>
+            <span class="rb-review-hint">{{ 'historian.review.save_verify_hint' | trans }}</span>
+        </div>
+        {% if source %}
+            <p class="rb-review-sources">{{ 'historian.review.original' | trans({'%source%': source.source}) }}:
+                {% if source.archiveUrl %}<a href="{{ source.archiveUrl }}" target="_blank" rel="nofollow noopener">{{ 'decklist.source.archived' | trans }}</a> &middot; {% endif %}
+                <a href="{{ source.sourceUrl }}" target="_blank" rel="nofollow noopener">{{ 'decklist.source.original' | trans }}</a></p>
+            {% if source.unresolved | length %}
+                <div class="rb-review-unresolved">
+                    <h4>{{ 'historian.review.unresolved' | trans }}</h4>
+                    <p class="rb-review-hint">{{ 'historian.review.unresolved_hint' | trans }}</p>
+                    <ul>
+                        {% for line in source.unresolved %}
+                            <li>
+                                <code>{{ line.line }}</code>{% if line.count is defined and line.count > 1 %} &times;{{ line.count }}{% endif %}
+                                {% if line.section is defined and line.section %}<span class="text-muted">{{ line.section }}</span>{% endif %}
+                                <button type="button" class="rb-link-btn" data-archive-search="{{ line.line }}">{{ 'historian.review.search' | trans }}</button>
+                                {% if line.candidates is defined and line.candidates | length %}
+                                    <div class="rb-candidates">
+                                        {% for code in line.candidates %}
+                                            <button type="button" class="rb-candidate" data-archive-add="{{ code }}" data-archive-section="{{ line.section ?? '' }}" data-hover-code="{{ code }}">+ {{ card_names[code] ?? code }} <small>{{ code }}</small></button>
+                                        {% endfor %}
+                                    </div>
+                                {% elseif line.reason is defined and line.reason %}
+                                    <em class="text-muted">({{ line.reason }})</em>
+                                {% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            {% if source.parse.guessed is defined and source.parse.guessed | length %}
+                <details class="rb-review-guessed">
+                    <summary>{{ 'historian.review.guessed' | trans({'%count%': source.parse.guessed | length}) }}</summary>
+                    <ul>
+                        {% for g in source.parse.guessed %}
+                            <li><code>{{ g.line }}</code> &rarr; <span data-hover-code="{{ g.card }}">{{ card_names[g.card] ?? g.card }}</span> <small class="text-muted">{{ g.method }}</small></li>
+                        {% endfor %}
+                    </ul>
+                </details>
+            {% endif %}
+            {% if source.formatGuess %}
+                <p class="small">{{ 'decklist.source.format_guessed' | trans({'%format%': archive_decklist.targetFormat}) }} {{ source.formatGuess.reasons | join('; ') }}.</p>
+            {% endif %}
+            <details class="rb-review-original" open>
+                <summary>{{ 'historian.review.raw' | trans }}</summary>
+                <pre class="rb-review-raw">{{ source.rawDecklist }}</pre>
+            </details>
+        {% endif %}
+    </section>
+{% endif %}
+
+<section class="rb-historic" id="historic-section" aria-labelledby="historic-title">
+        <h3 id="historic-title">{{ 'deckbuilder.historic.title' | trans }} <span class="rb-historic-badge" hidden>{{ 'deckbuilder.historic.badge' | trans }}</span></h3>
+        <label class="rb-check"><input type="checkbox" id="historic-on"> {{ 'deckbuilder.historic.is_historic' | trans }}</label>
+        <fieldset id="historic-fields" disabled>
+            {% set f = deck.historic ?? {} %}
+            <label class="rb-field rb-wide"><span>{{ 'deckbuilder.historic.author' | trans }}</span><input type="text" data-historic="author" value="{{ f.author ?? '' }}" placeholder="{{ app.user.username }}"></label>
+            <label class="rb-field"><span>{{ 'deckbuilder.historic.source' | trans }}</span>
+                <select data-historic="source">
+                    <option value="">{{ 'deckbuilder.historic.choose' | trans }}</option>
+                    {% set sources = {'decipher-forums': 'Decipher forums', 'decktech': 'DeckTech.net', 'gpn': 'GamePlayersNetwork', 'lotr-online-tcg-forums': 'LOTR Online TCG forums', 'tlhh': 'The Last Homely House', 'other': 'deckbuilder.historic.other' | trans} %}
+                    {% if f.source is defined and f.source and sources[f.source] is not defined %}<option value="{{ f.source }}" selected>{{ f.source }}</option>{% endif %}
+                    {% for code, label in sources %}
+                        <option value="{{ code }}"{% if (f.source ?? '') == code %} selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="rb-field"><span>{{ 'deckbuilder.historic.date_used' | trans }}</span><input type="text" data-historic="date_used" value="{{ f.date_used ?? '' }}" placeholder="{{ 'deckbuilder.historic.date_hint' | trans }}"></label>
+            <label class="rb-field rb-wide"><span>{{ 'deckbuilder.historic.source_url' | trans }}</span><input type="url" data-historic="source_url" value="{{ f.source_url ?? '' }}"></label>
+            <label class="rb-field rb-wide"><span>{{ 'deckbuilder.historic.archive_url' | trans }}</span><input type="url" data-historic="archive_url" value="{{ f.archive_url ?? '' }}"></label>
+            <label class="rb-field rb-wide"><span>{{ 'deckbuilder.historic.event' | trans }}</span><input type="text" data-historic="event" value="{{ f.event ?? '' }}" placeholder="{{ 'deckbuilder.historic.event_hint' | trans }}"></label>
+            <label class="rb-field"><span>{{ 'deckbuilder.historic.placing' | trans }}</span><input type="text" data-historic="placing" value="{{ f.placing ?? '' }}"></label>
+            <label class="rb-field"><span>{{ 'deckbuilder.historic.players' | trans }}</span><input type="text" data-historic="players" value="{{ f.players ?? '' }}"></label>
+            <label class="rb-field"><span>{{ 'deckbuilder.historic.date_posted' | trans }}</span><input type="text" data-historic="date_posted" value="{{ f.date_posted ?? '' }}" placeholder="{{ 'deckbuilder.historic.date_hint' | trans }}"></label>
+            <label class="rb-field"><span>{{ 'deckbuilder.historic.date_retrieved' | trans }}</span><input type="text" data-historic="date_retrieved" value="{{ f.date_retrieved ?? '' }}" placeholder="{{ 'deckbuilder.historic.date_hint' | trans }}"></label>
+            <label class="rb-field rb-wide"><span>{{ 'deckbuilder.historic.format_as_written' | trans }}</span><input type="text" data-historic="format_as_written" value="{{ f.format_as_written ?? '' }}"></label>
+            <label class="rb-field rb-wide"><span>{{ 'deckbuilder.historic.notes' | trans }}</span><textarea rows="3" data-historic="notes">{{ f.notes ?? '' }}</textarea></label>
+        </fieldset>
+    </section>
+</div>

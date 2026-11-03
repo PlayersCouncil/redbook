@@ -41,4 +41,18 @@ class SeedDeckTextTest extends TestCase
     {
         $this->assertSame("a  \nb", SeedDeckImporter::toMarkdown("a\r\nb\r\n", 'text'));
     }
+
+    public function testCandidatesFromAnAmbiguousReason(): void
+    {
+        $line = SeedDeckImporter::withCandidates(['line' => 'Sting, Bane o/t 8 Legs', 'section' => 'draw',
+            'reason' => 'ambiguous: 1_313 Sting, 5_116 Sting, Baggins Heirloom, 8_113 Sting, Bane of the Eight Legs']);
+        $this->assertSame(['1_313', '5_116', '8_113'], $line['candidates']);
+
+        $line = SeedDeckImporter::withCandidates(['line' => 'Strider', 'reason' => 'no card by that name was in print as of 2004-08-10 (probably a nickname)']);
+        $this->assertArrayNotHasKey('candidates', $line);
+
+        // the batch's own list wins
+        $line = SeedDeckImporter::withCandidates(['line' => 'x', 'reason' => 'ambiguous: 1_1 A', 'candidates' => ['2_2']]);
+        $this->assertSame(['2_2'], $line['candidates']);
+    }
 }

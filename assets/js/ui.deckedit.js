@@ -447,6 +447,32 @@
 
         $('#btn-save').on('click', function () { save(false); });
         $('#btn-save-verify').on('click', function () { save(false, null, true); });
+
+        // the Archive info tab: one click adds a candidate card, or searches the pool for an unmatched line
+        $('#tab-pane-archive').on('click', '[data-archive-add]', function () {
+            var code = String($(this).data('archive-add')),
+                card = app.data.cards.findById(code);
+            if(!card) {
+                return;
+            }
+            if($(this).data('archive-section') === 'ringBearer') {
+                app.deck.set_ring_bearer(code);
+            } else {
+                app.deck.add_one(code);
+            }
+            var shown = app.deck.get_quantity(code) || (app.deck.get_ring_bearer_code() === code ? 1 : 0);
+            $(this).addClass('is-added').attr('data-count', shown);
+            status_note = null;
+            $('#save-status').text(t('historian.review.added', {name: card.name})).attr('class', 'rb-save-status is-dirty');
+        });
+        $('#tab-pane-archive').on('click', '[data-archive-search]', function () {
+            var text = String($(this).data('archive-search'))
+                .replace(/\([^)]*\)/g, ' ')              // "(start)", "(TTT)"
+                .replace(/^\s*\d+\s*x?\s+|\s+x?\s*\d+\s*$/gi, ' ')   // "3x Sting", "Sting x3"
+                .replace(/\s+/g, ' ').trim();
+            $('a[href="#tab-pane-build"]').tab('show');
+            app.pool.search(text);
+        });
         $('#btn-revert').on('click', revert);
 
         $('#btn-visibility').on('click', function (event) {

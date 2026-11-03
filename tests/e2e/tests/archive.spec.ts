@@ -35,6 +35,9 @@ test('a seed batch imports as archived decklists', async ({ page }) => {
   await expect(page.locator('.decklist-source')).toContainText(author);
   await expect(page.locator('.decklist-source')).toContainText('2x Gandalfs Pipe');
   await expect(page.locator('.decklist-source')).toContainText('999_1');
+  // the original sites are gone: only the Wayback copy is linked
+  await expect(page.locator('.decklist-source').getByRole('link', { name: 'archived copy' })).toBeVisible();
+  await expect(page.locator('.decklist-source').getByRole('link', { name: 'original post' })).toHaveCount(0);
   await expect(page.locator('.decklist-plays')).toContainText('Fixture Regionals');
   // owned by the author's historic account, waiting for a historian
   await expect(page.locator('h3.username')).toContainText(author);
@@ -76,10 +79,19 @@ test('a historian verifies it from the review queue', async ({ pageAs }) => {
   ]);
   await builder.waitForLoadState();
   await waitForCardData(builder);
+  // the review and the historical fields are on the Archive info tab
+  await builder.click('#tab-header-archive');
   await expect(builder.locator('#review-status')).toContainText('Not yet checked');
+  await expect(builder.locator('#review-flags')).toContainText('lines resolved by a loose rule');
   await expect(builder.locator('.rb-review-original')).toContainText('2x Gandalfs Pipe');
+  await expect(builder.locator('.rb-review-guessed')).toContainText('Legolas Greenleaf');
   await expect(builder.locator('[data-historic=author]')).toHaveValue(author);
   await snap(builder, 'historian deckbuilder');
+  // an unmatched line's candidate goes into the deck with one click
+  const pipe = builder.locator('[data-archive-add="1_74"]');
+  await pipe.click();
+  await expect(pipe).toHaveClass(/is-added/);
+  await expect(builder.locator('#deck')).toContainText('Gandalf’s Pipe');
   await builder.click('#btn-save-verify');
   await expect(builder.locator('#review-status')).toContainText('Verified by');
 

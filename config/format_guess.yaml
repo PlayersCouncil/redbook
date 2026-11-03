@@ -20,6 +20,8 @@ introduced:
   expanded: 2004-11-03
   hunter_block: 2006-06-09      # set 15
   pre-hunters_expanded: 2006-06-09
+  # Fan formats (Ketura, 2026-11-02: never guess these for archive-era decks)
+  multipath: 2015-01-01         # Pre-Shadows Multipath, a fan format from around 2015
 
 # How likely a deck is to be for each format, all else equal. Higher wins;
 # unlisted formats count as 1. Ketura's order for King-path decks: Movie Block,

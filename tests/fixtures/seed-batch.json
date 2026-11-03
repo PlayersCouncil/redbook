@@ -24,8 +24,10 @@
         {"card": "999_1", "count": 1}
       ],
       "unresolved": [
-        {"line": "2x Gandalfs Pipe", "count": 2, "section": "draw", "reason": "ambiguous title"}
+        {"line": "2x Gandalfs Pipe", "count": 2, "section": "draw", "reason": "ambiguous: 1_74 Gandalf's Pipe, 1_91 Aragorn's Pipe"}
       ],
+      "parse": {"status": "needs-review", "issues": ["1 of 9 lines unresolved", "1 of 9 lines resolved by a loose rule"], "guessed": [{"line": "Legolas Greenleaf", "card": "1_50", "method": "FUZZY-full:legolas greenleaf"}]},
+      "related": [{"source": "dgma", "sourceId": "1", "relation": "same-list", "similarity": 1.0, "sameAuthor": true}],
       "rawDecklist": "Frodo, Son of Drogo\nThe One Ring, The Ruling Ring\n...\n2x Legolas, Greenleaf\n2x Gandalfs Pipe",
       "description": "<p>A <b>fixture</b> deck.</p><p>Not a real deck.</p>",
       "descriptionFormat": "html",

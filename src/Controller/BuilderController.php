@@ -428,6 +428,7 @@ class BuilderController extends AbstractController
             'deck' => $deck,
             'archive_decklist' => $archive,
             'review' => $archive === null ? null : $this->reviewInfo($archive),
+            'card_names' => $archive?->getSource() ? $this->archiveCardNames($archive->getSource()) : [],
             'formats' => $this->formats->findSelectable(),
             'format' => $this->formats->findOneByCode($deck->getTargetFormat()),
         ]);
@@ -589,6 +590,27 @@ class BuilderController extends AbstractController
             }
         }
         return null;
+    }
+
+    /** Names for the cards the Archive info tab offers or mentions, by blueprint ID */
+    private function archiveCardNames(\App\Entity\PublishedDeckSource $source): array
+    {
+        $codes = [];
+        foreach ($source->getUnresolved() as $line) {
+            foreach ($line['candidates'] ?? [] as $code) {
+                $codes[] = $code;
+            }
+        }
+        foreach ($source->getParse()['guessed'] ?? [] as $guess) {
+            $codes[] = (string) ($guess['card'] ?? '');
+        }
+        $names = [];
+        if ($codes) {
+            foreach ($this->managerRegistry->getRepository(\App\Entity\Card::class)->findBy(['code' => array_unique($codes)]) as $card) {
+                $names[$card->getCode()] = $card->getName() . ($card->getSubtitle() ? ', ' . $card->getSubtitle() : '');
+            }
+        }
+        return $names;
     }
 
     private function reviewInfo(PublishedDeck $decklist): array

@@ -66,6 +66,20 @@ class PublishedDeckSource
     #[ORM\Column(name: 'format_guess', type: 'json', nullable: true)]
     protected ?array $formatGuess = null;
 
+    /**
+     * The scraper's own account of the parse: {status, issues[], guessed[{line, card,
+     * method}]}, the lines it matched by a loose rule among them
+     */
+    #[ORM\Column(name: 'parse', type: 'json', nullable: true)]
+    protected ?array $parse = null;
+
+    /**
+     * Other archive decks the scraper found to be the same list or close to it:
+     * [{source, sourceId, relation, similarity, sameAuthor}]; for merging decks later
+     */
+    #[ORM\Column(name: 'related', type: 'json', nullable: true)]
+    protected ?array $related = null;
+
     /** The batch's generator line, for tracing a bad import */
     #[ORM\Column(name: 'batch', type: 'string', length: 255, nullable: true)]
     protected ?string $batch = null;
@@ -100,6 +114,10 @@ class PublishedDeckSource
     public function setRatings(?array $ratings): void { $this->ratings = $ratings; }
     public function getComments(): array { return $this->comments; }
     public function setComments(array $comments): void { $this->comments = $comments; }
+    public function getParse(): ?array { return $this->parse; }
+    public function setParse(?array $parse): void { $this->parse = $parse ?: null; }
+    public function getRelated(): array { return $this->related ?? []; }
+    public function setRelated(?array $related): void { $this->related = $related ?: null; }
     public function getFormatGuess(): ?array { return $this->formatGuess; }
     public function setFormatGuess(?array $guess): void { $this->formatGuess = $guess; }
     public function getBatch(): ?string { return $this->batch; }

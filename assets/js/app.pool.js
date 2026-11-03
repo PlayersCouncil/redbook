@@ -681,6 +681,16 @@
         refresh(true);
     };
 
+    /** A name search from elsewhere on the page (the Archive info tab's unmatched lines) */
+    pool.search = function search(text)
+    {
+        state = defaults();
+        state.text = text;
+        sync_controls();
+        filters_el.find('#filter-text').val(text);
+        refresh(true);
+    };
+
     /* ---- events ---- */
 
     function on_filter_change()
