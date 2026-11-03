@@ -77,9 +77,21 @@
         return '<button type="button" class="rb-plus" data-find="' + find + '"' + (extra || '') + ' aria-label="' + _.escape(label) + '" title="' + _.escape(label) + '">+</button>';
     }
 
+    /**
+     * The Ring-bearer, Ring, sites and map come straight out (Ketura, 2026-11-03):
+     * their + finds a replacement in a click, so there's no keeping the line.
+     */
+    function removes_at_once(slot)
+    {
+        return slot.key.indexOf('rb:') === 0 || app.deck.role_for_card(slot.card) !== 'draw';
+    }
+
     function x_or_trash(slot)
     {
         var name = _.escape(slot.card.label);
+        if(removes_at_once(slot)) {
+            return '<button type="button" class="rb-x rb-x-now" aria-label="' + t('deckbuilder.trash', {card: name}) + '" title="' + t('deckbuilder.remove_now') + '">' + ICONS.x + '</button>';
+        }
         if(slot.pending) {
             return '<button type="button" class="rb-trash" aria-label="' + t('deckbuilder.trash', {card: name}) + '" title="' + t('deckbuilder.trash_hint') + '">' + ICONS.trash + '</button>';
         }
@@ -149,9 +161,14 @@
     {
         var slots = app.deck.get_cards(role),
             v = view(),
-            html = '<div class="rb-slot rb-slot-' + role + '"><div class="rb-slot-head"><h3>' + title + '</h3>' + plus(find, find_label) + '</div>';
+            html = '<div class="rb-slot rb-slot-' + role + '"><div class="rb-slot-head"><h3>' + title + '</h3></div>';
+        // empty: the + stands where the card's X would be (Ketura, 2026-11-03)
         if(!slots.length) {
-            return html + '<div class="rb-empty">&mdash;</div></div>';
+            if(v === 'list' || sites_collapsed()) {
+                return html + '<div class="rb-line rb-slot-empty">' + plus(find, find_label) + '<span class="rb-choose">' + t('deckbuilder.choose_' + role) + '</span></div></div>';
+            }
+            return html + '<div class="rb-thumbs rb-thumbs-single' + (v === 'half' ? ' is-half' : '') + '"><div class="rb-tile rb-tile-empty rb-tile-empty-card">'
+                + plus(find, find_label) + '</div></div></div>';
         }
         // collapsed, the Ring-bearer, Ring and map are one line each, like the list view
         if(v === 'list' || sites_collapsed()) {
@@ -373,7 +390,10 @@
             var code = $(this).closest('[data-code]').data('code') + '';
             app.deck.set_quantity(code, parseInt($(this).data('qty'), 10));
         });
-        container.on('click', '.rb-x', function () {
+        container.on('click', '.rb-x-now', function () {
+            app.deck.remove($(this).closest('[data-key]').data('key') + '');
+        });
+        container.on('click', '.rb-x:not(.rb-x-now)', function () {
             app.deck.set_pending($(this).closest('[data-key]').data('key') + '', true);
         });
         container.on('click', '.rb-trash', function () {

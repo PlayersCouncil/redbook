@@ -151,6 +151,27 @@ test('deckbuilder clicks: pool cards add, counts fill, sites collapse, menus flo
   await expect(page.locator('#deck .rb-side-free_peoples .rb-tile').first()).toBeVisible();
   await page.locator('#deck-toolbar [data-view=list]').click();
 
+  // the Ring-bearer comes straight out, and its + takes the X's place
+  await page.click('[data-pool-view=list]');
+  await page.fill('#filter-text', 'frodo');
+  await page.locator('.rb-pool-row', { hasText: 'Frodo, Son of Drogo' }).first().locator('[data-rb]').click();
+  await expect(page.locator('#deck .rb-slot-ring_bearer')).toContainText('Frodo');
+  await expect(page.locator('#deck .rb-slot-ring_bearer .rb-plus')).toHaveCount(0);
+  await page.locator('#deck .rb-slot-ring_bearer .rb-x-now').click();
+  await expect(page.locator('#deck .rb-slot-ring_bearer')).not.toContainText('Frodo');
+  await expect(page.locator('#deck .rb-slot-ring_bearer .rb-slot-empty .rb-plus')).toBeVisible();
+
+  // Quick Search on a desktop: every group at once, one click to choose
+  await page.fill('#filter-text', '');
+  await page.locator('.rb-more-toggle').click();
+  await page.locator('.rb-quick-btn').click();
+  await expect(page.locator('.rb-quick-panel .rb-quick-group')).toHaveCount(14);
+  await page.locator('.rb-quick-panel .rb-quick-item', { hasText: 'Draw cards' }).click();
+  await expect(page.locator('.rb-quick-value')).toHaveText('Draw cards');
+  await expect(page.locator('.rb-showing .rb-chip[data-remove=quick]')).toBeVisible();
+  await page.locator('.rb-showing .rb-chip[data-remove=quick]').click();
+  await expect(page.locator('.rb-quick-value')).toHaveText('Any');
+
   // menus hang off the window, so the deck information pane can't cut them off
   await page.click('#btn-more');
   await expect(page.locator('#menu-more')).toBeVisible();

@@ -431,7 +431,11 @@
             + '<label class="rb-check"><input type="checkbox" data-field="can_bear"> ' + t('deckbuilder.filters.can_bear') + '</label></fieldset>'
             + '<fieldset><legend>' + t('deckbuilder.filters.stats') + '</legend>' + _.map(STATS, stat_row).join('')
             + '<p class="rb-hint">' + t('deckbuilder.stats.hint') + '</p></fieldset></div>'
-            + '<label class="rb-field rb-quick"><span>' + t('deckbuilder.filters.quick') + '</span><select data-field="quick">' + quick + '</select></label>'
+            // Quick Search: a dropdown on phones; on desktops a button opening every group at once in columns (Ketura, 2026-11-03)
+            + '<div class="rb-field rb-quick"><label for="filter-quick">' + t('deckbuilder.filters.quick') + '</label>'
+            + '<select id="filter-quick" data-field="quick" class="rb-quick-native">' + quick + '</select>'
+            + '<button type="button" class="rb-quick-btn" aria-haspopup="true" aria-expanded="false"><span class="rb-quick-value"></span>'
+            + '<span class="rb-chevron" aria-hidden="true">&#9662;</span></button></div>'
             + '<fieldset class="rb-mentions"><legend>' + t('deckbuilder.filters.mentions') + '</legend><div class="rb-more-grid">'
             + select('m_culture', t('deckbuilder.filters.culture'), culture_rows, null, 'rb-inline')
             + select('m_type', t('deckbuilder.filters.type'), options.types, null, 'rb-inline')
@@ -482,6 +486,7 @@
                 $(this).val(s[field] || '');
             }
         });
+        quick_label();
         filters_el.find('input[data-field=game_text]').val(s.game_text);
         filters_el.find('input[data-field=lore]').val(s.lore);
         filters_el.find('input[data-field=can_bear]').prop('checked', !!s.can_bear);
@@ -646,16 +651,37 @@
         if(!grid.length || !first.length) {
             return null;
         }
+        grid.css('grid-template-columns', '');
         var style = window.getComputedStyle(grid[0]),
             columns = style.gridTemplateColumns.split(' ').filter(function (c) { return c && c !== 'none'; }).length || 1,
             row_gap = parseFloat(style.rowGap) || 0,
+            col_gap = parseFloat(style.columnGap) || 0,
+            item_w = first.outerWidth(),
             item_h = first.outerHeight(),
             space = pool_el.innerHeight() - pool_el.find('.rb-pool-head').outerHeight(true)
                 - (parseFloat(pool_el.css('padding-top')) || 0) - (parseFloat(pool_el.css('padding-bottom')) || 0) - 4;
         if(!item_h || space <= 0) {
             return null;
         }
-        return columns * Math.max(1, Math.floor((space + row_gap) / (item_h + row_gap)));
+        var exact = (space + row_gap) / (item_h + row_gap),
+            rows = Math.max(1, Math.floor(exact)),
+            shrink = null;
+        // most of another row left over: take it, and shrink the pictures a hair to fit (Ketura, 2026-11-03)
+        if(grid.hasClass('rb-pool-grid') && exact - rows >= 0.75) {
+            rows += 1;
+            var tile_h = (space - row_gap * (rows - 1)) / rows;
+            shrink = {width: Math.floor(item_w * tile_h / item_h), columns: columns, gap: col_gap};
+        }
+        return {size: columns * rows, shrink: shrink};
+    }
+
+    /** Narrower tile columns, centred, when a page takes the extra row */
+    function apply_fit(fitted)
+    {
+        var grid = pool_el.find('.rb-pool-grid');
+        if(grid.length && fitted && fitted.shrink) {
+            grid.css({'grid-template-columns': 'repeat(' + fitted.shrink.columns + ', ' + fitted.shrink.width + 'px)', 'justify-content': 'center'});
+        }
     }
 
     /* ---- refresh ---- */
@@ -671,19 +697,7 @@
         var cards = pool.filtered();
         cards.sort(SORTS[sort] || SORTS.name);
         pool.last_result = cards;
-        // render once to measure, then with the real page size
-        pool_el.html(pool_html(cards, last_page_size));
-        var size = page_size();
-        if(size !== last_page_size) {
-            last_page_size = size;
-            pool_el.html(pool_html(cards, size));
-        }
-        // then trust the grid the browser actually drew: whole rows that fill the pool (Ketura, 2026-11-03)
-        var fitted = fitted_size();
-        if(fitted && fitted !== last_page_size) {
-            last_page_size = fitted;
-            pool_el.html(pool_html(cards, fitted));
-        }
+        // the Showing band first: it sits above the pool, and its height decides the pool's
         var format = app.deck.get_format(),
             chips = active_chips(),
             more = more_count();
@@ -697,6 +711,16 @@
             + chips.join('')
             + (chips.length ? '<button type="button" class="rb-clear-all">' + t('deckbuilder.filters.clear_all') + '</button>' : '')
             + '<span class="rb-showing-count">' + Translator.transChoice('deckbuilder.filters.count', cards.length, {count: cards.length}) + '</span>');
+        // render once to measure, then with the real page size: from the grid the browser
+        // actually drew (whole rows that fill the pool; Ketura, 2026-11-03), else an estimate
+        pool_el.html(pool_html(cards, last_page_size));
+        var fitted = fitted_size(),
+            size = fitted ? fitted.size : page_size();
+        if(size !== last_page_size) {
+            last_page_size = size;
+            pool_el.html(pool_html(cards, size));
+        }
+        apply_fit(fitted);
     };
 
     /** The deck list's + buttons: clear the filters and show what fits the slot */
@@ -727,6 +751,80 @@
         filters_el.find('#filter-text').val(text);
         refresh(true);
     };
+
+    /* ---- Quick Search's desktop panel ---- */
+
+    function quick_label()
+    {
+        var chosen = state.quick ? terms.quick(state.quick) : null;
+        filters_el.find('.rb-quick-value').text(chosen ? chosen.label : t('deckbuilder.filters.any'));
+    }
+
+    function quick_panel_html()
+    {
+        var item = function (value, label) {
+            var on = (state.quick || '') === value;
+            return '<button type="button" class="rb-quick-item' + (on ? ' active' : '') + '" data-quick="' + _.escape(value) + '" aria-pressed="' + on + '">' + _.escape(label) + '</button>';
+        };
+        return '<div class="rb-quick-any">' + item('', t('deckbuilder.filters.any')) + '</div>'
+            + '<div class="rb-quick-groups">' + _.map(terms.QUICK, function (group) {
+                return '<section class="rb-quick-group"><h4>' + _.escape(group.group) + '</h4>'
+                    + _.map(group.items, function (i) { return item(i[0], i[1]); }).join('') + '</section>';
+            }).join('') + '</div>';
+    }
+
+    /** The panel sits outside the scrolling filters, so nothing scrolls it away */
+    var quick_panel_el = null;
+    function quick_panel()
+    {
+        if(!quick_panel_el) {
+            quick_panel_el = $('<div class="rb-quick-panel" role="dialog" aria-label="' + t('deckbuilder.filters.quick') + '" hidden></div>')
+                .appendTo(filters_el.closest('.rb-builder').length ? filters_el.closest('.rb-builder') : 'body');
+            quick_panel_el.on('click', '[data-quick]', function () {
+                filters_el.find('select[data-field=quick]').val($(this).data('quick') + '').trigger('change');
+                quick_label();
+                close_quick();
+                filters_el.find('.rb-quick-btn').focus();
+            });
+        }
+        return quick_panel_el;
+    }
+
+    function close_quick()
+    {
+        if(quick_panel_el) {
+            quick_panel_el.prop('hidden', true);
+        }
+        filters_el.find('.rb-quick-btn').attr('aria-expanded', 'false');
+    }
+
+    function open_quick()
+    {
+        quick_panel().html(quick_panel_html()).prop('hidden', false);
+        place_quick();
+        filters_el.find('.rb-quick-btn').attr('aria-expanded', 'true');
+        var panel = quick_panel(),
+            first = panel.find('.rb-quick-item.active')[0] || panel.find('.rb-quick-item')[0];
+        if(first) {
+            first.focus({preventScroll: true});
+        }
+    }
+
+    function place_quick()
+    {
+        var button = filters_el.find('.rb-quick-btn'),
+            panel = quick_panel(),
+            rect = button[0].getBoundingClientRect(),
+            width = Math.min(900, window.innerWidth - 16),
+            left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)),
+            top = rect.bottom + 4,
+            room = window.innerHeight - top - 8;
+        // against the window, so the scrolling filters can't cut it off
+        panel.css({position: 'fixed', left: left + 'px', top: top + 'px', width: width + 'px', 'max-height': Math.max(220, room) + 'px'});
+        if(room < 220) {
+            panel.css({top: Math.max(8, rect.top - 4 - panel.outerHeight()) + 'px', 'max-height': (rect.top - 12) + 'px'});
+        }
+    }
 
     /* ---- events ---- */
 
@@ -763,6 +861,36 @@
                 }
             }
         });
+        filters_el.on('click', '.rb-quick-btn', function (event) {
+            event.stopPropagation();
+            quick_panel().prop('hidden') ? open_quick() : close_quick();
+        });
+        $(document).on('click', function (event) {
+            if(!$(event.target).closest('.rb-quick-panel, .rb-quick-btn').length) {
+                close_quick();
+            }
+        }).on('keydown', function (event) {
+            if(event.key === 'Escape' && quick_panel_el && !quick_panel_el.prop('hidden')) {
+                close_quick();
+                filters_el.find('.rb-quick-btn').focus();
+            }
+        });
+        // a pane scrolling under the open panel: it follows its button, or closes once the button is out of sight
+        document.addEventListener('scroll', function (event) {
+            if(!quick_panel_el || quick_panel_el.prop('hidden') || $(event.target).closest('.rb-quick-panel').length) {
+                return;
+            }
+            var button = filters_el.find('.rb-quick-btn')[0],
+                scroller = filters_el.find('.rb-filters-scroll')[0],
+                rect = button.getBoundingClientRect(),
+                area = scroller ? scroller.getBoundingClientRect() : {top: 0, bottom: window.innerHeight};
+            if(rect.bottom < area.top || rect.top > area.bottom) {
+                close_quick();
+            } else {
+                place_quick();
+            }
+        }, {passive: true, capture: true});
+        $(window).on('resize', close_quick);
         filters_el.on('change', 'select[data-field]', function () {
             var field = $(this).data('field');
             state[field] = $(this).val();
@@ -800,14 +928,13 @@
             on_filter_change();
         });
         filters_el.on('click', '.rb-more-toggle', function () {
+            // opens in place: the filters' scroll stays where it was, so nothing above moves (Ketura, 2026-11-03)
+            var scroller = filters_el.find('.rb-filters-scroll'),
+                top = scroller.scrollTop();
             more_open = !more_open;
             filters_el.find('.rb-more').prop('hidden', !more_open);
-            if(more_open) {
-                // the band with its button at the top, the extra filters right below it
-                var scroller = filters_el.find('.rb-filters-scroll');
-                scroller.scrollTop(scroller.scrollTop() + filters_el.find('.rb-showing').position().top - scroller.position().top);
-            }
             refresh(false);
+            scroller.scrollTop(top);
         });
         filters_el.on('click', '.rb-chip[data-remove]', function () {
             remove_filter($(this).data('remove') + '');

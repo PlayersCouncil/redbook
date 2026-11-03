@@ -855,6 +855,10 @@ deckbuilder.find_map: Show maps in the card pool
 deckbuilder.find_sites: "Show all sites in the card pool, by site number"
 deckbuilder.find_site: "Show site %number% options in the card pool"
 deckbuilder.choose_site: "Choose site %number%"
+deckbuilder.choose_ring_bearer: Choose a Ring-bearer
+deckbuilder.choose_ring: Choose a Ring
+deckbuilder.choose_map: Choose a map
+deckbuilder.remove_now: "Remove it (its + finds another)"
 deckbuilder.remove: "Take %card% out of the deck"
 deckbuilder.remove_hint: "Take out of the deck (the line stays until you delete it)"
 deckbuilder.trash: "Delete %card% from the list"

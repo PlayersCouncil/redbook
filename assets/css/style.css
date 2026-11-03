@@ -950,6 +950,12 @@ abbr.legality.banned {
 .rb-thumbs-single { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .rb-deck-top-left .rb-slot .rb-thumbs-single { grid-template-columns: minmax(0, 110px); }
 .rb-thumbs-sites { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+/* sites read down the columns, 1-2-3 | 4-5-6 | 7-8-9, with a wider gap between columns (Ketura, 2026-11-03) */
+.rb-thumbs-sites, .rb-site-list.is-columns { grid-auto-flow: column; grid-template-rows: repeat(3, auto); grid-auto-columns: minmax(0, 1fr); }
+.rb-thumbs-sites { column-gap: 16px; }
+.rb-tile-empty.rb-tile-empty-card { aspect-ratio: 357 / 497; }
+.rb-thumbs.is-half .rb-tile-empty.rb-tile-empty-card { aspect-ratio: 260 / 227; }
+.rb-slot-empty .rb-plus { width: 24px; height: 24px; }
 .rb-tile-site .rb-tile-img { aspect-ratio: 497 / 357; }
 .rb-tile-empty { position: relative; aspect-ratio: 497 / 357; border: 2px dashed #9FB6D3; background: #F3F6FA; display: flex; align-items: center; justify-content: center; }
 .rb-tile-empty .rb-plus { width: 32px; height: 32px; font-size: 20px; }
@@ -990,7 +996,7 @@ abbr.legality.banned {
 .rb-more-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
 .rb-more-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; }
 .rb-mentions .rb-more-grid { gap: 6px 16px; }
-.rb-quick > span { font-size: 13px; font-weight: 700; color: var(--rb-ink); }
+.rb-quick > span, .rb-quick > label { margin: 0; font-size: 13px; font-weight: 700; color: var(--rb-ink); }
 .rb-stat { display: flex; align-items: center; gap: 6px; margin: 0; font-weight: normal; }
 .rb-stat > span { flex: 0 0 82px; font-size: 12px; font-weight: 600; color: var(--rb-muted); }
 .rb-stat select { flex: 0 0 48px; padding: 0 4px; }
@@ -1120,7 +1126,24 @@ abbr.legality.banned {
 .rb-deck-top.is-collapsed .rb-slot:not(.rb-sites) .rb-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rb-side.is-collapsed .rb-side-head { border-bottom-style: dashed; }
 /* collapsed sites: list lines in three columns */
-.rb-site-list.is-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 10px; }
+.rb-site-list.is-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 16px; }
 .rb-site-list.is-columns .rb-line { min-width: 0; }
 .rb-site-list.is-columns .rb-name, .rb-site-list.is-columns .rb-choose { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-@media (max-width: 600px) { .rb-site-list.is-columns { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) { .rb-site-list.is-columns { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; } }
+
+/* Quick Search: every group at once, in columns, on desktops (Ketura, 2026-11-03) */
+.rb-quick-btn { display: none; height: 34px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; color: var(--rb-ink); font-size: 14px; text-align: left; align-items: center; gap: 8px; cursor: pointer; }
+.rb-quick-value { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-quick-panel { z-index: 40; overflow-y: auto; padding: 10px 12px 12px; border: 1px solid var(--rb-line-strong); border-radius: 8px; background: #fff; box-shadow: 0 8px 24px rgba(34, 31, 26, .2); }
+.rb-quick-panel[hidden] { display: none !important; }
+.rb-quick-any { margin-bottom: 6px; }
+.rb-quick-groups { column-width: 190px; column-gap: 18px; }
+.rb-quick-group { break-inside: avoid; margin-bottom: 10px; }
+.rb-quick-group h4 { margin: 0 0 3px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--rb-muted); }
+.rb-quick-item { display: block; width: 100%; padding: 3px 6px; border: 0; border-radius: 4px; background: none; color: var(--rb-ink); font-size: 13px; text-align: left; cursor: pointer; }
+.rb-quick-item:hover, .rb-quick-item:focus { background: #F1ECE2; outline: none; }
+.rb-quick-item.active { background: var(--rb-ink); color: #fff; }
+@media (min-width: 992px) {
+    .rb-quick-native { display: none; }
+    .rb-quick-btn { display: flex; width: 100%; }
+}
