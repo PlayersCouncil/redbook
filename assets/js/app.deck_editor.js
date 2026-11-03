@@ -2,9 +2,9 @@
 /**
  * The deckbuilder's deck list (the "green" region, Ketura's design of 2026-11-02).
  *
- * - Display options above the Ring-bearer: list / thumbnails / half-thumbnails, and
- *   grouping by culture, type or none. They sit above the Ring-bearer so the
- *   Ring-bearer and Ring don't move when the view changes.
+ * - Display options in a toolbar above the deck's scrolling area: list / thumbnails /
+ *   half-thumbnails, and grouping by culture, type or none.
+ * - In the picture views the Adventure Deck collapses to its sites' title strips.
  * - Every draw-deck card has X 1 2 3 4: X takes it out of the deck but keeps the
  *   line (the X becomes Trash, which deletes the line), and numbers above the
  *   format's limit are disabled.
@@ -16,6 +16,7 @@
 (function app_deck_editor(editor, $)
 {
     var container = null,
+        toolbar = null,
         TYPE_ORDER = ['companion', 'ally', 'follower', 'minion', 'artifact', 'possession', 'condition', 'event'],
         ICONS = {
             list: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5h12M3 9h12M3 13.5h12"/></svg>',
@@ -55,8 +56,10 @@
                 return '<button type="button" class="rb-opt rb-opt-group' + (g === code ? ' active' : '') + '" data-group="' + code + '" aria-pressed="' + (g === code)
                     + '" title="' + t('deckbuilder.group.' + code + '_hint') + '">' + label + '</button>';
             };
-        return '<div class="rb-display-opts" role="group" aria-label="' + t('deckbuilder.display_options') + '">'
+        // one row above the deck's scrolling area, so it never scrolls away (Ketura, 2026-11-03)
+        return '<div class="rb-display-opts" role="group" aria-label="' + t('deckbuilder.view.label') + '">'
             + vbtn('list', t('deckbuilder.view.list')) + vbtn('thumb', t('deckbuilder.view.thumb')) + vbtn('half', t('deckbuilder.view.half'))
+            + '</div><div class="rb-display-opts" role="group" aria-label="' + t('deckbuilder.group.label') + '">'
             + gbtn('culture', t('deckbuilder.group.culture')) + gbtn('type', t('deckbuilder.group.type')) + gbtn('none', t('deckbuilder.group.none'))
             + '</div>';
     }
@@ -82,9 +85,11 @@
         if(numbers) {
             var max = app.deck.max_quantity(slot.card), limit = Math.max(4, max);
             for(var n = 1; n <= limit; n++) {
+                // every count up to the current one is filled, so counts compare at a glance (Ketura, 2026-11-03)
                 var on = !slot.pending && slot.qty === n,
+                    filled = !slot.pending && n <= slot.qty,
                     disabled = n > max;
-                html += '<button type="button" class="rb-n' + (on ? ' active' : '') + '" data-qty="' + n + '" aria-pressed="' + on + '"'
+                html += '<button type="button" class="rb-n' + (on ? ' active' : '') + (filled ? ' is-filled' : '') + '" data-qty="' + n + '" aria-pressed="' + on + '"'
                     + (disabled ? ' disabled title="' + t('deckbuilder.over_limit') + '"' : '')
                     + ' aria-label="' + Translator.transChoice('deckbuilder.n_copies', n, {count: n}) + '">' + n + '</button>';
             }
@@ -140,7 +145,8 @@
         if(!slots.length) {
             return html + '<div class="rb-empty">&mdash;</div></div>';
         }
-        if(v === 'list') {
+        // collapsed, the Ring-bearer, Ring and map are one line each, like the list view
+        if(v === 'list' || (v !== 'list' && sites_collapsed())) {
             html += _.map(slots, function (s) { return line(s, problems); }).join('');
         } else {
             html += '<div class="rb-thumbs rb-thumbs-single' + (v === 'half' ? ' is-half' : '') + '">'
@@ -151,6 +157,11 @@
 
     /* ---- the Adventure Deck ---- */
 
+    function sites_collapsed()
+    {
+        return app.config.get('deck-sites-collapsed') === true || app.config.get('deck-sites-collapsed') === '1';
+    }
+
     function adventure_deck(problems)
     {
         var sites = app.deck.get_cards('site'),
@@ -159,8 +170,13 @@
             live = _.reject(sites, 'pending'),
             count = live.length,
             v = view(),
+            // in the picture views the sites can shrink to their title strips (Ketura, 2026-11-03)
+            collapsed = v !== 'list' && sites_collapsed(),
+            toggle = v === 'list' ? '' : '<button type="button" class="rb-collapse" aria-expanded="' + !collapsed + '" title="'
+                + t(collapsed ? 'deckbuilder.sites_expand' : 'deckbuilder.sites_collapse') + '" aria-label="' + t(collapsed ? 'deckbuilder.sites_expand' : 'deckbuilder.sites_collapse') + '">'
+                + '<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="' + (collapsed ? 'M3 4.5l3 3 3-3' : 'M3 7.5l3-3 3 3') + '"/></svg></button>',
             html = '<div class="rb-slot rb-sites"><div class="rb-slot-head"><h3>' + t('deckbuilder.adventure_deck', {count: count}) + '</h3>'
-                + (count < 9 ? plus('sites', t('deckbuilder.find_sites')) : '') + '</div>';
+                + (count < 9 ? plus('sites', t('deckbuilder.find_sites')) : '') + toggle + '</div>';
 
         var rows = [];
         if(numbered) {
@@ -190,7 +206,7 @@
                     + '<span class="rb-site-n">' + row.n + '</span>' + x_or_trash(row.slot) + name_html(row.slot.card) + '</div>';
             }).join('') + (!rows.length ? '<div class="rb-empty">&mdash;</div>' : '') + '</div>';
         } else {
-            html += '<div class="rb-thumbs rb-thumbs-sites">' + _.map(rows, function (row) {
+            html += '<div class="rb-thumbs rb-thumbs-sites' + (collapsed ? ' is-collapsed' : '') + '">' + _.map(rows, function (row) {
                 if(!row.slot) {
                     return '<div class="rb-tile rb-tile-site rb-tile-empty">' + plus('site', t('deckbuilder.find_site', {number: row.n}), ' data-site="' + row.n + '"')
                         + '<span class="rb-site-num">' + row.n + '</span></div>';
@@ -285,7 +301,7 @@
             v = view(),
             fp = _.filter(draw, function (s) { return s.card.side !== 'shadow'; }),
             shadow = _.filter(draw, function (s) { return s.card.side === 'shadow'; }),
-            html = '<div class="rb-deck-top view-' + v + '"><div class="rb-deck-top-left">' + display_options()
+            html = '<div class="rb-deck-top view-' + v + (v !== 'list' && sites_collapsed() ? ' is-collapsed' : '') + '"><div class="rb-deck-top-left">'
                 + single_slot('ring_bearer', t('deck.ring_bearer'), 'ring_bearer', t('deckbuilder.find_ring_bearer'), problems)
                 + single_slot('ring', t('deck.ring'), 'ring', t('deckbuilder.find_ring'), problems);
         if(app.deck.get_cards('map').length || (format && format.uses_maps)) {
@@ -295,19 +311,27 @@
             + '<h2 class="rb-draw-head">' + t('deckbuilder.draw_deck', {count: count(draw)}) + '</h2>'
             + '<div class="rb-sides">' + side_html('free_peoples', fp, problems) + side_html('shadow', shadow, problems) + '</div>';
         $(container).removeClass('deck-loading').html(html);
+        if(toolbar) {
+            toolbar.html(display_options());
+        }
     };
 
     /* ---- events ---- */
 
-    editor.setup = function setup(selector)
+    editor.setup = function setup(selector, toolbar_selector)
     {
         container = $(selector);
-        container.on('click', '.rb-opt-view', function () {
+        toolbar = toolbar_selector ? $(toolbar_selector) : null;
+        $(toolbar || container).on('click', '.rb-opt-view', function () {
             app.config.set('deck-view', $(this).data('view'));
             editor.render();
         });
-        container.on('click', '.rb-opt-group', function () {
+        $(toolbar || container).on('click', '.rb-opt-group', function () {
             app.config.set('deck-group', $(this).data('group'));
+            editor.render();
+        });
+        container.on('click', '.rb-collapse', function () {
+            app.config.set('deck-sites-collapsed', sites_collapsed() ? '0' : '1');
             editor.render();
         });
         container.on('click', '.rb-n:not([disabled])', function () {

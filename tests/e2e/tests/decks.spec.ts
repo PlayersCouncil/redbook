@@ -101,3 +101,58 @@ test('import a Gemp deck string and export it back unchanged', async ({ page }) 
   const sorted = (s: string) => s.split('|').map((p) => p.split(',').sort().join(',')).join('|');
   expect(sorted(exported)).toBe(sorted(gemp));
 });
+
+test('deckbuilder clicks: pool cards add, counts fill, sites collapse, menus float', async ({ page }) => {
+  const deckName = `E2E clicks ${runId}`;
+  await page.goto('/deck/new');
+  await page.selectOption('#target_format', 'fotr_block');
+  await page.fill('#name', deckName);
+  await page.locator('form[action$="/deck/build"] button[type=submit]').click();
+  await expect(page).toHaveURL(/\/deck\/edit\//);
+  await waitForCardData(page);
+
+  // a click on a pool row adds a copy, like its + (Ketura, 2026-11-03), and opens no card window
+  if (await page.locator('[data-pool-view=list][aria-pressed=false]').count()) {
+    await page.click('[data-pool-view=list]');
+  }
+  await page.fill('#filter-text', 'legolas');
+  const row = page.locator('.rb-pool-row', { hasText: 'Legolas, Greenleaf' }).first();
+  await row.locator('.rb-name').click();
+  await expect(page.locator('#deck .rb-line[data-code="1_50"] .rb-n.active')).toHaveText('1');
+  await row.locator('.rb-name').click();
+  await expect(page.locator('#cardModal')).not.toBeVisible();
+  // every count up to the current one is filled
+  const legolas = page.locator('#deck .rb-line[data-code="1_50"]');
+  await expect(legolas.locator('.rb-n.active')).toHaveText('2');
+  await expect(legolas.locator('.rb-n.is-filled')).toHaveCount(2);
+
+  // ... and so does a click on a thumbnail
+  await page.click('[data-pool-view=thumb]');
+  await page.fill('#filter-text', 'gimli');
+  const gimli = page.locator('.rb-pool-tile .rb-pool-img[data-code="1_13"]');
+  await expect(gimli).toBeVisible();
+  await gimli.click();
+  await expect(page.locator('#deck')).toContainText('Gimli');
+  await expect(page.locator('#cardModal')).not.toBeVisible();
+
+  // the view buttons sit above the deck's scrolling area; the Adventure Deck collapses to strips
+  await page.locator('#deck-toolbar [data-view=thumb]').click();
+  await page.locator('#deck .rb-sites .rb-collapse').click();
+  await expect(page.locator('#deck .rb-thumbs-sites.is-collapsed')).toBeVisible();
+  await expect(page.locator('#deck .rb-deck-top.is-collapsed')).toBeVisible();
+  await snap(page, 'collapsed adventure deck');
+  await page.locator('#deck .rb-sites .rb-collapse').click();
+  await expect(page.locator('#deck .rb-thumbs-sites.is-collapsed')).toHaveCount(0);
+  await page.locator('#deck-toolbar [data-view=list]').click();
+
+  // menus hang off the window, so the deck information pane can't cut them off
+  await page.click('#btn-more');
+  await expect(page.locator('#menu-more')).toBeVisible();
+  expect(await page.locator('#menu-more').evaluate((el) => getComputedStyle(el).position)).toBe('fixed');
+  await page.keyboard.press('Escape');
+
+  await page.click('#btn-more');
+  await page.locator('#menu-more [data-action=delete]').click();
+  await page.locator('#delete-deck-form [type=submit]').click();
+  await expect(page).toHaveURL(/\/decks/);
+});

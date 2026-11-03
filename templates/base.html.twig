@@ -33,7 +33,9 @@
     {% block stylesheets %}{% endblock %}
 </head>
 <body>
-<div id="wrapper">
+{# The page is the size of the window (Ketura, 2026-11-03): the navbar and footer stay
+   put and the content between scrolls, or, on pages like the deckbuilder that set
+   wrapper_class to rb-fill, fills the space and lets its own panes scroll. #}
     <nav class="navbar navbar-default navbar-static-top" role="navigation">
         <div class="container">
             {% block navbar %}
@@ -125,17 +127,14 @@
             {% endblock %}
         </div>
     </nav>
-
+<main id="wrapper" class="{% block wrapper_class %}{% endblock %}">
     {% block body %}{% endblock %}
-    <div id="push"></div>
-</div>
+</main>
 <footer class="hidden-print">
     <div class="container">
-
         {% block footer %}
             {% include 'footer.'~ app.request.locale ~'.html.twig' %}
         {% endblock %}
-
     </div>
 </footer>
 {% include 'Modale/card.html.twig' %}

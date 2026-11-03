@@ -830,6 +830,10 @@ deckbuilder.historic.format_as_written: Format as written
 deckbuilder.historic.notes: Archival Notes
 deckbuilder.tabs.draw: Test draw
 deckbuilder.display_options: Deck display options
+deckbuilder.view.label: Deck view
+deckbuilder.group.label: Group the draw deck by
+deckbuilder.sites_collapse: "Shrink the sites to their titles"
+deckbuilder.sites_expand: "Show the sites whole"
 deckbuilder.view.list: List view
 deckbuilder.view.thumb: Thumbnail view
 deckbuilder.view.half: Half-thumbnail view

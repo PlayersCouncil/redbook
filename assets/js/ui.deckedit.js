@@ -335,12 +335,34 @@
         $('[aria-haspopup=menu]').attr('aria-expanded', 'false');
     }
 
+    /**
+     * Menus and popovers hang off their button against the window, not the pane
+     * they're in, so a scrolling pane can't cut them off (Ketura, 2026-11-03).
+     */
+    function float_below(button, popup, align_right)
+    {
+        var rect = $(button)[0].getBoundingClientRect(),
+            el = $(popup),
+            width = el.outerWidth(),
+            height = el.outerHeight(),
+            left = align_right ? rect.right - width : rect.left,
+            top = rect.bottom + 4;
+        left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
+        if(top + height > window.innerHeight - 8 && rect.top - 4 - height > 8) {
+            top = rect.top - 4 - height;   // no room below: open upwards
+        }
+        el.css({position: 'fixed', left: left + 'px', top: top + 'px', right: 'auto'});
+    }
+
     function toggle_menu(button, menu)
     {
         var open = $(menu).prop('hidden');
         close_menus();
         $(menu).prop('hidden', !open);
         $(button).attr('aria-expanded', open ? 'true' : 'false');
+        if(open) {
+            float_below(button, menu, false);
+        }
     }
 
     function more_action(action)
@@ -393,6 +415,7 @@
         var pop = $('#format-suggestions');
         if(!response.suggestions.length) {
             pop.html('<p class="rb-muted">' + t('deck.suggest_none') + '</p>').prop('hidden', false);
+            float_below('#deck-format', pop, true);
             return;
         }
         pop.html('<div class="rb-muted">' + t('deckbuilder.info.suggest_intro') + '</div>' + _.map(response.suggestions, function (s) {
@@ -401,6 +424,7 @@
                 + '<strong>' + _.escape(s.name) + '</strong><span>' + _.escape(gemp) + '</span>'
                 + '<small>' + _.map(s.reasons, _.escape).join('; ') + '</small></button>';
         }).join('')).prop('hidden', false);
+        float_below('#deck-format', pop, true);
     }
 
     /* ---- wiring ---- */
@@ -491,6 +515,17 @@
             close_menus();
             more_action($(this).data('action'));
         });
+        // a floating menu would drift from its button if its pane scrolled: close it
+        document.addEventListener('scroll', function (event) {
+            if(!$(event.target).closest('.rb-menu, .rb-popover').length) {
+                close_menus();
+                $('#format-suggestions').prop('hidden', true);
+            }
+        }, {passive: true, capture: true});
+        $(window).on('resize', function () {
+            close_menus();
+            $('#format-suggestions').prop('hidden', true);
+        });
         $(document).on('click', function (event) {
             if(!$(event.target).closest('.rb-menu, .rb-popover, #btn-suggest-format').length) {
                 close_menus();
@@ -551,23 +586,12 @@
         app.markdown && app.markdown.setup('textarea[name=description_]', '#description-preview');
     };
 
-    /** The columns fill the window below the header; each part scrolls on its own */
-    function fit_columns()
-    {
-        var row = $('.rb-builder-row');
-        if(row.length) {
-            document.documentElement.style.setProperty('--rb-top', Math.round(row.offset().top + 14) + 'px');
-        }
-    }
-
     ui.on_dom_loaded = function on_dom_loaded()
     {
         page = app.deckbuilder_page || {};
-        fit_columns();
-        $(window).on('resize', _.debounce(fit_columns, 100));
         visibility = app.deck.is_shared() ? 'hidden' : 'private';
         ui.setup_event_handlers();
-        app.deck_editor.setup('#deck');
+        app.deck_editor.setup('#deck', '#deck-toolbar');
         app.pool.setup('#pool-filters', '#pool');
         app.draw_simulator && app.draw_simulator.on_dom_loaded();
         app.deck_history && app.deck_history.setup('#history');

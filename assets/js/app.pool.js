@@ -804,6 +804,17 @@
                 refresh(false);
             }
         });
+        // a click anywhere on a card (or its row in the list) is its + (Ketura, 2026-11-03);
+        // the + and the Ring-bearer button keep their own clicks, and a modified click
+        // (ctrl, shift, cmd) still opens the card's page
+        pool_el.on('click', '.rb-pool-tile, .rb-pool-row', function (event) {
+            if($(event.target).closest('button').length || event.ctrlKey || event.metaKey || event.shiftKey || event.altKey) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            $(this).find('[data-add]').trigger('click');
+        });
         pool_el.on('click', '[data-rb]', function (event) {
             event.preventDefault();
             app.deck.set_ring_bearer($(this).data('rb') + '');

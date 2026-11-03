@@ -12,6 +12,11 @@
  * - On a touch screen the first tap on a card shows it; the second does the usual
  *   thing (open the card's details).
  * - A card without an image falls back to the old text tooltip.
+ * - Timing follows Gemp's AutoZoom (Ketura, 2026-11-03): the first hover waits
+ *   HOVER_DELAY before showing; once a card is showing, moving to another shows it
+ *   at once; leaving the cards keeps that for COOLDOWN, so crossing the gap between
+ *   two thumbnails doesn't flicker. Pressing the mouse button hides it.
+ * - While the next image loads the hover is black, never the previous card.
  */
 (function app_tip(tip, $)
 {
@@ -20,7 +25,14 @@
         GAP = 10,
         overlay = null,
         current = null,
-        last_touch = 0;
+        last_touch = 0,
+        HOVER_DELAY = 500,
+        COOLDOWN = 500,
+        LEAVE_GRACE = 120,
+        hover_timer = null,
+        hide_timer = null,
+        cooldown_timer = null,
+        hover_valid = false;
 
     function long_edge()
     {
@@ -32,6 +44,7 @@
     {
         if(!overlay) {
             overlay = $('<div class="rb-hover" aria-hidden="true"><img alt=""></div>').appendTo('body');
+            overlay.find('img').on('load', function () { $(this).addClass('is-loaded'); });
         }
         return overlay;
     }
@@ -72,12 +85,28 @@
             return show_text(element, card);
         }
         ensure_overlay();
+        var switching = current !== null && overlay.hasClass('is-shown');
         current = element;
         var landscape = card.type_code === 'site',
             rect = element.getBoundingClientRect(),
             target = target_rect(rect, landscape),
-            grow = $(element).is('[data-hover-grow]');
-        overlay.toggleClass('is-landscape', landscape).find('img').attr('src', image).attr('alt', card.label || card.name || '');
+            // moving from one card to the next: no grow, just the new card in place
+            grow = !switching && $(element).is('[data-hover-grow]'),
+            img = overlay.find('img');
+        if(img.attr('src') !== image) {
+            // black until the new image arrives, never the previous card
+            img.removeClass('is-loaded').attr('src', image);
+        }
+        if(img[0].complete && img[0].naturalWidth) {
+            img.addClass('is-loaded');
+        }
+        img.attr('alt', card.label || card.name || '');
+        overlay.toggleClass('is-landscape', landscape);
+        if(switching) {
+            overlay.removeClass('is-animated is-fade');
+            place(target);
+            return;
+        }
         overlay.removeClass('is-shown is-animated');
         if(grow) {
             // start where the thumbnail is, then grow into place
@@ -139,17 +168,45 @@
         if(Date.now() - last_touch < 800 || $(this).hasClass('no-popup')) {
             return;
         }
-        var card = card_for(this);
-        if(card) {
-            tip.show(this, card);
+        var element = this,
+            card = card_for(element);
+        if(!card) {
+            return;
         }
+        clearTimeout(hide_timer);
+        clearTimeout(cooldown_timer);
+        clearTimeout(hover_timer);
+        if(hover_valid) {
+            tip.show(element, card);
+            return;
+        }
+        hover_timer = setTimeout(function () {
+            hover_valid = true;
+            tip.show(element, card);
+        }, HOVER_DELAY);
     }
 
     function on_leave()
     {
-        if(current === this) {
-            tip.hide();
+        clearTimeout(hover_timer);
+        if(current !== this) {
+            return;
         }
+        // a moment's grace, so the next card along can take over without a flicker
+        clearTimeout(hide_timer);
+        hide_timer = setTimeout(tip.hide, LEAVE_GRACE);
+        clearTimeout(cooldown_timer);
+        cooldown_timer = setTimeout(function () { hover_valid = false; }, COOLDOWN);
+    }
+
+    /** A click, scroll or resize: hide now, and the next hover waits again */
+    function dismiss()
+    {
+        clearTimeout(hover_timer);
+        clearTimeout(hide_timer);
+        clearTimeout(cooldown_timer);
+        hover_valid = false;
+        tip.hide();
     }
 
     $(document).on('start.app', function ()
@@ -162,7 +219,15 @@
             }
             on_enter.call(this, event);
         }).on('mouseleave', 'a:not(.card-tip):not([data-hover-code])', on_leave);
-        $(window).on('scroll resize', tip.hide);
+        $(window).on('resize', dismiss);
+        // the page's scrolling happens in its panes now: catch scrolls anywhere
+        document.addEventListener('scroll', dismiss, {passive: true, capture: true});
+        document.addEventListener('mousedown', function () {
+            // a touch makes a mousedown too; the tap handler below decides those
+            if(Date.now() - last_touch > 800) {
+                dismiss();
+            }
+        }, true);
 
         // touch: the first tap shows the card, the second goes through
         document.addEventListener('touchstart', function () { last_touch = Date.now(); }, {passive: true, capture: true});

@@ -6,11 +6,14 @@
     function load()
     {
         var config = {};
-        if (localStorage) {
-            var stored = localStorage.getItem('app.config');
+        // storage can be missing, full or refused (private windows): settings then last the page
+        try {
+            var stored = window.localStorage.getItem('app.config');
             if (stored) {
                 config = JSON.parse(stored);
             }
+        } catch (e) {
+            config = {};
         }
         return _.extend({
             'show-all-sets': false,
@@ -22,8 +25,10 @@
 
     function save(config)
     {
-        if (localStorage) {
-            localStorage.setItem('app.config', JSON.stringify(config));
+        try {
+            window.localStorage.setItem('app.config', JSON.stringify(config));
+        } catch (e) {
+            // kept in memory for this page only
         }
     }
 

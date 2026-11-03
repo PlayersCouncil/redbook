@@ -25,6 +25,8 @@
     </script>
 {% endblock %}
 
+{% block wrapper_class %}rb-fill{% endblock %}
+
 {% block body %}
     <div class="main white container rb-builder">
         {% include 'alerts.html.twig' %}
@@ -86,6 +88,7 @@
 
                 </section>
 
+                <div class="rb-deck-toolbar" id="deck-toolbar"></div>
                 <section class="rb-deck" id="deck" aria-label="{{ 'deckbuilder.deck_label' | trans }}">
                     <div class="deck-loading"><i class="fas fa-spinner fa-spin fa-3x"></i></div>
                 </section>

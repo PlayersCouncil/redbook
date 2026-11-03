@@ -125,14 +125,21 @@ td.type, td.faction {
     background-color: #fff;
     border: 1px solid red;
 }
-#wrapper {
-    min-height: 100%;
-    border-bottom: 10px solid #c0392b;
-    padding-bottom: 100px;
-}
-footer {
-    padding-top: 20px;
-    background-color: #95a5a6;
+/* The page is the window (Ketura, 2026-11-03): navbar and footer stay put, the
+   content between them scrolls; an rb-fill page lets its own panes scroll instead. */
+body { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+body > .navbar { flex: 0 0 auto; margin-bottom: 0; }
+#wrapper { display: block; flex: 1 1 auto; min-height: 0; overflow-y: auto; border-bottom: 4px solid #c0392b; padding-bottom: 20px; }
+#wrapper.rb-fill { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
+footer { flex: 0 0 auto; padding: 4px 0; background-color: #95a5a6; font-size: 12px; line-height: 1.4; }
+.rb-footer { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 18px; }
+.rb-footer-links { display: flex; flex-wrap: wrap; gap: 0 12px; }
+.rb-footer-links a { white-space: nowrap; }
+.rb-footer-disclaimer { flex: 1 1 420px; margin: 0; color: #2c3e50; }
+@media (max-width: 991px) {
+    /* phones and narrow windows: the page scrolls as before, footer at the end */
+    body { height: auto; display: block; overflow: visible; }
+    #wrapper, #wrapper.rb-fill { display: block; overflow: visible; }
 }
 .navbar-default {
     font-size: 16px;
@@ -510,11 +517,8 @@ article.review .review-comment {
     a[href]:after {
         content: none !important;
     }
-    #wrapper {
-        border: none;
-        padding: 0;
-        min-height: auto;
-    }
+    body { height: auto; display: block; overflow: visible; }
+    #wrapper, #wrapper.rb-fill { display: block; border: none; padding: 0; min-height: auto; overflow: visible; }
 
     .col-print-1 {width:8%;  float:left;}
     .col-print-2 {width:16%; float:left;}
@@ -763,7 +767,7 @@ abbr.legality.banned {
     --rb-fp: #2B5C8F; --rb-shadow: #9A4A24; --rb-good: #24572A;
     color: var(--rb-ink);
 }
-.container.main.rb-builder { width: auto; max-width: 1600px; padding-top: 12px; padding-bottom: 12px; }
+.container.main.rb-builder { width: auto; max-width: 1600px; padding-top: 12px; padding-bottom: 8px; margin-bottom: 0; }
 .rb-builder button { font-family: inherit; }
 .rb-builder [hidden] { display: none !important; }
 
@@ -776,7 +780,10 @@ abbr.legality.banned {
 /* ---- columns ---- */
 @media (min-width: 992px) {
     .rb-builder-row { display: flex; }
-    .rb-col-left, .rb-col-right { display: flex; flex-direction: column; height: calc(100vh - var(--rb-top, 120px)); min-height: 560px; }
+    /* the builder fills the space between navbar and footer; only its panes scroll */
+    #wrapper.rb-fill > .rb-builder { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .rb-builder-row { flex: 1 1 auto; min-height: 0; }
+    .rb-col-left, .rb-col-right { display: flex; flex-direction: column; min-height: 0; }
     .rb-info { flex: 0 0 auto; max-height: 62%; overflow-y: auto; }
     .rb-deck { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
     .rb-tab-content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
@@ -876,7 +883,14 @@ abbr.legality.banned {
 .rb-deck-top { display: flex; gap: 14px; align-items: flex-start; }
 .rb-deck-top-left { flex: 0 0 200px; display: flex; flex-direction: column; gap: 10px; }
 .rb-deck-top-right { flex: 1 1 0; min-width: 0; }
-.rb-display-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 5px; border: 1px solid var(--rb-line); border-radius: 8px; background: var(--rb-soft); }
+.rb-display-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border: 1px solid var(--rb-line); border-radius: 8px; background: var(--rb-soft); }
+/* the deck's view and grouping, above its scrolling area */
+.rb-deck-toolbar { flex: 0 0 auto; display: flex; gap: 8px; padding: 8px 0; border-top: 1px solid var(--rb-line); }
+.rb-deck-toolbar .rb-display-opts { min-width: 0; }
+.rb-deck-toolbar .rb-display-opts:first-child { flex: 0 0 136px; }
+.rb-deck-toolbar .rb-display-opts:last-child { flex: 0 1 240px; }
+.rb-deck-toolbar:empty { display: none; }
+.rb-deck-toolbar + .rb-deck { border-top: 0; padding-top: 2px; }
 .rb-opt { height: 30px; padding: 0 2px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; color: var(--rb-ink); font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .rb-opt.active, .rb-opt[data-active] { background: var(--rb-ink); border-color: var(--rb-ink); color: #fff; }
 .rb-slot-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
@@ -890,7 +904,7 @@ abbr.legality.banned {
 .rb-qty { flex: 0 0 auto; display: flex; gap: 2px; }
 .rb-qty button { width: 24px; height: 24px; padding: 0; border-radius: 5px; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .rb-n { border: 1px solid var(--rb-line-strong); background: #fff; color: var(--rb-ink); }
-.rb-n.active { background: var(--rb-ink); border-color: var(--rb-ink); color: #fff; }
+.rb-n.active, .rb-n.is-filled { background: var(--rb-ink); border-color: var(--rb-ink); color: #fff; }
 .rb-n[disabled] { opacity: .3; cursor: default; }
 /* the X is half as loud as the rest (Ketura, 2026-11-02) */
 .rb-x { border: 0; background: var(--rb-red); color: #fff; opacity: .5; }
@@ -1026,7 +1040,9 @@ abbr.legality.banned {
 /* ---- card hover (app.tip) ---- */
 .rb-hover { position: fixed; z-index: 2000; pointer-events: none; opacity: 0; overflow: hidden; border-radius: 3.5% / 2.5%; box-shadow: 0 10px 30px rgba(0, 0, 0, .45); background: #222; }
 .rb-hover.is-landscape { border-radius: 2.5% / 3.5%; }
-.rb-hover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rb-hover { background: #000; }
+.rb-hover img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0; }
+.rb-hover img.is-loaded { opacity: 1; }
 .rb-hover.is-shown { opacity: 1; }
 .rb-hover.is-fade { animation: rb-hover-in .12s ease-out; }
 .rb-hover.is-animated { transition: left .16s ease-out, top .16s ease-out, width .16s ease-out, height .16s ease-out; }
@@ -1073,3 +1089,20 @@ abbr.legality.banned {
 .rb-candidate.is-added::after { content: " \2713 " attr(data-count); color: var(--rb-good); font-weight: 700; }
 .rb-review-guessed > summary { cursor: pointer; font-size: 13px; font-weight: 700; }
 .rb-review-guessed ul { margin: 4px 0 0; padding-left: 18px; font-size: 13px; }
+
+/* a click anywhere on a pool card adds it */
+.rb-pool-tile, .rb-pool-row { cursor: pointer; }
+
+/* the Adventure Deck, collapsed to its sites' title strips (Ketura, 2026-11-03) */
+.rb-collapse { margin-left: auto; width: 26px; height: 26px; padding: 0; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; color: var(--rb-ink); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.rb-collapse:hover { border-color: var(--rb-ink); }
+.rb-thumbs-sites.is-collapsed { gap: 3px 6px; }
+.rb-thumbs-sites.is-collapsed .rb-tile-img,
+.rb-thumbs-sites.is-collapsed .rb-tile-empty { aspect-ratio: 497 / 64; border-radius: 4px; }
+.rb-thumbs-sites.is-collapsed .rb-tile-img img { object-position: top; }
+.rb-thumbs-sites.is-collapsed .rb-site-num { top: 50%; transform: translateY(-50%); left: 2px; min-width: 15px; height: 15px; font-size: 10px; }
+/* the X goes beside the number, leaving the shadow number (top right of a site) in view */
+.rb-thumbs-sites.is-collapsed .rb-tile-x { top: 50%; left: 19px; right: auto; transform: translateY(-50%); }
+.rb-deck-top.is-collapsed .rb-deck-top-left { gap: 4px; }
+.rb-thumbs-sites.is-collapsed .rb-tile-x button { width: 18px; height: 18px; }
+.rb-thumbs-sites.is-collapsed .rb-tile-empty .rb-plus { width: 20px; height: 20px; font-size: 14px; }
