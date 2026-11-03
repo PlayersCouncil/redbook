@@ -40,6 +40,7 @@ services:
     volumes:
       - ./data/sessions:/var/www/html/var/sessions   # logins survive a rebuild
       - ./data/oauth:/var/www/html/var/oauth         # OAuth2 signing keys
+      - ./data/seed-decks:/var/www/html/var/seed-decks:ro   # archive batches for app:import:seed-decks
     mem_limit: ${APP_MEM_LIMIT:-1g}
 
   # One-shot setup; never started by "up". See docker/init.sh.
