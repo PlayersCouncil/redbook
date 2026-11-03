@@ -56,6 +56,7 @@ class PublishedDeckFactory
             $decklist->getSlots()->add($decklistslot);
         }
         $decklist->updateCultures();
+        $decklist->setStarting($deck->getStarting());
         // the deck was validated as it was saved
         $decklist->setValidation($deck->getValidation());
 
@@ -124,6 +125,9 @@ class PublishedDeckFactory
             $decklist->getSlots()->add($decklistslot);
         }
         $decklist->updateCultures();
+        if ($deck instanceof Deck) {
+            $decklist->setStarting($deck->getStarting());
+        }
         if (count($deck->getChildren())) {
             $decklist->setPrecedent($deck->getChildren()[0]);
         } elseif ($deck->getParent()) {

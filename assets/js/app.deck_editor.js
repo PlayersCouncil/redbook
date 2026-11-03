@@ -117,6 +117,18 @@
         return html + '</div>';
     }
 
+    /** Starting fellowship (Ketura, 2026-11-03): an S on draw-deck companions, grey or yellow */
+    function start_button(slot)
+    {
+        if(slot.card.type_code !== 'companion' || slot.key.indexOf('rb:') === 0) {
+            return '';
+        }
+        var on = app.deck.is_starting(slot.card.code),
+            label = t(on ? 'deckbuilder.starting_off' : 'deckbuilder.starting_on', {card: _.escape(slot.card.label)});
+        return '<button type="button" class="rb-start' + (on ? ' active' : '') + '" data-start="' + slot.card.code + '" aria-pressed="' + on
+            + '" aria-label="' + label + '" title="' + label + '">S</button>';
+    }
+
     function name_html(card)
     {
         return '<a class="rb-name card card-tip" href="' + card.url + '" data-code="' + card.code + '">'
@@ -138,6 +150,7 @@
             + qty_control(slot, options.numbers)
             + (options.culture ? app.data.cultureIconHtml(slot.card.culture_code, slot.card.culture_name) : '')
             + name_html(slot.card)
+            + (options.numbers ? start_button(slot) : '')
             + '</div>';
     }
 
@@ -149,6 +162,7 @@
             + '<div class="rb-tile-img" data-hover-code="' + card.code + '" data-hover-grow="1">'
             + (card.image_url ? '<img src="' + card.image_url + '" alt="' + _.escape(card.label) + '" loading="lazy">' : '<span class="rb-tile-noimg">' + _.escape(card.label) + '</span>')
             + (options.number ? '<span class="rb-site-num">' + options.number + '</span>' : '')
+            + (options.numbers ? start_button(slot) : '')
             + (options.overlay ? '<div class="rb-tile-x">' + x_or_trash(slot) + '</div>' : '')
             + '</div>'
             + (options.overlay ? '' : qty_control(slot, options.numbers))
@@ -262,6 +276,12 @@
         return i === -1 ? 99 : i;
     }
 
+    /** Starting companions before the rest; otherwise no different */
+    function start_rank(slot)
+    {
+        return app.deck.is_starting(slot.card.code) ? 0 : 1;
+    }
+
     function by_cost(a, b)
     {
         return (a.card.twilight || 0) - (b.card.twilight || 0) || a.card.label.localeCompare(b.card.label);
@@ -276,7 +296,7 @@
             });
             groups = _.sortBy(groups, 'label');
             _.each(groups, function (gr) {
-                gr.slots.sort(function (a, b) { return type_rank(a.card) - type_rank(b.card) || by_cost(a, b); });
+                gr.slots.sort(function (a, b) { return type_rank(a.card) - type_rank(b.card) || start_rank(a) - start_rank(b) || by_cost(a, b); });
             });
         } else if(g === 'type') {
             groups = _.map(_.groupBy(slots, function (s) { return s.card.type_code; }), function (list, code) {
@@ -284,11 +304,11 @@
             });
             groups = _.sortBy(groups, 'rank');
             _.each(groups, function (gr) {
-                gr.slots.sort(function (a, b) { return (a.card.culture_name || '').localeCompare(b.card.culture_name || '') || by_cost(a, b); });
+                gr.slots.sort(function (a, b) { return start_rank(a) - start_rank(b) || (a.card.culture_name || '').localeCompare(b.card.culture_name || '') || by_cost(a, b); });
             });
         } else {
             slots = slots.slice().sort(function (a, b) {
-                return type_rank(a.card) - type_rank(b.card) || (a.card.culture_name || '').localeCompare(b.card.culture_name || '') || by_cost(a, b);
+                return type_rank(a.card) - type_rank(b.card) || start_rank(a) - start_rank(b) || (a.card.culture_name || '').localeCompare(b.card.culture_name || '') || by_cost(a, b);
             });
             groups = [{key: 'all', label: null, slots: slots}];
         }
@@ -313,6 +333,7 @@
         if(!slots.length) {
             return html + '<div class="rb-empty">&mdash;</div></section>';
         }
+        html += '<div class="rb-groups' + (v === 'list' ? ' view-list-groups' : '') + '">';
         _.each(groups_for(slots), function (group) {
             html += '<div class="rb-group">';
             if(group.label !== null) {
@@ -327,7 +348,7 @@
             }
             html += '</div>';
         });
-        return html + '</section>';
+        return html + '</div></section>';
     }
 
     /* ---- render ---- */
@@ -389,6 +410,10 @@
         container.on('click', '.rb-n:not([disabled])', function () {
             var code = $(this).closest('[data-code]').data('code') + '';
             app.deck.set_quantity(code, parseInt($(this).data('qty'), 10));
+        });
+        container.on('click', '.rb-start', function (event) {
+            event.stopPropagation();
+            app.deck.toggle_starting($(this).data('start') + '');
         });
         container.on('click', '.rb-x-now', function () {
             app.deck.remove($(this).closest('[data-key]').data('key') + '');

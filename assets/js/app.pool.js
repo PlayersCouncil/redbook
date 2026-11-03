@@ -982,6 +982,12 @@
             }
             event.preventDefault();
             event.stopPropagation();
+            // a companion who can bear the Ring fills an empty Ring-bearer slot first (Ketura, 2026-11-03)
+            var rb = $(this).find('[data-rb]');
+            if(rb.length && !app.deck.get_ring_bearer_code()) {
+                rb.trigger('click');
+                return;
+            }
             $(this).find('[data-add]').trigger('click');
         });
         pool_el.on('click', '[data-rb]', function (event) {

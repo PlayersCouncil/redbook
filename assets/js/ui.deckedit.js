@@ -91,7 +91,7 @@
         _.each(_.keys(state.content || {}).sort(), function (k) { sorted[k] = state.content[k]; });
         return {
             name: state.name || '', target_format: state.target_format || '', description_md: state.description_md || '',
-            tags: state.tags || '', historic: state.historic || null, content: sorted, pending: (state.pending || []).slice().sort()
+            tags: state.tags || '', historic: state.historic || null, starting: (state.starting || []).slice().sort(), content: sorted, pending: (state.pending || []).slice().sort()
         };
     }
 
@@ -150,7 +150,8 @@
             target_format: app.deck.get_format_code() || '',
             description: app.deck.get_description_md() || '',
             tags: app.deck.get_tags() || '',
-            historic: historic ? JSON.stringify(historic) : ''
+            historic: historic ? JSON.stringify(historic) : '',
+            starting: JSON.stringify(app.deck.get_starting())
         };
     }
 
@@ -624,7 +625,11 @@
         app.deck_editor.render();
         app.pool.refresh(true);
         app.deck.display_validation('#deck-validation');
-        if(app.deck.get_format_code()) {
+        // Gemp's verdict is saved with the deck: ask again only when this isn't the saved
+        // deck (a draft came back), the format differs, or no verdict was kept (Ketura, 2026-11-03)
+        var stored = app.deck.get_validation(),
+            format = app.deck.get_format_code();
+        if(format && (dirty || !stored || stored.format_code !== format)) {
             app.deck.validate();
         }
     };

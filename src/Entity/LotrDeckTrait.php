@@ -29,6 +29,13 @@ trait LotrDeckTrait
     #[ORM\Column(name: 'validated_at', type: 'datetime', nullable: true)]
     protected ?DateTimeInterface $validatedAt = null;
 
+    /**
+     * Companions marked as the starting fellowship (Ketura, 2026-11-03): blueprint IDs
+     * of draw-deck companions. Optional bookkeeping; Gemp doesn't see it.
+     */
+    #[ORM\Column(name: 'starting_fellowship', type: 'json', nullable: true)]
+    protected ?array $starting = null;
+
     /** complete, incomplete or unvalidated, from validation; a column so lists can filter on it (0023) */
     #[ORM\Column(name: 'completeness', type: 'string', length: 12, nullable: false, options: ['default' => 'unvalidated'])]
     protected string $completeness = 'unvalidated';
@@ -73,6 +80,19 @@ trait LotrDeckTrait
             : ($validation->isValid() ? self::COMPLETENESS_COMPLETE : self::COMPLETENESS_INCOMPLETE);
     }
 
+    /** @return string[] */
+    public function getStarting(): array
+    {
+        return $this->starting ?? [];
+    }
+
+    /** @param string[]|null $codes */
+    public function setStarting(?array $codes): void
+    {
+        $codes = array_values(array_unique(array_filter(array_map('strval', $codes ?? []), fn ($c) => preg_match('/^\d+_\d+$/', $c))));
+        $this->starting = $codes ?: null;
+    }
+
     public function getValidatedAt(): ?DateTimeInterface
     {
         return $this->validatedAt;
@@ -93,6 +113,7 @@ trait LotrDeckTrait
             'validation' => $this->validation,
             'validated_at' => $this->validatedAt?->format('c'),
             'completeness' => $this->getCompleteness(),
+            'starting' => $this->getStarting(),
         ];
     }
 }

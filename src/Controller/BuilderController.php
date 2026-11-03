@@ -242,6 +242,9 @@ class BuilderController extends AbstractController
         if ($request->request->has('historic')) {
             $data['historic'] = $request->get('historic');
         }
+        if ($request->request->has('starting')) {
+            $data['starting'] = (string) $request->get('starting');
+        }
         $deckManager->save($user, $deck, $data, $sourceDeck);
 
         // Save & verify: a historian's correction goes straight onto the archive decklist

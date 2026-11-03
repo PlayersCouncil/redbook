@@ -180,6 +180,12 @@ class DeckManager
         }
 
         $this->setSlots($deck, $content, $cards);
+        if (array_key_exists('starting', $data) && $deck instanceof Deck) {
+            // only companions the deck holds can start
+            $starting = is_string($data['starting']) ? json_decode($data['starting'], true) : $data['starting'];
+            $deck->setStarting(array_filter((array) ($starting ?? []), fn ($code) => isset($content[$code], $cards[$code])
+                && $cards[$code]->getType()->getCode() === 'companion'));
+        }
         $this->validator->validateDeck($deck);
     }
 
@@ -261,6 +267,7 @@ class DeckManager
             'content' => $source->getSlots()->getContent(),
             'target_format' => $source->getTargetFormat(),
             'effective_date' => $source->getEffectiveDate(),
+            'starting' => $source instanceof Deck || $source instanceof \App\Entity\PublishedDeck ? $source->getStarting() : [],
         ]);
         return $deck;
     }

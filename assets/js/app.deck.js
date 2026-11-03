@@ -47,6 +47,15 @@
     deck.get_historic = function () { return data.historic || null; };
     deck.set_historic = function (historic) { data.historic = historic; };
     deck.get_effective_date = function () { return data.effective_date; };
+
+    /* ---- the starting fellowship (Ketura, 2026-11-03): optional marks on companions ---- */
+    deck.get_starting = function () { return (data.starting || []).slice(); };
+    deck.is_starting = function (code) { return _.contains(data.starting || [], code); };
+    deck.toggle_starting = function toggle_starting(code)
+    {
+        data.starting = deck.is_starting(code) ? _.without(data.starting, code) : (data.starting || []).concat([code]);
+        deck.changed();
+    };
     deck.get_format_code = function () { return data.target_format; };
     deck.set_format_code = function (code) { data.target_format = code; };
     deck.get_format = function () { return app.data.findFormat(data.target_format); };
@@ -60,6 +69,7 @@
             description_md: data.description_md,
             tags: data.tags,
             historic: data.historic || null,
+            starting: (data.starting || []).slice().sort(),
             content: _.extend({}, content),
             pending: _.keys(pending)
         };
@@ -72,6 +82,7 @@
         data.description_md = state.description_md;
         data.tags = state.tags;
         data.historic = state.historic || null;
+        data.starting = (state.starting || []).slice();
         content = _.extend({}, state.content || {});
         pending = {};
         _.each(state.pending || [], function (key) {

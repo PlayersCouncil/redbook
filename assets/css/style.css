@@ -767,7 +767,7 @@ abbr.legality.banned {
     --rb-fp: #2B5C8F; --rb-shadow: #9A4A24; --rb-good: #24572A;
     color: var(--rb-ink);
 }
-.container.main.rb-builder { width: auto; max-width: 1600px; padding-top: 12px; padding-bottom: 8px; margin-bottom: 0; }
+.container.main.rb-builder { width: auto; max-width: none; padding-top: 12px; padding-bottom: 8px; margin-bottom: 0; }
 .rb-builder button { font-family: inherit; }
 .rb-builder [hidden] { display: none !important; }
 
@@ -785,7 +785,11 @@ abbr.legality.banned {
     .rb-builder-row { flex: 1 1 auto; min-height: 0; }
     /* fixed halves: nothing inside (a tab, a view) may change the page's width (Ketura, 2026-11-03) */
     #wrapper.rb-fill > .rb-builder { width: 100%; }
-    .rb-col-left, .rb-col-right { display: flex; flex-direction: column; min-height: 0; flex: 0 0 50%; max-width: 50%; min-width: 0; }
+    /* the whole width (Ketura, 2026-11-03): the deck side takes what the card side doesn't need,
+       the card side keeping about 640px, until the deck side has 1400px; then they share */
+    .rb-col-left, .rb-col-right { display: flex; flex-direction: column; min-height: 0; min-width: 0; max-width: none; }
+    .rb-col-left { flex: 0 0 auto; width: clamp(50%, calc(100% - 640px), 1400px); }
+    .rb-col-right { flex: 1 1 0; width: auto; }
     .rb-info, .rb-deck, .rb-scroll-pane, .rb-filters-scroll, .rb-pool { scrollbar-gutter: stable; }
     .rb-info { flex: 0 0 auto; max-height: 62%; overflow-y: auto; }
     .rb-deck { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
@@ -927,8 +931,21 @@ abbr.legality.banned {
 .rb-site-empty .rb-plus { width: 24px; height: 24px; }
 .rb-choose { color: var(--rb-muted); font-style: italic; }
 .rb-draw-head { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--rb-line); font-size: 20px; font-weight: 700; }
-.rb-sides { display: flex; flex-wrap: wrap; gap: 0 28px; }
-.rb-side { flex: 1 1 420px; min-width: 0; margin-top: 12px; }
+/* Free Peoples and Shadow: side by side whenever the deck area is wide enough, in every
+   view alike, so switching views never moves them (Ketura, 2026-11-03) */
+.rb-deck { container: deck / inline-size; }
+.rb-sides { display: flex; flex-direction: column; gap: 0 28px; }
+.rb-side { min-width: 0; margin-top: 12px; }
+@container deck (min-width: 740px) {
+    .rb-sides { flex-direction: row; }
+    .rb-side { flex: 1 1 0; }
+}
+/* culture or type groups sit next to each other when they fit */
+.rb-groups { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 28px; }
+.rb-group { flex: 0 1 auto; min-width: 0; max-width: 100%; }
+.view-list-groups .rb-group { flex: 1 1 250px; }
+.rb-groups .rb-thumbs { display: flex; flex-wrap: wrap; }
+.rb-groups .rb-thumbs > .rb-tile { width: 118px; }
 .rb-side-head { margin: 0; padding-bottom: 3px; font-size: 17px; font-weight: 700; border-bottom: 2px solid currentColor; }
 .rb-sides { margin-top: 6px; }
 .rb-side-free_peoples .rb-side-head { color: var(--rb-fp); }
@@ -941,12 +958,14 @@ abbr.legality.banned {
 .rb-tile { display: flex; flex-direction: column; gap: 5px; min-width: 0; padding: 5px 5px 6px; border-radius: 8px; background: var(--rb-tan); }
 .rb-tile-img { position: relative; aspect-ratio: 357 / 497; overflow: hidden; border-radius: 5px; background: #E8E1D2; }
 .rb-tile-img img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
-.rb-thumbs.is-half .rb-tile-img { aspect-ratio: 260 / 227; }
+.rb-thumbs.is-half .rb-tile-img { aspect-ratio: 260 / 231; }
 .rb-tile .rb-qty { justify-content: space-between; }
 .rb-tile .rb-qty button { width: 22px; }
 .rb-tile-noimg { display: block; padding: 6px; font-size: 12px; }
 .rb-tile-overlay { padding: 0; background: transparent; }
-.rb-tile-x { position: absolute; top: 4px; right: 4px; }
+.rb-tile-x { position: absolute; right: 4px; bottom: 4px; }
+/* the X over a card sits low, off the card's name and numbers, and at full strength (Ketura, 2026-11-03) */
+.rb-tile-x .rb-x { opacity: 1; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
 .rb-thumbs-single { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .rb-deck-top-left .rb-slot .rb-thumbs-single { grid-template-columns: minmax(0, 110px); }
 .rb-thumbs-sites { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
@@ -1013,9 +1032,13 @@ abbr.legality.banned {
 
 /* ---- card pool ("navy") ---- */
 .rb-pool { padding: 8px 2px 8px 0; }
-.rb-pool-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 8px; }
+/* sort on the left (about half its old width), views centred, pager on the right (Ketura, 2026-11-03) */
+.rb-pool-head { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; margin-bottom: 8px; }
+.rb-pool-head .rb-field.rb-inline { justify-self: start; }
 .rb-pool-head .rb-field.rb-inline > span { flex: 0 0 auto; }
-.rb-pool-views { display: flex; gap: 4px; }
+.rb-pool-head .rb-sort { width: 130px; }
+.rb-pool-head .rb-pager-top { justify-self: end; }
+.rb-pool-views { display: flex; gap: 4px; justify-self: center; }
 .rb-pool-views .rb-opt { width: 40px; height: 32px; }
 .rb-pager { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: #4A443B; }
 .rb-pager-top { margin-left: auto; }
@@ -1047,7 +1070,7 @@ abbr.legality.banned {
 .rb-pool-tile { position: relative; }
 .rb-pool-img { display: block; aspect-ratio: 357 / 497; overflow: hidden; border-radius: 6px; background: #E8E1D2; }
 .rb-pool-img img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
-.rb-pool-grid.is-half .rb-pool-img { aspect-ratio: 260 / 227; }
+.rb-pool-grid.is-half .rb-pool-img { aspect-ratio: 260 / 231; }
 .rb-pool-tile.is-site .rb-pool-img { aspect-ratio: 497 / 357; }
 .rb-pool-tile.is-banned img { filter: grayscale(1) opacity(.6); }
 .rb-pool-badges { position: absolute; top: 4px; right: 4px; display: flex; gap: 3px; }
@@ -1147,3 +1170,9 @@ abbr.legality.banned {
     .rb-quick-native { display: none; }
     .rb-quick-btn { display: flex; width: 100%; }
 }
+
+/* starting fellowship: an S on the card's right edge, grey, or yellow when marked (Ketura, 2026-11-03) */
+.rb-start { width: 22px; height: 26px; padding: 0; border: 0; border-radius: 5px; background: #4A4A4A; color: #fff; font-size: 13px; font-weight: 800; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
+.rb-start.active { background: var(--rb-yellow); color: #111; }
+.rb-tile-img .rb-start { position: absolute; right: 0; top: 50%; transform: translateY(-50%); border-radius: 5px 0 0 5px; }
+.rb-line .rb-start { flex: 0 0 auto; margin-left: auto; width: 22px; height: 22px; box-shadow: none; }

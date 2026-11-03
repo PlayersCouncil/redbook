@@ -834,6 +834,8 @@ deckbuilder.display_options: Deck display options
 deckbuilder.view.label: Deck view
 deckbuilder.group.label: Group the draw deck by
 deckbuilder.collapse: Collapse
+deckbuilder.starting_on: "Mark %card% as starting fellowship"
+deckbuilder.starting_off: "%card% starts in the fellowship (click to unmark)"
 deckbuilder.expand: Expand
 deckbuilder.view.list_short: List
 deckbuilder.view.thumb_short: Thumbs
