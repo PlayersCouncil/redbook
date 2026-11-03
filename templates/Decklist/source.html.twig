@@ -34,7 +34,7 @@
             {% for comment in source.comments %}
                 <div class="small archived-comment">
                     <strong>{{ comment.author ?? '?' }}</strong> {{ comment.date ?? '' }}
-                    <div>{{ comment.text ?? '' }}</div>
+                    <div class="archived-comment-text">{{ comment.text ?? '' }}</div>
                 </div>
             {% endfor %}
         {% endif %}

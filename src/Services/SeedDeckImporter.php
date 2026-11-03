@@ -458,15 +458,35 @@ class SeedDeckImporter
         return DateTime::createFromFormat('!Y-m-d', sprintf('%s-%s-%s', $m[1], $m[2] ?? '01' ?: '01', $m[3] ?? '01' ?: '01')) ?: null;
     }
 
-    /** The source's write-up as Markdown text; HTML and BBCode are reduced to plain text */
+    /**
+     * The source's write-up as Markdown text. HTML and BBCode are reduced to plain
+     * text first. Line breaks are kept (Markdown would otherwise join the lines of a
+     * paragraph), and lines Markdown would read as headings are escaped: a leading
+     * "#", or a row of dashes or equals signs, which makes the line above a heading.
+     */
     public static function toMarkdown(string $text, string $format): string
     {
+        $text = str_replace(["\r\n", "\r"], "\n", $text);
         if ($format === 'html') {
-            $text = preg_replace('#<br\s*/?>|</p>|</div>|</li>#i', "\n", $text);
+            // newlines in HTML source are just spaces; only the tags break lines
+            $text = preg_replace('/\s+/', ' ', $text);
+            $text = preg_replace('#\s*(</p>|</div>|</h\d>|</ul>|</ol>|</blockquote>)\s*#i', "\n\n", $text);
+            $text = preg_replace('#<br\s*/?>|</li>#i', "\n", $text);
+            $text = preg_replace('#<li[^>]*>#i', '- ', $text);
             $text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
         } elseif ($format === 'bbcode') {
+            $text = preg_replace('#\[\*\]#', '- ', $text);
             $text = preg_replace('#\[(/?)(b|i|u|s|url|img|quote|code|size|color|list|\*)[^\]]*\]#i', '', $text);
         }
-        return trim(preg_replace("/\n{3,}/", "\n\n", str_replace("\r", '', $text)));
+        $lines = array_map(function (string $line): string {
+            $line = rtrim($line);
+            if (preg_match('/^\s*(#|([-=*_])(\s*\2){2,}\s*$)/', $line)) {
+                $line = '\\' . ltrim($line);
+            }
+            return $line;
+        }, explode("\n", $text));
+        $text = trim(preg_replace("/\n{3,}/", "\n\n", implode("\n", $lines)));
+        // a hard break (two spaces) at the end of each line that isn't the end of a paragraph
+        return preg_replace('/(?<=\S)\n(?=[^\n])/', "  \n", $text);
     }
 }
