@@ -154,7 +154,7 @@
         }
         return '<div class="rb-line' + classes(slot, problems) + '" data-key="' + slot.key + '" data-code="' + slot.card.code + '">'
             + qty_control(slot, options.numbers)
-            + (options.culture ? app.data.cultureIconHtml(slot.card.culture_code, slot.card.culture_name) : '')
+            + (options.culture ? app.data.cardIconHtml(slot.card) : '')
             + start
             + name_html(slot.card)
             + '</div>';

@@ -584,7 +584,7 @@
             body = '<div class="rb-pool-list">' + _.map(shown, function (card) {
                 return '<div class="rb-pool-row' + (banned(card) ? ' is-banned' : '') + '" data-hover-code="' + card.code + '">'
                     + '<span class="rb-pool-buttons">' + buttons(card) + '</span>'
-                    + app.data.cultureIconHtml(card.culture_code, card.culture_name)
+                    + app.data.cardIconHtml(card)
                     + '<a class="rb-name card" href="' + card.url + '" data-code="' + card.code + '">' + (card.is_unique ? '&bull;' : '') + _.escape(card.label) + '</a>'
                     + badges(card) + '</div>';
             }).join('') + '</div>';

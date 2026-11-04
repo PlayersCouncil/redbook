@@ -44,15 +44,25 @@
         return null;
     };
 
-    // Ketura's culture icons (public/images/cultures), named by culture code
+    // Ketura's culture icons (public/images/cultures), named by culture code. The One Ring
+    // and site icons are the wiki's (Culture_The_One_Ring.svg, Culture_Site.svg; Ketura,
+    // 2026-11-03): not Decipher's, but good enough to mark those cards.
     var CULTURE_FILES = {uruk_hai: 'uruk'};
 
     /** The culture's icon, for a CSS mask so it takes the text colour; null for none */
     data.cultureIcon = function cultureIcon(code) {
-        if(!code || code === 'the_one_ring') {
+        if(!code) {
             return null;
         }
         return '/images/cultures/' + (CULTURE_FILES[code] || code) + '.svg';
+    };
+
+    /** A card's icon: its culture's, or for a site (which has none) the site icon */
+    data.cardIconHtml = function cardIconHtml(card) {
+        if(!card.culture_code && card.type_code === 'site') {
+            return data.cultureIconHtml('site', card.type_name || 'Site');
+        }
+        return data.cultureIconHtml(card.culture_code, card.culture_name);
     };
 
     /** A span showing a culture's icon in the current text colour */
