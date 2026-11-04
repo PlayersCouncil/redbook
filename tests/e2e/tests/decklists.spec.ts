@@ -46,7 +46,11 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await expect(page.locator('.rb-cardlink.is-missing')).toHaveText('[[Nobody At All]]');
   await expect(page.locator('.deck-validation')).toContainText('Legal in Fellowship Block');
   await expect(page.locator('.decklist-plays')).toContainText(`E2E Regionals ${runId}`);
-  await expect(page.locator('.deck-content')).toContainText('Ring-bearer');
+  // the reader: the deckbuilder's deck, read-only, "4x Card" lines
+  await expect(page.locator('#deck.rb-readonly')).toContainText('Ring-bearer');
+  await expect(page.locator('#deck .rb-qty-text').first()).toHaveText(/^\dx$/);
+  await expect(page.locator('#deck .rb-n')).toHaveCount(0);
+  await expect(page.locator('#tab-pane-stats #stats-chart-twilight svg')).toBeVisible();
   await snap(page, 'decklist published');
   decklistUrl = page.url();
   decklistId = decklistUrl.match(/\/decklist\/view\/(\d+)\//)![1];

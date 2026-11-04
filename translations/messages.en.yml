@@ -1092,3 +1092,12 @@ historian.review.unresolved_hint: "Click a line to search the card pool for it, 
 historian.review.search_title: "Search the card pool for this line"
 historian.review.added: "Added %name%"
 historian.review.guessed: "{1} 1 line matched by a loose rule|]1,Inf] %count% lines matched by a loose rule"
+decklist.reader.played: "Played %date%"
+decklist.reader.published: Published
+decklist.reader.tools: Tools
+decklist.reader.details: Details
+decklist.reader.deck: Deck
+decklist.reader.description: Description
+decklist.reader.comments: Comments
+decklist.reader.card_notes: Card Notes
+decklist.reader.has_note: "The author has a note on this card"

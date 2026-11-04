@@ -266,6 +266,18 @@
                 $('#tag-input .rb-tag-suggest').prop('hidden', true);
             }
         });
+        // the suggestions belong to the box: they close when it loses focus, and picking one
+        // doesn't take the focus away first (Ketura, 2026-11-04)
+        root.on('blur', '#tag-entry', function () {
+            setTimeout(function () {
+                if(!$('#tag-entry').is(':focus')) {
+                    $('#tag-input .rb-tag-suggest').prop('hidden', true);
+                }
+            }, 120);
+        });
+        root.on('mousedown', '.rb-tag-suggest button', function (event) {
+            event.preventDefault();
+        });
         root.on('click', '[data-tag]', function () {
             set_tags(tags().concat([$(this).data('tag') + '']));
             $('#tag-entry').val('').focus();

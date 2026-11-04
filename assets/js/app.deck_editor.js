@@ -19,6 +19,9 @@
 {
     var container = null,
         toolbar = null,
+        // the reader (Ketura, 2026-11-04): the same deck, shown not edited; its own view settings
+        readonly = false,
+        prefix = '',
         TYPE_ORDER = ['companion', 'ally', 'follower', 'minion', 'artifact', 'possession', 'condition', 'event'],
         ICONS = {
             list: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5h12M3 9h12M3 13.5h12"/></svg>',
@@ -38,12 +41,22 @@
 
     function view()
     {
-        return app.config.get('deck-view') || 'list';
+        return app.config.get(prefix + 'deck-view') || 'list';
     }
 
     function grouping()
     {
-        return app.config.get('deck-group') || 'culture';
+        return app.config.get(prefix + 'deck-group') || 'culture';
+    }
+
+    /** A card with a note in the deck's annotations gets a mark the reader links to it */
+    function annotation_mark(card)
+    {
+        if(!readonly || !_.findWhere(app.deck.get_annotations ? app.deck.get_annotations() : [], {code: card.code})) {
+            return '';
+        }
+        return '<span class="rb-annot-mark" data-annot="' + card.code + '" title="' + t('decklist.reader.has_note') + '" aria-hidden="true">'
+            + '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M2.5 2.5h11v8h-6l-3.5 3v-3h-1.5z"/></svg></span>';
     }
 
     function t(key, params)
@@ -74,6 +87,9 @@
 
     function plus(find, label, extra)
     {
+        if(readonly) {
+            return '';
+        }
         return '<button type="button" class="rb-plus" data-find="' + find + '"' + (extra || '') + ' aria-label="' + _.escape(label) + '" title="' + _.escape(label) + '">+</button>';
     }
 
@@ -88,6 +104,9 @@
 
     function x_or_trash(slot)
     {
+        if(readonly) {
+            return '';
+        }
         var name = _.escape(slot.card.label);
         if(removes_at_once(slot)) {
             return '<button type="button" class="rb-x rb-x-now" aria-label="' + t('deckbuilder.trash', {card: name}) + '" title="' + t('deckbuilder.remove_now') + '">' + ICONS.x + '</button>';
@@ -101,6 +120,10 @@
     /** X 1 2 3 4: the numbers only for draw-deck cards */
     function qty_control(slot, numbers)
     {
+        // reading: "4x Card", which pastes straight into Gemp's import (Ketura, 2026-11-04)
+        if(readonly) {
+            return numbers ? '<span class="rb-qty-text">' + slot.qty + 'x</span>' : '';
+        }
         var html = '<div class="rb-qty" role="group" aria-label="' + t('deckbuilder.copies_of', {card: _.escape(slot.card.label)}) + '">' + x_or_trash(slot);
         if(numbers) {
             var max = app.deck.max_quantity(slot.card), limit = Math.max(4, max);
@@ -123,8 +146,12 @@
         if(slot.card.type_code !== 'companion' || slot.key.indexOf('rb:') === 0) {
             return '';
         }
-        var on = app.deck.is_starting(slot.card.code),
-            label = t(on ? 'deckbuilder.starting_off' : 'deckbuilder.starting_on', {card: _.escape(slot.card.label)});
+        var on = app.deck.is_starting(slot.card.code);
+        if(readonly) {
+            // only the ones that start, and out of the way of a copy and paste
+            return on ? '<span class="rb-start active rb-start-mark" title="' + t('deckbuilder.starting_title') + '" aria-label="' + t('deckbuilder.starting_title') + '"></span>' : '';
+        }
+        var label = t(on ? 'deckbuilder.starting_off' : 'deckbuilder.starting_on', {card: _.escape(slot.card.label)});
         return '<button type="button" class="rb-start' + (on ? ' active' : '') + '" data-start="' + slot.card.code + '" aria-pressed="' + on
             + '" aria-label="' + label + '" title="' + t('deckbuilder.starting_title') + '">S</button>';
     }
@@ -149,7 +176,7 @@
         // the S sits between the culture icon and the name; other Free Peoples lines keep its
         // space, so the names line up (Ketura, 2026-11-03)
         var start = options.numbers ? start_button(slot) : '';
-        if(options.numbers && !start && slot.card.side !== 'shadow') {
+        if(options.numbers && !start && slot.card.side !== 'shadow' && !readonly) {
             start = '<span class="rb-start-space" aria-hidden="true"></span>';
         }
         return '<div class="rb-line' + classes(slot, problems) + '" data-key="' + slot.key + '" data-code="' + slot.card.code + '">'
@@ -157,6 +184,7 @@
             + (options.culture ? app.data.cardIconHtml(slot.card) : '')
             + start
             + name_html(slot.card)
+            + annotation_mark(slot.card)
             + '</div>';
     }
 
@@ -169,9 +197,11 @@
             + (card.image_url ? '<img src="' + card.image_url + '" alt="' + _.escape(card.label) + '" loading="lazy">' : '<span class="rb-tile-noimg">' + _.escape(card.label) + '</span>')
             + (options.number ? '<span class="rb-site-num">' + options.number + '</span>' : '')
             + (options.numbers ? start_button(slot) : '')
+            + (readonly && options.numbers ? '<span class="rb-tile-count">' + slot.qty + 'x</span>' : '')
+            + (readonly ? annotation_mark(card) : '')
             + (options.overlay ? '<div class="rb-tile-x">' + x_or_trash(slot) + '</div>' : '')
             + '</div>'
-            + (options.overlay ? '' : qty_control(slot, options.numbers))
+            + (options.overlay || readonly ? '' : qty_control(slot, options.numbers))
             + '</div>';
     }
 
@@ -183,6 +213,9 @@
             v = view(),
             html = '<div class="rb-slot rb-slot-' + role + '"><div class="rb-slot-head"><h3>' + title + '</h3></div>';
         // empty: the + stands where the card's X would be (Ketura, 2026-11-03)
+        if(!slots.length && readonly) {
+            return html + '<div class="rb-empty">&mdash;</div></div>';
+        }
         if(!slots.length) {
             if(v === 'list' || sites_collapsed()) {
                 return html + '<div class="rb-line rb-slot-empty">' + plus(find, find_label) + '<span class="rb-choose">' + t('deckbuilder.choose_' + role) + '</span></div></div>';
@@ -205,7 +238,7 @@
     /** Collapsed sections, remembered per browser: top (Ring-bearer, Ring, sites), free_peoples, shadow */
     function collapsed(section)
     {
-        return app.config.get('deck-collapsed-' + section) === '1';
+        return app.config.get(prefix + 'deck-collapsed-' + section) === '1';
     }
 
     function sites_collapsed()
@@ -257,7 +290,7 @@
                 if(!row.slot) {
                     return '<div class="rb-line rb-site-empty"><span class="rb-site-n">' + row.n + '</span>'
                         + plus('site', t('deckbuilder.find_site', {number: row.n}), ' data-site="' + row.n + '"')
-                        + '<span class="rb-choose">' + t('deckbuilder.choose_site', {number: row.n}) + '</span></div>';
+                        + '<span class="rb-choose">' + (readonly ? '&mdash;' : t('deckbuilder.choose_site', {number: row.n})) + '</span></div>';
                 }
                 return '<div class="rb-line' + classes(row.slot, problems) + '" data-key="' + row.slot.key + '" data-code="' + row.slot.card.code + '">'
                     + '<span class="rb-site-n">' + row.n + '</span>' + x_or_trash(row.slot) + name_html(row.slot.card) + '</div>';
@@ -398,23 +431,34 @@
 
     /* ---- events ---- */
 
-    editor.setup = function setup(selector, toolbar_selector)
+    /**
+     * options.readonly: the reader's deck (Ketura, 2026-11-04): counts as "4x", no controls,
+     * and its view, grouping and collapsed sections kept apart from the deckbuilder's
+     */
+    editor.setup = function setup(selector, toolbar_selector, options)
     {
         container = $(selector);
         toolbar = toolbar_selector ? $(toolbar_selector) : null;
+        readonly = !!(options && options.readonly);
+        prefix = readonly ? 'reader-' : '';
+        container.toggleClass('rb-readonly', readonly);
         $(toolbar || container).on('click', '.rb-opt-view', function () {
-            app.config.set('deck-view', $(this).data('view'));
+            app.config.set(prefix + 'deck-view', $(this).data('view'));
             editor.render();
         });
         $(toolbar || container).on('click', '.rb-opt-group', function () {
-            app.config.set('deck-group', $(this).data('group'));
+            app.config.set(prefix + 'deck-group', $(this).data('group'));
             editor.render();
         });
         container.on('click', '[data-collapse]', function () {
             var section = $(this).data('collapse');
-            app.config.set('deck-collapsed-' + section, collapsed(section) ? '0' : '1');
+            app.config.set(prefix + 'deck-collapsed-' + section, collapsed(section) ? '0' : '1');
             editor.render();
         });
+        if(readonly) {
+            $(document).on('deck.changed', editor.render);
+            return;
+        }
         container.on('click', '.rb-n:not([disabled])', function () {
             var code = $(this).closest('[data-code]').data('code') + '';
             app.deck.set_quantity(code, parseInt($(this).data('qty'), 10));

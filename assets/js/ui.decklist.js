@@ -238,6 +238,141 @@
 
 
 
+    /* ---- the reader (Ketura, 2026-11-04) ---- */
+
+    function t(key, params)
+    {
+        return Translator.trans(key, params || {});
+    }
+
+    function in_deck(code)
+    {
+        var content = app.deck.get_content();
+        return !!(content[code] || content['rb:' + code]);
+    }
+
+    /** Starting fellowship, bid and starting notes, above the description */
+    ui.render_starting = function render_starting()
+    {
+        var codes = app.deck.get_starting(),
+            bid = app.deck.get_starting_bid(),
+            notes = app.deck.get_starting_notes(),
+            box = $('#reader-starting');
+        if(!codes.length && !bid && !notes) {
+            box.prop('hidden', true);
+            return;
+        }
+        var cards = _.compact(_.map(codes, function (code) { return app.data.cards.findById(code); })),
+            twilight = _.reduce(cards, function (sum, card) { return sum + (card.twilight || 0); }, 0),
+            html = '<h3>' + t('deckbuilder.notes.starting') + '</h3>';
+        if(cards.length || bid) {
+            html += '<p class="rb-starting-list">'
+                + (cards.length ? '<span class="rb-starting-label">' + t('deckbuilder.notes.starting_fellowship') + '</span> '
+                    + _.map(cards, function (card) {
+                        return '<a href="' + card.url + '" class="rb-starting-card card-tip" data-code="' + card.code + '">' + _.escape(card.label) + '</a>';
+                    }).join('') + '<span class="rb-starting-cost">' + t('deckbuilder.notes.starting_twilight', {cost: twilight}) + '</span>' : '')
+                + (bid ? '<span class="rb-reader-bid"><span class="rb-starting-label">' + t('deckbuilder.notes.bid') + ':</span> ' + _.escape(bid) + '</span>' : '')
+                + '</p>';
+        }
+        if(notes) {
+            html += '<div class="rb-reader-text">' + app.markdown.render(notes) + '</div>';
+        }
+        box.html(html).prop('hidden', false);
+    };
+
+    /** The card notes, after the description; a card that isn't in the deck has an asterisk */
+    ui.render_notes = function render_notes()
+    {
+        var rows = app.deck.get_annotations(),
+            box = $('#reader-notes');
+        if(!rows.length) {
+            box.prop('hidden', true);
+            return;
+        }
+        box.html('<h3>' + t('decklist.reader.card_notes') + '</h3>' + _.map(rows, function (row) {
+            var card = app.data.cards.findById(row.code);
+            return '<div class="rb-reader-note" data-note="' + row.code + '">'
+                + '<div class="rb-reader-note-card"><a href="' + (card ? card.url : '#') + '" class="card-tip" data-code="' + row.code + '">' + _.escape(card ? card.label : row.code) + '</a>'
+                + (in_deck(row.code) ? '' : '<span class="rb-annot-out" title="' + t('deckbuilder.notes.not_in_deck') + '">*</span>') + '</div>'
+                + '<div class="rb-reader-text">' + app.markdown.render(row.text || '') + '</div></div>';
+        }).join('')).prop('hidden', false);
+    };
+
+    /**
+     * A note and its card, tied by a line (Ketura, 2026-11-04): pointing at either lights
+     * both and draws the line between them; one out of view is scrolled to first.
+     */
+    var linked = null;
+
+    function deck_item(code)
+    {
+        return $('#deck').find('.rb-line[data-code="' + code + '"], .rb-tile[data-code="' + code + '"]').first();
+    }
+
+    function visible_in(el, pane)
+    {
+        var r = el.getBoundingClientRect(), p = pane.getBoundingClientRect();
+        return r.bottom > p.top + 4 && r.top < p.bottom - 4;
+    }
+
+    function draw_link()
+    {
+        var path = $('#annot-link path');
+        if(!linked) {
+            path.attr('d', '');
+            return;
+        }
+        var note = $('.rb-reader-note[data-note="' + linked + '"]')[0],
+            item = deck_item(linked)[0];
+        if(!note || !item || !visible_in(note, $('.rb-reader-desc .rb-reader-scroll')[0]) || !visible_in(item, $('#deck')[0])) {
+            path.attr('d', '');
+            return;
+        }
+        var n = note.getBoundingClientRect(), c = item.getBoundingClientRect(),
+            x1 = n.left - 6, y1 = n.top + 12,
+            x2 = c.right + 6, y2 = c.top + c.height / 2,
+            bend = Math.max(30, (x1 - x2) / 2);
+        path.attr('d', 'M' + x1 + ' ' + y1 + ' C' + (x1 - bend) + ' ' + y1 + ' ' + (x2 + bend) + ' ' + y2 + ' ' + x2 + ' ' + y2);
+    }
+
+    function link(code)
+    {
+        unlink();
+        // the columns sit side by side only on a desktop; a phone stacks them and has no hover
+        if(!window.matchMedia('(min-width: 992px)').matches) {
+            return;
+        }
+        linked = code;
+        var note = $('.rb-reader-note[data-note="' + code + '"]').addClass('is-linked'),
+            item = deck_item(code).addClass('is-linked');
+        _.each([[note, $('.rb-reader-desc .rb-reader-scroll')], [item, $('#deck')]], function (pair) {
+            if(pair[0][0] && pair[1][0] && !visible_in(pair[0][0], pair[1][0])) {
+                pair[0][0].scrollIntoView({block: 'nearest', behavior: 'smooth'});
+            }
+        });
+        draw_link();
+    }
+
+    function unlink()
+    {
+        linked = null;
+        $('.is-linked').removeClass('is-linked');
+        draw_link();
+    }
+
+    ui.setup_reader = function setup_reader()
+    {
+        app.deck_editor.setup('#deck', '#deck-toolbar', {readonly: true});
+        app.deck_stats && app.deck_stats.setup();
+        $(document).on('mouseenter', '.rb-reader-note', function () { link($(this).data('note') + ''); })
+            .on('mouseleave', '.rb-reader-note', unlink)
+            .on('mouseenter', '#deck .rb-annot-mark', function () { link($(this).data('annot') + ''); })
+            .on('mouseleave', '#deck .rb-annot-mark', unlink);
+        // the line follows its ends as the columns scroll
+        document.addEventListener('scroll', _.throttle(draw_link, 16), {passive: true, capture: true});
+        $(window).on('resize', _.throttle(draw_link, 50));
+    };
+
     /**
      * called when the DOM is loaded
      * @memberOf ui
@@ -245,7 +380,7 @@
     ui.on_dom_loaded = function on_dom_loaded()
     {
         ui.setup_event_handlers();
-        app.draw_simulator && app.draw_simulator.on_dom_loaded();
+        ui.setup_reader();
     };
 
     /**
@@ -262,8 +397,10 @@
      */
     ui.on_all_loaded = function on_all_loaded()
     {
-        app.draw_simulator && app.draw_simulator.reset();
-        app.deck_charts && app.deck_charts.setup();
+        app.deck_editor.render();
+        ui.render_starting();
+        ui.render_notes();
+        app.deck_stats && app.deck_stats.refresh();
         app.user.loaded.done(function ()
         {
             ui.setup_comment_form();

@@ -760,7 +760,7 @@ abbr.legality.banned {
    and the deck on the left, card filters and pool on the right; each part
    scrolls on its own on a desktop, the page scrolls on a phone.
    ====================================================================== */
-.rb-builder, .rb-review-page {
+.rb-builder, .rb-review-page, .rb-reader {
     --rb-ink: #221F1A; --rb-muted: #6B645A; --rb-line: #DDD6C8; --rb-line-strong: #C9C0AE;
     --rb-soft: #FBFAF6; --rb-tan: #ECE5D6; --rb-blue: #1D5FAD; --rb-blue-soft: #EEF3F9;
     --rb-red: #B42318; --rb-red-dark: #6E140E; --rb-yellow: #E8B931; --rb-grey: #B9AFA0;
@@ -1324,3 +1324,73 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
     --rb-culture-shire: #3F523C; --rb-culture-shire-light: #C3C79F;
     --rb-culture-uruk-hai: #398129; --rb-culture-uruk-hai-light: #A6AC9B;
 }
+
+/* ---- the reader (Ketura, 2026-11-04) ----
+   A published deck at a glance: a header band, then four columns that scroll on their own:
+   tools (Stats, Details), the deck, the description, the comments. Narrower, the tools sit
+   under the deck; on a phone everything stacks, deck first and tools last. */
+.rb-reader { width: 100%; }
+.rb-reader-head { padding: 8px 16px 6px; border-bottom: 1px solid var(--rb-line); background: #fff; }
+.rb-reader-head .alert { margin: 0 0 6px; padding: 6px 12px; }
+.rb-reader-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
+.rb-reader-name { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.rb-reader-name h1 { margin: 0; font-size: 26px; font-weight: 700; line-height: 1.2; }
+.rb-reader-actions { display: flex; align-items: center; gap: 14px; }
+.rb-reader-actions .social-icons a, .rb-reader-actions .social-icons span { margin-left: 8px; }
+.rb-reader-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 4px; font-size: 13px; }
+.rb-reader-author { font-weight: 700; }
+.rb-reader-grid { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "deck" "desc" "comments" "tools"; }
+.rb-reader-tools { grid-area: tools; }
+.rb-reader-deck { grid-area: deck; }
+.rb-reader-desc { grid-area: desc; }
+.rb-reader-comments { grid-area: comments; }
+.rb-reader-col { min-width: 0; padding: 0; }
+.rb-reader-scroll { padding: 10px 14px 18px; }
+.rb-reader-deck-opts { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 10px; padding: 8px 10px 4px; }
+.rb-reader-deck .rb-deck { padding-top: 0; }
+.rb-reader-tools .rb-tabs { padding: 6px 10px 0; }
+.rb-reader-tools .rb-stats { padding: 10px 4px 20px; gap: 20px; }
+.rb-reader-details { padding-top: 10px; }
+.rb-reader-details .panel { margin-bottom: 12px; }
+@media (min-width: 992px) {
+    #wrapper.rb-fill > .rb-reader { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .rb-reader-grid { flex: 1 1 auto; min-height: 0; grid-template-columns: minmax(320px, 1fr) minmax(340px, 1.2fr) minmax(280px, 0.9fr);
+        grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); grid-template-areas: "deck desc comments" "tools desc comments"; }
+    .rb-reader-col { display: flex; flex-direction: column; min-height: 0; border-left: 1px solid var(--rb-line); }
+    .rb-reader-deck { border-left: 0; }
+    .rb-reader-tools { border-left: 0; border-top: 1px solid var(--rb-line); }
+    .rb-reader-scroll, .rb-reader-tools .tab-content { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
+    .rb-reader-deck .rb-deck { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+}
+/* wide: the four columns side by side, tools first */
+@media (min-width: 1400px) {
+    .rb-reader-grid { grid-template-columns: minmax(300px, 0.85fr) minmax(340px, 1.15fr) minmax(320px, 1.1fr) minmax(280px, 0.85fr);
+        grid-template-rows: minmax(0, 1fr); grid-template-areas: "tools deck desc comments"; }
+    .rb-reader-tools { border-top: 0; }
+    .rb-reader-deck { border-left: 1px solid var(--rb-line); }
+}
+/* the read-only deck: "4x Card" lines, a passive S on the starting fellowship */
+.rb-readonly .rb-qty-text { flex: 0 0 auto; min-width: 2.2em; text-align: right; font-variant-numeric: tabular-nums; color: var(--rb-ink); }
+.rb-readonly .rb-start-mark { flex: 0 0 auto; width: 16px; height: 16px; border-radius: 4px; font-size: 0; user-select: none; box-shadow: none; cursor: default; }
+.rb-readonly .rb-start-mark::before { content: "S"; font-size: 11px; font-weight: 800; }
+.rb-readonly .rb-line[data-code] { min-height: 24px; }
+.rb-tile-count { position: absolute; left: 4px; bottom: 4px; padding: 1px 6px; border-radius: 9px; background: rgba(20, 18, 14, .82); color: #fff; font-size: 12px; font-weight: 700; user-select: none; }
+.rb-annot-mark { flex: 0 0 auto; display: inline-flex; align-items: center; color: #2F6DB5; cursor: help; user-select: none; }
+.rb-tile .rb-annot-mark { position: absolute; right: 4px; top: 4px; padding: 3px; border-radius: 50%; background: #fff; }
+#deck .is-linked, .rb-reader-note.is-linked { background: #FDF3C8; border-radius: 4px; }
+/* the description: headings kept to the text's scale, whatever the source sent */
+.rb-reader-text { font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+.rb-reader-text h1, .rb-reader-text h2, .rb-reader-text h3 { font-size: 17px; font-weight: 700; margin: 14px 0 6px; }
+.rb-reader-text h4, .rb-reader-text h5, .rb-reader-text h6 { font-size: 15px; font-weight: 700; margin: 12px 0 4px; }
+.rb-reader-text img { max-width: 100%; height: auto; }
+.rb-reader-starting { margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--rb-line); }
+.rb-reader-starting h3, .rb-reader-notes h3 { margin: 0 0 6px; font-size: 15px; font-weight: 700; }
+.rb-reader-bid { margin-left: 8px; }
+.rb-reader-notes { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--rb-line); }
+.rb-reader-note { padding: 6px 8px; margin: 0 -8px; }
+.rb-reader-note-card { font-weight: 600; font-size: 13px; }
+.rb-reader-note .rb-reader-text p:last-child { margin-bottom: 0; }
+.rb-reader-comments .table { margin-bottom: 10px; }
+/* the note-to-card line: over everything, catching nothing */
+.rb-annot-link { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 40; overflow: visible; }
+.rb-annot-link path { fill: none; stroke: #2F6DB5; stroke-width: 2; stroke-dasharray: 5 4; }

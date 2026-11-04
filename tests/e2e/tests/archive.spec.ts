@@ -32,6 +32,8 @@ test('a seed batch imports as archived decklists', async ({ page }) => {
   await expect(link).toBeVisible();
   await link.click();
   decklistUrl = page.url();
+  // the archive's details sit on the reader's Details tab (Ketura, 2026-11-04)
+  await page.locator('a[href="#tab-pane-details"]').click();
   await expect(page.locator('.decklist-source')).toContainText(author);
   await expect(page.locator('.decklist-source')).toContainText('2x Gandalfs Pipe');
   await expect(page.locator('.decklist-source')).toContainText('999_1');
@@ -40,8 +42,8 @@ test('a seed batch imports as archived decklists', async ({ page }) => {
   await expect(page.locator('.decklist-source').getByRole('link', { name: 'original post' })).toHaveCount(0);
   await expect(page.locator('.decklist-plays')).toContainText('Fixture Regionals');
   // owned by the author's historic account, waiting for a historian
-  await expect(page.locator('h3.username')).toContainText(author);
-  await expect(page.locator('h3.username .rb-user-historic')).toBeVisible();
+  await expect(page.locator('.rb-reader-author')).toContainText(author);
+  await expect(page.locator('.rb-reader-author .rb-user-historic')).toBeVisible();
   await expect(page.locator('.rb-review-note')).toContainText("hasn't been checked");
   await snap(page, 'archived decklist');
 
@@ -102,7 +104,7 @@ test('a historian verifies it from the review queue', async ({ pageAs }) => {
   // the published deck says so, and keeps its historic author
   await admin.goto(decklistUrl);
   await expect(admin.locator('.rb-review-note')).toContainText('Checked against the original by');
-  await expect(admin.locator('h3.username')).toContainText(author);
+  await expect(admin.locator('.rb-reader-author')).toContainText(author);
 });
 
 test('a user claims the historic account and an admin approves', async ({ page, pageAs }) => {
@@ -122,9 +124,9 @@ test('a user claims the historic account and an admin approves', async ({ page, 
 
   // the decks are the user's now, and the historic name is an alias on their profile
   await page.goto(decklistUrl);
-  await expect(page.locator('h3.username')).toContainText(users.voter.username);
-  await expect(page.locator('h3.username .rb-user-historic')).toHaveCount(0);
+  await expect(page.locator('.rb-reader-author')).toContainText(users.voter.username);
+  await expect(page.locator('.rb-reader-author .rb-user-historic')).toHaveCount(0);
   await snap(page, 'claimed decklist');
-  await page.locator('h3.username a.username').click();
+  await page.locator('.rb-reader-author a.username').click();
   await expect(page.locator('.jumbotron')).toContainText(author);
 });
