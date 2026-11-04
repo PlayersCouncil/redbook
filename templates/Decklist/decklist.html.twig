@@ -6,6 +6,8 @@
    the deck, the description with the starting setup and card notes, and the comments.
    Narrower, the tools go under the deck; on a phone the order is deck, description,
    comments, tools. The deck is the deckbuilder's renderer in its read-only mode.
+   It loads in order (Ketura, 2026-11-04): the columns and the description come with the
+   page; the deck, then Stats, then the comment form follow the card data, a frame apart.
 #}
 
 {% block javascripts %}
@@ -90,38 +92,73 @@
 
     <div class="rb-reader-grid">
         {# tools: the deckbuilder's Stats, and the metadata nobody needs every time #}
-        <section class="rb-reader-col rb-reader-tools" aria-label="{{ 'decklist.reader.tools' | trans }}">
+        <section class="rb-reader-col rb-reader-tools is-pending" aria-label="{{ 'decklist.reader.tools' | trans }}">
             <ul class="nav nav-tabs rb-tabs" role="tablist">
                 <li role="presentation" class="active"><a href="#tab-pane-stats" aria-controls="tab-pane-stats" role="tab" data-toggle="tab">{{ 'deckbuilder.tabs.stats' | trans }}</a></li>
                 <li role="presentation"><a href="#tab-pane-details" aria-controls="tab-pane-details" role="tab" data-toggle="tab">{{ 'decklist.reader.details' | trans }}</a></li>
             </ul>
             <div class="tab-content rb-reader-scroll">
-                <div role="tabpanel" class="tab-pane active" id="tab-pane-stats">{% include 'Builder/tab-pane-stats.html.twig' %}</div>
+                <div role="tabpanel" class="tab-pane active" id="tab-pane-stats">
+                    <div class="rb-reader-loading">{{ 'decklist.reader.loading' | trans }}</div>
+                    {% include 'Builder/tab-pane-stats.html.twig' %}
+                </div>
                 <div role="tabpanel" class="tab-pane rb-reader-details" id="tab-pane-details">
                     {% include 'Deck/validation.html.twig' with {deck: decklist, title: 'decklist.view.problems' | trans} %}
                     {% include 'Decklist/plays.html.twig' %}
                     {% if decklist.source %}{% include 'Decklist/source.html.twig' with {source: decklist.source} %}{% endif %}
-                    {% include 'Decklist/table-predecessor.html.twig' %}
-                    {% include 'Decklist/table-successor.html.twig' %}
                 </div>
             </div>
         </section>
 
         <section class="rb-reader-col rb-reader-deck" aria-label="{{ 'decklist.reader.deck' | trans }}">
             <div class="rb-reader-deck-opts rb-deck-toolbar" id="deck-toolbar"></div>
-            <div class="rb-reader-scroll rb-deck rb-readonly" id="deck"></div>
+            <div class="rb-reader-scroll rb-deck rb-readonly deck-loading" id="deck"><div class="rb-reader-loading">{{ 'decklist.reader.loading' | trans }}</div></div>
         </section>
 
         <section class="rb-reader-col rb-reader-desc" aria-label="{{ 'decklist.reader.description' | trans }}">
+            {# rendered here rather than in the browser, so the column is whole on the first paint #}
             <div class="rb-reader-scroll">
-                <div class="rb-reader-starting" id="reader-starting" hidden></div>
+                {% if reader.starting or reader.bid or reader.starting_html %}
+                    <div class="rb-reader-starting" id="reader-starting">
+                        <h3>{{ 'deckbuilder.notes.starting' | trans }}</h3>
+                        {% if reader.starting or reader.bid %}
+                            <p class="rb-starting-list">
+                                {% if reader.starting %}
+                                    <span class="rb-starting-label">{{ 'deckbuilder.notes.starting_fellowship' | trans }}</span>
+                                    {% for card in reader.starting %}<a href="{{ card.href }}" class="rb-starting-card card-tip" data-code="{{ card.code }}">{{ card.label }}</a>{% endfor %}
+                                    <span class="rb-starting-cost">{{ 'deckbuilder.notes.starting_twilight' | trans({'%cost%': reader.twilight}) }}</span>
+                                {% endif %}
+                                {% if reader.bid %}<span class="rb-reader-bid"><span class="rb-starting-label">{{ 'deckbuilder.notes.bid' | trans }}:</span> {{ reader.bid }}</span>{% endif %}
+                            </p>
+                        {% endif %}
+                        {% if reader.starting_html %}<div class="rb-reader-text">{{ reader.starting_html | raw }}</div>{% endif %}
+                    </div>
+                {% endif %}
                 <div id="deck-description" class="rb-reader-text">{{ decklist.descriptionHtml|raw }}</div>
-                <div class="rb-reader-notes" id="reader-notes" hidden></div>
+                {% if reader.notes %}
+                    <div class="rb-reader-notes" id="reader-notes">
+                        <h3>{{ 'decklist.reader.card_notes' | trans }}</h3>
+                        {% for note in reader.notes %}
+                            <div class="rb-reader-note" data-note="{{ note.code }}">
+                                <div class="rb-reader-note-card"><a href="{{ note.href }}" class="card-tip" data-code="{{ note.code }}">{{ note.label }}</a>
+                                    {%- if not note.in_deck %}<span class="rb-annot-out" title="{{ 'deckbuilder.notes.not_in_deck' | trans }}">*</span>{% endif %}</div>
+                                <div class="rb-reader-text">{{ note.html | raw }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
             </div>
         </section>
 
         <section class="rb-reader-col rb-reader-comments" aria-label="{{ 'decklist.reader.comments' | trans }}">
-            <div class="rb-reader-scroll">{% include 'Decklist/comments.html.twig' %}</div>
+            <div class="rb-reader-scroll">
+                {# where the deck came from and what it led to, above the talk about it (Ketura, 2026-11-04) #}
+                <div class="rb-reader-tree">
+                    {% include 'Decklist/table-predecessor.html.twig' %}
+                    {% include 'Decklist/table-successor.html.twig' %}
+                </div>
+                {% include 'Decklist/comments.html.twig' %}
+            </div>
         </section>
     </div>
     {# the line from a card note to its card in the deck #}

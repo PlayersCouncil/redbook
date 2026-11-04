@@ -109,7 +109,7 @@ test('a historian verifies it from the review queue', async ({ pageAs }) => {
 
 test('a user claims the historic account and an admin approves', async ({ page, pageAs }) => {
   await page.goto(decklistUrl);
-  await page.getByRole('link', { name: 'This is me' }).click();
+  await page.getByRole('link', { name: 'Claim This Account' }).click();
   await expect(page.locator('h1')).toContainText(author);
   await page.fill('#message', `I was ${author}`);
   await page.locator('form button[type=submit].btn-primary').click();

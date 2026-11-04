@@ -241,7 +241,7 @@
     function base(type, height)
     {
         return {
-            chart: {type: type, height: height, backgroundColor: 'transparent', style: {fontFamily: 'inherit'}},
+            chart: {type: type, height: height, backgroundColor: 'transparent', style: {fontFamily: 'inherit'}, spacingLeft: 0, spacingRight: 2},
             title: {text: null},
             credits: {enabled: false},
             legend: {enabled: true, itemStyle: {fontWeight: 'normal'}},
@@ -486,8 +486,8 @@
             + '<button type="button" data-first="you"' + (runout.first === 'you' ? ' class="active"' : '') + '>' + t('deckbuilder.statstab.you') + '</button>'
             + '<button type="button" data-first="them"' + (runout.first === 'them' ? ' class="active"' : '') + '>' + t('deckbuilder.statstab.them') + '</button></span>'
             + '</div>'
-            + '<div class="rb-runout-row"><span class="rb-runout-who" style="color:' + YOU + '">' + t('deckbuilder.statstab.your_moves') + '</span>' + pattern_html('you') + '</div>'
-            + '<div class="rb-runout-row"><span class="rb-runout-who" style="color:' + THEM + '">' + t('deckbuilder.statstab.their_moves') + '</span>' + pattern_html('them') + '</div>');
+            + '<div class="rb-runout-row rb-runout-moves"><span class="rb-runout-who" style="color:' + YOU + '">' + t('deckbuilder.statstab.your_moves') + '</span>' + pattern_html('you') + '</div>'
+            + '<div class="rb-runout-row rb-runout-moves"><span class="rb-runout-who" style="color:' + THEM + '">' + t('deckbuilder.statstab.their_moves') + '</span>' + pattern_html('them') + '</div>');
     }
 
     /**
@@ -526,7 +526,7 @@
                 {name: t('deckbuilder.statstab.you'), color: YOU, data: result.you.points, zIndex: 4, lineWidth: 3}
             ]);
         $('#stats-chart-runout').highcharts({
-            chart: {type: 'line', height: 300, backgroundColor: 'transparent', style: {fontFamily: 'inherit'}},
+            chart: {type: 'line', height: 300, backgroundColor: 'transparent', style: {fontFamily: 'inherit'}, spacingLeft: 0, spacingRight: 6},
             title: {text: null},
             credits: {enabled: false},
             legend: {reversed: true},

@@ -647,7 +647,7 @@ class SocialController extends AbstractController
      * @return Response
      */
     #[Route(path: '/decklist/view/{decklist_id}/{decklist_name}', name: 'decklist_detail', methods: ['GET'], defaults: ['decklist_name' => null], requirements: ['decklist_id' => '\d+'])]
-    public function viewAction(TranslatorInterface $translator, int $cacheExpiration, FormatRepository $formats, $decklist_id)
+    public function viewAction(TranslatorInterface $translator, int $cacheExpiration, FormatRepository $formats, \App\Services\ReaderNotes $readerNotes, $decklist_id)
     {
         $response = new Response();
         $response->setPublic();
@@ -686,6 +686,7 @@ class SocialController extends AbstractController
                 'commenters' => $commenters,
                 'versions' => $versions,
                 'format' => $formats->findOneByCode($decklist->getTargetFormat()),
+                'reader' => $readerNotes->build($decklist),
             ),
             $response
         );

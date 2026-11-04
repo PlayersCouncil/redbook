@@ -240,64 +240,6 @@
 
     /* ---- the reader (Ketura, 2026-11-04) ---- */
 
-    function t(key, params)
-    {
-        return Translator.trans(key, params || {});
-    }
-
-    function in_deck(code)
-    {
-        var content = app.deck.get_content();
-        return !!(content[code] || content['rb:' + code]);
-    }
-
-    /** Starting fellowship, bid and starting notes, above the description */
-    ui.render_starting = function render_starting()
-    {
-        var codes = app.deck.get_starting(),
-            bid = app.deck.get_starting_bid(),
-            notes = app.deck.get_starting_notes(),
-            box = $('#reader-starting');
-        if(!codes.length && !bid && !notes) {
-            box.prop('hidden', true);
-            return;
-        }
-        var cards = _.compact(_.map(codes, function (code) { return app.data.cards.findById(code); })),
-            twilight = _.reduce(cards, function (sum, card) { return sum + (card.twilight || 0); }, 0),
-            html = '<h3>' + t('deckbuilder.notes.starting') + '</h3>';
-        if(cards.length || bid) {
-            html += '<p class="rb-starting-list">'
-                + (cards.length ? '<span class="rb-starting-label">' + t('deckbuilder.notes.starting_fellowship') + '</span> '
-                    + _.map(cards, function (card) {
-                        return '<a href="' + card.url + '" class="rb-starting-card card-tip" data-code="' + card.code + '">' + _.escape(card.label) + '</a>';
-                    }).join('') + '<span class="rb-starting-cost">' + t('deckbuilder.notes.starting_twilight', {cost: twilight}) + '</span>' : '')
-                + (bid ? '<span class="rb-reader-bid"><span class="rb-starting-label">' + t('deckbuilder.notes.bid') + ':</span> ' + _.escape(bid) + '</span>' : '')
-                + '</p>';
-        }
-        if(notes) {
-            html += '<div class="rb-reader-text">' + app.markdown.render(notes) + '</div>';
-        }
-        box.html(html).prop('hidden', false);
-    };
-
-    /** The card notes, after the description; a card that isn't in the deck has an asterisk */
-    ui.render_notes = function render_notes()
-    {
-        var rows = app.deck.get_annotations(),
-            box = $('#reader-notes');
-        if(!rows.length) {
-            box.prop('hidden', true);
-            return;
-        }
-        box.html('<h3>' + t('decklist.reader.card_notes') + '</h3>' + _.map(rows, function (row) {
-            var card = app.data.cards.findById(row.code);
-            return '<div class="rb-reader-note" data-note="' + row.code + '">'
-                + '<div class="rb-reader-note-card"><a href="' + (card ? card.url : '#') + '" class="card-tip" data-code="' + row.code + '">' + _.escape(card ? card.label : row.code) + '</a>'
-                + (in_deck(row.code) ? '' : '<span class="rb-annot-out" title="' + t('deckbuilder.notes.not_in_deck') + '">*</span>') + '</div>'
-                + '<div class="rb-reader-text">' + app.markdown.render(row.text || '') + '</div></div>';
-        }).join('')).prop('hidden', false);
-    };
-
     /**
      * A note and its card, tied by a line (Ketura, 2026-11-04): pointing at either lights
      * both and draws the line between them; one out of view is scrolled to first.
@@ -395,24 +337,49 @@
      * called when both the DOM and the data app have finished loading
      * @memberOf ui
      */
+    /** Runs the steps one after another, letting the browser paint in between */
+    function in_frames(steps)
+    {
+        if(!steps.length) {
+            return;
+        }
+        steps[0]();
+        window.requestAnimationFrame(function () {
+            setTimeout(function () { in_frames(steps.slice(1)); }, 0);
+        });
+    }
+
+    /**
+     * called when both the DOM and the data app have finished loading. The description came
+     * with the page; the deck, Stats and the comment form follow in that order, a frame
+     * apart, so each shows as soon as it's ready (Ketura, 2026-11-04)
+     * @memberOf ui
+     */
     ui.on_all_loaded = function on_all_loaded()
     {
-        app.deck_editor.render();
-        ui.render_starting();
-        ui.render_notes();
-        app.deck_stats && app.deck_stats.refresh();
-        app.user.loaded.done(function ()
-        {
-            ui.setup_comment_form();
-            ui.add_author_actions();
-            ui.setup_comment_hide();
-        }).fail(function ()
-        {
-            $('<p>You must be logged in to post comments.</p>').insertAfter('#comment-form');
-        }).always(function ()
-        {
-            ui.setup_social_icons();
-        });
+        in_frames([
+            function () {
+                app.deck_editor.render();
+            },
+            function () {
+                $('.rb-reader-tools').removeClass('is-pending');
+                app.deck_stats && app.deck_stats.refresh();
+            },
+            function () {
+                app.user.loaded.done(function ()
+                {
+                    ui.setup_comment_form();
+                    ui.add_author_actions();
+                    ui.setup_comment_hide();
+                }).fail(function ()
+                {
+                    $('<p>You must be logged in to post comments.</p>').insertAfter('#comment-form');
+                }).always(function ()
+                {
+                    ui.setup_social_icons();
+                });
+            }
+        ]);
     };
 
 })(app.ui, jQuery);

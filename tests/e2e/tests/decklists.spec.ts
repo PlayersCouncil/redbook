@@ -16,7 +16,9 @@ let decklistId = '';
 
 test('publish a deck as a decklist, with a play record', async ({ page }) => {
   const deckName = `E2E to publish ${runId}`;
-  const [, gemp] = fs.readFileSync(path.join(__dirname, '..', 'fixtures', 'fellowship-gemp.txt'), 'utf8').trim().split('\n');
+  const [, fixture] = fs.readFileSync(path.join(__dirname, '..', 'fixtures', 'fellowship-gemp.txt'), 'utf8').trim().split('\n');
+  // one Axe Strike becomes Gimli, so the deck has a companion to start
+  const gemp = fixture.replace('1_3,1_3,', '1_3,1_12,');
 
   await page.goto('/deck/import');
   await page.selectOption('#target_format', 'fotr_block');
@@ -24,6 +26,13 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await page.click('form[action$="/deck/fileimport"] button[type=submit]');
   await expect(page).toHaveURL(/\/deck\/edit\//);
   await waitForCardData(page);
+
+  // Gimli starts, with a starting note; both go with the deck when it's published
+  await page.locator('#deck [data-start="1_12"]').click();
+  await page.click('a[href="#tab-pane-infos"]');
+  await page.fill('#starting-notes', 'Start [[Gimli, Dwarf of Erebor]] and bid low.');
+  await page.click('#btn-save');
+  await expect(page.locator('#save-status')).toContainText('Saved as version');
 
   // Publish is the deckbuilder's Visibility menu (Ketura, 2026-11-02)
   await page.click('#btn-visibility');
@@ -51,6 +60,27 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await expect(page.locator('#deck .rb-qty-text').first()).toHaveText(/^\dx$/);
   await expect(page.locator('#deck .rb-n')).toHaveCount(0);
   await expect(page.locator('#tab-pane-stats #stats-chart-twilight svg')).toBeVisible();
+  // the starting fellowship: an S in the deck, and the starting notes above the description,
+  // which come with the page rather than after the card data (Ketura, 2026-11-04)
+  await expect(page.locator('#deck .rb-line[data-code="1_12"] .rb-start-mark')).toHaveCount(1);
+  await expect(page.locator('#deck .rb-start-mark')).toHaveCount(1);
+  await expect(page.locator('#reader-starting .rb-starting-card')).toHaveText('Gimli, Dwarf of Erebor');
+  await expect(page.locator('#reader-starting a.rb-cardlink[data-code="1_12"]')).toBeVisible();
+  // copying the deck gives "2x Card" lines, Gemp's import format
+  const copied = await page.evaluate(() => {
+    const deck = document.querySelector('#deck')!;
+    const range = document.createRange();
+    range.selectNodeContents(deck);
+    getSelection()!.removeAllRanges();
+    getSelection()!.addRange(range);
+    const data = new DataTransfer();
+    deck.dispatchEvent(new ClipboardEvent('copy', { clipboardData: data, bubbles: true, cancelable: true }));
+    getSelection()!.removeAllRanges();
+    return data.getData('text/plain');
+  });
+  expect(copied).toMatch(/^Ring-bearer: Frodo, Son of Drogo$/m);
+  expect(copied).toMatch(/^1x Gimli, Dwarf of Erebor$/m);
+  expect(copied).toMatch(/^2x Axe Strike$|^1x Axe Strike$/m);
   await snap(page, 'decklist published');
   decklistUrl = page.url();
   decklistId = decklistUrl.match(/\/decklist\/view\/(\d+)\//)![1];

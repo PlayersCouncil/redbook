@@ -325,10 +325,10 @@ decklist:
       comment: Comment
       version: Version
     derived:
-      title: Derived from
+      title: Derived From
       none: None. Self-made deck here.
     inspire:
-      title: Inspiration for
+      title: Inspiration For
       none: None yet.
     toolbar:
       edit: Edit decklist name / description
@@ -737,7 +737,7 @@ decklist.source.unresolved: "Lines in the original that couldn't be matched to a
 decklist.source.raw: The decklist as originally posted
 decklist.source.comments: Comments from the original thread
 decklist.source.archived_label: (archived)
-claim.button: This is me
+claim.button: Claim This Account
 claim.title: "Claim %name%"
 claim.intro: "If you posted as %name% on %source%, ask for this account to be merged into yours. An admin will check and approve it. Its %count% published decks become yours, they keep a note of where they came from, and %name% is listed on your profile as another name you've used."
 claim.message: "How can we tell it's you? (your name on the original site, anything else that helps)"
@@ -872,14 +872,14 @@ deckbuilder.statstab.their_deck: "Opponent's draw deck"
 deckbuilder.statstab.first: "Goes first:"
 deckbuilder.statstab.you: You
 deckbuilder.statstab.them: Opponent
-deckbuilder.statstab.your_moves: Your moves
-deckbuilder.statstab.their_moves: "Opponent's moves"
+deckbuilder.statstab.your_moves: Your Moves
+deckbuilder.statstab.their_moves: "Opponent's Moves"
 deckbuilder.statstab.turn_n: "Turn %count%"
 deckbuilder.statstab.single: Single move
 deckbuilder.statstab.double: Double move
 deckbuilder.statstab.site: Site
 deckbuilder.statstab.cards_left: Cards left in the draw deck
-deckbuilder.statstab.runs_out: "%who% runs out at site %site%."
+deckbuilder.statstab.runs_out: "%who%: out of cards at site %site%."
 deckbuilder.statstab.cards_at: "%who%: %count% cards left at site %site%."
 deckbuilder.notes.tag_placeholder: "Add a tag…"
 deckbuilder.notes.tag_add: Add a tag
@@ -1101,3 +1101,4 @@ decklist.reader.description: Description
 decklist.reader.comments: Comments
 decklist.reader.card_notes: Card Notes
 decklist.reader.has_note: "The author has a note on this card"
+decklist.reader.loading: "Loading…"

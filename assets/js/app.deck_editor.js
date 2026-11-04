@@ -22,6 +22,8 @@
         // the reader (Ketura, 2026-11-04): the same deck, shown not edited; its own view settings
         readonly = false,
         prefix = '',
+        // the nine sites don't fit beside the Ring-bearer as thumbnails: they're list lines instead
+        sites_fallback = false,
         TYPE_ORDER = ['companion', 'ally', 'follower', 'minion', 'artifact', 'possession', 'condition', 'event'],
         ICONS = {
             list: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5h12M3 9h12M3 13.5h12"/></svg>',
@@ -165,6 +167,12 @@
             + (card.kind === 'errata' ? ' <span class="rb-pc" title="' + t('card.kind.errata_short') + '">PC</span>' : '');
     }
 
+    /** In the reader the whole row previews its card (Ketura, 2026-11-04); the deckbuilder's rows are full of buttons */
+    function row_hover(card)
+    {
+        return readonly ? ' data-hover-code="' + card.code + '"' : '';
+    }
+
     function classes(slot, problems)
     {
         return (slot.pending ? ' is-pending' : '') + (!slot.pending && problems[slot.card.code] ? ' is-problem' : '');
@@ -179,13 +187,23 @@
         if(options.numbers && !start && slot.card.side !== 'shadow' && !readonly) {
             start = '<span class="rb-start-space" aria-hidden="true"></span>';
         }
-        return '<div class="rb-line' + classes(slot, problems) + '" data-key="' + slot.key + '" data-code="' + slot.card.code + '">'
+        return '<div class="rb-line' + classes(slot, problems) + '" data-key="' + slot.key + '" data-code="' + slot.card.code + '"' + row_hover(slot.card) + '>'
             + qty_control(slot, options.numbers)
             + (options.culture ? app.data.cardIconHtml(slot.card) : '')
             + start
             + name_html(slot.card)
             + annotation_mark(slot.card)
             + '</div>';
+    }
+
+    /** Four segments under a tile, one dark per copy, so counts compare at a glance (Ketura, 2026-11-04) */
+    function copies_strip(qty)
+    {
+        var html = '<div class="rb-copies" aria-hidden="true">';
+        for(var n = 1; n <= Math.max(4, qty); n++) {
+            html += '<span' + (n <= qty ? ' class="is-on"' : '') + '></span>';
+        }
+        return html + '</div>';
     }
 
     function tile(slot, problems, options)
@@ -196,11 +214,13 @@
             + '<div class="rb-tile-img" data-hover-code="' + card.code + '" data-hover-grow="1">'
             + (card.image_url ? '<img src="' + card.image_url + '" alt="' + _.escape(card.label) + '" loading="lazy">' : '<span class="rb-tile-noimg">' + _.escape(card.label) + '</span>')
             + (options.number ? '<span class="rb-site-num">' + options.number + '</span>' : '')
-            + (options.numbers ? start_button(slot) : '')
-            + (readonly && options.numbers ? '<span class="rb-tile-count">' + slot.qty + 'x</span>' : '')
+            + (options.numbers && !readonly ? start_button(slot) : '')
+            // the reader: the count, the S just right of it (Ketura, 2026-11-04)
+            + (readonly && options.numbers ? '<span class="rb-tile-badges"><span class="rb-tile-count">' + slot.qty + 'x</span>' + start_button(slot) + '</span>' : '')
             + (readonly ? annotation_mark(card) : '')
             + (options.overlay ? '<div class="rb-tile-x">' + x_or_trash(slot) + '</div>' : '')
             + '</div>'
+            + (readonly && options.numbers ? copies_strip(slot.qty) : '')
             + (options.overlay || readonly ? '' : qty_control(slot, options.numbers))
             + '</div>';
     }
@@ -285,14 +305,14 @@
             rows = _.map(sites, function (s) { return {n: '', slot: s}; });
         }
 
-        if(v === 'list' || shut) {
+        if(v === 'list' || shut || sites_fallback) {
             html += '<div class="rb-site-list' + (shut ? ' is-columns' : '') + '">' + _.map(rows, function (row) {
                 if(!row.slot) {
                     return '<div class="rb-line rb-site-empty"><span class="rb-site-n">' + row.n + '</span>'
                         + plus('site', t('deckbuilder.find_site', {number: row.n}), ' data-site="' + row.n + '"')
                         + '<span class="rb-choose">' + (readonly ? '&mdash;' : t('deckbuilder.choose_site', {number: row.n})) + '</span></div>';
                 }
-                return '<div class="rb-line' + classes(row.slot, problems) + '" data-key="' + row.slot.key + '" data-code="' + row.slot.card.code + '">'
+                return '<div class="rb-line' + classes(row.slot, problems) + '" data-key="' + row.slot.key + '" data-code="' + row.slot.card.code + '"' + row_hover(row.slot.card) + '>'
                     + '<span class="rb-site-n">' + row.n + '</span>' + x_or_trash(row.slot) + name_html(row.slot.card) + '</div>';
             }).join('') + (!rows.length ? '<div class="rb-empty">&mdash;</div>' : '') + '</div>';
         } else {
@@ -427,7 +447,68 @@
         if(toolbar) {
             toolbar.html(display_options());
         }
+        fit_sites();
     };
+
+    /**
+     * Thumbnails of the sites that would need a sideways scroll to see are shown as list
+     * lines instead (Ketura, 2026-11-04); a resize tries the thumbnails again.
+     */
+    function fit_sites()
+    {
+        var thumbs = $(container).find('.rb-thumbs-sites')[0];
+        if(!sites_fallback && thumbs && thumbs.scrollWidth > thumbs.clientWidth + 1) {
+            sites_fallback = true;
+            editor.render();
+        }
+    }
+
+    function refit()
+    {
+        if(sites_fallback && view() !== 'list' && !sites_collapsed()) {
+            sites_fallback = false;
+            editor.render();
+        }
+    }
+
+    /**
+     * A selection across the reader's deck copies as one line per card, "4x Card", the way
+     * Gemp's import reads them (Ketura, 2026-11-04). The page's own layout would put the count
+     * and the name on lines of their own. Headings are left out; a selection inside one line
+     * copies as it is.
+     */
+    function copy_lines(event)
+    {
+        var selection = window.getSelection(),
+            clipboard = event.originalEvent && event.originalEvent.clipboardData;
+        if(!clipboard || !selection || selection.isCollapsed) {
+            return;
+        }
+        var lines = [],
+            content = app.deck.get_content();
+        container.find('.rb-line[data-key], .rb-tile[data-key]').each(function () {
+            if(!selection.containsNode(this, true)) {
+                return;
+            }
+            var key = $(this).data('key') + '',
+                card = app.data.cards.findById($(this).data('code') + ''),
+                role = key.indexOf('rb:') === 0 ? 'ring_bearer' : (card ? app.deck.role_for_card(card) : null);
+            if(!card) {
+                return;
+            }
+            if(role === 'ring_bearer' || role === 'ring' || role === 'map') {
+                lines.push({ring_bearer: 'Ring-bearer: ', ring: 'Ring: ', map: 'Map: '}[role] + card.label);
+            } else {
+                lines.push((content[key] || 1) + 'x ' + card.label);
+            }
+        });
+        if(lines.length < 2) {
+            return;
+        }
+        clipboard.setData('text/plain', lines.join('\n'));
+        clipboard.setData('text/html', _.map(lines, _.escape).join('<br>'));
+        event.preventDefault();
+    }
 
     /* ---- events ---- */
 
@@ -444,6 +525,7 @@
         container.toggleClass('rb-readonly', readonly);
         $(toolbar || container).on('click', '.rb-opt-view', function () {
             app.config.set(prefix + 'deck-view', $(this).data('view'));
+            sites_fallback = false;
             editor.render();
         });
         $(toolbar || container).on('click', '.rb-opt-group', function () {
@@ -453,9 +535,12 @@
         container.on('click', '[data-collapse]', function () {
             var section = $(this).data('collapse');
             app.config.set(prefix + 'deck-collapsed-' + section, collapsed(section) ? '0' : '1');
+            sites_fallback = false;
             editor.render();
         });
+        $(window).on('resize', _.debounce(refit, 200));
         if(readonly) {
+            container.on('copy', copy_lines);
             $(document).on('deck.changed', editor.render);
             return;
         }

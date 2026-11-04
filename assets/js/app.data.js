@@ -238,7 +238,17 @@
      * updates the database if necessary, from fetched data
      * @memberOf data
      */
-    function update_collection(data, collection, locale, deferred) {
+    function update_collection(data, collection, locale, deferred, last_modified) {
+        /*
+         * nothing changed since the last full check (Ketura, 2026-11-04): the server's
+         * Last-Modified is the one stored then, and the counts agree. Going through every
+         * card again held up each page by half a second after it had rendered.
+         */
+        var meta = collection.metaData();
+        if (last_modified && meta.lastModified === last_modified && meta.locale === locale && collection.count() === data.length) {
+            deferred.resolve();
+            return;
+        }
         // we update the database and Forerunner will tell us if the data is actually different
         data.forEach(function (row) {
             var existingRow = collection.findById(row.code);
@@ -264,6 +274,7 @@
             locale_changed = true;
         }
         collection.metaData().locale = locale;
+        collection.metaData().lastModified = last_modified || null;
 
         collection.save(function (err) {
             if (err) {
@@ -290,7 +301,7 @@
      */
     function parse_packs(response, textStatus, jqXHR) {
         var locale = jqXHR.getResponseHeader('Content-Language');
-        update_collection(response, masters.packs, locale, dfd.packs);
+        update_collection(response, masters.packs, locale, dfd.packs, jqXHR.getResponseHeader('Last-Modified'));
     }
 
     /**
@@ -299,7 +310,7 @@
      */
     function parse_cards(response, textStatus, jqXHR) {
         var locale = jqXHR.getResponseHeader('Content-Language');
-        update_collection(response, masters.cards, locale, dfd.cards);
+        update_collection(response, masters.cards, locale, dfd.cards, jqXHR.getResponseHeader('Last-Modified'));
     }
 
     $(function () {
