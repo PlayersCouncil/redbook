@@ -32,8 +32,9 @@ abstract class CommonDeck implements CommonDeckInterface
 
     private function sortForExport(array $slots): array
     {
-        usort($slots, fn (SlotInterface $a, SlotInterface $b) => [$a->getCard()->getCulture()?->getName(), $a->getCard()->getType()->getName(), $a->getCard()->getFullName()]
-            <=> [$b->getCard()->getCulture()?->getName(), $b->getCard()->getType()->getName(), $b->getCard()->getFullName()]);
+        // culture, type, twilight, name: the order app.deck.get_cards gives the browser's copy of the list
+        usort($slots, fn (SlotInterface $a, SlotInterface $b) => [$a->getCard()->getCulture()?->getName(), $a->getCard()->getType()->getName(), (int) $a->getCard()->getTwilight(), $a->getCard()->getFullName()]
+            <=> [$b->getCard()->getCulture()?->getName(), $b->getCard()->getType()->getName(), (int) $b->getCard()->getTwilight(), $b->getCard()->getFullName()]);
         return $slots;
     }
 }

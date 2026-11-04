@@ -905,8 +905,14 @@ abbr.legality.banned {
 /* the deck's view and grouping, above its scrolling area */
 .rb-deck-toolbar { flex: 0 0 auto; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 8px 0; border-top: 1px solid var(--rb-line); }
 .rb-deck-toolbar .rb-display-opts { flex: 0 1 auto; min-width: 0; display: flex; }
-.rb-deck-toolbar .rb-opt { flex: 0 0 auto; gap: 5px; padding: 0 10px; font-size: 13px; }
+.rb-deck-toolbar .rb-opt { flex: 0 0 auto; gap: 0; padding: 0 10px; font-size: 13px; }
 .rb-deck-toolbar .rb-opt svg { flex: 0 0 auto; }
+/* icons only, each button keeping the width its word gives it; a click shows the word for a
+   moment, then it slides away (Ketura, 2026-11-04). app.deck_editor pins the widths. */
+.rb-deck-toolbar .rb-opt span { max-width: 0; margin-left: 0; overflow: hidden; white-space: nowrap; opacity: 0;
+    transition: max-width .5s ease, margin-left .5s ease, opacity .35s ease; }
+.rb-deck-toolbar .rb-opt.show-label span, .rb-deck-toolbar.rb-measuring .rb-opt span { max-width: 7em; margin-left: 5px; opacity: 1; }
+.rb-deck-toolbar.rb-no-anim .rb-opt span { transition: none; }
 @media (max-width: 480px) { .rb-deck-toolbar .rb-opt span { display: none; } }
 .rb-deck-toolbar:empty { display: none; }
 .rb-deck-toolbar + .rb-deck { border-top: 0; padding-top: 2px; }
@@ -1376,6 +1382,9 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 .rb-reader-desc { grid-area: desc; }
 .rb-reader-comments { grid-area: comments; }
 .rb-reader-col { min-width: 0; padding: 0; }
+/* the deck on white, the other columns on the page's tint, so the eye goes to the deck (Ketura, 2026-11-04) */
+.rb-reader-deck { background: #fff; }
+.rb-reader-col-head { flex: 0 0 auto; margin: 0; padding: 10px 14px 8px; border-bottom: 1px solid var(--rb-line); font-size: 15px; font-weight: 700; }
 .rb-reader-scroll { padding: 10px 14px 18px; }
 /* while the card data loads: the deck and Stats say so (Ketura, 2026-11-04) */
 .rb-reader-loading { padding: 40px 0; text-align: center; color: var(--rb-muted); }
@@ -1411,6 +1420,8 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 .rb-readonly .rb-start-mark { flex: 0 0 auto; width: 16px; height: 16px; border-radius: 4px; font-size: 0; user-select: none; box-shadow: none; cursor: default; }
 .rb-readonly .rb-start-mark::before { content: "S"; font-size: 11px; font-weight: 800; }
 .rb-readonly .rb-line[data-code] { min-height: 24px; }
+/* the row under the pointer, plainly (Ketura, 2026-11-04) */
+#deck.rb-readonly .rb-line[data-code]:hover { background: #FBE38E; }
 /* groups side by side only when their names fit whole (Ketura, 2026-11-04) */
 .rb-readonly .view-list-groups .rb-group { flex: 1 0 auto; max-width: 100%; }
 .rb-tile-badges { position: absolute; left: 4px; bottom: 4px; display: flex; align-items: center; gap: 3px; }

@@ -127,6 +127,8 @@
         </section>
 
         <section class="rb-reader-col rb-reader-desc" aria-label="{{ 'decklist.reader.description' | trans }}">
+            {# the column's name stays put above its scrolling (Ketura, 2026-11-04) #}
+            <h2 class="rb-reader-col-head">{{ 'decklist.reader.commentary' | trans }}</h2>
             {# rendered here rather than in the browser, so the column is whole on the first paint #}
             <div class="rb-reader-scroll">
                 {% if reader.starting or reader.bid or reader.starting_html %}

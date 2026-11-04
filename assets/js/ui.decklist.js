@@ -320,7 +320,12 @@
         if(!steps.length) {
             return;
         }
-        steps[0]();
+        // one step failing (a chart on an odd archive deck, say) mustn't keep the rest from showing
+        try {
+            steps[0]();
+        } catch (e) {
+            console.error(e);
+        }
         window.requestAnimationFrame(function () {
             setTimeout(function () { in_frames(steps.slice(1)); }, 0);
         });

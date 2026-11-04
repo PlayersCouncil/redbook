@@ -426,11 +426,15 @@
                 them: {deck: (runout.their_deck || your_deck) - 8, hand: 8, site: 1, pattern: runout.them.slice(), turn: 0, points: [[1, Math.max(0, (runout.their_deck || your_deck) - 8)]]}
             },
             play = function (p, n) { p.hand = Math.max(0, p.hand - n); },
-            reconcile = function (p) {
+            // the site where a deck first runs dry, as the Free Peoples or the Shadow player
+            reconcile = function (p, site) {
                 var want = 8 - p.hand,
                     got = Math.min(want, Math.max(0, p.deck));
                 p.deck -= got;
                 p.hand += got;
+                if(p.deck <= 0 && !p.out) {
+                    p.out = site;
+                }
             },
             fp_key = runout.first,
             guard = 0;
@@ -448,10 +452,10 @@
                 play(shadow, shadow_plays(fp.site));
                 if(m < moves) {
                     // moving again: only the Shadow player reconciles
-                    reconcile(shadow);
+                    reconcile(shadow, fp.site);
                 } else {
-                    reconcile(fp);
-                    reconcile(shadow);
+                    reconcile(fp, fp.site);
+                    reconcile(shadow, fp.site);
                 }
                 fp.points.push([fp.site, Math.max(0, fp.deck)]);
             }
@@ -538,8 +542,10 @@
         });
         var say = function (who, p) {
             var end = p.points[p.points.length - 1];
+            // where it ran dry (Ketura, 2026-11-04): a deck can empty on the other player's turn,
+            // at a site its own line never stops at
             return p.deck <= 0
-                ? t('deckbuilder.statstab.runs_out', {who: who, site: _.find(p.points, function (pt) { return pt[1] === 0; })[0]})
+                ? t('deckbuilder.statstab.runs_out', {who: who, site: p.out || 1})
                 : t('deckbuilder.statstab.cards_at', {who: who, count: end[1], site: end[0]});
         };
         $('#runout-summary').text(say(t('deckbuilder.statstab.you'), result.you) + ' ' + say(t('deckbuilder.statstab.them'), result.them));

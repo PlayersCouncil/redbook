@@ -24,6 +24,8 @@
         prefix = '',
         // the nine sites don't fit beside the Ring-bearer as thumbnails: they're list lines instead
         sites_fallback = false,
+        // the view or grouping just clicked, whose word shows for a moment
+        flash = null, flash_timer = null,
         TYPE_ORDER = ['companion', 'ally', 'follower', 'minion', 'artifact', 'possession', 'condition', 'event'],
         ICONS = {
             list: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5h12M3 9h12M3 13.5h12"/></svg>',
@@ -72,11 +74,11 @@
     {
         var v = view(), g = grouping(),
             vbtn = function (code) {
-                return '<button type="button" class="rb-opt rb-opt-view' + (v === code ? ' active' : '') + '" data-view="' + code + '" aria-pressed="' + (v === code)
+                return '<button type="button" class="rb-opt rb-opt-view' + (v === code ? ' active' : '') + (flash === code ? ' show-label' : '') + '" data-view="' + code + '" aria-pressed="' + (v === code)
                     + '" title="' + t('deckbuilder.view.' + code) + '">' + ICONS[code] + '<span>' + t('deckbuilder.view.' + code + '_short') + '</span></button>';
             },
             gbtn = function (code, label) {
-                return '<button type="button" class="rb-opt rb-opt-group' + (g === code ? ' active' : '') + '" data-group="' + code + '" aria-pressed="' + (g === code)
+                return '<button type="button" class="rb-opt rb-opt-group' + (g === code ? ' active' : '') + (flash === code ? ' show-label' : '') + '" data-group="' + code + '" aria-pressed="' + (g === code)
                     + '" title="' + t('deckbuilder.group.' + code + '_hint') + '">' + ICONS[code] + '<span>' + label + '</span></button>';
             };
         // one row above the deck's scrolling area, so it never scrolls away (Ketura, 2026-11-03)
@@ -437,7 +439,7 @@
             html = '<h2 class="rb-deck-head">' + section_toggle('top', _.map(totals, _.escape).join(', ')) + '</h2>'
                 + '<div class="rb-deck-top view-' + v + (sites_collapsed() ? ' is-collapsed' : '') + '"><div class="rb-deck-top-left">'
                 + single_slot('ring_bearer', t('deck.ring_bearer'), 'ring_bearer', t('deckbuilder.find_ring_bearer'), problems)
-                + single_slot('ring', t('deck.ring'), 'ring', t('deckbuilder.find_ring'), problems);
+                + single_slot('ring', t('deck.ring_short'), 'ring', t('deckbuilder.find_ring'), problems);
         if(app.deck.get_cards('map').length || (format && format.uses_maps)) {
             html += single_slot('map', t('deck.map'), 'map', t('deckbuilder.find_map'), problems);
         }
@@ -446,9 +448,37 @@
         $(container).removeClass('deck-loading').html(html);
         if(toolbar) {
             toolbar.html(display_options());
+            pin_option_widths();
         }
         fit_sites();
     };
+
+    /**
+     * The view and grouping buttons show only their icons, at the width their word gives them
+     * (Ketura, 2026-11-04): measured with every word showing and no animation, then pinned.
+     */
+    function pin_option_widths()
+    {
+        var buttons = toolbar.find('.rb-opt');
+        toolbar.addClass('rb-no-anim rb-measuring');
+        var widths = buttons.map(function () { return this.getBoundingClientRect().width; }).get();
+        // a hidden toolbar measures nothing: leave its buttons to size themselves
+        buttons.each(function (i) { this.style.width = widths[i] ? Math.ceil(widths[i]) + 'px' : ''; });
+        toolbar.removeClass('rb-measuring');
+        void toolbar[0].offsetWidth;
+        toolbar.removeClass('rb-no-anim');
+    }
+
+    /** A clicked view or grouping says its name for two seconds, then the word slides away */
+    function flash_label(code)
+    {
+        flash = code;
+        clearTimeout(flash_timer);
+        flash_timer = setTimeout(function () {
+            flash = null;
+            toolbar && toolbar.find('.rb-opt.show-label').removeClass('show-label');
+        }, 2000);
+    }
 
     /**
      * Thumbnails of the sites that would need a sideways scroll to see are shown as list
@@ -525,11 +555,13 @@
         container.toggleClass('rb-readonly', readonly);
         $(toolbar || container).on('click', '.rb-opt-view', function () {
             app.config.set(prefix + 'deck-view', $(this).data('view'));
+            flash_label($(this).data('view'));
             sites_fallback = false;
             editor.render();
         });
         $(toolbar || container).on('click', '.rb-opt-group', function () {
             app.config.set(prefix + 'deck-group', $(this).data('group'));
+            flash_label($(this).data('group'));
             editor.render();
         });
         container.on('click', '[data-collapse]', function () {

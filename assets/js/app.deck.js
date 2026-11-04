@@ -602,26 +602,8 @@
         if(type === 'gemp') {
             return gemp;
         }
-        if(type === 'list') {
-            return deck.get_list();
-        }
-        var line = function (s) { return s.qty + 'x ' + s.card.label + ' (' + s.card.code + ')'; },
-            rb = deck.get_cards('ring_bearer'),
-            ring = deck.get_cards('ring'),
-            map = deck.get_cards('map'),
-            draw = deck.get_cards('draw'),
-            lines = [data.name || '', 'Format: ' + (data.target_format || ''), ''];
-        if(rb.length) { lines.push('Ring-bearer: ' + rb[0].card.label + ' (' + rb[0].card.code + ')'); }
-        if(ring.length) { lines.push('Ring: ' + ring[0].card.label + ' (' + ring[0].card.code + ')'); }
-        lines.push('', 'Adventure deck');
-        lines = lines.concat(_.map(deck.get_cards('site'), line));
-        lines.push('', 'Free Peoples');
-        lines = lines.concat(_.map(_.filter(draw, function (s) { return s.card.side !== 'shadow'; }), line));
-        lines.push('', 'Shadow');
-        lines = lines.concat(_.map(_.filter(draw, function (s) { return s.card.side === 'shadow'; }), line));
-        if(map.length) { lines.push('', 'Map: ' + map[0].card.label + ' (' + map[0].card.code + ')'); }
-        lines.push('', 'Gemp: ' + gemp);
-        return lines.join('\n');
+        // the plain text is the list (Ketura, 2026-11-04): the same as the server's text download
+        return deck.get_list();
     };
 
     /**

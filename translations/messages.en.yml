@@ -1102,6 +1102,7 @@ decklist.reader.card_notes: Card Notes
 decklist.reader.has_note: "The author has a note on this card"
 decklist.reader.loading: "Loading…"
 decklist.reader.archived: Archived
+decklist.reader.commentary: Author Commentary
 decklist.reader.tags: Tags
 decklist.reader.social: "Like, favourite, comment"
 decklist.reader.copy_deck: Copy This Deck

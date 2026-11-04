@@ -1,15 +1,17 @@
-{% macro line(slot) %}{{ slot.quantity }}x {{ slot.card.fullName }} ({{ slot.card.code }})
+{# The deck as a list (Ketura, 2026-11-04): the same text as the reader's Copy List
+   (app.deck.get_list), for people and for Gemp's import, which needs no blueprint codes. #}
+{% macro line(slot) %}{{ slot.quantity }}x {{ slot.card.fullName }}
 {% endmacro %}
 {% import _self as m %}
 {{ deck.name }}
-Format: {{ deck.target_format }}
+Format: {{ format_name(deck.target_format) }}
 
-{% if deck.ring_bearer %}Ring-bearer: {{ deck.ring_bearer.card.fullName }} ({{ deck.ring_bearer.card.code }})
+{% if deck.ring_bearer %}Ring-bearer: {{ deck.ring_bearer.card.fullName }}
 {% endif %}
-{% if deck.ring %}Ring: {{ deck.ring.card.fullName }} ({{ deck.ring.card.code }})
+{% if deck.ring %}Ring: {{ deck.ring.card.fullName }}
 {% endif %}
 
-Adventure deck
+Adventure Deck
 {% for slot in deck.sites %}{{ m.line(slot) }}{% endfor %}
 
 Free Peoples
@@ -19,7 +21,5 @@ Shadow
 {% for slot in deck.shadow %}{{ m.line(slot) }}{% endfor %}
 {% if deck.map %}
 
-Map: {{ deck.map.card.fullName }} ({{ deck.map.card.code }})
+Map: {{ deck.map.card.fullName }}
 {% endif %}
-
-Gemp: {{ deck.gemp }}

@@ -96,6 +96,8 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   // Download Text File: named for the account, then the deck
   const download = await page.request.get(await page.locator('.rb-reader-buttons-wide a[href*="/decklist/export/text/"]').getAttribute('href') as string);
   expect(download.headers()['content-disposition']).toMatch(/filename="?e2e_author_[a-z0-9]+_e2e-decklist-/);
+  // and holding the same list as Copy List (Ketura, 2026-11-04)
+  expect((await download.text()).replace(/\r\n/g, '\n').trim()).toBe(list.trim());
   await snap(page, 'decklist published');
   decklistUrl = page.url();
   decklistId = decklistUrl.match(/\/decklist\/view\/(\d+)\//)![1];

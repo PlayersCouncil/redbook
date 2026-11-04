@@ -160,7 +160,7 @@ class BuilderController extends AbstractController
             ? $deck->getSlots()->toGempString() . "\r\n"
             : str_replace("\n", "\r\n", $this->renderView('Export/default.txt.twig', ['deck' => $deck->getTextExport()]));
 
-        return $this->textFile($content, $texts->slugify($deck->getName()) . '.txt');
+        return $this->textFile($content, $texts->slugify($deck->getUser()->getDisplayName()) . '_' . $texts->slugify($deck->getName()) . '.txt');
     }
 
     #[Route(path: '/deck/clone/{deck_uuid}', name: 'deck_clone', methods: ['GET'], requirements: ['deck_uuid' => self::UUID])]
