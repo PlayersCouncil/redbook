@@ -126,7 +126,7 @@
         var on = app.deck.is_starting(slot.card.code),
             label = t(on ? 'deckbuilder.starting_off' : 'deckbuilder.starting_on', {card: _.escape(slot.card.label)});
         return '<button type="button" class="rb-start' + (on ? ' active' : '') + '" data-start="' + slot.card.code + '" aria-pressed="' + on
-            + '" aria-label="' + label + '" title="' + label + '">S</button>';
+            + '" aria-label="' + label + '" title="' + t('deckbuilder.starting_title') + '">S</button>';
     }
 
     function name_html(card)
@@ -146,11 +146,17 @@
     function line(slot, problems, options)
     {
         options = options || {};
+        // the S sits between the culture icon and the name; other Free Peoples lines keep its
+        // space, so the names line up (Ketura, 2026-11-03)
+        var start = options.numbers ? start_button(slot) : '';
+        if(options.numbers && !start && slot.card.side !== 'shadow') {
+            start = '<span class="rb-start-space" aria-hidden="true"></span>';
+        }
         return '<div class="rb-line' + classes(slot, problems) + '" data-key="' + slot.key + '" data-code="' + slot.card.code + '">'
             + qty_control(slot, options.numbers)
             + (options.culture ? app.data.cultureIconHtml(slot.card.culture_code, slot.card.culture_name) : '')
+            + start
             + name_html(slot.card)
-            + (options.numbers ? start_button(slot) : '')
             + '</div>';
     }
 
@@ -341,7 +347,9 @@
                     + '<span>' + _.escape(group.label) + '</span> <span class="rb-count">(' + count(group.slots) + ')</span></div>';
             }
             if(v === 'list') {
-                html += _.map(group.slots, function (s) { return line(s, problems, {numbers: true, culture: g !== 'culture'}); }).join('');
+                // as wide as the longest line and a little more, so the empty space beside the
+                // list isn't a field of invisible rows (Ketura, 2026-11-03)
+                html += '<div class="rb-lines">' + _.map(group.slots, function (s) { return line(s, problems, {numbers: true, culture: g !== 'culture'}); }).join('') + '</div>';
             } else {
                 html += '<div class="rb-thumbs' + (v === 'half' ? ' is-half' : '') + '">'
                     + _.map(group.slots, function (s) { return tile(s, problems, {numbers: true}); }).join('') + '</div>';

@@ -33,7 +33,8 @@
         hand = [],
         sorted_count = 0,
         drawn = 0,
-        runout = {fp_play: 3, shadow_play: 4, you: 'DSDSD'.split(''), them: 'DSDSD'.split(''), first: 'you', their_deck: null};
+        runout = {fp_play: 3, shadow_play: 4, you: 'DSDSD'.split(''), them: 'DSDSD'.split(''), first: 'you', their_deck: null},
+        RUNOUT_KEY = 'stats-runout';
 
     function t(key, params)
     {
@@ -229,6 +230,7 @@
         var fp = [], shadow = [];
         _.each(series, function (s) {
             _.each(s.data, function (v, i) {
+                v = v && typeof v === 'object' ? v.y : v;
                 var list = v < 0 ? fp : shadow;
                 list[i] = (list[i] || 0) + v;
             });
@@ -244,9 +246,38 @@
             credits: {enabled: false},
             legend: {enabled: true, itemStyle: {fontWeight: 'normal'}},
             // one stack per row: Free Peoples to the left of zero, Shadow to the right, on the same line
-            plotOptions: {series: {stacking: 'normal', borderWidth: 0, groupPadding: 0.1, pointPadding: 0.04, animation: false}},
-            tooltip: {formatter: function () { return '<b>' + this.series.name + '</b><br>' + this.x + ': ' + Math.abs(this.y); }}
+            // no tooltip on the bar charts: the hovered bar shows its count, centred on it (Ketura, 2026-11-03)
+            tooltip: {enabled: false},
+            plotOptions: {series: {stacking: 'normal', borderWidth: 0, groupPadding: 0.1, pointPadding: 0.04, animation: false,
+                states: {hover: {brightness: 0.08}},
+                point: {events: {mouseOver: show_count, mouseOut: hide_count}}}}
         };
+    }
+
+    /** The hovered bar's count, drawn on the middle of the bar; it ignores the pointer */
+    function show_count()
+    {
+        var point = this,
+            chart = point.series.chart;
+        hide_count.call(point);
+        if(!point.y || !point.graphic) {
+            return;
+        }
+        var bar = point.graphic.element.getBoundingClientRect(),
+            box = chart.container.getBoundingClientRect();
+        chart.rb_count = chart.renderer.text(String(Math.abs(point.y)), bar.left - box.left + bar.width / 2, bar.top - box.top + bar.height / 2 + 4)
+            .attr({align: 'center', zIndex: 9, 'class': 'rb-bar-count'})
+            .css({fontWeight: '700', fontSize: '12px', color: '#1E1B16', pointerEvents: 'none'})
+            .add();
+    }
+
+    function hide_count()
+    {
+        var chart = this.series.chart;
+        if(chart.rb_count) {
+            chart.rb_count.destroy();
+            chart.rb_count = null;
+        }
     }
 
     function chart_twilight(draw)
@@ -295,8 +326,9 @@
             values = function (field, negative) { return _.map(keys, function (key) { return negative ? -rows[key][field] : rows[key][field]; }); },
             half = totals.shadow / 2,
             series = [
-                {name: t('deckbuilder.statstab.companions'), color: FP, data: values('companion', true)},
-                {name: t('deckbuilder.statstab.allies'), color: FP_LIGHT, borderColor: FP, borderWidth: 1, data: values('ally', true)},
+                // companions match the other Free Peoples cards; allies are the odd one out (Ketura, 2026-11-03)
+                {name: t('deckbuilder.statstab.companions'), color: '#C4AC78', data: values('companion', true)},
+                {name: t('deckbuilder.statstab.allies'), color: FP, data: values('ally', true)},
                 {name: t('deckbuilder.statstab.other_fp'), color: '#C4AC78', data: values('fp', true), showInLegend: false},
                 {name: t('deckbuilder.statstab.minions'), color: SHADOW, data: values('minion', false)},
                 {name: t('deckbuilder.statstab.other_shadow'), color: '#A88DC0', data: values('shadow', false), showInLegend: false}
@@ -322,7 +354,7 @@
         var cultures = {};
         _.each(draw, function (c) {
             var code = c.culture_code || 'none';
-            cultures[code] = cultures[code] || {name: c.culture_name || t('deck.no_culture'), fp: 0, shadow: 0};
+            cultures[code] = cultures[code] || {code: code, name: c.culture_name || t('deck.no_culture'), fp: 0, shadow: 0};
             cultures[code][c.side === 'shadow' ? 'shadow' : 'fp'] += c.indeck;
         });
         var all = _.values(cultures),
@@ -338,8 +370,9 @@
                 r = i < top ? shadow_only[i] : both[i - top];
             left.push(l ? l.name : '');
             right.push(r ? r.name : '');
-            fp.push(l ? -l.fp : 0);
-            shadow.push(r ? r.shadow : 0);
+            // each culture in its own colour, from the card templates (app.cultures)
+            fp.push(l ? {y: -l.fp, color: app.cultures.color(l.code)} : 0);
+            shadow.push(r ? {y: r.shadow, color: app.cultures.color(r.code)} : 0);
         }
         var series = [
             {name: t('side.free_peoples'), color: FP, data: fp},
@@ -351,10 +384,7 @@
                 {categories: right, title: {text: null}, opposite: true, linkedTo: 0}
             ],
             yAxis: split_axis(stack_totals(series)),
-            tooltip: {formatter: function () {
-                var names = this.y < 0 ? left : right;
-                return '<b>' + names[this.point.x] + '</b><br>' + this.series.name + ': ' + Math.abs(this.y);
-            }},
+            legend: {enabled: false},
             series: series
         }));
     }
@@ -470,18 +500,22 @@
             you_end = _.last(result.you.points),
             them_end = _.last(result.them.points),
             top = Math.max(result.you.points[0][1], result.them.points[0][1], 1),
-            close = Math.abs(you_end[1] - them_end[1]) < top * 0.08,
+            // the two cliffs' labels would meet: yours is the one labelled
+            close = Math.abs(you_end[0] - them_end[0]) <= 2 && Math.abs(you_end[1] - them_end[1]) < top * 0.12,
+            /**
+             * The cliff (Ketura, 2026-11-03): from the final dot straight down to the site axis,
+             * saying how many cards that player is left holding in the draw deck, unused
+             */
             guide = function (end, color, labelled, z) {
                 if(!end[1]) {
                     return null;
                 }
                 return {
-                    // labelled under the line, ending at the final dot, clear of where the lines come down from
-                    type: 'line', data: [{x: 1, y: end[1]}, {x: end[0], y: end[1], dataLabels: {enabled: labelled}}],
-                    color: '#9A9A9A', lineWidth: 1, dashStyle: 'Dash', marker: {enabled: false}, enableMouseTracking: false,
+                    type: 'line', data: [{x: end[0], y: end[1]}, {x: end[0], y: end[1] / 2, dataLabels: {enabled: labelled}}, {x: end[0], y: 0}],
+                    color: '#8A8A8A', lineWidth: 2, dashStyle: 'Dash', marker: {enabled: false}, enableMouseTracking: false,
                     showInLegend: false, zIndex: z,
-                    dataLabels: {enabled: false, align: 'right', verticalAlign: 'top', x: -8, y: 2, crop: false, overflow: 'none',
-                        style: {color: color, fontWeight: '600', fontSize: '11px', textShadow: 'none'},
+                    dataLabels: {enabled: false, align: 'right', verticalAlign: 'middle', x: -8, y: 0, crop: false, overflow: 'none',
+                        style: {color: color, fontWeight: '700', fontSize: '12px', textShadow: '0 0 3px #fff, 0 0 2px #fff'},
                         formatter: function () { return Translator.transChoice('deckbuilder.statstab.cards_remain', end[1], {count: end[1]}); }}
                 };
             },
@@ -511,9 +545,40 @@
         $('#runout-summary').text(say(t('deckbuilder.statstab.you'), result.you) + ' ' + say(t('deckbuilder.statstab.them'), result.them));
     }
 
+    /** The run-out settings are kept in this browser, so a setup someone likes stays (Ketura, 2026-11-03) */
+    function load_runout()
+    {
+        var saved = app.config && app.config.get(RUNOUT_KEY);
+        if(!saved || typeof saved !== 'object') {
+            return;
+        }
+        _.each(['fp_play', 'shadow_play', 'their_deck'], function (key) {
+            if(saved[key] === null || (typeof saved[key] === 'number' && saved[key] >= 0 && saved[key] <= 200)) {
+                runout[key] = saved[key];
+            }
+        });
+        _.each(['you', 'them'], function (who) {
+            if(typeof saved[who] === 'string' && /^[SD]+$/.test(saved[who])) {
+                runout[who] = normalize(saved[who].split(''));
+            }
+        });
+        if(saved.first === 'you' || saved.first === 'them') {
+            runout.first = saved.first;
+        }
+    }
+
+    function save_runout()
+    {
+        if(app.config) {
+            app.config.set(RUNOUT_KEY, {fp_play: runout.fp_play, shadow_play: runout.shadow_play, their_deck: runout.their_deck,
+                you: runout.you.join(''), them: runout.them.join(''), first: runout.first});
+        }
+    }
+
     /** Redraws the run-out part only, keeping the pane where it was scrolled to (Ketura, 2026-11-03) */
     function refresh_runout()
     {
+        save_runout();
         var pane = $('#deck-stats').parents().filter(function () { return this.scrollHeight > this.clientHeight && /(auto|scroll)/.test($(this).css('overflow-y')); }).first(),
             scrolled = pane.scrollTop(),
             focused = document.activeElement && $(document.activeElement).closest('#runout-inputs').length
@@ -550,6 +615,7 @@
     stats.setup = function setup()
     {
         var root = $('#deck-stats');
+        load_runout();
         root.on('click', '[data-draw]', function () { stats.draw($(this).data('draw') + ''); });
         root.on('click', '[data-turn]', function () {
             var who = $(this).closest('[data-pattern]').data('pattern'),

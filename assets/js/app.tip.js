@@ -15,7 +15,8 @@
  * - Timing follows Gemp's AutoZoom (Ketura, 2026-11-03): the first hover waits
  *   HOVER_DELAY before showing; once a card is showing, moving to another shows it
  *   at once; leaving the cards keeps that for COOLDOWN, so crossing the gap between
- *   two thumbnails doesn't flicker. Pressing the mouse button hides it.
+ *   two thumbnails doesn't flicker (1s since Ketura, 2026-11-03, so moves within a second
+ *   never re-animate). Pressing the mouse button hides it.
  * - While the next image loads the hover is black, never the previous card.
  */
 (function app_tip(tip, $)
@@ -27,7 +28,7 @@
         current = null,
         last_touch = 0,
         HOVER_DELAY = 500,
-        COOLDOWN = 500,
+        COOLDOWN = 1000,
         LEAVE_GRACE = 120,
         hover_timer = null,
         hide_timer = null,

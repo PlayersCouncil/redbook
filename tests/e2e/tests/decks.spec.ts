@@ -222,7 +222,8 @@ test('deck notes, stats and history: starting fellowship, tags, annotations, tes
   await page.fill('#annot-search', 'the one ring, the ruling');
   await page.locator('.rb-annot-suggest [data-annotate]').first().click();
   await page.locator('#annot-list textarea').fill('Cut for the Isildur\'s Bane ring');
-  await expect(page.locator('#annot-list .rb-annot-where')).toContainText('not in the deck');
+  // not in the deck: an asterisk after the name
+  await expect(page.locator('#annot-list .rb-annot-out')).toBeVisible();
 
   await page.click('#btn-save');
   await expect(page.locator('#save-status')).toContainText('Saved as version');

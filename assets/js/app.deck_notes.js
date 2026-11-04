@@ -73,9 +73,10 @@
                 rows.unshift({tag: typed, count: 0, is_new: true});
             }
             box.html(_.map(rows, function (row) {
-                return '<button type="button" data-tag="' + _.escape(row.tag) + '">' + _.escape(row.tag)
-                    + (row.is_new ? ' <small>' + t('deckbuilder.notes.tag_new') + '</small>' : ' <small>' + Translator.transChoice('deckbuilder.notes.tag_count', row.count, {count: row.count}) + '</small>')
-                    + '</button>';
+                var note = row.is_new ? t('deckbuilder.notes.tag_new')
+                    : row.count ? Translator.transChoice('deckbuilder.notes.tag_count', row.count, {count: row.count})
+                    : Translator.transChoice('deckbuilder.notes.tag_site', row.site, {count: row.site});
+                return '<button type="button" data-tag="' + _.escape(row.tag) + '">' + _.escape(row.tag) + ' <small>' + note + '</small></button>';
             }).join('')).prop('hidden', !rows.length);
         });
     }
@@ -124,9 +125,10 @@
         $('#annot-list').html(rows.length ? _.map(rows, function (row) {
             var card = app.data.cards.findById(row.code),
                 held = !!(in_deck[row.code] || in_deck['rb:' + row.code]);
+            // a card that isn't in the deck gets an asterisk after its name (Ketura, 2026-11-03)
             return '<div class="rb-annot" data-code="' + row.code + '">'
-                + '<div class="rb-annot-card"><a href="' + (card ? card.url : '#') + '" class="card-tip" data-code="' + row.code + '">' + _.escape(card ? card.label : row.code) + '</a>'
-                + '<span class="rb-annot-where' + (held ? ' is-held' : '') + '">' + t(held ? 'deckbuilder.notes.in_deck' : 'deckbuilder.notes.not_in_deck') + '</span>'
+                + '<div class="rb-annot-card"><span><a href="' + (card ? card.url : '#') + '" class="card-tip" data-code="' + row.code + '">' + _.escape(card ? card.label : row.code) + '</a>'
+                + '<span class="rb-annot-out" title="' + t('deckbuilder.notes.not_in_deck') + '"' + (held ? ' hidden' : '') + '>*</span></span>'
                 + '<button type="button" class="rb-annot-remove" data-unannotate="' + row.code + '" aria-label="' + t('deckbuilder.notes.annotation_remove') + '">&times;</button></div>'
                 + '<textarea rows="2" data-annotation="' + row.code + '" aria-label="' + t('deckbuilder.notes.annotation_for', {card: _.escape(card ? card.label : row.code)}) + '">' + _.escape(row.text || '') + '</textarea>'
                 + '</div>';
@@ -347,7 +349,7 @@
                 var code = $(this).data('code') + '',
                     content = app.deck.get_content ? app.deck.get_content() : {},
                     held = !!(content[code] || content['rb:' + code]);
-                $(this).find('.rb-annot-where').toggleClass('is-held', held).text(t(held ? 'deckbuilder.notes.in_deck' : 'deckbuilder.notes.not_in_deck'));
+                $(this).find('.rb-annot-out').prop('hidden', held);
             });
         });
     };

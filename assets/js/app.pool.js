@@ -675,9 +675,25 @@
         return {size: columns * rows, shrink: shrink};
     }
 
+    /** The list view reads down the columns, not across the rows (Ketura, 2026-11-03) */
+    function list_in_columns()
+    {
+        var list = pool_el.find('.rb-pool-list');
+        if(!list.length) {
+            return;
+        }
+        list.css({'grid-auto-flow': '', 'grid-template-rows': ''});
+        var columns = window.getComputedStyle(list[0]).gridTemplateColumns.split(' ').filter(function (c) { return c && c !== 'none'; }).length || 1,
+            rows = Math.ceil(list.children().length / columns);
+        if(columns > 1 && rows > 0) {
+            list.css({'grid-auto-flow': 'column', 'grid-template-rows': 'repeat(' + rows + ', auto)'});
+        }
+    }
+
     /** Narrower tile columns, centred, when a page takes the extra row */
     function apply_fit(fitted)
     {
+        list_in_columns();
         var grid = pool_el.find('.rb-pool-grid');
         if(grid.length && fitted && fitted.shrink) {
             grid.css({'grid-template-columns': 'repeat(' + fitted.shrink.columns + ', ' + fitted.shrink.width + 'px)', 'justify-content': 'center'});

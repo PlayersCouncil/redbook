@@ -886,6 +886,7 @@ deckbuilder.notes.tag_add: Add a tag
 deckbuilder.notes.tag_remove: "Remove the tag %tag%"
 deckbuilder.notes.tag_new: new tag
 deckbuilder.notes.tag_count: "{1} on 1 of your decks|]1,Inf] on %count% of your decks"
+deckbuilder.notes.tag_site: "{0} |{1} on 1 public deck|]1,Inf] on %count% public decks"
 deckbuilder.notes.starting: Starting Notes
 deckbuilder.notes.bid: Bid
 deckbuilder.notes.bid_placeholder: "e.g. 2-3"
@@ -902,7 +903,7 @@ deckbuilder.notes.annotations_none: "Notes on single cards go here: why it's in,
 deckbuilder.notes.annotation_for: "Notes on %card%"
 deckbuilder.notes.annotation_remove: Remove this annotation
 deckbuilder.notes.in_deck: in the deck
-deckbuilder.notes.not_in_deck: not in the deck
+deckbuilder.notes.not_in_deck: Not in the deck
 deckbuilder.notes.no_card: No card by that name.
 deckbuilder.notes.markdown_hint: "Markdown: **bold**, *italic*, lists, links"
 deckbuilder.history.imported: Imported from archive
@@ -916,6 +917,7 @@ deckbuilder.more.submit_historic_confirm: "Submit this deck to the historians as
 historian.queue.submitted: submitted
 historian.review.flag.submitted: "Submitted by %detail%"
 historian.queue.flag_name.submitted: Submitted
+deckbuilder.starting_title: Starting Fellowship
 deckbuilder.starting_on: "Mark %card% as starting fellowship"
 deckbuilder.starting_off: "%card% starts in the fellowship (click to unmark)"
 deckbuilder.expand: Expand

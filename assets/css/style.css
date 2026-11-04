@@ -917,7 +917,12 @@ abbr.legality.banned {
 .rb-plus { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 5px; background: var(--rb-blue); color: #fff; font-size: 16px; font-weight: 700; line-height: 1; cursor: pointer; flex: 0 0 auto; }
 .rb-empty { color: var(--rb-muted); }
 .rb-line { display: flex; align-items: center; gap: 7px; min-height: 28px; }
-.rb-line .rb-name { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--rb-ink); }
+.rb-line .rb-name { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--rb-ink); }
+/* a group's lines: all as wide as its longest, plus a rem; the pool's row highlight (Ketura, 2026-11-03) */
+.rb-lines { display: grid; grid-template-columns: minmax(0, max-content); max-width: 100%; }
+.rb-lines .rb-line { padding: 0 1rem 0 3px; }
+#deck .rb-line[data-code] { border-radius: 4px; }
+#deck .rb-line[data-code]:hover { background: var(--rb-blue-soft); }
 .rb-sub { color: var(--rb-muted); font-weight: normal; }
 .rb-pc { padding: 0 4px; border-radius: 3px; background: #D9E6F4; color: #1F4670; font-size: 10px; font-weight: 700; }
 .rb-qty { flex: 0 0 auto; display: flex; gap: 2px; }
@@ -1162,6 +1167,8 @@ abbr.legality.banned {
 .rb-side.is-collapsed .rb-side-head { border-bottom-style: dashed; }
 /* collapsed sites: list lines in three columns */
 .rb-site-list.is-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 16px; }
+/* collapsed: the three columns sit close together, centred (Ketura, 2026-11-03) */
+.rb-site-list.is-columns { grid-auto-columns: minmax(0, max-content); grid-template-columns: none; justify-content: center; column-gap: 28px; }
 .rb-site-list.is-columns .rb-line { min-width: 0; }
 .rb-site-list.is-columns .rb-name, .rb-site-list.is-columns .rb-choose { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 600px) { .rb-site-list.is-columns { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; } }
@@ -1187,7 +1194,10 @@ abbr.legality.banned {
 .rb-start { width: 22px; height: 26px; padding: 0; border: 0; border-radius: 5px; background: #4A4A4A; color: #fff; font-size: 13px; font-weight: 800; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
 .rb-start.active { background: var(--rb-yellow); color: #111; }
 .rb-tile-img .rb-start { position: absolute; right: 0; top: 50%; transform: translateY(-50%); border-radius: 5px 0 0 5px; }
-.rb-line .rb-start { flex: 0 0 auto; margin-left: auto; width: 22px; height: 22px; box-shadow: none; }
+.rb-line .rb-start { flex: 0 0 auto; width: 22px; height: 22px; box-shadow: none; }
+.rb-start-space { flex: 0 0 22px; }
+/* off: the S struck through (Ketura, 2026-11-03) */
+.rb-start:not(.active) { background-image: linear-gradient(to top right, transparent calc(50% - 1px), rgba(255, 255, 255, .9) calc(50% - 1px), rgba(255, 255, 255, .9) calc(50% + 1px), transparent calc(50% + 1px)); }
 
 /* History: saved and published versions in one timeline (Ketura, 2026-11-03) */
 .rb-history-published td { background: #F6F3EC; }
@@ -1217,6 +1227,9 @@ abbr.legality.banned {
 .rb-starting-list { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 13px; }
 .rb-starting-label { font-weight: 600; color: var(--rb-muted); }
 .rb-starting-card { padding: 1px 8px; border-radius: 12px; background: var(--rb-yellow); color: #111; }
+/* black on the yellow, whatever the link colours say; underlined on hover (Ketura, 2026-11-03) */
+a.rb-starting-card, a.rb-starting-card:visited, a.rb-starting-card:hover, a.rb-starting-card:focus { color: #111; text-decoration: none; }
+a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline; }
 .rb-starting-cost { color: var(--rb-muted); }
 .rb-md-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; min-height: 120px; }
 .rb-md-pair textarea { width: 100%; height: 100%; min-height: 0; resize: none; padding: 6px 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 13px; overflow-y: auto; }
@@ -1234,8 +1247,7 @@ abbr.legality.banned {
 .rb-annot-list { flex: 1 1 auto; min-height: 60px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
 .rb-annot { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); gap: 8px; align-items: start; }
 .rb-annot-card { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; font-size: 13px; }
-.rb-annot-where { font-size: 11px; color: var(--rb-muted); }
-.rb-annot-where.is-held { color: var(--rb-good); }
+.rb-annot-out { margin-left: 1px; color: var(--rb-muted); font-weight: 700; cursor: help; }
 .rb-annot-remove { width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--rb-muted); font-size: 16px; line-height: 1; cursor: pointer; }
 .rb-annot-remove:hover { color: var(--rb-red); }
 .rb-annot textarea { width: 100%; resize: vertical; padding: 4px 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 13px; }
@@ -1285,3 +1297,30 @@ abbr.legality.banned {
 .rb-cardlink.is-ambiguous { text-decoration: underline dotted; }
 .rb-cardlink.is-missing { color: #a94442; text-decoration: underline wavy rgba(169, 68, 66, .6); cursor: help; }
 .card-versions li:target { background: #fdf3c8; outline: 2px solid #e6c200; outline-offset: 2px; border-radius: 2px; }
+
+/* ---- culture colours (Ketura, 2026-11-03) ----
+   The one place the site keeps them: CSS uses var(--rb-culture-gondor), JS reads them
+   through app.cultures.color('gondor'). From the card templates of sets 5-13 by
+   docker/tools/culture_colors.py: the main colour is the title bar's gradient, the light
+   one the tint of the collector's-info patch. The Balrog's fiery template isn't Moria's. */
+/* hover counts on the Stats bars must not catch the pointer, or the bar loses its hover */
+.rb-chart .highcharts-data-labels, .rb-chart .highcharts-data-labels *, .rb-chart .rb-bar-count { pointer-events: none; }
+.rb-chart .rb-bar-count { paint-order: stroke; stroke: rgba(255, 255, 255, .85); stroke-width: 3px; }
+:root {
+    --rb-culture-dunland: #676E7D; --rb-culture-dunland-light: #766B5B;
+    --rb-culture-dwarven: #420726; --rb-culture-dwarven-light: #C9BFA1;
+    --rb-culture-elven: #346186; --rb-culture-elven-light: #BBB9BC;
+    --rb-culture-gandalf: #446D81; --rb-culture-gandalf-light: #CEAC87;
+    --rb-culture-gollum: #536F7C; --rb-culture-gollum-light: #736F6C;
+    --rb-culture-gondor: #6C5D8C; --rb-culture-gondor-light: #D0C8D3;
+    --rb-culture-isengard: #3F7C4E; --rb-culture-isengard-light: #AAB3A4;
+    --rb-culture-men: #D1AA3D; --rb-culture-men-light: #767677;
+    --rb-culture-moria: #BD5F03; --rb-culture-moria-light: #BFA67A;
+    --rb-culture-orc: #9D3A21; --rb-culture-orc-light: #9F8D79;
+    --rb-culture-raider: #E4C632; --rb-culture-raider-light: #BEA86C;
+    --rb-culture-ringwraith: #244B5E; --rb-culture-ringwraith-light: #8C9AA5;
+    --rb-culture-rohan: #1A69AC; --rb-culture-rohan-light: #687080;
+    --rb-culture-sauron: #791217; --rb-culture-sauron-light: #D5B4A2;
+    --rb-culture-shire: #3F523C; --rb-culture-shire-light: #C3C79F;
+    --rb-culture-uruk-hai: #398129; --rb-culture-uruk-hai-light: #A6AC9B;
+}

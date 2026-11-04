@@ -306,14 +306,31 @@ class BuilderController extends AbstractController
     public function tagsAction(): JsonResponse
     {
         $user = $this->requireUser();
-        $counts = [];
+        $mine = [];
         foreach ($user->getDecks() as $deck) {
             foreach (array_unique(preg_split('/\s+/', trim((string) $deck->getTags()), -1, PREG_SPLIT_NO_EMPTY)) as $tag) {
-                $counts[$tag] = ($counts[$tag] ?? 0) + 1;
+                $mine[$tag] = ($mine[$tag] ?? 0) + 1;
             }
         }
-        arsort($counts);
-        return new JsonResponse(array_map(fn ($tag, $count) => ['tag' => (string) $tag, 'count' => $count], array_keys($counts), $counts));
+        // the most used tags on the site, counted only over decks that are already public:
+        // published as a decklist, or archive decks (Ketura, 2026-11-03). Private decks'
+        // tags stay private.
+        $public = [];
+        $rows = $this->managerRegistry->getManager()->getConnection()->fetchFirstColumn(
+            "SELECT d.tags FROM deck d JOIN user u ON u.id = d.user_id
+             WHERE d.tags IS NOT NULL AND d.tags <> ''
+               AND (u.historic = 1 OR EXISTS (SELECT 1 FROM published_deck p WHERE p.parent_deck_id = d.id))"
+        );
+        foreach ($rows as $tags) {
+            foreach (array_unique(preg_split('/\s+/', trim((string) $tags), -1, PREG_SPLIT_NO_EMPTY)) as $tag) {
+                $public[$tag] = ($public[$tag] ?? 0) + 1;
+            }
+        }
+        $all = array_unique(array_merge(array_keys($mine), array_keys($public)));
+        $list = array_map(fn ($tag) => ['tag' => (string) $tag, 'count' => $mine[$tag] ?? 0, 'site' => $public[$tag] ?? 0], $all);
+        // yours first, by use; then the site's
+        usort($list, fn ($a, $b) => [$b['count'], $b['site'], $a['tag']] <=> [$a['count'], $a['site'], $b['tag']]);
+        return new JsonResponse($list);
     }
 
     /**
