@@ -602,6 +602,9 @@
         if(type === 'gemp') {
             return gemp;
         }
+        if(type === 'list') {
+            return deck.get_list();
+        }
         var line = function (s) { return s.qty + 'x ' + s.card.label + ' (' + s.card.code + ')'; },
             rb = deck.get_cards('ring_bearer'),
             ring = deck.get_cards('ring'),
@@ -618,6 +621,32 @@
         lines = lines.concat(_.map(_.filter(draw, function (s) { return s.card.side === 'shadow'; }), line));
         if(map.length) { lines.push('', 'Map: ' + map[0].card.label + ' (' + map[0].card.code + ')'); }
         lines.push('', 'Gemp: ' + gemp);
+        return lines.join('\n');
+    };
+
+    /**
+     * The deck as a list for people and for Gemp's import (Ketura, 2026-11-04): the format by
+     * its name, "2x Card" lines, no blueprint codes and no Gemp string.
+     */
+    deck.get_list = function get_list()
+    {
+        var line = function (s) { return s.qty + 'x ' + s.card.label; },
+            live = function (role) { return _.reject(deck.get_cards(role), 'pending'); },
+            rb = live('ring_bearer'),
+            ring = live('ring'),
+            map = live('map'),
+            draw = live('draw'),
+            format = deck.get_format(),
+            lines = [data.name || '', 'Format: ' + (format ? format.name : (data.target_format || '')), ''];
+        if(rb.length) { lines.push('Ring-bearer: ' + rb[0].card.label); }
+        if(ring.length) { lines.push('Ring: ' + ring[0].card.label); }
+        lines.push('', 'Adventure Deck');
+        lines = lines.concat(_.map(live('site'), line));
+        lines.push('', 'Free Peoples');
+        lines = lines.concat(_.map(_.filter(draw, function (s) { return s.card.side !== 'shadow'; }), line));
+        lines.push('', 'Shadow');
+        lines = lines.concat(_.map(_.filter(draw, function (s) { return s.card.side === 'shadow'; }), line));
+        if(map.length) { lines.push('', 'Map: ' + map[0].card.label); }
         return lines.join('\n');
     };
 

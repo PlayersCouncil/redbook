@@ -51,23 +51,33 @@
                         {% endfor %}
                     </ul>
                 </span>
+                {# the deck's tags, from the deck it was published from (Ketura, 2026-11-04) #}
+                {% set tags = decklist.parent and decklist.parent.tags ? decklist.parent.tags | split(' ') | filter(t => t) : [] %}
+                {% if tags %}
+                    <ul class="rb-reader-tags" aria-label="{{ 'decklist.reader.tags' | trans }}">
+                        {% for tag in tags %}<li class="rb-tag-chip">{{ tag }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
             </div>
             <div class="rb-reader-actions">
-                <div class="social">
+                {# like, favourite and comment as buttons, filled once you have (Ketura, 2026-11-04) #}
+                <div class="rb-social" role="group" aria-label="{{ 'decklist.reader.social' | trans }}">
                     {% if is_granted('IS_AUTHENTICATED_REMEMBERED') %}
-                        <span class="social-icons">
-                            <a id="social-icon-like" href="#" class="social-icon-like" data-toggle="tooltip" data-placement="bottom" title="{{ 'decklist.view.social.like' | trans }}">
-                                <span class="fas fa-heart"></span> <span class="num">{{ decklist.nbVotes }}</span></a>
-                            <a id="social-icon-favorite" href="#" class="social-icon-favorite" data-toggle="tooltip" data-placement="bottom" title="{{ 'decklist.view.social.favorite' | trans }}">
-                                <span class="fas fa-star"></span> <span class="num">{{ decklist.nbFavorites }}</span></a>
-                            <a id="social-icon-comment" href="#comment-form" class="social-icon-comment" data-toggle="tooltip" data-placement="bottom" title="{{ 'decklist.view.social.comment' | trans }}">
-                                <span class="fas fa-comment"></span> <span class="num">{{ decklist.nbComments }}</span></a>
-                        </span>
+                        <button type="button" id="social-like" class="rb-social-btn is-like" aria-pressed="false" title="{{ 'decklist.view.social.like' | trans }}">
+                            <span class="far fa-thumbs-up" aria-hidden="true"></span><span class="num">{{ decklist.nbVotes }}</span></button>
+                        <button type="button" id="social-favorite" class="rb-social-btn is-favorite" aria-pressed="false" title="{{ 'decklist.view.social.favorite' | trans }}">
+                            <span class="far fa-bookmark" aria-hidden="true"></span><span class="num">{{ decklist.nbFavorites }}</span></button>
+                        <a href="#comment-form" id="social-comment" class="rb-social-btn is-comment" title="{{ 'decklist.view.social.comment' | trans }}">
+                            <span class="far fa-comment" aria-hidden="true"></span><span class="num">{{ decklist.nbComments }}</span></a>
                     {% else %}
-                        {{ macros.decklist_social_icons(decklist) }}
+                        {# logged out: the buttons lead to the login page #}
+                        {% for social in [{key: 'like', icon: 'thumbs-up', num: decklist.nbVotes}, {key: 'favorite', icon: 'bookmark', num: decklist.nbFavorites}, {key: 'comment', icon: 'comment', num: decklist.nbComments}] %}
+                            <a href="{{ path('fos_user_security_login') }}" class="rb-social-btn is-{{ social.key }}" title="{{ ('decklist.view.social.' ~ social.key) | trans }}">
+                                <span class="far fa-{{ social.icon }}" aria-hidden="true"></span><span class="num">{{ social.num }}</span></a>
+                        {% endfor %}
                     {% endif %}
                 </div>
-                <div class="btn-group" role="group" id="btn-group-decklist">{% include 'Decklist/toolbar.html.twig' %}</div>
+                <div class="rb-reader-buttons" id="btn-group-decklist">{% include 'Decklist/toolbar.html.twig' %}</div>
             </div>
         </div>
         <div class="rb-reader-meta">
@@ -78,7 +88,8 @@
             {% endif %}
             {% if format %}<a href="{{ path('format', {code: format.code}) }}">{{ format.name }}</a>{% endif %}
             <span>{{ 'decklist.reader.played' | trans({'%date%': decklist.effectiveDate | date('Y-m-d')}) }}</span>
-            <span class="text-muted">{{ 'decklist.reader.published' | trans }} <time datetime="{{ decklist.dateCreation|date('c') }}">{{ decklist.dateCreation|date('Y-m-d') }}</time></span>
+            {# an archive deck wasn't published here: it was brought in from the archives #}
+            <span class="text-muted">{{ (decklist.source ? 'decklist.reader.archived' : 'decklist.reader.published') | trans }} <time datetime="{{ decklist.dateCreation|date('c') }}">{{ decklist.dateCreation|date('Y-m-d') }}</time></span>
             {% include 'Deck/completeness-label.html.twig' with {deck: decklist} %}
             {% if decklist.verified and decklist.reviewedBy %}
                 <span class="small text-muted rb-review-note">{{ 'decklist.review.verified_by' | trans({'%name%': decklist.reviewedBy.displayName, '%date%': decklist.reviewedAt | date('Y-m-d')}) }}</span>
@@ -157,6 +168,7 @@
                     {% include 'Decklist/table-predecessor.html.twig' %}
                     {% include 'Decklist/table-successor.html.twig' %}
                 </div>
+                {% if decklist.source and decklist.source.comments | length %}{% include 'Decklist/archive-comments.html.twig' with {source: decklist.source} %}{% endif %}
                 {% include 'Decklist/comments.html.twig' %}
             </div>
         </section>

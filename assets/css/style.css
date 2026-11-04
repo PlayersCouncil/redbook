@@ -1338,10 +1338,36 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 .rb-reader-head { padding: 8px 16px 6px; border-bottom: 2px solid var(--rb-divide); background: #fff; }
 .rb-reader-head .alert { margin: 0 0 6px; padding: 6px 12px; }
 .rb-reader-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
-.rb-reader-name { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.rb-reader-name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-width: 0; }
 .rb-reader-name h1 { margin: 0; font-size: 26px; font-weight: 700; line-height: 1.2; }
-.rb-reader-actions { display: flex; align-items: center; gap: 14px; }
-.rb-reader-actions .social-icons a, .rb-reader-actions .social-icons span { margin-left: 8px; }
+.rb-reader-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.rb-reader-buttons, .rb-reader-buttons-wide { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rb-reader-buttons a.rb-btn, .rb-reader-buttons a.rb-btn:hover, .rb-reader-buttons a.rb-btn:focus { color: var(--rb-ink); text-decoration: none; }
+.rb-reader-buttons-narrow { display: none; }
+@media (max-width: 767px) {
+    .rb-reader-buttons-wide { display: none; }
+    .rb-reader-buttons-narrow { display: inline-block; }
+}
+/* like, favourite, comment: buttons, the icon filled and the button tinted once you have (Ketura, 2026-11-04) */
+.rb-social { display: flex; gap: 8px; }
+.rb-social-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border: 1px solid var(--rb-line-strong); border-radius: 8px;
+    background: #fff; color: var(--rb-ink); font-size: 15px; font-weight: 600; line-height: 1; cursor: pointer; }
+.rb-social-btn .fa-thumbs-up, .rb-social-btn .fa-bookmark, .rb-social-btn .fa-comment { font-size: 24px; }
+a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-ink); text-decoration: none; }
+.rb-social-btn:hover:not([disabled]) { border-color: #8F846C; background: var(--rb-soft); }
+.rb-social-btn.is-like .far, .rb-social-btn.is-like .fas { color: #1D5FAD; }
+.rb-social-btn.is-favorite .far, .rb-social-btn.is-favorite .fas { color: #B7860B; }
+.rb-social-btn.is-comment .far, .rb-social-btn.is-comment .fas { color: #24572A; }
+.rb-social-btn.is-like.is-on { border-color: #1D5FAD; background: #E7EFF9; }
+.rb-social-btn.is-favorite.is-on { border-color: #B7860B; background: #FBF2D9; }
+.rb-social-btn.is-comment.is-on { border-color: #24572A; background: #E6F0E6; }
+.rb-social-btn[disabled] { cursor: default; opacity: .6; }
+.rb-social-btn.processing { opacity: .6; }
+.rb-reader-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.rb-reader-tags .rb-tag-chip { padding: 1px 9px; font-size: 12px; }
+.rb-toast { position: fixed; z-index: 1060; padding: 5px 12px; border-radius: 6px; background: #fff; border: 1px solid #9CC79F; color: #1E7B2E;
+    font-size: 14px; font-weight: 700; box-shadow: 0 2px 8px rgba(0, 0, 0, .15); pointer-events: none; transition: opacity .5s; }
+.rb-toast.is-leaving { opacity: 0; }
 .rb-reader-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 4px; font-size: 13px; }
 .rb-reader-author { font-weight: 700; }
 .rb-reader-grid { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "deck" "desc" "comments" "tools"; }

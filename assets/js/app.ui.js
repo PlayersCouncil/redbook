@@ -38,6 +38,37 @@
         $('#exportModal').modal('show');
     };
 
+    /** Puts text on the clipboard; a promise either way */
+    ui.copy_text = function copy_text(text) {
+        if(navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text).catch(function () { return fallback(); });
+        }
+        return fallback();
+
+        function fallback() {
+            var area = $('<textarea>').val(text).css({position: 'fixed', top: 0, left: 0, opacity: 0}).appendTo('body').select();
+            try {
+                document.execCommand('copy');
+            } catch (e) {
+                // nothing more to try
+            }
+            area.remove();
+            return $.Deferred().resolve().promise();
+        }
+    };
+
+    /** A short green note under an element that fades away (Ketura, 2026-11-04) */
+    ui.toast = function toast(message, anchor) {
+        $('.rb-toast').remove();
+        var note = $('<div class="rb-toast" role="status"></div>').text(message).appendTo('body'),
+            box = anchor ? anchor.getBoundingClientRect() : null;
+        if(box) {
+            note.css({top: box.bottom + 6, left: Math.max(8, Math.min(box.left + box.width / 2 - note.outerWidth() / 2, window.innerWidth - note.outerWidth() - 8))});
+        }
+        setTimeout(function () { note.addClass('is-leaving'); }, 1600);
+        setTimeout(function () { note.remove(); }, 2100);
+    };
+
     ui.export_gemp = function export_gemp(deck) {
         $('#export-deck').text(deck.get_export('gemp'));
         $('#exportModal').modal('show');

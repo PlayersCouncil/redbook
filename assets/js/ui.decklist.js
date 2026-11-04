@@ -11,9 +11,9 @@
     {
 
         $('.decklist-delete').on('click', ui.delete_form);
-        $('.social .social-icon-like').on('click', ui.send_like);
-        $('.social .social-icon-favorite').on('click', ui.send_favorite);
-        $('#btn-group-decklist button[id],a[id]').on('click', ui.do_action_decklist);
+        $('#social-like').on('click', ui.send_like);
+        $('#social-favorite').on('click', ui.send_favorite);
+        $('[data-copy-list]').on('click', ui.copy_list);
         $('#btn-compare').on('click', ui.compare_form);
         $('#btn-compare-submit').on('click', ui.compare_submit);
     };
@@ -23,61 +23,48 @@
         $('#deleteModal').modal('show');
     };
 
-    ui.do_action_decklist = function do_action_decklist(event)
+    /** Copy List (Ketura, 2026-11-04): the deck as a list, straight onto the clipboard */
+    ui.copy_list = function copy_list(event)
     {
-        var action_id = $(this).attr('id');
-        if(!action_id) {
+        event.preventDefault();
+        var anchor = $(this).is(':visible') ? this : $('.rb-reader-buttons-narrow .dropdown-toggle')[0];
+        app.ui.copy_text(app.deck.get_export('list')).then(function () {
+            app.ui.toast(Translator.trans('decklist.reader.copied'), anchor);
+        });
+    };
+
+    /** A like or favourite button: pressed once the user has, its count from the server */
+    function set_pressed(button, on, count)
+    {
+        $(button).toggleClass('is-on', on).attr('aria-pressed', on)
+            .find('.fa-thumbs-up, .fa-bookmark, .fa-comment').toggleClass('fas', on).toggleClass('far', !on);
+        if(count !== undefined) {
+            $(button).find('.num').text(count);
+        }
+    }
+
+    function toggle(button, route)
+    {
+        if(button.hasClass('processing')) {
             return;
         }
-        switch(action_id) {
-            case 'btn-export-plaintext':
-                ui.export_plaintext(app.deck);
-                break;
-            case 'btn-export-gemp':
-                ui.export_gemp(app.deck);
-                break;
-            default:
-                return;
-        }
-
-        event.preventDefault();
-    };
+        button.addClass('processing');
+        $.post(Routing.generate(route), {id: app.deck.get_id()}, function (data)
+        {
+            set_pressed(button, !button.hasClass('is-on'), data);
+        }).always(function () { button.removeClass('processing'); });
+    }
 
     ui.send_like = function send_like(event)
     {
         event.preventDefault();
-        var that = $(this);
-        if($(that).hasClass('processing'))
-            return;
-        $(that).addClass('processing');
-        $.post(Routing.generate('decklist_like'), {
-            id: app.deck.get_id()
-        }, function (data, textStatus, jqXHR)
-        {
-            $(that).find('.num').text(data);
-            $(that).removeClass('processing');
-        });
+        toggle($(this), 'decklist_like');
     };
 
     ui.send_favorite = function send_favorite(event)
     {
         event.preventDefault();
-        var that = $(this);
-        if($(that).hasClass('processing'))
-            return;
-        $(that).addClass('processing');
-        $.post(Routing.generate('decklist_favorite'), {
-            id: app.deck.get_id()
-        }, function (data, textStatus, jqXHR)
-        {
-            that.find('.num').text(data);
-            var title = that.data('original-tooltip');
-            that.data('original-tooltip',
-                    title === "Add to favorites" ? "Remove from favorites"
-                    : "Add to favorites");
-            that.attr('title', that.data('original-tooltip'));
-            $(that).removeClass('processing');
-        });
+        toggle($(this), 'decklist_favorite');
     };
 
     ui.setup_comment_form = function setup_comment_form()
@@ -111,9 +98,10 @@
             });
         });
 
-        $('.social .social-icon-comment').on('click', function ()
+        $('#social-comment').on('click', function (event)
         {
-            $('#comment-form-text').trigger('focus');
+            event.preventDefault();
+            $('#comment-form-text').trigger('focus')[0].scrollIntoView({block: 'nearest', behavior: 'smooth'});
         });
 
         app.markdown.setup('#comment-form-text', '#comment-form-preview');
@@ -125,30 +113,19 @@
 
     };
 
+    /** The buttons show what the user has done; an author can't like their own deck */
     ui.setup_social_icons = function setup_social_icons()
     {
-        var element;
-        if(!app.user.data || app.user.data.is_author) {
-            element = $('.social .social-icon-like');
-            element.replaceWith($('<span class="social-icon-like"></span>').html(element.html()));
+        var user = app.user.data;
+        if(!user) {
+            return;
         }
-
-        if(!app.user.data) {
-            element = $('.social .social-icon-favorite');
-            element.replaceWith($('<span class="social-icon-favorite"></span>').html(element.html()));
-        } else if(app.user.data.is_favorite) {
-            element = $('.social .social-icon-favorite');
-            element.attr('title', "Remove from favorites");
-        } else {
-            element = $('.social .social-icon-favorite');
-            element.attr('title', "Add to favorites");
+        set_pressed('#social-like', !!user.is_liked);
+        set_pressed('#social-favorite', !!user.is_favorite);
+        set_pressed('#social-comment', _.contains(Commenters || [], user.name));
+        if(user.is_author) {
+            $('#social-like').prop('disabled', true).attr('title', Translator.trans('decklist.reader.own_deck'));
         }
-
-        if(!app.user.data) {
-            element = $('.social .social-icon-comment');
-            element.replaceWith($('<span class="social-icon-comment"></span>').html(element.html()));
-        }
-
     };
 
     ui.add_author_actions = function add_author_actions()

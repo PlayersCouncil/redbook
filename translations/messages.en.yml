@@ -316,7 +316,7 @@ decklist:
     published: published
     duplicate: Duplicate of %duplicate%
     comments:
-      count: "{0} No comments | {1} %count% comment | ]1,Inf] %count% comments"
+      count: "{0} No Comments | {1} %count% Comment | ]1,Inf] %count% Comments"
       hint: "Enter your comment in Markdown format. Type # to enter a card name. Type $ to enter a symbol. Type @ to enter a user name."
       submit: Submit comment
     social:
@@ -735,7 +735,6 @@ decklist.source.format: "format as written: %format%"
 decklist.source.ratings: "Rated %score% (%votes% votes, %scale%) on the original site."
 decklist.source.unresolved: "Lines in the original that couldn't be matched to a card:"
 decklist.source.raw: The decklist as originally posted
-decklist.source.comments: Comments from the original thread
 decklist.source.archived_label: (archived)
 claim.button: Claim This Account
 claim.title: "Claim %name%"
@@ -1102,3 +1101,14 @@ decklist.reader.comments: Comments
 decklist.reader.card_notes: Card Notes
 decklist.reader.has_note: "The author has a note on this card"
 decklist.reader.loading: "Loading…"
+decklist.reader.archived: Archived
+decklist.reader.tags: Tags
+decklist.reader.social: "Like, favourite, comment"
+decklist.reader.copy_deck: Copy This Deck
+decklist.reader.copy_deck_hint: "Make your own copy of this deck to change"
+decklist.reader.copy_list: Copy List
+decklist.reader.copy_list_hint: "Copy the deck as a list, which Gemp's import reads"
+decklist.reader.copied: "Copied to clipboard!"
+decklist.reader.own_deck: "Your own deck"
+decklist.reader.download: Download Text File
+decklist.reader.archive_comments: "{1} 1 Imported Archive Comment|]1,Inf] %count% Imported Archive Comments"

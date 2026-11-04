@@ -1071,7 +1071,9 @@ class SocialController extends AbstractController
         $response->headers->set('Content-Type', 'text/plain; charset=utf-8');
         $response->headers->set(
             'Content-Disposition',
-            $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT, $texts->slugify($decklist->getName()) . '.txt')
+            // the account first, then the deck (Ketura, 2026-11-04): "ketura_my-deck.txt"
+            $response->headers->makeDisposition(ResponseHeaderBag::DISPOSITION_ATTACHMENT,
+                $texts->slugify($decklist->getUser()->getDisplayName()) . '_' . $texts->slugify($decklist->getName()) . '.txt')
         );
         return $response;
     }

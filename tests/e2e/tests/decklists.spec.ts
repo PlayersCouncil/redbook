@@ -31,6 +31,8 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await page.locator('#deck [data-start="1_12"]').click();
   await page.click('a[href="#tab-pane-infos"]');
   await page.fill('#starting-notes', 'Start [[Gimli, Dwarf of Erebor]] and bid low.');
+  await page.fill('#tag-entry', 'dwarves');
+  await page.keyboard.press('Enter');
   await page.click('#btn-save');
   await expect(page.locator('#save-status')).toContainText('Saved as version');
 
@@ -81,27 +83,44 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   expect(copied).toMatch(/^Ring-bearer: Frodo, Son of Drogo$/m);
   expect(copied).toMatch(/^1x Gimli, Dwarf of Erebor$/m);
   expect(copied).toMatch(/^2x Axe Strike$|^1x Axe Strike$/m);
+  // the deck's tags beside its version
+  await expect(page.locator('.rb-reader-tags')).toContainText('dwarves');
+  // Copy List: the list on the clipboard, format by name, no codes, no Gemp string
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.locator('.rb-reader-buttons-wide [data-copy-list]').click();
+  await expect(page.locator('.rb-toast')).toHaveText('Copied to clipboard!');
+  const list = await page.evaluate(() => navigator.clipboard.readText());
+  expect(list).toContain('Format: Fellowship Block');
+  expect(list).toMatch(/^1x Gimli, Dwarf of Erebor$/m);
+  expect(list).not.toMatch(/\(\d+_\d+\)|Gemp:/);
+  // Download Text File: named for the account, then the deck
+  const download = await page.request.get(await page.locator('.rb-reader-buttons-wide a[href*="/decklist/export/text/"]').getAttribute('href') as string);
+  expect(download.headers()['content-disposition']).toMatch(/filename="?e2e_author_[a-z0-9]+_e2e-decklist-/);
   await snap(page, 'decklist published');
   decklistUrl = page.url();
   decklistId = decklistUrl.match(/\/decklist\/view\/(\d+)\//)![1];
 
   // Authors can't like their own decklist
-  await expect(page.locator('#social-icon-like')).toHaveCount(0);
+  await expect(page.locator('#social-like')).toBeDisabled();
 });
 
 test('another user likes, favourites and comments on it', async ({ pageAs }) => {
   const page = await pageAs('voter');
   await page.goto(decklistUrl);
 
-  const like = page.locator('#social-icon-like');
+  // buttons that show what this user has done (Ketura, 2026-11-04)
+  const like = page.locator('#social-like');
   await expect(like.locator('.num')).toHaveText('0');
+  await expect(like).toHaveAttribute('aria-pressed', 'false');
   await like.click();
   await expect(like.locator('.num')).toHaveText('1');
+  await expect(like).toHaveAttribute('aria-pressed', 'true');
 
-  const favorite = page.locator('#social-icon-favorite');
+  const favorite = page.locator('#social-favorite');
   await expect(favorite.locator('.num')).toHaveText('0');
   await favorite.click();
   await expect(favorite.locator('.num')).toHaveText('1');
+  await expect(favorite).toHaveClass(/is-on/);
 
   const comment = `Nice list from run ${runId}`;
   // Type it (not fill) so the Markdown preview renders as it would for a
@@ -117,9 +136,12 @@ test('another user likes, favourites and comments on it', async ({ pageAs }) => 
 
   // The counts are stored, not just updated in the page
   await page.reload();
-  await expect(page.locator('#social-icon-like .num')).toHaveText('1');
-  await expect(page.locator('#social-icon-favorite .num')).toHaveText('1');
-  await expect(page.locator('#social-icon-comment .num')).toHaveText('1');
+  await expect(page.locator('#social-like .num')).toHaveText('1');
+  await expect(page.locator('#social-like')).toHaveClass(/is-on/);
+  await expect(page.locator('#social-favorite .num')).toHaveText('1');
+  await expect(page.locator('#social-favorite')).toHaveClass(/is-on/);
+  await expect(page.locator('#social-comment .num')).toHaveText('1');
+  await expect(page.locator('#social-comment')).toHaveClass(/is-on/);
   await expect(page.locator('.comment-text').filter({ hasText: comment })).toBeVisible();
   await snap(page, 'after reload: counts and comment kept');
 });

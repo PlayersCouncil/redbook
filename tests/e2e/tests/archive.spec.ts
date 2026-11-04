@@ -41,6 +41,11 @@ test('a seed batch imports as archived decklists', async ({ page }) => {
   await expect(page.locator('.decklist-source').getByRole('link', { name: 'archived copy' })).toBeVisible();
   await expect(page.locator('.decklist-source').getByRole('link', { name: 'original post' })).toHaveCount(0);
   await expect(page.locator('.decklist-plays')).toContainText('Fixture Regionals');
+  // brought in, not published: "Archived", and the thread's comments above the site's own
+  await expect(page.locator('.rb-reader-meta')).toContainText('Archived');
+  await expect(page.locator('.rb-reader-comments .rb-archive-comments')).toContainText('Imported Archive Comment');
+  await expect(page.locator('.rb-archive-comments .comment-author')).toHaveText('Commenter');
+  await expect(page.locator('.rb-archive-comments .comment-text')).toHaveText('Nice deck');
   // owned by the author's historic account, waiting for a historian
   await expect(page.locator('.rb-reader-author')).toContainText(author);
   await expect(page.locator('.rb-reader-author .rb-user-historic')).toBeVisible();

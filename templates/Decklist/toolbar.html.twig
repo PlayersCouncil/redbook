@@ -1,23 +1,27 @@
+{# The reader's buttons (Ketura, 2026-11-04): the author's Edit and Delete, then Copy This Deck,
+   Copy List and Download Text File. On a phone the last three fold into an Actions menu. #}
 <a href="{{ path('decklist_edit', {decklist_id:decklist.id}) }}" title="{{ 'decklist.view.toolbar.edit' | trans }}"
-   class="btn btn-sm btn-default decklist-edit" style="display:none">
-    <span class="fas fa-pencil-alt text-primary"></span> {{ 'forms.edit' | trans }}
+   class="rb-btn rb-btn-small decklist-edit" style="display:none">
+    <span class="fas fa-pencil-alt text-primary" aria-hidden="true"></span> {{ 'forms.edit' | trans }}
 </a>
-<a href="#" title="Delete decklist" class="btn btn-sm btn-default decklist-delete" style="display:none">
-    <span class="fas fa-trash-alt text-danger"></span> {{ 'forms.delete' | trans }}
+<a href="#" title="Delete decklist" class="rb-btn rb-btn-small decklist-delete" style="display:none">
+    <span class="fas fa-trash-alt text-danger" aria-hidden="true"></span> {{ 'forms.delete' | trans }}
 </a>
-<a href="{{ path('deck_copy', {decklist_id:decklist.id}) }}" class="btn btn-sm btn-default">
-    <span class="fas fa-save"></span> <span class="hidden-xs">{{ 'forms.copy' | trans }}</span>
-</a>
-<div class="btn-group">
-    <button type="button" class="btn  btn-sm btn-default dropdown-toggle" data-toggle="dropdown">
-        <span></span> <span class="hidden-sm">{{ 'forms.actions' | trans }}</span> <span class="caret"></span>
+<span class="rb-reader-buttons-wide">
+    <a href="{{ path('deck_copy', {decklist_id:decklist.id}) }}" class="rb-btn rb-btn-small" title="{{ 'decklist.reader.copy_deck_hint' | trans }}">
+        <span class="fas fa-code-branch" aria-hidden="true"></span> {{ 'decklist.reader.copy_deck' | trans }}</a>
+    <button type="button" class="rb-btn rb-btn-small" data-copy-list title="{{ 'decklist.reader.copy_list_hint' | trans }}">
+        <span class="far fa-copy" aria-hidden="true"></span> {{ 'decklist.reader.copy_list' | trans }}</button>
+    <a href="{{ path('decklist_download', {decklist_id: decklist.id, format: 'text'}) }}" class="rb-btn rb-btn-small">
+        <span class="fas fa-file-download" aria-hidden="true"></span> {{ 'decklist.reader.download' | trans }}</a>
+</span>
+<span class="dropdown rb-reader-buttons-narrow">
+    <button type="button" class="rb-btn rb-btn-small dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        {{ 'forms.actions' | trans }} <span class="caret"></span>
     </button>
     <ul class="dropdown-menu dropdown-menu-right" role="menu">
-        <li class="dropdown-header"><span class="fas fa-file-export"></span> {{ 'forms.export' | trans }}</li>
-        <li><a id="btn-export-plaintext" href="#">{{ 'decks.form.export.plaintext' | trans }}</a></li>
-        <li><a id="btn-export-gemp" href="#">{{ 'decks.form.export.gemp' | trans }}</a></li>
-        <li class="dropdown-header"><span class="fas fa-file-download"></span> {{ 'forms.download' | trans }}</li>
-        <li><a href="{{ path('decklist_download', {decklist_id: decklist.id, format: 'text'}) }}">{{ 'decks.form.download.text' | trans }}</a></li>
-        <li><a href="{{ path('decklist_download', {decklist_id: decklist.id, format: 'gemp'}) }}">{{ 'decks.form.download.gemp' | trans }}</a></li>
+        <li><a href="{{ path('deck_copy', {decklist_id:decklist.id}) }}"><span class="fas fa-code-branch" aria-hidden="true"></span> {{ 'decklist.reader.copy_deck' | trans }}</a></li>
+        <li><a href="#" data-copy-list><span class="far fa-copy" aria-hidden="true"></span> {{ 'decklist.reader.copy_list' | trans }}</a></li>
+        <li><a href="{{ path('decklist_download', {decklist_id: decklist.id, format: 'text'}) }}"><span class="fas fa-file-download" aria-hidden="true"></span> {{ 'decklist.reader.download' | trans }}</a></li>
     </ul>
-</div>
+</span>

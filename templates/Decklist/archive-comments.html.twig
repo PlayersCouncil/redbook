@@ -1,0 +1,22 @@
+{# The comments from an archive deck's original thread (Ketura, 2026-11-04): just above the
+   site's own comments and looking like them. They are plain text as the archive found them. #}
+<table class="table rb-archive-comments">
+    <thead>
+    <tr>
+        <th><span class="fas fa-archive" aria-hidden="true"></span> {{ 'decklist.reader.archive_comments' | trans({'%count%': source.comments | length}) }}</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for comment in source.comments %}
+        <tr>
+            <td>
+                <h4 class="comment-header">
+                    {% if comment.date ?? null %}<span class="comment-date pull-right">{{ comment.date }}</span>{% endif %}
+                    <span class="comment-author">{{ comment.author ?? '?' }}</span>
+                </h4>
+                <div class="comment-text">{{ (comment.text ?? '') | nl2br }}</div>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>

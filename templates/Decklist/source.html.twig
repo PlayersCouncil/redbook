@@ -27,14 +27,5 @@
             </div>
         {% endif %}
         <details><summary class="small">{{ 'decklist.source.raw' | trans }}</summary><pre class="small">{{ source.rawDecklist }}</pre></details>
-        {% if source.comments | length %}
-            <h4>{{ 'decklist.source.comments' | trans }}</h4>
-            {% for comment in source.comments %}
-                <div class="small archived-comment">
-                    <strong>{{ comment.author ?? '?' }}</strong> {{ comment.date ?? '' }}
-                    <div class="archived-comment-text">{{ comment.text ?? '' }}</div>
-                </div>
-            {% endfor %}
-        {% endif %}
     </div>
 </div>
