@@ -160,6 +160,13 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     protected ?Card $thumbnailCard = null;
 
     /**
+     * The cultures a thumbnail without a card shows, [{code, name, corner}], worked out from the
+     * draw deck by updateSizes() (see pickThumbnailCultures)
+     */
+    #[ORM\Column(name: 'thumbnail_cultures', type: 'json', nullable: true)]
+    protected ?array $thumbnailCultures = null;
+
+    /**
      * @var int
      */
     #[ORM\Column(name: 'nb_comments', type: 'integer')]
@@ -320,36 +327,63 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
         $this->thumbnailCard = $card;
     }
 
-    /**
-     * The cultures a thumbnail without a card shows (Ketura, 2026-11-05): for a whole deck, the
-     * Free Peoples culture with the most cards in the top left and the Shadow one in the bottom
-     * right; for a fragment, or a deck with cultures on one side only, its main culture filling
-     * the tile. Ties go to the first by name.
-     *
-     * @return array<array{culture: Culture, corner: string}> corner: fp, shadow or full
-     */
+    /** @return array<array{code: string, name: string, corner: string}> see pickThumbnailCultures */
     public function getThumbnailCultures(): array
     {
-        $rows = array_filter($this->cultures->toArray(), fn (PublishedDeckCulture $row) => $row->getCulture()->getSide() !== null);
-        usort($rows, fn ($a, $b) => [$b->getCount(), $a->getCulture()->getName()] <=> [$a->getCount(), $b->getCulture()->getName()]);
-        if (!$rows) {
-            return [];
-        }
-        $top = fn (string $side) => array_values(array_filter($rows, fn ($row) => $row->getCulture()->getSide() === $side))[0] ?? null;
-        $fp = $top(Card::SIDE_FREE_PEOPLES);
-        $shadow = $top(Card::SIDE_SHADOW);
-        if ($this->getKind() === 'whole' && $fp && $shadow) {
-            return [['culture' => $fp->getCulture(), 'corner' => 'fp'], ['culture' => $shadow->getCulture(), 'corner' => 'shadow']];
-        }
-        return [['culture' => $rows[0]->getCulture(), 'corner' => 'full']];
+        return $this->thumbnailCultures ?? [];
     }
 
-    /** Recounts the draw deck's Free Peoples and Shadow cards (see $nbFreePeoples) */
+    /**
+     * The cultures a thumbnail without a card shows (Ketura, 2026-11-05), from the draw deck's
+     * card counts by side and culture. A whole deck: the Free Peoples culture with the most Free
+     * Peoples cards top left, the Shadow culture with the most Shadow cards bottom right; Gollum,
+     * whose cards are on both sides, can be either or both. A fragment, or a deck with cards on
+     * one side only: that side's main culture filling the tile. Ties go to the first by name.
+     *
+     * @param array<string, array<string, array{name: string, count: int}>> $counts side => culture code => name and count
+     * @return array<array{code: string, name: string, corner: string}> corner: fp, shadow or full
+     */
+    public static function pickThumbnailCultures(array $counts): array
+    {
+        $top = function (string $side) use ($counts): ?array {
+            $rows = [];
+            foreach ($counts[$side] ?? [] as $code => $row) {
+                if ($row['count'] > 0) {
+                    $rows[] = ['code' => $code, 'name' => $row['name'], 'count' => $row['count']];
+                }
+            }
+            usort($rows, fn ($a, $b) => [$b['count'], $a['name']] <=> [$a['count'], $b['name']]);
+            return $rows[0] ?? null;
+        };
+        $fp = $top(Card::SIDE_FREE_PEOPLES);
+        $shadow = $top(Card::SIDE_SHADOW);
+        $part = fn (array $row, string $corner) => ['code' => $row['code'], 'name' => $row['name'], 'corner' => $corner];
+        if ($fp && $shadow) {
+            return [$part($fp, 'fp'), $part($shadow, 'shadow')];
+        }
+        $only = $fp ?? $shadow;
+        return $only ? [$part($only, 'full')] : [];
+    }
+
+    /** Recounts the draw deck's Free Peoples and Shadow cards (see $nbFreePeoples), and picks the thumbnail's cultures */
     public function updateSizes(): void
     {
         $count = fn ($slots) => array_sum(array_map(fn ($slot) => (int) $slot->getQuantity(), iterator_to_array($slots)));
         $this->nbFreePeoples = $count($this->getSlots()->getFreePeoples());
         $this->nbShadow = $count($this->getSlots()->getShadow());
+
+        // and the thumbnail's cultures, which come from the same counts by side
+        $counts = [];
+        foreach ($this->getSlots()->getDrawDeck() as $slot) {
+            $card = $slot->getCard();
+            if ($card->getSide() && $card->getCulture()) {
+                $row = &$counts[$card->getSide()][$card->getCulture()->getCode()];
+                $row ??= ['name' => $card->getCulture()->getName(), 'count' => 0];
+                $row['count'] += (int) $slot->getQuantity();
+                unset($row);
+            }
+        }
+        $this->thumbnailCultures = self::pickThumbnailCultures($counts);
     }
 
     public function getNbFreePeoples(): int

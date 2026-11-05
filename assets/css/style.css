@@ -1630,25 +1630,29 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-thumb-icon {
     --w: var(--size); position: absolute; width: var(--w); height: var(--w);
     left: calc(var(--cx) - var(--w) / 2 + var(--x, 0%)); top: calc(var(--cy) - var(--w) / 2 + var(--y, 0%));
-    transform: scale(var(--s, 1));
+    transform: scale(calc(var(--s, 1) * var(--m, 1)), var(--s, 1));
     background-color: var(--c, #6B645A); -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat;
     filter: drop-shadow(0 1px 0 rgba(255, 255, 255, .7));
 }
-.rb-thumb-fp { clip-path: polygon(0 0, 100% 0, 0 100%); --cx: 30%; --cy: 30%; --size: 95%; --x: var(--corner-x); --y: var(--corner-y); --s: var(--corner-s); }
-.rb-thumb-shadow { clip-path: polygon(100% 0, 100% 100%, 0 100%); --cx: 70%; --cy: 70%; --size: 95%; --x: var(--corner-x); --y: var(--corner-y); --s: var(--corner-s); }
-.rb-thumb-full { --cx: 50%; --cy: 50%; --size: 125%; --x: var(--full-x); --y: var(--full-y); --s: var(--full-s); }
+.rb-thumb-fp { clip-path: polygon(0 0, 100% 0, 0 100%); --cx: 30%; --cy: 30%; --size: 95%; --x: var(--corner-x); --y: var(--corner-y); --s: var(--corner-s); --m: var(--corner-m); }
+.rb-thumb-shadow { clip-path: polygon(100% 0, 100% 100%, 0 100%); --cx: 70%; --cy: 70%; --size: 95%; --x: var(--corner-x); --y: var(--corner-y); --s: var(--corner-s); --m: var(--corner-m); }
+.rb-thumb-full { --cx: 50%; --cy: 50%; --size: 125%; --x: var(--full-x); --y: var(--full-y); --s: var(--full-s); --m: var(--full-m); }
 .rb-thumb-shadow::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom right, transparent calc(50% - 1.5px), rgba(255, 255, 255, .9) calc(50% - 1px), rgba(255, 255, 255, .9) calc(50% + 1px), transparent calc(50% + 1.5px)); }
 /* each culture's framing, in its corner and filling the tile: moved by x and y (percent of the
-   tile, + is right and down) and scaled by s. Ketura's adjustments go here. */
-.rb-thumb-part { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
+   tile, + is right and down), scaled by s, mirrored by m: -1. Ketura's settings from the
+   thumbnail tuner go here; Gollum, on either side, has a corner for each. */
+.rb-thumb-part { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --corner-m: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; --full-m: 1; }
 /* Free Peoples */
 .rb-thumb-c-dwarven    { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
 .rb-thumb-c-elven      { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
 .rb-thumb-c-gandalf    { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
-.rb-thumb-c-gollum     { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
 .rb-thumb-c-gondor     { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
 .rb-thumb-c-rohan      { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
 .rb-thumb-c-shire      { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
+/* Gollum, on either side */
+.rb-thumb-c-gollum     { --full-x: 0%; --full-y: 0%; --full-s: 1; }
+.rb-thumb-fp.rb-thumb-c-gollum { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; }
+.rb-thumb-shadow.rb-thumb-c-gollum { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; }
 /* Shadow */
 .rb-thumb-c-dunland    { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
 .rb-thumb-c-isengard   { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }

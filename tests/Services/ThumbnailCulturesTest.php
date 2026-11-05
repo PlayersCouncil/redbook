@@ -2,59 +2,54 @@
 
 namespace App\Tests\Services;
 
-use App\Entity\Card;
-use App\Entity\Culture;
 use App\Entity\PublishedDeck;
-use App\Entity\PublishedDeckCulture;
 use PHPUnit\Framework\TestCase;
 
 /**
  * A thumbnail without a card (Ketura, 2026-11-05): a whole deck's main Free Peoples and main
- * Shadow culture; a fragment's main culture alone. Ties go to the first by name.
+ * Shadow culture, by each side's cards, so Gollum can be either; a fragment's main culture
+ * alone. Ties go to the first by name.
  */
 class ThumbnailCulturesTest extends TestCase
 {
-    private function deck(int $fp, int $shadow, array $cultures): PublishedDeck
+    private function shown(array $counts): array
     {
-        $deck = new PublishedDeck();
-        foreach (['nbFreePeoples' => $fp, 'nbShadow' => $shadow] as $field => $value) {
-            (new \ReflectionProperty(PublishedDeck::class, $field))->setValue($deck, $value);
+        $byside = [];
+        foreach ($counts as [$side, $name, $count]) {
+            $byside[$side][strtolower($name)] = ['name' => $name, 'count' => $count];
         }
-        foreach ($cultures as [$name, $side, $count]) {
-            $culture = new Culture();
-            $culture->setCode(strtolower($name));
-            $culture->setName($name);
-            $culture->setSide($side);
-            $deck->getCultures()->add(new PublishedDeckCulture($deck, $culture, $count));
-        }
-        return $deck;
-    }
-
-    private function shown(PublishedDeck $deck): array
-    {
-        return array_map(fn ($part) => $part['culture']->getName() . ':' . $part['corner'], $deck->getThumbnailCultures());
+        return array_map(fn ($part) => $part['name'] . ':' . $part['corner'], PublishedDeck::pickThumbnailCultures($byside));
     }
 
     public function testAWholeDeckShowsTheMainCultureOfEachSide(): void
     {
-        $deck = $this->deck(30, 30, [
-            ['Shire', Card::SIDE_FREE_PEOPLES, 12], ['Gandalf', Card::SIDE_FREE_PEOPLES, 12],
-            ['Moria', Card::SIDE_SHADOW, 18], ['Sauron', Card::SIDE_SHADOW, 12], ['The One Ring', null, 40],
-        ]);
-        $this->assertSame(['Gandalf:fp', 'Moria:shadow'], $this->shown($deck));
+        $this->assertSame(['Gandalf:fp', 'Moria:shadow'], $this->shown([
+            ['free_peoples', 'Shire', 12], ['free_peoples', 'Gandalf', 12],
+            ['shadow', 'Moria', 18], ['shadow', 'Sauron', 12],
+        ]));
+    }
+
+    public function testGollumOnEitherSideByItsCardsThere(): void
+    {
+        // Gollum's Shadow cards make it the Shadow culture; its Free Peoples cards don't count there
+        $this->assertSame(['Shire:fp', 'Gollum:shadow'], $this->shown([
+            ['free_peoples', 'Shire', 20], ['free_peoples', 'Gollum', 10],
+            ['shadow', 'Gollum', 18], ['shadow', 'Moria', 12],
+        ]));
+        // and both corners, for now (Ketura will want one tile when both are Gollum)
+        $this->assertSame(['Gollum:fp', 'Gollum:shadow'], $this->shown([
+            ['free_peoples', 'Gollum', 20], ['shadow', 'Gollum', 30],
+        ]));
     }
 
     public function testAFragmentShowsItsMainCultureAlone(): void
     {
-        $deck = $this->deck(36, 0, [['Elven', Card::SIDE_FREE_PEOPLES, 20], ['Gandalf', Card::SIDE_FREE_PEOPLES, 16]]);
-        $this->assertSame(['Elven:full'], $this->shown($deck));
-        // Gollum's Shadow cards in a Shadow fragment: still the one culture, whatever its side
-        $deck = $this->deck(0, 30, [['Gollum', Card::SIDE_FREE_PEOPLES, 18], ['Moria', Card::SIDE_SHADOW, 12]]);
-        $this->assertSame(['Gollum:full'], $this->shown($deck));
+        $this->assertSame(['Elven:full'], $this->shown([['free_peoples', 'Elven', 20], ['free_peoples', 'Gandalf', 16]]));
+        $this->assertSame(['Gollum:full'], $this->shown([['shadow', 'Gollum', 18], ['shadow', 'Moria', 12]]));
     }
 
     public function testNoCultures(): void
     {
-        $this->assertSame([], $this->shown($this->deck(0, 0, [])));
+        $this->assertSame([], $this->shown([]));
     }
 }
