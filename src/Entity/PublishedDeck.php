@@ -141,6 +141,17 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     protected $nbFavorites;
 
     /**
+     * The draw deck's size on each side (Ketura, 2026-11-05): the list shows them as 30/30, and a
+     * side with no cards marks a deck fragment, whether published as a half or archived as one.
+     * Kept by updateSizes() so lists can show and filter on them without the slots.
+     */
+    #[ORM\Column(name: 'nb_free_peoples', type: 'smallint', options: ['default' => 0])]
+    protected int $nbFreePeoples = 0;
+
+    #[ORM\Column(name: 'nb_shadow', type: 'smallint', options: ['default' => 0])]
+    protected int $nbShadow = 0;
+
+    /**
      * @var int
      */
     #[ORM\Column(name: 'nb_comments', type: 'integer')]
@@ -289,6 +300,36 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
         foreach ($counts as ['culture' => $culture, 'count' => $count]) {
             $this->cultures->add(new PublishedDeckCulture($this, $culture, $count));
         }
+    }
+
+    /** Recounts the draw deck's Free Peoples and Shadow cards (see $nbFreePeoples) */
+    public function updateSizes(): void
+    {
+        $count = fn ($slots) => array_sum(array_map(fn ($slot) => (int) $slot->getQuantity(), iterator_to_array($slots)));
+        $this->nbFreePeoples = $count($this->getSlots()->getFreePeoples());
+        $this->nbShadow = $count($this->getSlots()->getShadow());
+    }
+
+    public function getNbFreePeoples(): int
+    {
+        return $this->nbFreePeoples;
+    }
+
+    public function getNbShadow(): int
+    {
+        return $this->nbShadow;
+    }
+
+    /** whole, free_peoples or shadow: the side a fragment has; whole when it has both (or neither) */
+    public function getKind(): string
+    {
+        if ($this->nbShadow === 0 && $this->nbFreePeoples > 0) {
+            return Card::SIDE_FREE_PEOPLES;
+        }
+        if ($this->nbFreePeoples === 0 && $this->nbShadow > 0) {
+            return Card::SIDE_SHADOW;
+        }
+        return 'whole';
     }
 
     /** @return Collection<int, PublishedDeckPlay> */

@@ -29,11 +29,11 @@
                 {% endif %}
             <div>
                 {% if user.decklists|length > 1 %}
-                    <a href="{{ path('decklists_list',{type:'find',page:1,author:user.username}) }}">{{ user.decklists|length }}
+                    <a href="{{ path('decklists_list',{author:user.displayName}) }}">{{ user.decklists|length }}
                         published decklists.</a>
                 {% else %}
                     {% if user.decklists|length == 1 %}
-                        <a href="{{ path('decklists_list',{type:'find',page:1,author:user.username}) }}">One published
+                        <a href="{{ path('decklists_list',{author:user.displayName}) }}">One published
                             decklist.</a>
                     {% else %}
                         No published decklists.

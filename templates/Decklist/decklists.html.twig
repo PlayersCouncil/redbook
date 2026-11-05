@@ -1,153 +1,224 @@
 {#
 @file
-    Page template for rendering a user's private list of decks.
+    The decklists page (Ketura, 2026-11-05): search and filters on top, the decks below. The
+    presets along the top are the old tabs, now links that set the filters.
 
     Available variables:
-    - pagetitle
-    - decklists
-    - filters, formats, cultures: the browsing filters (DecklistManager::getFilters)
-    - url
-    - type
-    - pages
-    - prevurl
-    - nexturl
+    - decklists, total: this page of decks and how many match
+    - filters: the active filters (PublishedDeckManager::getFilters)
+    - presets, preset: the presets' filters by name, and the one the filters match if any
+    - formats: [{code, name, count}] the formats decks target, most used first
+    - format_names: format names by code
+    - cultures: every culture
+    - cards: the cards being searched for
+    - pages, prevurl, nexturl: pagination
 #}
 {% extends 'base.html.twig' %}
-{% import "macros.html.twig" as macros %}
+
+{% macro culture_icon(culture, count) %}
+    {%- set file = culture.code == 'uruk_hai' ? 'uruk' : culture.code -%}
+    <span class="culture-icon" role="img" aria-label="{{ culture.name }}" title="{{ culture.name }}{% if count is not null %} · {{ count }}{% endif %}"
+          style="--icon:url({{ asset('images/cultures/' ~ file ~ '.svg') }}); color: var(--rb-culture-{{ culture.code | replace({'_': '-'}) }}, currentColor)"></span>
+{%- endmacro %}
 
 {% block javascripts %}
-    {{  parent() }}
+    {{ parent() }}
     <script src="{{ asset('js/ui.decklist_search.js') }}"></script>
-    <script type="text/javascript">
-      $(function () {
-        var type = {{ type|json_encode|raw }};
-        $('time').each(function (index, element) {
-          var datetime = moment($(element).attr('datetime'));
-          var formatted;
-          switch (type) {
-            case 'popular':
-            case 'recent':
-            case 'hottopics':
-              formatted = datetime.fromNow();
-              break;
-            case 'halloffame':
-            case 'favorites':
-            case 'mine':
-            case 'search':
-            default:
-              formatted = datetime.format('ll');
-              break;
-          }
-          $(element).html(formatted);
-          $(element).attr('title', datetime.format('LLLL'));
-        });
-      });
-    </script>
 {% endblock %}
 
 {% block body %}
+{% import _self as m %}
+{% set f = filters %}
+{% set query = app.request.query.all %}
+<div class="main white container rb-browse">
 
-    <div class="main white container">
+    {% include 'alerts.html.twig' %}
 
-        {% include 'alerts.html.twig' %}
-        <div class="row">
-            <div class="col-md-3">
-
-                <ul class="nav nav-pills nav-stacked" style="margin-bottom:2em">
-                    {% set linkurl = path('decklists_list', {type:'popular'}) %}
-                    <li class="{% if url == linkurl %}active{% endif %}"><a
-                                href="{{ linkurl }}">{{ 'decklist.list.types.popular' | trans }}</a></li>
-                    {% set linkurl = path('decklists_list', {type:'recent'}) %}
-                    <li class="{% if url == linkurl %}active{% endif %}"><a
-                                href="{{ linkurl }}">{{ 'decklist.list.types.recent' | trans }}</a></li>
-                    {% set linkurl = path('decklists_list', {type:'tournament'}) %}
-                    <li class="{% if url == linkurl %}active{% endif %}"><a
-                                href="{{ linkurl }}">{{ 'decklist.list.types.tournaments' | trans }}</a></li>
-                    {% set linkurl = path('decklists_list', {type:'hottopics'}) %}
-                    <li class="{% if url == linkurl %}active{% endif %}"><a
-                                href="{{ linkurl }}">{{ 'decklist.list.types.hottopics' | trans }}</a></li>
-                    {% set linkurl = path('decklists_list', {type:'halloffame'}) %}
-                    <li class="{% if url == linkurl %}active{% endif %}"><a
-                                href="{{ linkurl }}">{{ 'decklist.list.types.hof' | trans }}</a></li>
-                    {% set linkurl = path('decklists_list', {type:'favorites'}) %}
-                    <li class="{% if url == linkurl %}active{% endif %}"><a
-                                href="{{ linkurl }}">{{ 'decklist.list.types.myfavorites' | trans }}</a></li>
-                    {% set linkurl = path('decklists_list', {type:'mine'}) %}
-                    <li class="{% if url == linkurl %}active{% endif %}"><a
-                                href="{{ linkurl }}">{{ 'decklist.list.types.mydecklists' | trans }}</a></li>
-                    {% set linkurl = path('decklists_searchform') %}
-                    <li class="{% if url == linkurl %}active{% endif %}"><a href="{{ linkurl }}"><span
-                                    class="fas fa-search"></span> {{ 'forms.search' | trans }}</a></li>
-                </ul>
-
-            </div>
-
-            <div class="col-md-9">
-
-                {{ header|raw }}
-                {% if type != 'find' or decklists is not null %}{% include 'Decklist/filters.html.twig' %}{% endif %}
-
-                {% include 'Default/pagination.html.twig' %}
-
-                <table class="table decklists">
-                    <thead></thead>
-                    <tbody>
-
-                    {% for decklist in decklists %}
-
-                        <tr>
-                            <td class="decklist-cultures hidden-xs">
-                                {% for row in decklist.cultures %}
-                                    <span class="label label-default culture-label culture-{{ row.culture.code }}" title="{{ row.count }}">{{ row.culture.name }}</span><br>
-                                {% endfor %}
-                            </td>
-                            <td>
-                                <article>
-                                    <h4>
-                                        <small class="pull-right">
-                                            {{ macros.decklist_social_icons(decklist) }}
-                                        </small>
-                                        <a class="decklist-name"
-                                           href="{{ path('decklist_detail', { 'decklist_id': decklist.id, 'decklist_name': decklist.nameCanonical|e('url') }) }}">{{ decklist.name }}</a>
-                                        {% if decklist.unverified %}<span class="label label-warning rb-unverified-badge" title="{{ 'decklist.review.unverified_title' | trans }}">{{ 'decklist.review.unverified' | trans }}</span>{% endif %}
-                                    </h4>
-                                    <h5>
-                                        <time class="pull-right"
-                                              datetime="{{ decklist.dateCreation|date('c') }}">{{ decklist.dateCreation|date('M d') }}</time>
-                                        <span class="username">
-                                            <a href="{{ path('user_profile_public', {user_id:decklist.user.id,user_name:decklist.user.username|e('url')}) }}"
-                                               class="{{ decklist.user.color }}">{{ decklist.user.displayName }}</a>
-                                            {% if decklist.user.historic %}<span class="label label-default rb-user-historic" title="{{ 'user.historic.badge_title' | trans }}">{{ 'user.historic.badge' | trans }}</span>{% endif %}
-                                            {% if decklist.user.role('ROLE_ADMIN') %}
-                                                <span class="fas fa-user-tie admin" title="Administrator"></span>
-                                            {% endif %}
-                                            {% if not decklist.user.historic %}<small class="reputation">{{ decklist.user.reputation }}</small>{% endif %}
-                                        </span>
-                                        {% if decklist.tournament %}
-                                            <span class="text-success" style="margin-left:1em">
-                                                <span class="fas fa-certificate"></span> {{ decklist.tournament.description }}
-                                            </span>
-                                        {% endif %}
-                                    </h5>
-                                    <div class="small decklist-meta">
-                                        {{ decklist.targetFormat }}
-                                        &middot; {{ decklist.effectiveDate | date('Y') }}
-                                        {% include 'Deck/completeness-label.html.twig' with {deck: decklist} %}
-                                        {% if decklist.plays | length %}<span class="text-success"><span class="fas fa-trophy"></span> {{ decklist.plays | first.eventName }}</span>{% endif %}
-                                    </div>
-                                </article>
-                            </td>
-                        </tr>
-                    {% endfor %}
-
-                    </tbody>
-                </table>
-
-                {% include 'Default/pagination.html.twig' %}
-
-            </div>
-
+    <form method="get" action="{{ path('decklists_list') }}" class="rb-browse-pane" id="browse-form">
+        <div class="rb-browse-top">
+            <h1 class="rb-browse-title">{{ 'decklist.list.title' | trans }}</h1>
+            <nav class="rb-presets" aria-label="{{ 'decklist.browse.presets' | trans }}">
+                {% for key, params in presets %}
+                    <a href="{{ path('decklists_list', params) }}" class="rb-preset{% if preset == key %} is-active{% endif %}">{{ ('decklist.browse.preset.' ~ key) | trans }}</a>
+                {% endfor %}
+            </nav>
+            {% set active = f | filter((v, k) => k != 'sort') | length %}
+            <button type="button" class="rb-filters-toggle" aria-expanded="false" aria-controls="browse-form">
+                <span class="fas fa-sliders-h"></span> {{ 'decklist.browse.filters' | trans }}{% if active %} <span class="rb-more-count">{{ active }}</span>{% endif %}
+            </button>
         </div>
-    </div>
 
+        <div class="rb-browse-search">
+            <label class="rb-field">
+                <span>{{ 'decklist.browse.name' | trans }}</span>
+                <input type="search" name="name" class="form-control input-sm" value="{{ f.name ?? '' }}">
+            </label>
+            <label class="rb-field">
+                <span>{{ 'decklist.browse.author' | trans }}</span>
+                <input type="search" name="author" class="form-control input-sm" value="{{ f.author ?? '' }}">
+            </label>
+            <label class="rb-field">
+                <span>{{ 'decklist.browse.event' | trans }}</span>
+                <input type="search" name="event" class="form-control input-sm" value="{{ f.event ?? '' }}">
+            </label>
+            <div class="rb-field rb-field-cards">
+                <label for="browse-card">{{ 'decklist.browse.cards' | trans }}</label>
+                <div class="rb-card-picks form-control input-sm" id="browse-cards">
+                    {% for card in cards %}
+                        <span class="rb-card-pick"><input type="hidden" name="cards[]" value="{{ card.code }}">{{ card.fullName }}<button type="button" aria-label="{{ 'decklist.browse.remove' | trans }}">&times;</button></span>
+                    {% endfor %}
+                    <input type="text" id="browse-card" autocomplete="off" placeholder="{{ 'decklist.browse.cards_hint' | trans }}">
+                </div>
+            </div>
+        </div>
+
+        <div class="rb-browse-filters">
+            <label class="rb-field rb-field-format">
+                <span>{{ 'decklist.browse.format' | trans }}</span>
+                <select name="format" class="form-control input-sm" data-autosubmit>
+                    <option value="">{{ 'decklist.browse.any_format' | trans }}</option>
+                    {% for format in formats %}
+                        <option value="{{ format.code }}"{% if (f.format ?? '') == format.code %} selected{% endif %}>{{ format.name }} ({{ format.count }})</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <div class="rb-field rb-field-years">
+                <span>{{ 'decklist.browse.played' | trans }}</span>
+                <div class="rb-years">
+                    <input type="number" name="from" class="form-control input-sm" min="2001" max="2100" placeholder="{{ 'decklist.browse.from' | trans }}" value="{{ f.from ?? '' }}" aria-label="{{ 'decklist.browse.from' | trans }}">
+                    <span>–</span>
+                    <input type="number" name="to" class="form-control input-sm" min="2001" max="2100" placeholder="{{ 'decklist.browse.to' | trans }}" value="{{ f.to ?? '' }}" aria-label="{{ 'decklist.browse.to' | trans }}">
+                </div>
+            </div>
+            <div class="rb-field">
+                <span>{{ 'decklist.browse.show' | trans }}</span>
+                <div class="rb-toggles" data-kinds>
+                    {% for kind in ['whole', 'free_peoples', 'shadow'] %}
+                        <label class="rb-toggle rb-toggle-{{ kind }}" title="{{ ('decklist.browse.kind_title.' ~ kind) | trans }}">
+                            <input type="checkbox" name="kind[]" value="{{ kind }}" data-autosubmit{% if f.kind is not defined or kind in f.kind %} checked{% endif %}>
+                            <span>{{ ('decklist.browse.kind.' ~ kind) | trans }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="rb-field">
+                <span>{{ 'decklist.browse.only' | trans }}</span>
+                <div class="rb-toggles">
+                    <label class="rb-toggle" title="{{ 'decklist.browse.played_title' | trans }}">
+                        <input type="checkbox" name="played" value="1" data-autosubmit{% if f.played ?? false %} checked{% endif %}>
+                        <span><span class="fas fa-trophy"></span> {{ 'decklist.browse.played_only' | trans }}</span>
+                    </label>
+                    <label class="rb-toggle" title="{{ 'decklist.browse.legal_title' | trans }}">
+                        <input type="checkbox" name="legal" value="1" data-autosubmit{% if f.legal ?? false %} checked{% endif %}>
+                        <span><span class="fas fa-check"></span> {{ 'decklist.browse.legal' | trans }}</span>
+                    </label>
+                    {% if app.user %}
+                        <label class="rb-toggle">
+                            <input type="checkbox" name="mine" value="1" data-autosubmit{% if f.mine ?? false %} checked{% endif %}>
+                            <span>{{ 'decklist.browse.preset.mine' | trans }}</span>
+                        </label>
+                        <label class="rb-toggle">
+                            <input type="checkbox" name="favorites" value="1" data-autosubmit{% if f.favorites ?? false %} checked{% endif %}>
+                            <span>{{ 'decklist.browse.preset.favorites' | trans }}</span>
+                        </label>
+                    {% endif %}
+                </div>
+            </div>
+            <label class="rb-field rb-field-sort">
+                <span>{{ 'decklist.browse.sort' | trans }}</span>
+                <select name="sort" class="form-control input-sm" data-autosubmit>
+                    {% for sort in ['new', 'old', 'rated', 'name', 'comments'] %}
+                        <option value="{{ sort }}"{% if (f.sort ?? 'new') == sort %} selected{% endif %}>{{ ('decklist.browse.sorts.' ~ sort) | trans }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </div>
+
+        <div class="rb-browse-cultures">
+            <span class="rb-browse-label">{{ 'decklist.browse.cultures' | trans }}</span>
+            {% for side in ['free_peoples', 'shadow'] %}
+                {% if not loop.first %}<span class="rb-culture-sep"></span>{% endif %}
+                {% for culture in cultures | filter(c => c.side == side) %}
+                    <label class="rb-culture-pick" title="{{ culture.name }}">
+                        <input type="checkbox" name="culture[]" value="{{ culture.code }}" data-autosubmit{% if culture.code in (f.culture ?? []) %} checked{% endif %}>
+                        <span>{{ m.culture_icon(culture, null) }}</span>
+                    </label>
+                {% endfor %}
+            {% endfor %}
+            <span class="rb-browse-actions">
+                {% if active %}<a href="{{ path('decklists_list', f.sort is defined ? {sort: f.sort} : {}) }}" class="rb-browse-clear">{{ 'decklist.browse.clear' | trans }}</a>{% endif %}
+                <button type="submit" class="btn btn-primary btn-sm"><span class="fas fa-search"></span> {{ 'decklist.browse.search' | trans }}</button>
+            </span>
+        </div>
+    </form>
+
+    <div class="rb-browse-results">
+        <div class="rb-results-head">
+            <span class="rb-results-count">{{ 'decklist.browse.count' | trans({'%count%': total, '%n%': total | number_format}) }}</span>
+            {% if pages | length > 1 %}{% include 'Default/pagination.html.twig' %}{% endif %}
+        </div>
+
+        {% if total %}
+        {% set sorted = f.sort ?? 'new' %}
+        <table class="rb-decks">
+            <thead>
+                <tr>
+                    <th class="rb-col-format">{{ 'decklist.browse.col.format' | trans }}</th>
+                    <th class="rb-col-size" title="{{ 'decklist.browse.col.size_title' | trans }}">{{ 'decklist.browse.col.size' | trans }}</th>
+                    <th class="rb-col-cultures">{{ 'decklist.browse.cultures' | trans }}</th>
+                    <th class="rb-col-deck"><a href="{{ path('decklists_list', query | merge({sort: 'name', page: null})) }}"{% if sorted == 'name' %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.deck' | trans }}</a></th>
+                    <th class="rb-col-event">{{ 'decklist.browse.col.event' | trans }}</th>
+                    <th class="rb-col-year"><a href="{{ path('decklists_list', query | merge({sort: sorted == 'new' ? 'old' : null, page: null})) }}"{% if sorted in ['new', 'old'] %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.year' | trans }}{% if sorted == 'new' %} <span class="fas fa-caret-down"></span>{% elseif sorted == 'old' %} <span class="fas fa-caret-up"></span>{% endif %}</a></th>
+                    <th class="rb-col-rating"><a href="{{ path('decklists_list', query | merge({sort: 'rated', page: null})) }}"{% if sorted == 'rated' %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.rating' | trans }}</a></th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for decklist in decklists %}
+                {% set url = path('decklist_detail', {decklist_id: decklist.id, decklist_name: decklist.nameCanonical | e('url')}) %}
+                {% set kind = decklist.kind %}
+                {% set score = decklist.nbVotes + 2 * decklist.nbFires %}
+                <tr data-href="{{ url }}" class="rb-kind-{{ kind }}">
+                    <td class="rb-col-format">
+                        <span class="rb-fmt">{{ format_names[decklist.targetFormat] ?? (decklist.targetFormat ?: '—') }}</span>
+                    </td>
+                    <td class="rb-col-size">
+                        <span class="rb-size" title="{{ ('decklist.browse.kind_title.' ~ kind) | trans }}"><span class="rb-size-fp{% if not decklist.nbFreePeoples %} is-none{% endif %}">{{ decklist.nbFreePeoples ?: '–' }}</span><span class="rb-size-slash">/</span><span class="rb-size-sh{% if not decklist.nbShadow %} is-none{% endif %}">{{ decklist.nbShadow ?: '–' }}</span></span>
+                    </td>
+                    <td class="rb-col-cultures">
+                        {% set rows = decklist.cultures | filter(r => r.culture.side) | sort((a, b) => b.count <=> a.count) %}
+                        <span class="rb-row-cultures">
+                            {% for row in rows | filter(r => r.culture.side == 'free_peoples') %}{{ m.culture_icon(row.culture, row.count) }}{% endfor %}
+                            {% if rows | filter(r => r.culture.side == 'free_peoples') | length and rows | filter(r => r.culture.side == 'shadow') | length %}<span class="rb-row-sep"></span>{% endif %}
+                            {% for row in rows | filter(r => r.culture.side == 'shadow') %}{{ m.culture_icon(row.culture, row.count) }}{% endfor %}
+                        </span>
+                    </td>
+                    <td class="rb-col-deck">
+                        <a href="{{ url }}" class="rb-deck-name">{{ decklist.name }}</a>
+                        <span class="rb-deck-by">
+                            {{ decklist.user.displayName }}{% if decklist.user.historic %} <span class="rb-archive-mark" title="{{ 'user.historic.badge_title' | trans }}">{{ 'decklist.browse.archive' | trans }}</span>{% endif %}
+                        </span>
+                    </td>
+                    <td class="rb-col-event">
+                        {% set play = decklist.plays | first %}
+                        {% if play %}
+                            <span class="rb-event" title="{{ decklist.plays | map(p => (p.placing ? p.placing ~ ' · ' : '') ~ p.eventName) | join("\n") }}">
+                                {% if play.placing %}<b>{{ play.placing }}</b> · {% endif %}{{ play.eventName }}{% if decklist.plays | length > 1 %} <span class="rb-more-plays">+{{ decklist.plays | length - 1 }}</span>{% endif %}
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td class="rb-col-year">{{ decklist.effectiveDate ? decklist.effectiveDate | date('Y') : '' }}</td>
+                    <td class="rb-col-rating">
+                        {% if score %}<span class="rb-score" title="{{ 'decklist.browse.score_title' | trans({'%likes%': decklist.nbVotes, '%fires%': decklist.nbFires}) }}"><span class="fas fa-thumbs-up"></span> {{ score }}</span>{% endif %}
+                        {% if decklist.nbComments %}<span class="rb-comments" title="{{ 'decklist.browse.comments_title' | trans({'%count%': decklist.nbComments}) }}"><span class="fas fa-comment"></span> {{ decklist.nbComments }}</span>{% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% if pages | length > 1 %}{% include 'Default/pagination.html.twig' %}{% endif %}
+        {% else %}
+            <p class="rb-results-none">{{ 'decklist.browse.none' | trans }}</p>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

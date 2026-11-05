@@ -32,7 +32,7 @@
                             </div>
                             {% include 'Search/card-errata-long.html.twig' %}
                             <p>Link:
-                                <a href="{{ path('decklists_list',{type:'find',_locale:app.request.locale,'cards[]':card.code}) }}">Decklists</a>
+                                <a href="{{ path('decklists_list',{_locale:app.request.locale,'cards[]':card.code}) }}">Decklists</a>
                             </p>
 
                         </div>

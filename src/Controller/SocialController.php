@@ -7,7 +7,6 @@ use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\Card;
 use App\Entity\Comment;
 use App\Entity\CommentInterface;
-use App\Entity\Cycle;
 use App\Entity\Deck;
 use App\Entity\PublishedDeck;
 use App\Entity\PublishedDeckInterface;
@@ -16,7 +15,6 @@ use App\Entity\PublishedDeckPlay;
 use App\Repository\FormatRepository;
 use App\Entity\Tournament;
 use App\Entity\User;
-use App\Services\CardsData;
 use App\Services\PublishedDeckFactory;
 use App\Services\PublishedDeckManager;
 use App\Services\DeckValidator;
@@ -430,212 +428,94 @@ class SocialController extends AbstractController
         $em->remove($decklist);
         $em->flush();
 
-        return $this->redirectToRoute('decklists_list', array(
-            'type' => 'mine',
-        ));
+        return $this->redirectToRoute('decklists_list', ['mine' => 1]);
     }
 
     /**
-     * @param Request $request
-     * @param TranslatorInterface $translator
-     * @param CardsData $cardsData
-     * @return string
+     * The old tabs, as presets of the decklists page (Ketura, 2026-11-05)
      */
-    protected function searchForm(Request $request, TranslatorInterface $translator, CardsData $cardsData)
-    {
-        $doctrine = $this->managerRegistry;
-        $dbh = $doctrine->getConnection();
-
-        $cards_code = $request->query->all()['cards'] ?? [];
-        $tournament = (int) $request->query->get('tournament');
-        $author_name = trim(strip_tags((string) $request->query->get('author')));
-        $decklist_name = trim(strip_tags((string) $request->query->get('name')));
-        $sort = $request->query->get('sort');
-        $packs = $request->query->all()['packs'] ?? null;
-
-        if (!is_array($packs)) {
-            $packs = $dbh->executeQuery("select id from pack")->fetchFirstColumn();
-        }
-
-        $categories = [];
-        $on = 0;
-        $off = 0;
-        $categories[] = array(
-            "label" => $translator->trans('decklist.list.search.allowed.core'),
-            "packs" => [],
-        );
-        $list_cycles = $this->managerRegistry->getRepository(Cycle::class)->findAll();
-        foreach ($list_cycles as $cycle) {
-            $size = count($cycle->getPacks());
-            if ($cycle->getPosition() == 0 || $size == 0) {
-                continue;
-            }
-            $first_pack = $cycle->getPacks()[0];
-            if ($cycle->getCode() == 'core' || ($size === 1 && $first_pack->getName() == $cycle->getName())) {
-                $checked = count($packs) ? in_array($first_pack->getId(), $packs) : true;
-                if ($checked) {
-                    $on++;
-                } else {
-                    $off++;
-                }
-                $categories[0]["packs"][] = array(
-                    "id" => $first_pack->getId(),
-                    "label" => $first_pack->getName(),
-                    "checked" => $checked,
-                    "future" => $first_pack->getDateRelease() === null,
-                );
-            } else {
-                $category = array("label" => $cycle->getName(), "packs" => []);
-                foreach ($cycle->getPacks() as $pack) {
-                    $checked = count($packs) ? in_array($pack->getId(), $packs) : true;
-                    if ($checked) {
-                        $on++;
-                    } else {
-                        $off++;
-                    }
-                    $category['packs'][] = array(
-                        "id" => $pack->getId(),
-                        "label" => $pack->getName(),
-                        "checked" => $checked,
-                        "future" => $pack->getDateRelease() === null,
-                    );
-                }
-                $categories[] = $category;
-            }
-        }
-
-        $activeTournamentTiers = $this->managerRegistry
-            ->getRepository(Tournament::class)
-            ->findBy(['active' => true]);
-
-        $inactiveTournamentTiers = $this->managerRegistry
-            ->getRepository(Tournament::class)
-            ->findBy(['active' => false]);
-
-        $params = array(
-            'allowed' => $categories,
-            'on' => $on,
-            'off' => $off,
-            'author' => $author_name,
-            'name' => $decklist_name,
-            'activeTournamentTiers' => $activeTournamentTiers,
-            'inactiveTournamentTiers' => $inactiveTournamentTiers,
-        );
-        $params['sort_' . $sort] = ' selected="selected"';
-        $params['selectedTournament'] = $tournament;
-
-        if (!empty($cards_code) && is_array($cards_code)) {
-            $cards = $this->managerRegistry->getRepository(Card::class)->findBy(['code' => $cards_code]);
-
-            $params['cards'] = '';
-            foreach ($cards as $card) {
-                $cardinfo = $cardsData->getCardInfo($card, false, null);
-                $params['cards'] .= $this->renderView('Search/card.html.twig', $cardinfo);
-            }
-        }
-
-        return $this->renderView('Search/form.html.twig', $params);
-    }
+    private const LEGACY_LISTS = [
+        'popular' => ['sort' => 'rated'],
+        'halloffame' => ['sort' => 'rated'],
+        'recent' => [],
+        'hottopics' => ['sort' => 'comments'],
+        'tournament' => ['played' => 1],
+        'favorites' => ['favorites' => 1],
+        'mine' => ['mine' => 1],
+        'find' => [],
+    ];
 
     /**
-     * Displays the lists of decklists.
-     *
-     * @param Request $request
-     * @param TranslatorInterface $translator
-     * @param PublishedDeckManager $decklistManager
-     * @param CardsData $cardsData
-     * @param int $cacheExpiration
-     * @param string $type
-     * @param int $page
-     * @return Response
+     * The decklists page (Ketura, 2026-11-05): search and filters on top, the decks below. Its
+     * presets, the old tabs, are links that set the filters; see PublishedDeckManager::getFilters.
      */
-    #[Route(path: '/decklists/{type}/{page}', name: 'decklists_list', methods: ['GET'], defaults: ['type' => 'popular', 'page' => 1], requirements: ['type' => 'find|favorites|mine|recent|halloffame|hottopics|tournament|popular', 'page' => '\d+'])]
+    #[Route(path: '/decklists', name: 'decklists_list', methods: ['GET'])]
     public function listAction(
         Request $request,
         TranslatorInterface $translator,
         PublishedDeckManager $decklistManager,
-        CardsData $cardsData,
         FormatRepository $formats,
-        int $cacheExpiration,
-        $type,
-        $page = 1
     ) {
+        $filters = $decklistManager->getFilters();
+        $user = $this->getUser();
 
         $response = new Response();
-        $response->setPublic();
-        $response->setMaxAge($cacheExpiration);
-
-        $decklistManager->setLimit(30);
-        $decklistManager->setPage($page);
-
-        $header = '';
-
-        switch ($type) {
-            case 'find':
-                $header = $this->searchForm($request, $translator, $cardsData);
-                $paginator = $decklistManager->findDecklistsWithComplexSearch();
-                break;
-            case 'favorites':
-                $response->setPrivate();
-                $decklistManager->setBrowsing(false);
-                /* @var UserInterface $user */
-                $user = $this->getUser();
-                if ($user) {
-                    $paginator = $decklistManager->findDecklistsByFavorite($user);
-                } else {
-                    $paginator = $decklistManager->getEmptyList();
-                }
-                break;
-            case 'mine':
-                $response->setPrivate();
-                $decklistManager->setBrowsing(false);
-                /* @var UserInterface $user */
-                $user = $this->getUser();
-                if ($user) {
-                    $paginator = $decklistManager->findDecklistsByAuthor($user);
-                } else {
-                    $paginator = $decklistManager->getEmptyList();
-                }
-                break;
-            case 'recent':
-                $paginator = $decklistManager->findDecklistsByAge(false);
-                break;
-            case 'halloffame':
-                $paginator = $decklistManager->findDecklistsInHallOfFame();
-                break;
-            case 'hottopics':
-                $paginator = $decklistManager->findDecklistsInHotTopic();
-                break;
-            case 'tournament':
-                $paginator = $decklistManager->findDecklistsInTournaments();
-                break;
-            case 'popular':
-            default:
-                $type = 'popular';
-                $paginator = $decklistManager->findDecklistsByPopularity();
-                break;
+        if (!empty($filters['mine']) || !empty($filters['favorites'])) {
+            $response->setPrivate();
+        } else {
+            $response->setPublic();
+            $response->setMaxAge(60);
         }
 
-        $pagetitle = $translator->trans('decklist.list.titles.' . $type);
+        $decklistManager->setLimit(50);
+        $decklistManager->setPage(max(1, (int) $request->query->get('page', 1)));
+        $decklists = $decklistManager->browse($filters, $user);
+
+        $allFormats = $formats->findAllByCode();
+        $usedFormats = [];
+        foreach ($decklistManager->countFormats() as $code => $count) {
+            $usedFormats[] = ['code' => $code, 'name' => isset($allFormats[$code]) ? $allFormats[$code]->getName() : $code, 'count' => $count];
+        }
+        $cards = empty($filters['cards']) ? []
+            : $this->managerRegistry->getRepository(Card::class)->findBy(['code' => $filters['cards']]);
+
+        $presets = ['new' => [], 'rated' => ['sort' => 'rated'], 'events' => ['played' => true]];
+        if ($user) {
+            $presets += ['mine' => ['mine' => true], 'favorites' => ['favorites' => true]];
+        }
+        $preset = array_search($filters, $presets, true);
 
         return $this->render(
             'Decklist/decklists.html.twig',
-            array(
-                'pagetitle' => $pagetitle,
-                'pagedescription' => "Browse the collection of thousands of premade decks.",
-                'decklists' => $paginator,
-                'filters' => $decklistManager->getFilters(),
-                'formats' => $formats->findSelectable(),
+            [
+                'pagetitle' => $translator->trans('decklist.list.title'),
+                'pagedescription' => 'Browse thousands of Lord of the Rings TCG decks, from the Decipher era to today.',
+                'decklists' => $decklists,
+                'total' => $decklistManager->getMaxCount(),
+                'filters' => $filters,
+                'presets' => $presets,
+                'preset' => $preset === false ? null : $preset,
+                'formats' => $usedFormats,
+                'format_names' => array_map(fn ($f) => $f->getName(), $allFormats),
                 'cultures' => $this->managerRegistry->getRepository(Culture::class)->findBy([], ['name' => 'ASC']),
-                'url' => $request->getRequestUri(),
-                'header' => $header,
-                'type' => $type,
+                'cards' => $cards,
                 'pages' => $decklistManager->getClosePages(),
                 'prevurl' => $decklistManager->getPreviousUrl(),
                 'nexturl' => $decklistManager->getNextUrl(),
-            ),
+            ],
             $response
         );
+    }
+
+    /** The old tab and search addresses, onto the decklists page with the same filters */
+    #[Route(path: '/decklists/{type}/{page}', name: 'decklists_legacy', methods: ['GET'], defaults: ['page' => 1], requirements: ['type' => 'find|favorites|mine|recent|halloffame|hottopics|tournament|popular|search', 'page' => '\d+'])]
+    public function legacyListAction(Request $request, string $type, int $page = 1): Response
+    {
+        $params = $request->query->all() + (self::LEGACY_LISTS[$type] ?? []);
+        if ($page > 1) {
+            $params['page'] = $page;
+        }
+        return $this->redirectToRoute('decklists_list', $params, Response::HTTP_MOVED_PERMANENTLY);
     }
 
     /**
@@ -1355,105 +1235,6 @@ class SocialController extends AbstractController
                         "page" => $nextpage,
                     )
                 ),
-            ),
-            $response
-        );
-    }
-
-    /**
-     *
-     * @param Request $request
-     * @param TranslatorInterface $translator
-     * @param int $cacheExpiration
-     * @return Response
-     */
-    #[Route(path: '/decklists/search', name: 'decklists_searchform', methods: ['GET'])]
-    public function searchAction(Request $request, TranslatorInterface $translator, int $cacheExpiration)
-    {
-        $response = new Response();
-        $response->setPublic();
-        $response->setMaxAge($cacheExpiration);
-
-        $categories = [];
-        $on = 0;
-        $off = 0;
-        $categories[] = array("label" => $translator->trans("decklist.list.search.allowed.core"), "packs" => []);
-        $list_cycles = $this->managerRegistry->getRepository(Cycle::class)->findAll();
-        foreach ($list_cycles as $cycle) {
-            $size = count($cycle->getPacks());
-            if ($cycle->getPosition() == 0 || $size == 0) {
-                continue;
-            }
-            $first_pack = $cycle->getPacks()[0];
-            if ($cycle->getCode() === 'core' || ($size === 1 && $first_pack->getName() == $cycle->getName())) {
-                $checked = $first_pack->getDateRelease() !== null;
-                if ($checked) {
-                    $on++;
-                } else {
-                    $off++;
-                }
-                $categories[0]["packs"][] = array(
-                    "id" => $first_pack->getId(),
-                    "label" => $first_pack->getName(),
-                    "checked" => $checked,
-                    "future" => $first_pack->getDateRelease() === null,
-                );
-            } else {
-                $category = array("label" => $cycle->getName(), "packs" => []);
-                foreach ($cycle->getPacks() as $pack) {
-                    $checked = $pack->getDateRelease() !== null;
-                    if ($checked) {
-                        $on++;
-                    } else {
-                        $off++;
-                    }
-                    $category['packs'][] = array(
-                        "id" => $pack->getId(),
-                        "label" => $pack->getName(),
-                        "checked" => $checked,
-                        "future" => $pack->getDateRelease() === null,
-                    );
-                }
-                $categories[] = $category;
-            }
-        }
-
-        $activeTournamentTiers = $this->managerRegistry
-            ->getRepository(Tournament::class)
-            ->findBy(['active' => true]);
-
-        $inactiveTournamentTiers = $this->managerRegistry
-            ->getRepository(Tournament::class)
-            ->findBy(['active' => false]);
-
-        $searchForm = $this->renderView(
-            'Search/form.html.twig',
-            array(
-                'allowed' => $categories,
-                'on' => $on,
-                'off' => $off,
-                'author' => '',
-                'name' => '',
-                'activeTournamentTiers' => $activeTournamentTiers,
-                'inactiveTournamentTiers' => $inactiveTournamentTiers,
-                'selectedTournament' => 0,
-            )
-        );
-
-        return $this->render(
-            'Decklist/decklists.html.twig',
-            array(
-                'pagetitle' => $translator->trans('decklist.list.titles.search'),
-                'decklists' => null,
-                'filters' => [],
-                'formats' => [],
-                'cultures' => [],
-                'url' => $request->getRequestUri(),
-                'header' => $searchForm,
-                'type' => 'find',
-                'pages' => null,
-                'prevurl' => null,
-                'nexturl' => null,
             ),
             $response
         );

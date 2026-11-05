@@ -719,15 +719,58 @@ decklist.plays.players: Players
 decklist.plays.add: Add an event
 decklist.publish.half: Deck half
 decklist.publish.half_hint: "Publish only one side, for others to pair with their own."
-decklist.filters.any_format: Any format
-decklist.filters.culture: Culture
-decklist.filters.any_culture: Any culture
-decklist.filters.whole_decks: Whole decks
-decklist.filters.with_halves: Whole decks and halves
-decklist.filters.from: From year
-decklist.filters.to: To year
-decklist.filters.incomplete: Include decks with problems
-decklist.filters.apply: Filter
+decklist.list.title: Decklists
+decklist.browse.presets: Presets
+decklist.browse.preset.new: Newest
+decklist.browse.preset.rated: Top Rated
+decklist.browse.preset.events: Event Decks
+decklist.browse.preset.mine: My Decks
+decklist.browse.preset.favorites: My Favourites
+decklist.browse.name: Deck Name
+decklist.browse.author: Author
+decklist.browse.event: Event
+decklist.browse.cards: Cards
+decklist.browse.cards_hint: Type a card name
+decklist.browse.remove: Remove
+decklist.browse.format: Format
+decklist.browse.any_format: Any format
+decklist.browse.played: Played
+decklist.browse.from: From
+decklist.browse.to: To
+decklist.browse.show: Show
+decklist.browse.kind.whole: Whole Decks
+decklist.browse.kind.free_peoples: Free Peoples Only
+decklist.browse.kind.shadow: Shadow Only
+decklist.browse.kind_title.whole: "A whole deck: Free Peoples and Shadow"
+decklist.browse.kind_title.free_peoples: "A fragment: only the Free Peoples side"
+decklist.browse.kind_title.shadow: "A fragment: only the Shadow side"
+decklist.browse.only: Only
+decklist.browse.played_only: Played at an Event
+decklist.browse.played_title: Decks with a recorded event result
+decklist.browse.legal: Gemp Legal
+decklist.browse.legal_title: Decks Gemp accepts as they are, in their format
+decklist.browse.sort: Sort
+decklist.browse.sorts.new: Newest
+decklist.browse.sorts.old: Oldest
+decklist.browse.sorts.rated: Top Rated
+decklist.browse.sorts.name: Name
+decklist.browse.sorts.comments: Most Comments
+decklist.browse.cultures: Cultures
+decklist.browse.clear: Clear All
+decklist.browse.filters: Search and Filters
+decklist.browse.search: Search
+decklist.browse.count: "{0} No decks match|{1} 1 deck|]1,Inf[ %n% decks"
+decklist.browse.none: Nothing matches. Try removing a filter.
+decklist.browse.col.format: Format
+decklist.browse.col.size: Size
+decklist.browse.col.size_title: "Draw deck: Free Peoples / Shadow"
+decklist.browse.col.deck: Deck
+decklist.browse.col.event: Event
+decklist.browse.col.year: Year
+decklist.browse.col.rating: Rating
+decklist.browse.archive: archive
+decklist.browse.score_title: "%likes% likes, %fires% fires"
+decklist.browse.comments_title: "%count% comments"
 decklist.source.title: "Archived deck by %author%"
 decklist.source.from: "From %source%:"
 decklist.source.original: original post

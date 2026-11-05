@@ -251,6 +251,7 @@ class SeedDeckImporter
         }
         $decklist->setLastPack($latestPack);
         $decklist->updateCultures();
+        $decklist->updateSizes();
 
         foreach ($decklist->getPlays()->toArray() as $play) {
             $decklist->removePlay($play);

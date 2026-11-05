@@ -41,12 +41,16 @@ test('formats are copied from Gemp, without the debug format', async ({ page, re
   expect(formats.map((f) => f.code)).not.toContain('debug');
 });
 
-test('decklist listings load', async ({ page }) => {
-  for (const type of ['popular', 'recent', 'halloffame']) {
+test('decklist listings load, the old tabs as presets', async ({ page }) => {
+  for (const [type, url] of [['popular', /\/decklists\?sort=rated$/], ['recent', /\/decklists$/], ['tournament', /\/decklists\?played=1$/]] as const) {
     const res = await page.goto(`/decklists/${type}`);
     expect(res?.status(), type).toBe(200);
-    await expect(page.locator('form.decklist-filters')).toBeVisible();
+    await expect(page).toHaveURL(url);
+    await expect(page.locator('#browse-form')).toBeVisible();
+    await expect(page.locator('.rb-preset.is-active')).toHaveCount(1);
   }
+  await page.goto('/decklists/search');
+  await expect(page).toHaveURL(/\/decklists$/);
 });
 
 test('anonymous users are sent to the login page for their decks', async ({ page }) => {

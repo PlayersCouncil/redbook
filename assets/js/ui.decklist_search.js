@@ -1,118 +1,129 @@
-/* global app */
+/* global app, _ */
 
+/**
+ * The decklists page (Ketura, 2026-11-05): the card picker, filters that apply as they
+ * change, clean addresses, and rows that open their deck.
+ */
 (function ui_decklist_search(ui, $)
 {
+    var form;
 
-
-    ui.handle_checkbox_change = function handle_checkbox_change()
+    /** A picked card: a chip carrying the hidden cards[] input */
+    function add_card(card)
     {
-        $('#packs-on').text($('#allowed_packs').find('input[type="checkbox"]:checked').size());
-        $('#packs-off').text($('#allowed_packs').find('input[type="checkbox"]:not(:checked)').size());
-    };
-
-    /**
-     * @memberOf ui
-     */
-    ui.setup_typeahead = function setup_typeahead()
-    {
-
-        function findMatches(q, cb)
-        {
-            if(q.match(/^\w:/))
-                return;
-            var regexp = new RegExp(q, 'i');
-            cb(app.data.cards.find({label: regexp}));
+        if(form.find('input[name="cards[]"][value="' + card.code + '"]').length) {
+            return;
         }
+        $('<span class="rb-card-pick"><input type="hidden" name="cards[]"><button type="button">&times;</button></span>')
+            .find('input').val(card.code).end()
+            .prepend(document.createTextNode(card.label))
+            .find('button').attr('aria-label', Translator.trans('decklist.browse.remove')).end()
+            .insertBefore('#browse-card');
+        submit();
+    }
 
-        $('#card').typeahead({
-            hint: true,
-            highlight: true,
-            minLength: 2
-        }, {
+    function setup_card_picker()
+    {
+        var input = $('#browse-card');
+        input.typeahead({hint: true, highlight: true, minLength: 2}, {
             name: 'cardnames',
             displayKey: 'label',
-            source: findMatches
+            source: function (q, cb)
+            {
+                var regexp = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+                // one suggestion per name: a search finds every printing of it
+                cb(_.uniq(app.data.cards.find({label: regexp}, {$orderBy: {label: 1}}), false, 'label').slice(0, 12));
+            }
         });
-
-
-        $('#card').on('typeahead:selected typeahead:autocompleted', function (event, data)
+        input.on('typeahead:selected typeahead:autocompleted', function (event, card)
         {
-            var card = app.data.cards.find({
-                label: data.label
-            })[0];
-            var line = $('<p style="padding: 3px 5px;border-radius: 3px;border: 1px solid silver"><button type="button" class="close" aria-hidden="true">&times;</button><input type="hidden" name="cards[]" value="' + card.code + '">' +
-                    card.label + '</p>');
-            line.on({
-                click: function (event)
-                {
-                    line.remove();
-                }
-            });
-            line.insertBefore($('#card'));
-            $(event.target).typeahead('val', '');
+            input.typeahead('val', '');
+            add_card(card);
         });
-
-    };
+    }
 
     /**
-     * called when the DOM is loaded
-     * @memberOf ui
+     * Submits without the empty fields and the defaults, so addresses stay short and the
+     * presets can recognise them
      */
+    function submit()
+    {
+        var kinds = form.find('input[name="kind[]"]');
+        if(kinds.filter(':checked').length === kinds.length) {
+            kinds.prop('disabled', true);
+        }
+        form.find('input, select').each(function ()
+        {
+            if(this.name && (this.value === '' || (this.name === 'sort' && this.value === 'new'))) {
+                this.disabled = true;
+            }
+        });
+        form.trigger('submit');
+    }
+
     ui.on_dom_loaded = function on_dom_loaded()
     {
-        ui.setup_typeahead();
-        $('#allowed_packs').on('change', ui.handle_checkbox_change);
-
-        $('#select_all').on('click', function (event)
+        form = $('#browse-form');
+        // back to this page from the browser's cache: the fields submit() turned off come back
+        $(window).on('pageshow', function ()
         {
-            $('#allowed_packs').find('input[type="checkbox"]:not(:checked)').prop('checked', true);
-            ui.handle_checkbox_change();
-            return false;
+            form.find(':disabled').prop('disabled', false);
+            form.removeData('cleaned');
         });
-
-        $('#select_none').on('click', function (event)
+        form.on('change', '[data-autosubmit]', function ()
         {
-            $('#allowed_packs').find('input[type="checkbox"]:checked').prop('checked', false);
-            ui.handle_checkbox_change();
-            return false;
+            // at least one kind stays on: unticking the last would match nothing
+            var kinds = form.find('input[name="kind[]"]');
+            if(this.name === 'kind[]' && !kinds.filter(':checked').length) {
+                kinds.not(this).prop('checked', true);
+            }
+            submit();
+        });
+        form.on('submit', function ()
+        {
+            if(!form.data('cleaned')) {
+                form.data('cleaned', true);
+                submit();
+                return false;
+            }
+        });
+        form.on('click', '.rb-filters-toggle', function ()
+        {
+            var open = form.toggleClass('is-open').hasClass('is-open');
+            $(this).attr('aria-expanded', open ? 'true' : 'false');
+        });
+        form.on('click', '.rb-card-pick button', function ()
+        {
+            $(this).closest('.rb-card-pick').remove();
+            submit();
+        });
+        $('#browse-cards').on('click', function (event)
+        {
+            if(event.target === this) {
+                $('#browse-card').trigger('focus');
+            }
+        });
+        // a row opens its deck; the name stays a real link for new tabs and keyboards
+        $('.rb-decks tbody').on('click', 'tr[data-href]', function (event)
+        {
+            if($(event.target).closest('a, button').length || window.getSelection().toString()) {
+                return;
+            }
+            if(event.ctrlKey || event.metaKey || event.button === 1) {
+                window.open($(this).data('href'));
+            } else {
+                window.location = $(this).data('href');
+            }
         });
     };
 
-    /**
-     * called when the app data is loaded
-     * @memberOf ui
-     */
     ui.on_data_loaded = function on_data_loaded()
     {
-        function findMatches(q, cb)
-        {
-            if(q.match(/^\w:/))
-                return;
-            var matches = app.data.cards({name: {likenocase: q}}).map(function (record)
-            {
-                return {value: record.name};
-            });
-            cb(matches);
-        }
-
-        $('#card').typeahead({
-            hint: true,
-            highlight: true,
-            minLength: 3
-        }, {
-            name: 'cardnames',
-            displayKey: 'value',
-            source: findMatches
-        });
+        setup_card_picker();
     };
 
-    /**
-     * called when both the DOM and the data app have finished loading
-     * @memberOf ui
-     */
     ui.on_all_loaded = function on_all_loaded()
     {
-
     };
 
 })(app.ui, jQuery);

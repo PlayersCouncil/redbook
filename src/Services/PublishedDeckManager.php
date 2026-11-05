@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Entity\Card;
 use App\Entity\PublishedDeck;
 use App\Entity\PublishedDeckSlot;
+use App\Entity\PublishedDeckPlay;
 use App\Entity\Card as CardEntity;
 use App\Entity\CommonDeckInterface;
 use App\Entity\Culture;
@@ -25,8 +26,6 @@ use Symfony\Component\Routing\RouterInterface;
  */
 class PublishedDeckManager
 {
-    /** Hide incomplete decks and halves unless the filters ask for them (decision 0023) */
-    protected bool $browsing = true;
     protected $page = 1;
     protected $start = 0;
     protected $limit = 30;
@@ -58,23 +57,27 @@ class PublishedDeckManager
         $this->logger = $logger;
     }
 
-    /**
-     * Lists of the user's own decklists or favorites show everything; public
-     * browsing shows complete whole decks unless the filters say otherwise.
-     */
-    public function setBrowsing(bool $browsing): void
-    {
-        $this->browsing = $browsing;
-    }
+    /** The page's sorts (Ketura, 2026-11-05): the first is the default */
+    public const SORTS = ['new', 'old', 'rated', 'name', 'comments'];
+
+    /** Which decks a list shows by what they hold: whole decks, and fragments of either side */
+    public const KINDS = ['whole', CardEntity::SIDE_FREE_PEOPLES, CardEntity::SIDE_SHADOW];
 
     /**
-     * The browsing filters, from the query string, shared by every list (Ketura,
-     * 2026-11-01: filters, not search fields):
+     * The decklists page's search and filters, from the query string (Ketura, 2026-11-05: one
+     * page, filters on top, results below; the old tabs are presets of these). Anything left
+     * out is not filtered on.
+     *   name, author, event     text in the deck's name, its author, an event it was played at
+     *   cards[]=<code>          has each of these cards
      *   format=<gemp code>      target format
      *   culture[]=<code>        has cards of each culture
-     *   incomplete=1            include decks Gemp finds problems with, or couldn't check
-     *   half=any|free_peoples|shadow  include deck halves (any), or show only that half
      *   from=YYYY, to=YYYY      effective date (the year the deck was played)
+     *   kind[]=whole|free_peoples|shadow  whole decks and fragments; all three when left out
+     *   legal=1                 only decks Gemp accepts as they are
+     *   played=1                only decks played at an event
+     *   mine=1, favorites=1     the user's own decks, or their favourites
+     *   sort=new|old|rated|name|comments
+     * The old search's parameters still work: sort=date|popularity|likes|reputation, half=.
      */
     public function getFilters(): array
     {
@@ -82,20 +85,76 @@ class PublishedDeckManager
         if ($query === null) {
             return [];
         }
-        $cultures = $query->all()['culture'] ?? [];
+        $all = $query->all();
+        $text = fn (string $key) => mb_substr(trim(strip_tags((string) (is_array($all[$key] ?? null) ? '' : ($all[$key] ?? '')))), 0, 100);
+        $codes = fn (string $key) => array_values(array_unique(array_filter(array_map(
+            fn ($c) => preg_replace('/[^\w-]/', '', (string) $c),
+            (array) ($all[$key] ?? [])
+        ))));
+
+        $kind = array_values(array_intersect(self::KINDS, $codes('kind')));
+        $half = $query->get('half');
+        if (!$kind && in_array($half, [CardEntity::SIDE_FREE_PEOPLES, CardEntity::SIDE_SHADOW], true)) {
+            $kind = [$half];
+        }
+        if (count($kind) === count(self::KINDS)) {
+            $kind = [];
+        }
+        $sort = (string) $query->get('sort');
+        $sort = ['date' => 'new', 'popularity' => 'rated', 'likes' => 'rated', 'reputation' => 'rated'][$sort] ?? $sort;
+
         return array_filter([
+            'name' => $text('name'),
+            'author' => $text('author'),
+            'event' => $text('event'),
+            'cards' => $codes('cards'),
             'format' => preg_replace('/[^\w-]/', '', (string) $query->get('format')),
-            'culture' => array_values(array_filter(array_map(fn ($c) => preg_replace('/[^\w]/', '', (string) $c), (array) $cultures))),
-            'incomplete' => (bool) $query->get('incomplete'),
-            'half' => in_array($query->get('half'), ['any', CardEntity::SIDE_FREE_PEOPLES, CardEntity::SIDE_SHADOW], true) ? $query->get('half') : null,
+            'culture' => $codes('culture'),
             'from' => (int) $query->get('from') ?: null,
             'to' => (int) $query->get('to') ?: null,
+            'kind' => $kind,
+            'legal' => (bool) $query->get('legal'),
+            'played' => (bool) $query->get('played'),
+            'mine' => (bool) $query->get('mine'),
+            'favorites' => (bool) $query->get('favorites'),
+            'sort' => in_array($sort, self::SORTS, true) && $sort !== self::SORTS[0] ? $sort : null,
         ]);
     }
 
-    private function applyFilters(QueryBuilder $qb): void
+    /**
+     * The decklists page: the filters above, for the given user (mine and favorites need one;
+     * without, they find nothing).
+     */
+    public function browse(array $filters, ?UserInterface $user): Paginator|ArrayCollection
     {
-        $filters = $this->getFilters();
+        if ((!empty($filters['mine']) || !empty($filters['favorites'])) && $user === null) {
+            return $this->getEmptyList();
+        }
+        $qb = $this->doctrine->createQueryBuilder()->select('d')->from(PublishedDeck::class, 'd');
+
+        if (!empty($filters['name'])) {
+            $qb->andWhere('d.name LIKE :name')->setParameter('name', '%' . addcslashes($filters['name'], '%_') . '%');
+        }
+        if (!empty($filters['author'])) {
+            // a registered author, or the source's author or poster of an archived deck
+            $qb->join('d.user', 'au')->leftJoin('d.source', 'asrc')
+                ->andWhere('au.username LIKE :author OR au.displayName LIKE :author OR asrc.legacyAuthor LIKE :author')
+                ->setParameter('author', '%' . addcslashes($filters['author'], '%_') . '%');
+        }
+        if (!empty($filters['event'])) {
+            $qb->andWhere('EXISTS (SELECT ep FROM ' . PublishedDeckPlay::class . ' ep WHERE ep.decklist = d AND ep.eventName LIKE :event)')
+                ->setParameter('event', '%' . addcslashes($filters['event'], '%_') . '%');
+        }
+        if (!empty($filters['played'])) {
+            $qb->andWhere('EXISTS (SELECT pp FROM ' . PublishedDeckPlay::class . ' pp WHERE pp.decklist = d)');
+        }
+        // a card in any printing: one with the same name and subtitle
+        foreach ($filters['cards'] ?? [] as $i => $code) {
+            $qb->andWhere("EXISTS (SELECT s$i FROM " . PublishedDeckSlot::class . " s$i JOIN s$i.card c$i, " . CardEntity::class . " k$i"
+                . " WHERE s$i.decklist = d AND k$i.code = :card$i AND c$i.name = k$i.name"
+                . " AND (c$i.subtitle = k$i.subtitle OR (c$i.subtitle IS NULL AND k$i.subtitle IS NULL)))")
+                ->setParameter("card$i", $code);
+        }
         if (!empty($filters['format'])) {
             $qb->andWhere('d.targetFormat = :format')->setParameter('format', $filters['format']);
         }
@@ -109,16 +168,75 @@ class PublishedDeckManager
         if (!empty($filters['to'])) {
             $qb->andWhere('d.effectiveDate <= :to')->setParameter('to', $filters['to'] . '-12-31');
         }
-        $half = $filters['half'] ?? null;
-        if (in_array($half, [CardEntity::SIDE_FREE_PEOPLES, CardEntity::SIDE_SHADOW], true)) {
-            $qb->andWhere('d.half = :half')->setParameter('half', $half);
-        } elseif ($half === null && $this->browsing) {
-            $qb->andWhere('d.half IS NULL');
+        if (!empty($filters['kind'])) {
+            $kinds = [
+                'whole' => '(d.nbFreePeoples > 0 AND d.nbShadow > 0)',
+                CardEntity::SIDE_FREE_PEOPLES => '(d.nbFreePeoples > 0 AND d.nbShadow = 0)',
+                CardEntity::SIDE_SHADOW => '(d.nbFreePeoples = 0 AND d.nbShadow > 0)',
+            ];
+            $qb->andWhere(implode(' OR ', array_map(fn ($k) => $kinds[$k], $filters['kind'])));
         }
-        // a half is never "complete" as a deck, so asking for halves includes them whatever their validation
-        if (empty($filters['incomplete']) && $this->browsing && $half === null) {
+        if (!empty($filters['legal'])) {
             $qb->andWhere('d.completeness = :complete')->setParameter('complete', CommonDeckInterface::COMPLETENESS_COMPLETE);
         }
+        if (!empty($filters['mine'])) {
+            $qb->andWhere('d.user = :me')->setParameter('me', $user);
+        }
+        if (!empty($filters['favorites'])) {
+            $qb->andWhere(':fan MEMBER OF d.favorites')->setParameter('fan', $user);
+        }
+
+        switch ($filters['sort'] ?? self::SORTS[0]) {
+            case 'old':
+                $qb->orderBy('d.dateCreation', 'ASC');
+                break;
+            case 'rated':
+                $qb->addSelect(PublishedDeck::SCORE_DQL . ' AS HIDDEN score')->orderBy('score', 'DESC')->addOrderBy('d.dateCreation', 'DESC');
+                break;
+            case 'name':
+                $qb->orderBy('d.name', 'ASC');
+                break;
+            case 'comments':
+                $qb->orderBy('d.nbComments', 'DESC')->addOrderBy('d.dateCreation', 'DESC');
+                break;
+            default:
+                $qb->orderBy('d.dateCreation', 'DESC');
+        }
+        $qb->addOrderBy('d.id', 'DESC');
+        $qb->setFirstResult($this->start)->setMaxResults($this->limit);
+
+        $paginator = $this->getPaginator($qb->getQuery());
+        $this->preload(iterator_to_array($paginator));
+        return $paginator;
+    }
+
+    /** Loads what a row shows (cultures, author, plays) for a page of decks in three queries */
+    private function preload(array $decklists): void
+    {
+        if (!$decklists) {
+            return;
+        }
+        foreach (['d.cultures c LEFT JOIN c.culture cu' => 'c, cu', 'd.user u' => 'u', 'd.plays p' => 'p'] as $join => $select) {
+            $this->doctrine->createQuery('SELECT d, ' . $select . ' FROM ' . PublishedDeck::class . ' d LEFT JOIN ' . $join . ' WHERE d IN (:decks)')
+                ->setParameter('decks', $decklists)
+                ->getResult();
+        }
+    }
+
+    /** The formats published decks target, with how many: [code => count], most used first */
+    public function countFormats(): array
+    {
+        $rows = $this->doctrine->createQuery('SELECT d.targetFormat AS code, COUNT(d.id) AS n FROM ' . PublishedDeck::class
+            . " d WHERE d.targetFormat IS NOT NULL AND d.targetFormat <> '' GROUP BY d.targetFormat ORDER BY n DESC")
+            ->getArrayResult();
+        return array_column($rows, 'n', 'code');
+    }
+
+    /** The home page's lists: whole decks Gemp accepts (decision 0023) */
+    private function applyHomeFilters(QueryBuilder $qb): void
+    {
+        $qb->andWhere('d.half IS NULL');
+        $qb->andWhere('d.completeness = :complete')->setParameter('complete', CommonDeckInterface::COMPLETENESS_COMPLETE);
     }
 
     public function setLimit($limit)
@@ -145,7 +263,7 @@ class PublishedDeckManager
         $qb = $this->doctrine->createQueryBuilder();
         $qb->select('d');
         $qb->from(PublishedDeck::class, 'd');
-        $this->applyFilters($qb);
+        $this->applyHomeFilters($qb);
         $qb->setFirstResult($this->start);
         $qb->setMaxResults($this->limit);
         $qb->distinct();
@@ -187,170 +305,6 @@ class PublishedDeckManager
     {
         $qb = $this->getQueryBuilder();
         $qb->orderBy('d.dateCreation', 'DESC');
-        return $this->getPaginator($qb->getQuery());
-    }
-
-    /**
-     * @param UserInterface $user
-     * @return Paginator
-     */
-    public function findDecklistsByFavorite(UserInterface $user)
-    {
-        $qb = $this->getQueryBuilder();
-        $qb->leftJoin('d.favorites', 'u');
-        $qb->andWhere('u = :user');
-        $qb->setParameter('user', $user);
-        $qb->orderBy('d.dateCreation', 'DESC');
-        return $this->getPaginator($qb->getQuery());
-    }
-
-    /**
-     * @param UserInterface $user
-     * @return Paginator
-     */
-    public function findDecklistsByAuthor(UserInterface $user)
-    {
-        $qb = $this->getQueryBuilder();
-        $qb->andWhere('d.user = :user');
-        $qb->setParameter('user', $user);
-        $qb->orderBy('d.dateCreation', 'DESC');
-        return $this->getPaginator($qb->getQuery());
-    }
-
-    public function findDecklistsInHallOfFame()
-    {
-        $qb = $this->getQueryBuilder();
-        // likes with the fires weighed in (Ketura, 2026-11-04)
-        $qb->addSelect(PublishedDeck::SCORE_DQL . ' AS HIDDEN score');
-        $qb->andWhere(PublishedDeck::SCORE_DQL . ' > 10');
-        $qb->orderBy('score', 'DESC');
-        return $this->getPaginator($qb->getQuery());
-    }
-
-    /**
-     * @return Paginator
-     */
-    public function findDecklistsInHotTopic()
-    {
-        $qb = $this->getQueryBuilder();
-        $qb->addSelect(
-            '(SELECT count(c) FROM App\Entity\Comment c'
-            . ' WHERE c.decklist=d AND DATE_DIFF(CURRENT_TIMESTAMP(), c.dateCreation)<1) AS HIDDEN nbRecentComments'
-        );
-        $qb->orderBy('nbRecentComments', 'DESC');
-        $qb->orderBy('d.nbComments', 'DESC');
-        return $this->getPaginator($qb->getQuery());
-    }
-
-    /**
-     * @return Paginator
-     */
-    public function findDecklistsInTournaments()
-    {
-        $qb = $this->getQueryBuilder();
-        $qb->andWhere('d.tournament is not null');
-        $qb->orderBy('d.dateCreation', 'DESC');
-        return $this->getPaginator($qb->getQuery());
-    }
-
-    /**
-     * @return Paginator
-     */
-    public function findDecklistsWithComplexSearch()
-    {
-        $request = $this->request_stack->getCurrentRequest();
-
-        $cards_code = $request->query->all()['cards'] ?? [];
-        if (!is_array($cards_code)) {
-            $cards_code = [];
-        }
-
-        $author_name = trim(strip_tags((string) $request->query->get('author')));
-
-        $decklist_name = trim(strip_tags((string) $request->query->get('name')));
-
-        $tournament = (int) $request->query->get('tournament');
-
-        $sort = $request->query->get('sort');
-
-        $packs = $request->query->all()['packs'] ?? null;
-
-        $qb = $this->getQueryBuilder();
-        $joinTables = [];
-
-        if (!empty($author_name)) {
-            // a registered author, or the source's author of a seeded deck (phase3/06)
-            $qb->innerJoin('d.user', 'u');
-            $joinTables[] = 'd.user';
-            $qb->leftJoin('d.source', 'src');
-            $qb->andWhere('u.username = :username OR u.displayName = :username OR src.legacyAuthor = :username');
-            $qb->setParameter('username', $author_name);
-        }
-        if (!empty($decklist_name)) {
-            $qb->andWhere('d.name like :deckname');
-            $qb->setParameter('deckname', "%$decklist_name%");
-        }
-
-        if (!empty($tournament)) {
-            $qb->andWhere('d.tournament = :tournament');
-            $qb->setParameter('tournament', $tournament);
-        }
-
-        if (!empty($cards_code) || !empty($packs)) {
-            if (!empty($cards_code)) {
-                foreach ($cards_code as $i => $card_code) {
-                    /* @var CardInterface $card */
-                    $card = $this->doctrine->getRepository(Card::class)->findOneBy(array('code' => $card_code));
-                    if (!$card) {
-                        continue;
-                    }
-
-                    $qb->innerJoin('d.slots', "s$i");
-                    $qb->andWhere("s$i.card = :card$i");
-                    $qb->setParameter("card$i", $card);
-
-                    if (!empty($packs)) {
-                        $packs[] = $card->getPack()->getId();
-                    }
-                }
-            }
-            if (!empty($packs)) {
-                $sub = $this->doctrine->createQueryBuilder();
-                $sub->select("c");
-                $sub->from(Card::class, "c");
-                $sub->innerJoin(PublishedDeckSlot::class, 's', 'WITH', 's.card = c');
-                $sub->where('s.decklist = d');
-                $sub->andWhere($sub->expr()->notIn('c.pack', $packs));
-
-                $qb->andWhere($qb->expr()->not($qb->expr()->exists($sub->getDQL())));
-            }
-        }
-
-        switch ($sort) {
-            case 'date':
-                $qb->orderBy('d.dateCreation', 'DESC');
-                break;
-            case 'likes':
-                $qb->addSelect(PublishedDeck::SCORE_DQL . ' AS HIDDEN score');
-                $qb->orderBy('score', 'DESC');
-                break;
-            case 'reputation':
-                if (!in_array('d.user', $joinTables)) {
-                    $qb->innerJoin('d.user', 'u');
-                }
-                $qb->addSelect('u.reputation as HIDDEN reputation');
-                $qb->orderBy('reputation', 'DESC');
-                break;
-            case 'popularity':
-            default:
-                $qb->addSelect(
-                    '(1+' . PublishedDeck::SCORE_DQL . ')/(1+POWER(DATE_DIFF(CURRENT_TIMESTAMP(), d.dateCreation), 2))'
-                    . ' AS HIDDEN popularity'
-                );
-                $qb->orderBy('popularity', 'DESC');
-                break;
-        }
-
         return $this->getPaginator($qb->getQuery());
     }
 
@@ -410,7 +364,7 @@ class PublishedDeckManager
 
     public function getNextUrl()
     {
-        if ($this->page === $this->getNumberOfPages()) {
+        if ($this->page >= $this->getNumberOfPages()) {
             return null;
         }
 

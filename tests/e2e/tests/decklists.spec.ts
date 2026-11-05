@@ -173,14 +173,49 @@ test('another user likes, favourites and comments on it', async ({ pageAs }) => 
 });
 
 test('the decklist shows up in search and in the favourites list', async ({ page, pageAs }) => {
+  // the old search address still works
   await page.goto(`/decklists/find?name=${encodeURIComponent(decklistName)}&sort=likes`);
-  await expect(page.getByRole('link', { name: decklistName })).toBeVisible();
+  await expect(page).toHaveURL(/\/decklists\?/);
+  const row = page.locator('.rb-decks tbody tr').filter({ hasText: decklistName });
+  await expect(row).toHaveCount(1);
+  // format first, then the size per side
+  await expect(row.locator('.rb-col-format')).toHaveText('Fellowship Block');
+  await expect(row.locator('.rb-size')).toHaveText('30/30');
+  await expect(row).toHaveClass(/rb-kind-whole/);
   await snap(page, 'search by name');
 
   const voter = await pageAs('voter');
   await voter.goto('/decklists/favorites');
+  await expect(voter).toHaveURL(/favorites=1/);
   await expect(voter.getByRole('link', { name: decklistName })).toBeVisible();
+  await expect(voter.locator('.rb-preset.is-active')).toHaveText('My Favourites');
   await snap(voter, "voter's favourites");
+});
+
+test('the decklists page filters by card, kind and culture', async ({ page }) => {
+  await page.goto(`/decklists?name=${encodeURIComponent(decklistName)}`);
+  await page.waitForFunction(() => (window as any).app?.data?.cards?.find().length > 100);
+  // a card picked from the suggestions is searched for straight away
+  await page.locator('#browse-card').fill('Gimli, Dwarf of Er');
+  await Promise.all([page.waitForURL(/cards/), page.locator('.tt-suggestion').first().click()]);
+  await expect(page.locator('.rb-card-pick')).toContainText('Gimli, Dwarf of Erebor');
+  await expect(page.getByRole('link', { name: decklistName })).toBeVisible();
+  // fragments only: a whole deck drops out
+  await Promise.all([page.waitForURL(/kind/), page.locator('.rb-toggle-whole span').click()]);
+  await expect(page.locator('.rb-results-none')).toBeVisible();
+  // the last kind can't be turned off
+  await Promise.all([page.waitForURL(/kind/), page.locator('.rb-toggle-free_peoples span').click()]);
+  await Promise.all([page.waitForURL(/kind/), page.locator('.rb-toggle-shadow span').click()]);
+  await expect(page.locator('.rb-toggle input:checked[name="kind[]"]')).toHaveCount(2);
+  // a culture the deck doesn't have
+  await page.goto(`/decklists?name=${encodeURIComponent(decklistName)}&culture[]=dwarven`);
+  await expect(page.getByRole('link', { name: decklistName })).toBeVisible();
+  await page.goto(`/decklists?name=${encodeURIComponent(decklistName)}&culture[]=raider`);
+  await expect(page.locator('.rb-results-none')).toBeVisible();
+  // Clear All keeps nothing but the sort
+  await page.goto(`/decklists?name=x&sort=rated`);
+  await page.getByRole('link', { name: 'Clear All' }).click();
+  await expect(page).toHaveURL(/\/decklists\?sort=rated$/);
 });
 
 test('the public API serves the decklist', async ({ request }) => {

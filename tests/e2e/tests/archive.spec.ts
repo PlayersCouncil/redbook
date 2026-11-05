@@ -27,7 +27,7 @@ test('a seed batch imports as archived decklists', async ({ page }) => {
   } catch (e) {
     test.skip(true, 'could not run the importer through docker exec');
   }
-  await page.goto(`/decklists/find?author=${author}&incomplete=1`);
+  await page.goto(`/decklists?author=${author}`);
   const link = page.getByRole('link', { name: 'Fixture Elves and Moria' }).first();
   await expect(link).toBeVisible();
   await link.click();
@@ -52,8 +52,8 @@ test('a seed batch imports as archived decklists', async ({ page }) => {
   await expect(page.locator('.rb-review-note')).toContainText("hasn't been checked");
   await snap(page, 'archived decklist');
 
-  // incomplete: not in default browsing
-  await page.goto(`/decklists/find?author=${author}`);
+  // listed by default, whole or not (Ketura, 2026-11-05), but not among the decks Gemp accepts
+  await page.goto(`/decklists?author=${author}&legal=1`);
   await expect(page.getByRole('link', { name: 'Fixture Elves and Moria' })).toHaveCount(0);
 });
 

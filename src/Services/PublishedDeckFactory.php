@@ -65,6 +65,7 @@ class PublishedDeckFactory
             $decklist->getSlots()->add($decklistslot);
         }
         $decklist->updateCultures();
+        $decklist->updateSizes();
         $this->copyNotes($deck, $decklist);
         // the deck was validated as it was saved
         $decklist->setValidation($deck->getValidation());
@@ -134,6 +135,7 @@ class PublishedDeckFactory
             $decklist->getSlots()->add($decklistslot);
         }
         $decklist->updateCultures();
+        $decklist->updateSizes();
         if ($deck instanceof Deck) {
             $this->copyNotes($deck, $decklist);
         }

@@ -761,7 +761,7 @@ abbr.legality.banned {
    and the deck on the left, card filters and pool on the right; each part
    scrolls on its own on a desktop, the page scrolls on a phone.
    ====================================================================== */
-.rb-builder, .rb-review-page, .rb-reader {
+.rb-builder, .rb-review-page, .rb-reader, .rb-browse {
     --rb-ink: #221F1A; --rb-muted: #6B645A; --rb-line: #DDD6C8; --rb-line-strong: #C9C0AE;
     --rb-soft: #FBFAF6; --rb-tan: #ECE5D6; --rb-blue: #1D5FAD; --rb-blue-soft: #EEF3F9;
     --rb-red: #B42318; --rb-red-dark: #6E140E; --rb-yellow: #E8B931; --rb-grey: #B9AFA0;
@@ -1479,4 +1479,114 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 #wrapper.rb-fill ::-webkit-scrollbar-thumb:hover { background: #877C65; }
 @supports not selector(::-webkit-scrollbar) {
     #wrapper.rb-fill * { scrollbar-color: #ADA189 #EFEAE0; scrollbar-width: auto; }
+}
+
+/* ---- the decklists page (Ketura, 2026-11-05) ----
+   Search and filters on top, the decks below as compact rows: format first, then the draw
+   deck's size per side (a fragment's missing side shown as a dash), then cultures. */
+.container.main.rb-browse { width: auto; max-width: 1440px; padding-top: 14px; }
+.rb-browse-pane { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--rb-line); border-radius: 10px; background: var(--rb-soft); }
+.rb-browse-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+.rb-browse-title { margin: 0; font-size: 24px; font-weight: 700; }
+.rb-filters-toggle { display: none; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; font-size: 13px; font-weight: 600; }
+.rb-browse-pane.is-open .rb-filters-toggle { background: var(--rb-tan); }
+.rb-presets { display: flex; flex-wrap: wrap; gap: 4px; }
+.rb-preset { padding: 5px 12px; border: 1px solid var(--rb-line-strong); border-radius: 16px; background: #fff; color: var(--rb-ink); font-size: 13px; font-weight: 600; }
+.rb-preset:hover, .rb-preset:focus { background: var(--rb-tan); color: var(--rb-ink); text-decoration: none; }
+.rb-preset.is-active { background: var(--rb-ink); border-color: var(--rb-ink); color: #fff; }
+.rb-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; margin: 0; font-weight: 400; }
+.rb-field > span, .rb-field > label, .rb-browse-label { font-size: 12px; font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; margin: 0; }
+.rb-browse-search { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 2fr); gap: 10px; }
+.rb-card-picks { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; height: auto; min-height: 30px; padding: 2px 4px; cursor: text; }
+.rb-card-picks .twitter-typeahead { flex: 1 1 120px; }
+.rb-card-picks #browse-card, .rb-card-picks .tt-hint { width: 100%; height: 24px; border: 0; outline: 0; padding: 0 4px; background: transparent; }
+.rb-card-pick { display: inline-flex; align-items: center; gap: 4px; padding: 1px 4px 1px 8px; border-radius: 12px; background: var(--rb-blue-soft); border: 1px solid #C8D7EA; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.rb-card-pick button { border: 0; background: none; padding: 0 2px; font-size: 15px; line-height: 1; color: var(--rb-muted); cursor: pointer; }
+.rb-card-picks .tt-dropdown-menu { min-width: 260px; margin-top: 4px; padding: 4px 0; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; box-shadow: 0 4px 14px rgba(0, 0, 0, .12); }
+.rb-card-picks .tt-suggestion { padding: 3px 10px; font-size: 13px; }
+.rb-card-picks .tt-suggestion.tt-cursor { background: #FBE38E; }
+.rb-browse-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 16px; }
+.rb-field-format select { width: 230px; }
+.rb-field-sort select { width: 150px; }
+.rb-years { display: flex; align-items: center; gap: 4px; }
+.rb-years input { width: 76px; }
+.rb-toggles { display: flex; flex-wrap: wrap; gap: 4px; }
+.rb-toggle, .rb-culture-pick { position: relative; margin: 0; font-weight: 600; cursor: pointer; }
+.rb-toggle input, .rb-culture-pick input { position: absolute; opacity: 0; pointer-events: none; }
+.rb-toggle > span { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; font-size: 13px; color: var(--rb-muted); }
+.rb-toggle input:checked + span { background: var(--rb-ink); border-color: var(--rb-ink); color: #fff; }
+.rb-toggle-free_peoples input:checked + span { background: var(--rb-fp); border-color: var(--rb-fp); }
+.rb-toggle-shadow input:checked + span { background: var(--rb-shadow); border-color: var(--rb-shadow); }
+.rb-toggle input:focus-visible + span, .rb-culture-pick input:focus-visible + span { outline: 2px solid var(--rb-blue); outline-offset: 1px; }
+.rb-browse-cultures { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.rb-browse-cultures .rb-browse-label { margin-right: 6px; }
+.rb-culture-pick > span { width: 34px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; }
+.rb-culture-pick .culture-icon { width: 24px; height: 22px; }
+.rb-culture-pick input:checked + span { background: #FBE38E; border-color: #B58B00; box-shadow: inset 0 0 0 1px #B58B00; }
+.rb-browse-cultures .rb-culture-sep { width: 1px; height: 26px; margin: 0 6px; background: var(--rb-line-strong); }
+.rb-browse-actions { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.rb-browse-clear { font-size: 13px; font-weight: 600; }
+
+.rb-results-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; margin-bottom: 6px; }
+.rb-results-count { font-size: 15px; font-weight: 700; }
+.rb-results-head .pagination, .rb-browse-results > .text-center .pagination { margin: 0; }
+.rb-browse-results > .text-center { margin-top: 10px; }
+.rb-results-head .text-center { text-align: right; }
+.rb-results-none { padding: 40px 0; text-align: center; color: var(--rb-muted); font-size: 15px; }
+.rb-decks { width: 100%; border-collapse: collapse; font-size: 14px; }
+.rb-decks th { padding: 6px 8px; border-bottom: 2px solid var(--rb-line-strong); font-size: 12px; font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; text-align: left; }
+.rb-decks th a { color: inherit; }
+.rb-decks th a.is-sorted { color: var(--rb-ink); }
+.rb-decks td { padding: 6px 8px; border-bottom: 1px solid var(--rb-line); vertical-align: middle; }
+.rb-decks tbody tr { cursor: pointer; }
+.rb-decks tbody tr:hover { background: #FFF7D6; }
+.rb-col-format { width: 1%; white-space: nowrap; }
+.rb-fmt { display: inline-block; min-width: 128px; font-weight: 700; }
+.rb-col-size { width: 1%; white-space: nowrap; text-align: center !important; }
+.rb-size { display: inline-flex; align-items: baseline; justify-content: center; min-width: 66px; padding: 2px 6px; border-radius: 5px; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 14px; }
+.rb-size-fp { color: var(--rb-fp); min-width: 2ch; text-align: right; }
+.rb-size-sh { color: var(--rb-shadow); min-width: 2ch; text-align: left; }
+.rb-size-slash { margin: 0 2px; color: var(--rb-grey); font-weight: 400; }
+.rb-size .is-none { color: var(--rb-grey); font-weight: 400; }
+/* a fragment's cell is tinted with the side it has, so fragments stand out in a list of whole decks */
+.rb-kind-free_peoples .rb-size { background: #E3ECF6; box-shadow: inset 0 0 0 1px #B9CDE3; }
+.rb-kind-shadow .rb-size { background: #F5E6DD; box-shadow: inset 0 0 0 1px #E0C1AF; }
+.rb-col-cultures { width: 1%; white-space: nowrap; }
+.rb-row-cultures { display: inline-flex; align-items: center; gap: 2px; min-width: 120px; }
+.rb-row-cultures .culture-icon { width: 22px; height: 20px; }
+.rb-row-sep { width: 1px; height: 18px; margin: 0 4px; background: var(--rb-line-strong); }
+.rb-col-deck { min-width: 220px; }
+.rb-deck-name { display: block; font-weight: 700; color: var(--rb-ink); }
+.rb-deck-by { display: block; font-size: 12px; color: var(--rb-muted); }
+.rb-archive-mark { margin-left: 4px; padding: 0 5px; border-radius: 3px; background: var(--rb-tan); font-size: 11px; font-weight: 600; }
+.rb-col-event { width: 24%; max-width: 0; font-size: 13px; }
+.rb-event { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-more-plays { color: var(--rb-muted); font-weight: 600; }
+.rb-col-year { width: 1%; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--rb-muted); }
+.rb-col-rating { width: 1%; white-space: nowrap; font-size: 13px; }
+.rb-score { color: var(--rb-blue); font-weight: 700; }
+.rb-comments { margin-left: 8px; color: var(--rb-good); }
+
+@media (max-width: 1100px) {
+    .rb-browse-search { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .rb-field-cards { grid-column: 1 / -1; }
+}
+/* a phone: each deck a block of three lines (format, size and year; the name; cultures and rating) */
+@media (max-width: 767px) {
+    .rb-browse-pane:not(.is-open) > :not(.rb-browse-top) { display: none; }
+    .rb-filters-toggle { display: inline-flex !important; }
+    .rb-browse-search { grid-template-columns: minmax(0, 1fr); }
+    .rb-field-format select, .rb-field-sort select { width: 100%; }
+    .rb-field-format, .rb-field-sort { flex: 1 1 100%; }
+    .rb-browse-actions { margin-left: 0; width: 100%; justify-content: space-between; }
+    .rb-decks thead { display: none; }
+    .rb-decks, .rb-decks tbody { display: block; }
+    .rb-decks tr { display: grid; grid-template-columns: auto auto 1fr auto; grid-template-areas: "fmt size . year" "deck deck deck deck" "event event event event" "cult cult . rating"; gap: 2px 8px; padding: 8px 2px; border-bottom: 1px solid var(--rb-line); }
+    .rb-decks td { padding: 0; border: 0; width: auto; max-width: none; min-width: 0; }
+    .rb-decks td.rb-col-format { grid-area: fmt; } .rb-decks td.rb-col-size { grid-area: size; }
+    .rb-decks td.rb-col-year { grid-area: year; } .rb-decks td.rb-col-deck { grid-area: deck; }
+    .rb-decks td.rb-col-event { grid-area: event; } .rb-decks td.rb-col-cultures { grid-area: cult; }
+    .rb-decks td.rb-col-rating { grid-area: rating; }
+    .rb-fmt { min-width: 0; }
+    .rb-decks td.rb-col-event:empty { display: none; }
 }
