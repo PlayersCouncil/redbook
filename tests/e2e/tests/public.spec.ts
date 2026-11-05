@@ -49,6 +49,15 @@ test('decklist listings load, the old tabs as presets', async ({ page }) => {
     await expect(page.locator('#browse-form')).toBeVisible();
     await expect(page.locator('.rb-preset.is-active')).toHaveCount(1);
   }
+  // the pager: first and previous off on page 1, nine pages at most
+  await page.goto('/decklists?sort=old');
+  const pager = page.locator('.rb-results-head .rb-pager');
+  if (await pager.count()) {
+    await expect(pager.locator('.rb-page-step.is-disabled')).toHaveCount(2);
+    expect(await pager.locator('.rb-page:not(.rb-page-step)').count()).toBeLessThanOrEqual(9);
+    await Promise.all([page.waitForURL(/page=2/), pager.getByRole('link', { name: 'Next Page' }).click()]);
+    await expect(pager.locator('.rb-page.is-current')).toHaveText('2');
+  }
   await page.goto('/decklists/search');
   await expect(page).toHaveURL(/\/decklists$/);
 });

@@ -459,13 +459,16 @@ class SocialController extends AbstractController
         $filters = $decklistManager->getFilters();
         $user = $this->getUser();
 
-        $response = new Response();
+        // the page's own requests as the filters change get the parts it swaps in, as JSON
+        // (Ketura, 2026-11-05); the same address answers both, so caches keep them apart
+        $response = $request->isXmlHttpRequest() ? new JsonResponse() : new Response();
         if (!empty($filters['mine']) || !empty($filters['favorites'])) {
             $response->setPrivate();
         } else {
             $response->setPublic();
             $response->setMaxAge(60);
         }
+        $response->setVary(['X-Requested-With']);
 
         $decklistManager->setLimit(50);
         $decklistManager->setPage(max(1, (int) $request->query->get('page', 1)));
@@ -485,26 +488,29 @@ class SocialController extends AbstractController
         }
         $preset = array_search($filters, $presets, true);
 
-        return $this->render(
-            'Decklist/decklists.html.twig',
-            [
-                'pagetitle' => $translator->trans('decklist.list.title'),
-                'pagedescription' => 'Browse thousands of Lord of the Rings TCG decks, from the Decipher era to today.',
-                'decklists' => $decklists,
-                'total' => $decklistManager->getMaxCount(),
-                'filters' => $filters,
-                'presets' => $presets,
-                'preset' => $preset === false ? null : $preset,
-                'formats' => $usedFormats,
-                'format_names' => array_map(fn ($f) => $f->getName(), $allFormats),
-                'cultures' => $this->managerRegistry->getRepository(Culture::class)->findBy([], ['name' => 'ASC']),
-                'cards' => $cards,
-                'pages' => $decklistManager->getClosePages(),
-                'prevurl' => $decklistManager->getPreviousUrl(),
-                'nexturl' => $decklistManager->getNextUrl(),
-            ],
-            $response
-        );
+        $params = [
+            'pagetitle' => $translator->trans('decklist.list.title'),
+            'pagedescription' => 'Browse thousands of Lord of the Rings TCG decks, from the Decipher era to today.',
+            'decklists' => $decklists,
+            'total' => $decklistManager->getMaxCount(),
+            'filters' => $filters,
+            'presets' => $presets,
+            'preset' => $preset === false ? null : $preset,
+            'formats' => $usedFormats,
+            'format_names' => array_map(fn ($f) => $f->getName(), $allFormats),
+            'cultures' => $this->managerRegistry->getRepository(Culture::class)->findBy([], ['name' => 'ASC']),
+            'cards' => $cards,
+            'pager' => $decklistManager->getPager(9),
+        ];
+
+        if ($response instanceof JsonResponse) {
+            return $response->setData([
+                'top' => $this->renderBlockView('Decklist/decklists.html.twig', 'browse_top', $params),
+                'fields' => $this->renderBlockView('Decklist/decklists.html.twig', 'browse_fields', $params),
+                'results' => $this->renderBlockView('Decklist/decklists.html.twig', 'browse_results', $params),
+            ]);
+        }
+        return $this->render('Decklist/decklists.html.twig', $params, $response);
     }
 
     /** The old tab and search addresses, onto the decklists page with the same filters */

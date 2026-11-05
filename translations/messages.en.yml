@@ -758,6 +758,15 @@ decklist.browse.sorts.comments: Most Comments
 decklist.browse.cultures: Cultures
 decklist.browse.clear: Clear All
 decklist.browse.filters: Search and Filters
+decklist.browse.pages: Pages
+decklist.browse.page_first: First Page
+decklist.browse.page_prev: Previous Page
+decklist.browse.page_next: Next Page
+decklist.browse.page_last: Last Page
+decklist.browse.page: Page
+decklist.browse.page_of: "Go to page (of %count%)"
+decklist.browse.page_go: Go
+decklist.browse.loading: Loading…
 decklist.browse.search: Search
 decklist.browse.count: "{0} No decks match|{1} 1 deck|]1,Inf[ %n% decks"
 decklist.browse.none: Nothing matches. Try removing a filter.

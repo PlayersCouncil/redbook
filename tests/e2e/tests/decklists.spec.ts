@@ -200,7 +200,15 @@ test('the decklists page filters by card, kind and culture', async ({ page }) =>
   await Promise.all([page.waitForURL(/cards/), page.locator('.tt-suggestion').first().click()]);
   await expect(page.locator('.rb-card-pick')).toContainText('Gimli, Dwarf of Erebor');
   await expect(page.getByRole('link', { name: decklistName })).toBeVisible();
-  // fragments only: a whole deck drops out
+  // fragments only: a whole deck drops out, the results swapped in without loading the page
+  await page.evaluate(() => { (window as any).samePage = true; });
+  await Promise.all([page.waitForURL(/kind/), page.locator('.rb-toggle-whole span').click()]);
+  await expect(page.locator('.rb-results-none')).toBeVisible();
+  expect(await page.evaluate(() => (window as any).samePage)).toBe(true);
+  // Back restores the list and the filters
+  await page.goBack();
+  await expect(page.getByRole('link', { name: decklistName })).toBeVisible();
+  await expect(page.locator('.rb-toggle-whole input')).toBeChecked();
   await Promise.all([page.waitForURL(/kind/), page.locator('.rb-toggle-whole span').click()]);
   await expect(page.locator('.rb-results-none')).toBeVisible();
   // the last kind can't be turned off

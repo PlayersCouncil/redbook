@@ -11,7 +11,9 @@
     - format_names: format names by code
     - cultures: every culture
     - cards: the cards being searched for
-    - pages, prevurl, nexturl: pagination
+    - pager: PublishedDeckManager::getPager
+    Its blocks browse_top, browse_fields and browse_results are also sent alone, for the
+    page to swap in as the filters change without loading the page again.
 #}
 {% extends 'base.html.twig' %}
 
@@ -27,27 +29,38 @@
 {% endblock %}
 
 {% block body %}
-{% import _self as m %}
-{% set f = filters %}
-{% set query = app.request.query.all %}
 <div class="main white container rb-browse">
 
     {% include 'alerts.html.twig' %}
 
     <form method="get" action="{{ path('decklists_list') }}" class="rb-browse-pane" id="browse-form">
-        <div class="rb-browse-top">
+        <div class="rb-browse-top" id="browse-top">{{ block('browse_top') }}</div>
+        <div class="rb-browse-fields" id="browse-fields">{{ block('browse_fields') }}</div>
+    </form>
+
+    <div class="rb-browse-results" id="browse-results">{{ block('browse_results') }}</div>
+</div>
+{% endblock %}
+
+{# The parts the page replaces as the filters change (SocialController::listAction) #}
+{% block browse_top %}
+{% set f = filters %}
             <h1 class="rb-browse-title">{{ 'decklist.list.title' | trans }}</h1>
             <nav class="rb-presets" aria-label="{{ 'decklist.browse.presets' | trans }}">
                 {% for key, params in presets %}
-                    <a href="{{ path('decklists_list', params) }}" class="rb-preset{% if preset == key %} is-active{% endif %}">{{ ('decklist.browse.preset.' ~ key) | trans }}</a>
+                    <a href="{{ list_path('decklists_list', params) }}" class="rb-preset{% if preset == key %} is-active{% endif %}">{{ ('decklist.browse.preset.' ~ key) | trans }}</a>
                 {% endfor %}
             </nav>
             {% set active = f | filter((v, k) => k != 'sort') | length %}
             <button type="button" class="rb-filters-toggle" aria-expanded="false" aria-controls="browse-form">
                 <span class="fas fa-sliders-h"></span> {{ 'decklist.browse.filters' | trans }}{% if active %} <span class="rb-more-count">{{ active }}</span>{% endif %}
             </button>
-        </div>
+{% endblock %}
 
+{% block browse_fields %}
+{% import _self as m %}
+{% set f = filters %}
+{% set active = f | filter((v, k) => k != 'sort') | length %}
         <div class="rb-browse-search">
             <label class="rb-field">
                 <span>{{ 'decklist.browse.name' | trans }}</span>
@@ -124,14 +137,6 @@
                     {% endif %}
                 </div>
             </div>
-            <label class="rb-field rb-field-sort">
-                <span>{{ 'decklist.browse.sort' | trans }}</span>
-                <select name="sort" class="form-control input-sm" data-autosubmit>
-                    {% for sort in ['new', 'old', 'rated', 'name', 'comments'] %}
-                        <option value="{{ sort }}"{% if (f.sort ?? 'new') == sort %} selected{% endif %}>{{ ('decklist.browse.sorts.' ~ sort) | trans }}</option>
-                    {% endfor %}
-                </select>
-            </label>
         </div>
 
         <div class="rb-browse-cultures">
@@ -146,16 +151,27 @@
                 {% endfor %}
             {% endfor %}
             <span class="rb-browse-actions">
-                {% if active %}<a href="{{ path('decklists_list', f.sort is defined ? {sort: f.sort} : {}) }}" class="rb-browse-clear">{{ 'decklist.browse.clear' | trans }}</a>{% endif %}
+                {% if active %}<a href="{{ list_path('decklists_list', f.sort is defined ? {sort: f.sort} : {}) }}" class="rb-browse-clear">{{ 'decklist.browse.clear' | trans }}</a>{% endif %}
                 <button type="submit" class="btn btn-primary btn-sm"><span class="fas fa-search"></span> {{ 'decklist.browse.search' | trans }}</button>
             </span>
         </div>
-    </form>
+{% endblock %}
 
-    <div class="rb-browse-results">
+{% block browse_results %}
+{% import _self as m %}
+{% set f = filters %}
+{% set query = app.request.query.all %}
         <div class="rb-results-head">
             <span class="rb-results-count">{{ 'decklist.browse.count' | trans({'%count%': total, '%n%': total | number_format}) }}</span>
-            {% if pages | length > 1 %}{% include 'Default/pagination.html.twig' %}{% endif %}
+            {% include 'Decklist/pager.html.twig' %}
+            <label class="rb-results-sort">
+                <span>{{ 'decklist.browse.sort' | trans }}</span>
+                <select name="sort" form="browse-form" class="form-control input-sm" data-autosubmit>
+                    {% for sort in ['new', 'old', 'rated', 'name', 'comments'] %}
+                        <option value="{{ sort }}"{% if (f.sort ?? 'new') == sort %} selected{% endif %}>{{ ('decklist.browse.sorts.' ~ sort) | trans }}</option>
+                    {% endfor %}
+                </select>
+            </label>
         </div>
 
         {% if total %}
@@ -166,10 +182,10 @@
                     <th class="rb-col-format">{{ 'decklist.browse.col.format' | trans }}</th>
                     <th class="rb-col-size" title="{{ 'decklist.browse.col.size_title' | trans }}">{{ 'decklist.browse.col.size' | trans }}</th>
                     <th class="rb-col-cultures">{{ 'decklist.browse.cultures' | trans }}</th>
-                    <th class="rb-col-deck"><a href="{{ path('decklists_list', query | merge({sort: 'name', page: null})) }}"{% if sorted == 'name' %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.deck' | trans }}</a></th>
+                    <th class="rb-col-deck"><a href="{{ list_path('decklists_list', query | merge({sort: 'name', page: null})) }}"{% if sorted == 'name' %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.deck' | trans }}</a></th>
                     <th class="rb-col-event">{{ 'decklist.browse.col.event' | trans }}</th>
-                    <th class="rb-col-year"><a href="{{ path('decklists_list', query | merge({sort: sorted == 'new' ? 'old' : null, page: null})) }}"{% if sorted in ['new', 'old'] %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.year' | trans }}{% if sorted == 'new' %} <span class="fas fa-caret-down"></span>{% elseif sorted == 'old' %} <span class="fas fa-caret-up"></span>{% endif %}</a></th>
-                    <th class="rb-col-rating"><a href="{{ path('decklists_list', query | merge({sort: 'rated', page: null})) }}"{% if sorted == 'rated' %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.rating' | trans }}</a></th>
+                    <th class="rb-col-year"><a href="{{ list_path('decklists_list', query | merge({sort: sorted == 'new' ? 'old' : null, page: null})) }}"{% if sorted in ['new', 'old'] %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.year' | trans }}{% if sorted == 'new' %} <span class="fas fa-caret-down"></span>{% elseif sorted == 'old' %} <span class="fas fa-caret-up"></span>{% endif %}</a></th>
+                    <th class="rb-col-rating"><a href="{{ list_path('decklists_list', query | merge({sort: 'rated', page: null})) }}"{% if sorted == 'rated' %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.rating' | trans }}</a></th>
                 </tr>
             </thead>
             <tbody>
@@ -186,11 +202,9 @@
                     </td>
                     <td class="rb-col-cultures">
                         {% set rows = decklist.cultures | filter(r => r.culture.side) | sort((a, b) => b.count <=> a.count) %}
-                        <span class="rb-row-cultures">
-                            {% for row in rows | filter(r => r.culture.side == 'free_peoples') %}{{ m.culture_icon(row.culture, row.count) }}{% endfor %}
-                            {% if rows | filter(r => r.culture.side == 'free_peoples') | length and rows | filter(r => r.culture.side == 'shadow') | length %}<span class="rb-row-sep"></span>{% endif %}
-                            {% for row in rows | filter(r => r.culture.side == 'shadow') %}{{ m.culture_icon(row.culture, row.count) }}{% endfor %}
-                        </span>
+                        {% for side in ['free_peoples', 'shadow'] %}
+                            <span class="rb-row-cultures rb-row-cultures-{{ side }}">{% for row in rows | filter(r => r.culture.side == side) %}{{ m.culture_icon(row.culture, row.count) }}{% endfor %}</span>
+                        {% endfor %}
                     </td>
                     <td class="rb-col-deck">
                         <a href="{{ url }}" class="rb-deck-name">{{ decklist.name }}</a>
@@ -215,10 +229,8 @@
             {% endfor %}
             </tbody>
         </table>
-        {% if pages | length > 1 %}{% include 'Default/pagination.html.twig' %}{% endif %}
+        <div class="rb-results-foot">{% include 'Decklist/pager.html.twig' %}</div>
         {% else %}
             <p class="rb-results-none">{{ 'decklist.browse.none' | trans }}</p>
         {% endif %}
-    </div>
-</div>
 {% endblock %}

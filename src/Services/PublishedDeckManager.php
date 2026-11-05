@@ -308,6 +308,44 @@ class PublishedDeckManager
         return $this->getPaginator($qb->getQuery());
     }
 
+    /**
+     * The decklists page's pager (Ketura, 2026-11-05): first, previous, a window of pages
+     * around the current one, next and last; the urls null where they'd go nowhere.
+     */
+    public function getPager(int $window = 9): array
+    {
+        $count = $this->getNumberOfPages();
+        $current = min($this->page, max(1, $count));
+        $start = max(1, min($current - intdiv($window, 2), $count - $window + 1));
+        $end = min($count, $start + $window - 1);
+        $url = fn (int $page) => $this->pageUrl($page);
+        $pages = [];
+        for ($page = $start; $page <= $end; $page++) {
+            $pages[] = ['numero' => $page, 'url' => $url($page), 'current' => $page === $current];
+        }
+        return [
+            'count' => $count,
+            'current' => $current,
+            'pages' => $pages,
+            'first' => $current > 1 ? $url(1) : null,
+            'prev' => $current > 1 ? $url($current - 1) : null,
+            'next' => $current < $count ? $url($current + 1) : null,
+            'last' => $current < $count ? $url($count) : null,
+        ];
+    }
+
+    /** This list's address on another page; page 1 leaves the parameter out */
+    private function pageUrl(int $page): string
+    {
+        $request = $this->request_stack->getCurrentRequest();
+        $params = $request->query->all();
+        unset($params['page']);
+        if ($page > 1) {
+            $params['page'] = $page;
+        }
+        return \App\Twig\ListUrlExtension::unindex($this->router->generate($request->get('_route'), $params + $request->get('_route_params', [])));
+    }
+
     public function getNumberOfPages()
     {
         return intval(ceil($this->maxcount / $this->limit));

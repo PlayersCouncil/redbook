@@ -1,0 +1,31 @@
+{# The decklists page's pager (Ketura, 2026-11-05): start, previous, nine pages, next, end, and
+   a box to jump to a page. Variables: pager (PublishedDeckManager::getPager) #}
+{% if pager.count > 1 %}
+<nav class="rb-pager" aria-label="{{ 'decklist.browse.pages' | trans }}">
+    {% for step in [
+        {url: pager.first, icon: 'fa-step-backward', label: 'decklist.browse.page_first'},
+        {url: pager.prev, icon: 'fa-chevron-left', label: 'decklist.browse.page_prev'},
+    ] %}
+        {% if step.url %}<a href="{{ step.url }}" class="rb-page rb-page-step" title="{{ step.label | trans }}" aria-label="{{ step.label | trans }}"><span class="fas {{ step.icon }}"></span></a>
+        {% else %}<span class="rb-page rb-page-step is-disabled" aria-hidden="true"><span class="fas {{ step.icon }}"></span></span>{% endif %}
+    {% endfor %}
+    {% for page in pager.pages %}
+        {% if page.current %}<span class="rb-page is-current" aria-current="page">{{ page.numero }}</span>
+        {% else %}<a href="{{ page.url }}" class="rb-page">{{ page.numero }}</a>{% endif %}
+    {% endfor %}
+    {% for step in [
+        {url: pager.next, icon: 'fa-chevron-right', label: 'decklist.browse.page_next'},
+        {url: pager.last, icon: 'fa-step-forward', label: 'decklist.browse.page_last'},
+    ] %}
+        {% if step.url %}<a href="{{ step.url }}" class="rb-page rb-page-step" title="{{ step.label | trans }}" aria-label="{{ step.label | trans }}"><span class="fas {{ step.icon }}"></span></a>
+        {% else %}<span class="rb-page rb-page-step is-disabled" aria-hidden="true"><span class="fas {{ step.icon }}"></span></span>{% endif %}
+    {% endfor %}
+    <form method="get" action="{{ path('decklists_list') }}" class="rb-page-jump">
+        {% for key, value in app.request.query.all | filter((v, k) => k != 'page') %}
+            {% if value is iterable %}{% for v in value %}<input type="hidden" name="{{ key }}[]" value="{{ v }}">{% endfor %}{% else %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}
+        {% endfor %}
+        <input type="number" name="page" min="1" max="{{ pager.count }}" placeholder="{{ 'decklist.browse.page' | trans }}" aria-label="{{ 'decklist.browse.page_of' | trans({'%count%': pager.count}) }}" title="{{ 'decklist.browse.page_of' | trans({'%count%': pager.count}) }}">
+        <button type="submit">{{ 'decklist.browse.page_go' | trans }}</button>
+    </form>
+</nav>
+{% endif %}
