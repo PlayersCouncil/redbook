@@ -20,6 +20,13 @@ use Ramsey\Uuid\Uuid;
 /**
  * Imports a seed-deck batch from the archive scrapes (phase3/06, seed-deck.schema.json).
  *
+ * Batches of schema version 1 and 2 are read (Ketura, 2026-11-04; phase3/09). A v2 deck
+ * names its reporter (who posted it) and, when someone else built it, its author; the deck
+ * is filed under the author when there is one. Its plays[] replace v1's tournament, and it
+ * may carry a starting setup and card annotations, which become the deck's own starting
+ * fellowship, bid, starting notes and card notes. normalize() turns either version into
+ * the shape the rest of the importer reads.
+ *
  * Each author becomes a historic account (one per source and name; Ketura,
  * 2026-11-02), and each deck a private deck of theirs carrying the Historical Deck
  * Information, published as a decklist keyed by (source, sourceId) so a re-import
@@ -36,6 +43,12 @@ class SeedDeckImporter
 
     /** Decks per flush; the entity manager is cleared after each so a big batch keeps its memory flat */
     public const CHUNK = 100;
+
+    /** The fields a deck must have, by schema version */
+    private const REQUIRED = [
+        1 => ['sourceId', 'sourceUrl', 'title', 'legacyAuthor', 'postedDate', 'drawDeck', 'rawDecklist'],
+        2 => ['sourceId', 'sourceUrl', 'title', 'reporter', 'postedDate', 'drawDeck', 'rawDecklist'],
+    ];
 
     /** @var array<string, Card|null> */
     private array $cards = [];
@@ -64,6 +77,7 @@ class SeedDeckImporter
     {
         $this->checkBatch($batch);
         $source = $batch['source'];
+        $version = (int) $batch['schemaVersion'];
         foreach ($this->em->getRepository(Format::class)->findAll() as $format) {
             $this->formats[$format->getCode()] = true;
         }
@@ -76,12 +90,13 @@ class SeedDeckImporter
         foreach (array_chunk($batch['decks'], self::CHUNK, true) as $chunk) {
             $this->preloadCards($chunk);
             foreach ($chunk as $i => $deck) {
-                $missing = array_diff(['sourceId', 'sourceUrl', 'title', 'legacyAuthor', 'postedDate', 'drawDeck', 'rawDecklist'], array_keys($deck));
+                $missing = array_diff(self::REQUIRED[$version], array_keys($deck));
                 if ($missing) {
                     $report['skipped']++;
                     $report['problems'][] = sprintf('deck %d (%s): missing %s', $i, $deck['sourceId'] ?? '?', implode(', ', $missing));
                     continue;
                 }
+                $deck = self::normalize($deck, $version);
                 $existing = $this->em->getRepository(PublishedDeckSource::class)->findOneBy(['source' => $source, 'sourceId' => (string) $deck['sourceId']]);
                 $decklist = $existing?->getDecklist() ?? new PublishedDeck();
                 if ($decklist->isVerified()) {
@@ -89,7 +104,7 @@ class SeedDeckImporter
                     $report['kept']++;
                     continue;
                 }
-                $owner = $this->historicAccount($source, (string) $deck['legacyAuthor'], $dryRun, $report);
+                $owner = $this->historicAccount($source, $deck['owner'], $deck['ownerDisplay'], $dryRun, $report);
                 $current = $decklist->getUser();
                 if ($current instanceof User && !$current->isHistoric() && $current->getUsername() !== self::LEGACY_ARCHIVE_USERNAME) {
                     // claimed before historic accounts existed: it stays with that person
@@ -128,7 +143,10 @@ class SeedDeckImporter
 
         $source->setSourceUrl((string) $deck['sourceUrl']);
         $source->setArchiveUrl($deck['archiveUrl'] ?? null);
-        $source->setLegacyAuthor((string) $deck['legacyAuthor']);
+        $source->setLegacyAuthor($deck['ownerDisplay']);
+        $source->setPeople($deck['people']);
+        $source->setLanguage($deck['language']);
+        $source->setStartingQuote($deck['starting']['quote'] ?? null);
         $source->setPostedDateText((string) $deck['postedDate']);
         $source->setPostedDate(self::partialDate($deck['postedDate']));
         $source->setFormatAsWritten($deck['formatAsWritten'] ?? null);
@@ -237,16 +255,24 @@ class SeedDeckImporter
         foreach ($decklist->getPlays()->toArray() as $play) {
             $decklist->removePlay($play);
         }
-        if (!empty($deck['tournament']['name'])) {
+        foreach ($deck['plays'] as $row) {
             $play = new PublishedDeckPlay();
-            $play->setEventName(mb_substr((string) $deck['tournament']['name'], 0, 255));
-            $play->setEventDate(self::partialDate($deck['tournament']['date'] ?? null));
-            $play->setPlacing(isset($deck['tournament']['placing']) ? mb_substr((string) $deck['tournament']['placing'], 0, 50) : null);
-            $play->setPlayerCount(isset($deck['tournament']['players']) ? (int) $deck['tournament']['players'] : null);
-            $play->setLocation($deck['tournament']['location'] ?? null);
+            $play->setEventName(mb_substr($row['eventName'], 0, 255));
+            $play->setEventDate(self::partialDate($row['date'] ?? null));
+            // what the post claims; an event's own results win once they're linked (phase3/09)
+            $play->setPlacing(isset($row['placingAsWritten']) ? mb_substr((string) $row['placingAsWritten'], 0, 50) : null);
+            $play->setPlayerCount(isset($row['players']) ? (int) $row['players'] : null);
+            $play->setLocation(isset($row['location']) ? mb_substr((string) $row['location'], 0, 255) : null);
+            $play->setPilot($row['pilot']);
+            $play->setEventRef(isset($row['eventId']) ? (string) $row['eventId'] : null);
+            $play->setPartRef(isset($row['partId']) ? (string) $row['partId'] : null);
+            $play->setResultPlayer(isset($row['resultPlayer']) ? (string) $row['resultPlayer'] : null);
             $play->setFormat($format);
             $decklist->addPlay($play);
         }
+
+        // the author's starting setup and card notes, as the source states them (v2)
+        $this->fillNotes($decklist, $deck, $content);
 
         if ($validate && $format !== null) {
             $this->validator->validateDeck($decklist);
@@ -282,6 +308,78 @@ class SeedDeckImporter
     }
 
     /**
+     * The starting fellowship (companions in the draw deck only), bid and starting notes,
+     * and the card annotations: the deck's own Notes, so the reader shows them and a
+     * historian sees them in the deckbuilder. Several notes on one card are joined.
+     */
+    private function fillNotes(PublishedDeck|Deck $deck, array $source, array $content): void
+    {
+        $starting = $source['starting'] ?? [];
+        $deck->setStarting(array_values(array_filter((array) ($starting['fellowship'] ?? []), fn ($code) => is_string($code) && isset($content[$code]))));
+        $bid = trim((string) ($starting['bid'] ?? ''));
+        $deck->setStartingBid($bid === '' ? null : mb_substr($bid, 0, 30));
+        $notes = self::toMarkdown((string) ($starting['notes'] ?? ''), $starting['notesFormat'] ?? 'text');
+        $deck->setStartingNotes($notes === '' ? null : $notes);
+
+        $notes = [];
+        foreach ($source['annotations'] ?? [] as $row) {
+            $code = is_array($row) ? (string) ($row['card'] ?? '') : '';
+            $text = self::toMarkdown((string) ($row['text'] ?? ''), $row['format'] ?? 'text');
+            if ($code === '' || $text === '') {
+                continue;
+            }
+            $notes[$code] = isset($notes[$code]) ? $notes[$code] . "\n\n" . $text : $text;
+        }
+        $deck->setAnnotations(array_map(fn ($code, $text) => ['code' => $code, 'text' => $text], array_keys($notes), $notes));
+    }
+
+    /**
+     * A deck of either schema version in the importer's terms (Ketura, 2026-11-04):
+     * - owner, ownerDisplay: whom it's filed under, the author when the source names one
+     *   (v2), else the reporter (v2) or legacyAuthor (v1); the name keys the historic account
+     * - people: v2's {reporter, author}; plays: v2's plays[], or v1's tournament as one play
+     * - comments: their authors as names; language: the deck text's, en unless given
+     */
+    public static function normalize(array $deck, int $version): array
+    {
+        $name = fn (mixed $person) => trim((string) (is_array($person) ? ($person['name'] ?? '') : ($person ?? '')));
+        $display = fn (mixed $person) => trim((string) (is_array($person) ? ($person['displayName'] ?? $person['name'] ?? '') : ($person ?? '')));
+        if ($version === 1) {
+            $deck['owner'] = $name($deck['legacyAuthor']);
+            $deck['ownerDisplay'] = $deck['owner'];
+            $deck['people'] = null;
+            $tournament = $deck['tournament'] ?? [];
+            $deck['plays'] = empty($tournament['name']) ? [] : [[
+                'eventName' => (string) $tournament['name'],
+                'date' => $tournament['date'] ?? null,
+                'placingAsWritten' => $tournament['placing'] ?? null,
+                'players' => $tournament['players'] ?? null,
+                'location' => $tournament['location'] ?? null,
+            ]];
+        } else {
+            $owner = $name($deck['author'] ?? null) !== '' ? $deck['author'] : $deck['reporter'];
+            $deck['owner'] = $name($owner);
+            $deck['ownerDisplay'] = $display($owner) ?: $deck['owner'];
+            $deck['people'] = ['reporter' => $deck['reporter'], 'author' => $deck['author'] ?? null];
+            $plays = [];
+            foreach ($deck['plays'] ?? [] as $play) {
+                $event = trim((string) ($play['eventName'] ?? $play['eventId'] ?? ''));
+                if ($event !== '') {
+                    $plays[] = ['eventName' => $event] + $play;
+                }
+            }
+            $deck['plays'] = $plays;
+        }
+        foreach ($deck['plays'] as &$play) {
+            $play['pilot'] = isset($play['pilot']) ? ($display($play['pilot']) ?: null) : null;
+        }
+        unset($play);
+        $deck['comments'] = array_map(fn ($c) => is_array($c) && is_array($c['author'] ?? null) ? ['author' => $display($c['author'])] + $c : $c, $deck['comments'] ?? []);
+        $deck['language'] = is_string($deck['language'] ?? null) && $deck['language'] !== '' ? $deck['language'] : 'en';
+        return $deck;
+    }
+
+    /**
      * The private deck behind the published one: what a historian opens in the
      * deckbuilder, carrying the Historical Deck Information.
      */
@@ -306,16 +404,20 @@ class SeedDeckImporter
         $private->setEffectiveDate($decklist->getEffectiveDate());
         $private->setTags(implode(' ', array_map(fn ($t) => preg_replace('/\s+/', '-', trim((string) $t)), $deck['tags'] ?? [])));
         $private->setValidation($decklist->getValidation());
+        $private->setStarting($decklist->getStarting());
+        $private->setStartingBid($decklist->getStartingBid());
+        $private->setStartingNotes($decklist->getStartingNotes());
+        $private->setAnnotations($decklist->getAnnotations());
 
-        $tournament = $deck['tournament'] ?? [];
+        $play = $deck['plays'][0] ?? [];
         $private->setHistoric(DeckManager::normalizeHistoric([
-            'author' => $deck['legacyAuthor'],
+            'author' => $deck['ownerDisplay'],
             'source' => $sourceCode,
             'source_url' => $deck['sourceUrl'],
             'archive_url' => $deck['archiveUrl'] ?? '',
-            'event' => $tournament['name'] ?? '',
-            'placing' => $tournament['placing'] ?? '',
-            'players' => $tournament['players'] ?? '',
+            'event' => $play['eventName'] ?? '',
+            'placing' => $play['placingAsWritten'] ?? '',
+            'players' => $play['players'] ?? '',
             'date_used' => self::dateUsed($deck) ?? '',
             'date_posted' => $deck['postedDate'],
             'date_retrieved' => self::archiveDate($deck['archiveUrl'] ?? null) ?? '',
@@ -338,7 +440,7 @@ class SeedDeckImporter
      * The historic account for an author in a source, made on first sight. Follows
      * merges, so a claimed author's decks go to the person who claimed them.
      */
-    private function historicAccount(string $source, string $author, bool $dryRun, array &$report): User
+    private function historicAccount(string $source, string $author, string $displayName, bool $dryRun, array &$report): User
     {
         $key = self::historicKey($source, $author);
         $repository = $this->em->getRepository(User::class);
@@ -356,7 +458,7 @@ class SeedDeckImporter
             $user->setHistoric(true);
             $user->setHistoricKey($key);
             $user->setHistoricSource($source);
-            $user->setDisplayName(mb_substr(trim($author), 0, 100) ?: 'Unknown author');
+            $user->setDisplayName(mb_substr(trim($displayName), 0, 100) ?: 'Unknown author');
             $this->userManager->updateCanonicalFields($user);
             $report['accounts']++;
             if (!$dryRun) {
@@ -388,7 +490,7 @@ class SeedDeckImporter
     /** When the deck was played or built: its effective date, else its event, else when it was posted */
     public static function dateUsed(array $deck): ?string
     {
-        foreach ([$deck['effectiveDate'] ?? null, $deck['tournament']['date'] ?? null, $deck['postedDate'] ?? null] as $date) {
+        foreach ([$deck['effectiveDate'] ?? null, $deck['plays'][0]['date'] ?? null, $deck['tournament']['date'] ?? null, $deck['postedDate'] ?? null] as $date) {
             if (is_string($date) && self::partialDate($date) !== null) {
                 return $date;
             }
@@ -467,8 +569,8 @@ class SeedDeckImporter
 
     private function checkBatch(array $batch): void
     {
-        if (($batch['schemaVersion'] ?? null) !== 1) {
-            throw new InvalidArgumentException('Not a seed-deck batch with schemaVersion 1');
+        if (!isset(self::REQUIRED[$batch['schemaVersion'] ?? null])) {
+            throw new InvalidArgumentException(sprintf('Not a seed-deck batch of schemaVersion %s', implode(' or ', array_keys(self::REQUIRED))));
         }
         if (!preg_match('/^[a-z][a-z0-9_-]*$/', (string) ($batch['source'] ?? ''))) {
             throw new InvalidArgumentException('The batch needs a source code such as "decktech"');

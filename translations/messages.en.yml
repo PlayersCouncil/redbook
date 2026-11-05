@@ -711,7 +711,8 @@ card.info.short.twilight: Tw
 card.info.short.strvit: Str/Vit
 decklist.view.problems: "Problems Gemp found when this was published:"
 decklist.list.none: No decklists yet.
-decklist.plays.title: Played at
+decklist.plays.title: Played At
+decklist.plays.pilot: "played by %name%"
 decklist.plays.event: Event
 decklist.plays.placing: Place
 decklist.plays.players: Players
@@ -732,6 +733,8 @@ decklist.source.from: "From %source%:"
 decklist.source.original: original post
 decklist.source.archived: archived copy
 decklist.source.posted: "posted %date%"
+decklist.source.posted_by: "posted by %name%"
+decklist.source.starting_quote: "The starting setup, as the original put it:"
 decklist.source.format: "format as written: %format%"
 decklist.source.ratings: "Rated %score% (%votes% votes, %scale%) on the original site."
 decklist.source.unresolved: "Lines in the original that couldn't be matched to a card:"

@@ -10,6 +10,8 @@
             {% if source.archiveUrl %}<a href="{{ source.archiveUrl }}" rel="nofollow noopener" target="_blank">{{ 'decklist.source.archived' | trans }}</a>
             {% else %}<a href="{{ source.sourceUrl }}" rel="nofollow noopener" target="_blank">{{ 'decklist.source.original' | trans }}</a>{% endif %}
             {% if source.postedDateText %}&middot; {{ 'decklist.source.posted' | trans({'%date%': source.postedDateText}) }}{% endif %}
+            {# someone else posted it (v2 batches: the reporter, Ketura 2026-11-04) #}
+            {% if source.reporterName %}&middot; {{ 'decklist.source.posted_by' | trans({'%name%': source.reporterName}) }}{% endif %}
             {% if source.formatAsWritten %}&middot; {{ 'decklist.source.format' | trans({'%format%': source.formatAsWritten}) }}{% endif %}
         </p>
         {% if source.formatGuess %}
@@ -25,6 +27,10 @@
                 <strong>{{ 'decklist.source.unresolved' | trans }}</strong>
                 <ul>{% for line in source.unresolved %}<li>{{ line.line }}{% if line.reason is defined and line.reason %} <em>({{ line.reason }})</em>{% endif %}</li>{% endfor %}</ul>
             </div>
+        {% endif %}
+        {% if source.startingQuote %}
+            <p class="small"><strong>{{ 'decklist.source.starting_quote' | trans }}</strong></p>
+            <blockquote class="small rb-source-quote">{{ source.startingQuote | nl2br }}</blockquote>
         {% endif %}
         <details><summary class="small">{{ 'decklist.source.raw' | trans }}</summary><pre class="small">{{ source.rawDecklist }}</pre></details>
     </div>

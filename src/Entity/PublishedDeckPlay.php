@@ -51,6 +51,21 @@ class PublishedDeckPlay
     #[ORM\Column(name: 'url', type: 'string', length: 500, nullable: true)]
     protected ?string $url = null;
 
+    /** Who played it there, when it wasn't the deck's author (v2 batches, Ketura 2026-11-04) */
+    #[ORM\Column(name: 'pilot', type: 'string', length: 255, nullable: true)]
+    protected ?string $pilot = null;
+
+    /** The event (and its part) in the archive's event batch, for linking to its results later */
+    #[ORM\Column(name: 'event_ref', type: 'string', length: 255, nullable: true)]
+    protected ?string $eventRef = null;
+
+    #[ORM\Column(name: 'part_ref', type: 'string', length: 255, nullable: true)]
+    protected ?string $partRef = null;
+
+    /** The pilot exactly as the event's results list them: what ties the deck to its placing */
+    #[ORM\Column(name: 'result_player', type: 'string', length: 255, nullable: true)]
+    protected ?string $resultPlayer = null;
+
     public function getId() { return $this->id; }
     public function getDecklist(): PublishedDeck { return $this->decklist; }
     public function setDecklist(PublishedDeck $decklist): void { $this->decklist = $decklist; }
@@ -70,6 +85,14 @@ class PublishedDeckPlay
     public function setLocation(?string $location): void { $this->location = $location; }
     public function getUrl(): ?string { return $this->url; }
     public function setUrl(?string $url): void { $this->url = $url; }
+    public function getPilot(): ?string { return $this->pilot; }
+    public function setPilot(?string $pilot): void { $this->pilot = $pilot ? mb_substr($pilot, 0, 255) : null; }
+    public function getEventRef(): ?string { return $this->eventRef; }
+    public function setEventRef(?string $ref): void { $this->eventRef = $ref ? mb_substr($ref, 0, 255) : null; }
+    public function getPartRef(): ?string { return $this->partRef; }
+    public function setPartRef(?string $ref): void { $this->partRef = $ref ? mb_substr($ref, 0, 255) : null; }
+    public function getResultPlayer(): ?string { return $this->resultPlayer; }
+    public function setResultPlayer(?string $player): void { $this->resultPlayer = $player ? mb_substr($player, 0, 255) : null; }
 
     public function serialize(): array
     {
@@ -82,6 +105,9 @@ class PublishedDeckPlay
             'format' => $this->format,
             'location' => $this->location,
             'url' => $this->url,
+            'pilot' => $this->pilot,
+            'event_ref' => $this->eventRef,
+            'part_ref' => $this->partRef,
         ];
     }
 }

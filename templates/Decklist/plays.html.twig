@@ -6,7 +6,8 @@
         {% for play in decklist.plays %}
             <tr>
                 <td>{% if play.url %}<a href="{{ play.url }}" rel="nofollow noopener" target="_blank">{{ play.eventName }}</a>{% else %}{{ play.eventName }}{% endif %}
-                    {% if play.tier %}<span class="label label-default">{{ play.tier.description }}</span>{% endif %}</td>
+                    {% if play.tier %}<span class="label label-default">{{ play.tier.description }}</span>{% endif %}
+                    {% if play.pilot and not (decklist.source and play.pilot == decklist.source.legacyAuthor) %}<div class="small text-muted">{{ 'decklist.plays.pilot' | trans({'%name%': play.pilot}) }}</div>{% endif %}</td>
                 <td>{{ play.eventDate ? play.eventDate | date('Y-m-d') : '' }}</td>
                 <td>{{ play.placing }}{% if play.playerCount %} / {{ play.playerCount }}{% endif %}</td>
                 <td>{{ play.location }}</td>

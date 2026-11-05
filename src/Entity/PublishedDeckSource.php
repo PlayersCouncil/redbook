@@ -37,6 +37,22 @@ class PublishedDeckSource
     #[ORM\Column(name: 'legacy_author', type: 'string', length: 255, nullable: false)]
     protected string $legacyAuthor;
 
+    /**
+     * The people of a v2 batch (Ketura, 2026-11-04): {reporter, author}, each a person
+     * {name, displayName?, sourceUserId?}. The reporter posted the deck, the author built
+     * it; legacyAuthor is the author when known, else the reporter.
+     */
+    #[ORM\Column(name: 'people', type: 'json', nullable: true)]
+    protected ?array $people = null;
+
+    /** The language of the deck's own text, a BCP 47 tag (v2 batches; en when absent) */
+    #[ORM\Column(name: 'language', type: 'string', length: 35, nullable: true)]
+    protected ?string $language = null;
+
+    /** The sentences a starting fellowship and bid were read from, verbatim, for the historians */
+    #[ORM\Column(name: 'starting_quote', type: 'text', nullable: true)]
+    protected ?string $startingQuote = null;
+
     #[ORM\Column(name: 'posted_date', type: 'date', nullable: true)]
     protected ?DateTimeInterface $postedDate = null;
 
@@ -120,6 +136,18 @@ class PublishedDeckSource
     public function setRelated(?array $related): void { $this->related = $related ?: null; }
     public function getFormatGuess(): ?array { return $this->formatGuess; }
     public function setFormatGuess(?array $guess): void { $this->formatGuess = $guess; }
+    public function getPeople(): array { return $this->people ?? []; }
+    public function setPeople(?array $people): void { $this->people = $people ? array_filter($people) : null; }
+    /** The poster, when someone else built the deck */
+    public function getReporterName(): ?string
+    {
+        $reporter = $this->people['reporter']['name'] ?? null;
+        return $reporter !== null && $reporter !== $this->legacyAuthor ? $reporter : null;
+    }
+    public function getLanguage(): ?string { return $this->language; }
+    public function setLanguage(?string $language): void { $this->language = $language ?: null; }
+    public function getStartingQuote(): ?string { return $this->startingQuote; }
+    public function setStartingQuote(?string $quote): void { $this->startingQuote = $quote ?: null; }
     public function getBatch(): ?string { return $this->batch; }
     public function setBatch(?string $batch): void { $this->batch = $batch; }
 }
