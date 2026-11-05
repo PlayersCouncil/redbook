@@ -1,17 +1,18 @@
 {# A published deck's thumbnail (Ketura, 2026-11-05), the size of a half-thumb in the deckbuilder:
-   its chosen card's top half, or else a tile of its two main cultures' icons, each enlarged
-   past the edges and cropped, split down the middle or along the diagonal (.rb-thumb-split,
-   .rb-thumb-diagonal, set by whatever shows the thumbnails).
+   its chosen card's top half, or else a raised tile of its cultures' icons, enlarged past the
+   edges and cropped: a whole deck's main Free Peoples culture top left and main Shadow culture
+   bottom right, divided along the diagonal; a fragment's main culture filling the tile. Each
+   culture's framing is set in style.css (.rb-thumb-c-<code>).
    Variables: decklist; thumb_card to show another card instead, or false for the cultures #}
 {% set card = thumb_card ?? decklist.thumbnailCard %}
 {% if card and card.imageUrl %}
     <span class="rb-thumb rb-thumb-card" data-hover-code="{{ card.code }}"><img src="{{ card.imageUrl }}" alt="{{ card.fullName }}" loading="lazy"></span>
 {% else %}
-    {% set cultures = decklist.thumbnailCultures %}
-    <span class="rb-thumb rb-thumb-cultures rb-thumb-n{{ cultures | length }}" role="img" aria-label="{{ cultures | map(c => c.name) | join(' / ') }}">
-        {% for culture in cultures %}
-            {%- set file = culture.code == 'uruk_hai' ? 'uruk' : culture.code -%}
-            <span class="rb-thumb-part" style="--c: var(--rb-culture-{{ culture.code | replace({'_': '-'}) }}); --icon: url({{ asset('images/cultures/' ~ file ~ '.svg') }})"><span class="rb-thumb-icon"></span></span>
+    {% set parts = decklist.thumbnailCultures %}
+    <span class="rb-thumb rb-thumb-cultures" role="img" aria-label="{{ parts | map(p => p.culture.name) | join(' / ') }}">
+        {% for part in parts %}
+            {%- set code = part.culture.code -%}
+            <span class="rb-thumb-part rb-thumb-{{ part.corner }} rb-thumb-c-{{ code | replace({'_': '-'}) }}" style="--c: var(--rb-culture-{{ code | replace({'_': '-'}) }}); --icon: url({{ asset('images/cultures/' ~ (code == 'uruk_hai' ? 'uruk' : code) ~ '.svg') }})"><span class="rb-thumb-icon"></span></span>
         {% endfor %}
     </span>
 {% endif %}

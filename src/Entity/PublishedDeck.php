@@ -321,16 +321,27 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     }
 
     /**
-     * The cultures a thumbnail without a card shows: the two with the most cards, a tie going
-     * to the first by name
+     * The cultures a thumbnail without a card shows (Ketura, 2026-11-05): for a whole deck, the
+     * Free Peoples culture with the most cards in the top left and the Shadow one in the bottom
+     * right; for a fragment, or a deck with cultures on one side only, its main culture filling
+     * the tile. Ties go to the first by name.
      *
-     * @return Culture[]
+     * @return array<array{culture: Culture, corner: string}> corner: fp, shadow or full
      */
     public function getThumbnailCultures(): array
     {
         $rows = array_filter($this->cultures->toArray(), fn (PublishedDeckCulture $row) => $row->getCulture()->getSide() !== null);
         usort($rows, fn ($a, $b) => [$b->getCount(), $a->getCulture()->getName()] <=> [$a->getCount(), $b->getCulture()->getName()]);
-        return array_map(fn (PublishedDeckCulture $row) => $row->getCulture(), array_slice($rows, 0, 2));
+        if (!$rows) {
+            return [];
+        }
+        $top = fn (string $side) => array_values(array_filter($rows, fn ($row) => $row->getCulture()->getSide() === $side))[0] ?? null;
+        $fp = $top(Card::SIDE_FREE_PEOPLES);
+        $shadow = $top(Card::SIDE_SHADOW);
+        if ($this->getKind() === 'whole' && $fp && $shadow) {
+            return [['culture' => $fp->getCulture(), 'corner' => 'fp'], ['culture' => $shadow->getCulture(), 'corner' => 'shadow']];
+        }
+        return [['culture' => $rows[0]->getCulture(), 'corner' => 'full']];
     }
 
     /** Recounts the draw deck's Free Peoples and Shadow cards (see $nbFreePeoples) */

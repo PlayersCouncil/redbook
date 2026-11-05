@@ -176,7 +176,7 @@
 
         {% if total %}
         {% set sorted = f.sort ?? 'new' %}
-        <table class="rb-decks rb-thumb-{{ app.request.query.get('thumbs') == 'split' ? 'split' : 'diagonal' }}">
+        <table class="rb-decks">
             <thead>
                 <tr>
                     <th class="rb-col-thumb"></th>
