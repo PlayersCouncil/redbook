@@ -1561,6 +1561,7 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-decks tbody tr { cursor: pointer; }
 .rb-decks tbody tr:hover { background: #FFF7D6; }
 .rb-col-format { width: 1%; white-space: nowrap; }
+.rb-decks td.rb-col-thumb { width: 1%; padding: 5px 4px 5px 0; }
 .rb-fmt { display: inline-block; min-width: 128px; font-weight: 700; }
 .rb-col-size { width: 1%; white-space: nowrap; text-align: center !important; }
 .rb-size { display: inline-flex; align-items: baseline; justify-content: center; min-width: 66px; padding: 2px 6px; border-radius: 5px; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 14px; }
@@ -1602,7 +1603,9 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
     .rb-page-jump { display: none; }
     .rb-decks thead { display: none; }
     .rb-decks, .rb-decks tbody { display: block; }
-    .rb-decks tr { display: grid; grid-template-columns: auto auto 1fr auto; grid-template-areas: "fmt size . year" "deck deck deck deck" "event event event event" "cult cult . rating"; gap: 2px 8px; padding: 8px 2px; border-bottom: 1px solid var(--rb-line); }
+    .rb-decks tr { display: grid; grid-template-columns: auto auto auto 1fr auto; grid-template-areas: "thumb fmt size . year" "thumb deck deck deck deck" "thumb event event event event" "thumb cult cult . rating"; gap: 2px 8px; padding: 8px 2px; border-bottom: 1px solid var(--rb-line); }
+    .rb-decks td.rb-col-thumb { grid-area: thumb; padding: 0; }
+    .rb-decks .rb-thumb { width: 80px; }
     .rb-decks td { padding: 0; border: 0; width: auto; max-width: none; min-width: 0; }
     .rb-decks td.rb-col-format { grid-area: fmt; } .rb-decks td.rb-col-size { grid-area: size; }
     .rb-decks td.rb-col-year { grid-area: year; } .rb-decks td.rb-col-deck { grid-area: deck; }
@@ -1611,3 +1614,32 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
     .rb-fmt { min-width: 0; }
     .rb-decks td.rb-col-event:empty { display: none; }
 }
+
+/* ---- a published deck's thumbnail (Ketura, 2026-11-05) ----
+   The size of a half-thumb: a card's top half, or a raised tile of the deck's two main
+   cultures, their icons enlarged past the edges and cropped. Two ways to divide the tile while
+   we try them: .rb-thumb-split (left and right halves) and .rb-thumb-diagonal (corner to corner,
+   the first culture top left). */
+.rb-thumb { position: relative; display: block; width: 104px; aspect-ratio: 260 / 231; overflow: hidden; border-radius: 7px; background: #EFE9DC; }
+.rb-thumb-card img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.rb-thumb-card { box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
+.rb-thumb-cultures { border: 1px solid #A89C83; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), inset 0 -3px 6px rgba(0, 0, 0, .14), 0 1px 3px rgba(0, 0, 0, .25); }
+.rb-thumb-part { position: absolute; inset: 0; background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, .55), transparent 60%), color-mix(in srgb, var(--c, #8A8A8A) 16%, #F2ECDF); }
+.rb-thumb-icon { position: absolute; width: 120%; height: 120%; left: -10%; top: -10%; background-color: var(--c, #6B645A); -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; filter: drop-shadow(0 1px 0 rgba(255, 255, 255, .7)); }
+/* one culture fills the tile; none leaves it plain */
+.rb-thumb-split .rb-thumb-n2 .rb-thumb-part:first-child { clip-path: inset(0 50% 0 0); }
+.rb-thumb-split .rb-thumb-n2 .rb-thumb-part:last-child { clip-path: inset(0 0 0 50%); }
+.rb-thumb-split .rb-thumb-n2 .rb-thumb-part:first-child .rb-thumb-icon { width: 130%; height: 130%; left: -40%; top: -15%; }
+.rb-thumb-split .rb-thumb-n2 .rb-thumb-part:last-child .rb-thumb-icon { width: 130%; height: 130%; left: 10%; top: -15%; }
+.rb-thumb-split .rb-thumb-n2::after { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; margin-left: -1px; background: rgba(255, 255, 255, .85); box-shadow: 0 0 2px rgba(0, 0, 0, .25); }
+.rb-thumb-diagonal .rb-thumb-n2 .rb-thumb-part:first-child { clip-path: polygon(0 0, 100% 0, 0 100%); }
+.rb-thumb-diagonal .rb-thumb-n2 .rb-thumb-part:last-child { clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+.rb-thumb-diagonal .rb-thumb-n2 .rb-thumb-part:first-child .rb-thumb-icon { width: 110%; height: 110%; left: -30%; top: -28%; }
+.rb-thumb-diagonal .rb-thumb-n2 .rb-thumb-part:last-child .rb-thumb-icon { width: 110%; height: 110%; left: 20%; top: 18%; }
+.rb-thumb-diagonal .rb-thumb-n2::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom right, transparent calc(50% - 1.5px), rgba(255, 255, 255, .9) calc(50% - 1px), rgba(255, 255, 255, .9) calc(50% + 1px), transparent calc(50% + 1.5px)); }
+.rb-thumb-n1 .rb-thumb-icon { width: 130%; height: 130%; left: -15%; top: -15%; }
+/* the thumbnail's choice on the publish form, with how it will look */
+.rb-thumb-pick { display: flex; align-items: flex-start; gap: 14px; }
+.rb-thumb-choice { flex: 1 1 auto; min-width: 0; }
+.rb-thumb-preview { flex: 0 0 auto; }
+.rb-thumb-preview [hidden] { display: none; }

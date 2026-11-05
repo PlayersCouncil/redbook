@@ -152,6 +152,14 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     protected int $nbShadow = 0;
 
     /**
+     * The card the deck's thumbnail shows (Ketura, 2026-11-05), chosen when publishing; without
+     * one the thumbnail shows the deck's two main cultures (getThumbnailCultures).
+     */
+    #[ORM\ManyToOne(targetEntity: Card::class)]
+    #[ORM\JoinColumn(name: 'thumbnail_card_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    protected ?Card $thumbnailCard = null;
+
+    /**
      * @var int
      */
     #[ORM\Column(name: 'nb_comments', type: 'integer')]
@@ -300,6 +308,29 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
         foreach ($counts as ['culture' => $culture, 'count' => $count]) {
             $this->cultures->add(new PublishedDeckCulture($this, $culture, $count));
         }
+    }
+
+    public function getThumbnailCard(): ?Card
+    {
+        return $this->thumbnailCard;
+    }
+
+    public function setThumbnailCard(?Card $card): void
+    {
+        $this->thumbnailCard = $card;
+    }
+
+    /**
+     * The cultures a thumbnail without a card shows: the two with the most cards, a tie going
+     * to the first by name
+     *
+     * @return Culture[]
+     */
+    public function getThumbnailCultures(): array
+    {
+        $rows = array_filter($this->cultures->toArray(), fn (PublishedDeckCulture $row) => $row->getCulture()->getSide() !== null);
+        usort($rows, fn ($a, $b) => [$b->getCount(), $a->getCulture()->getName()] <=> [$a->getCount(), $b->getCulture()->getName()]);
+        return array_map(fn (PublishedDeckCulture $row) => $row->getCulture(), array_slice($rows, 0, 2));
     }
 
     /** Recounts the draw deck's Free Peoples and Shadow cards (see $nbFreePeoples) */

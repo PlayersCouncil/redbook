@@ -176,9 +176,10 @@
 
         {% if total %}
         {% set sorted = f.sort ?? 'new' %}
-        <table class="rb-decks">
+        <table class="rb-decks rb-thumb-{{ app.request.query.get('thumbs') == 'split' ? 'split' : 'diagonal' }}">
             <thead>
                 <tr>
+                    <th class="rb-col-thumb"></th>
                     <th class="rb-col-format">{{ 'decklist.browse.col.format' | trans }}</th>
                     <th class="rb-col-size" title="{{ 'decklist.browse.col.size_title' | trans }}">{{ 'decklist.browse.col.size' | trans }}</th>
                     <th class="rb-col-cultures">{{ 'decklist.browse.cultures' | trans }}</th>
@@ -194,6 +195,7 @@
                 {% set kind = decklist.kind %}
                 {% set score = decklist.nbVotes + 2 * decklist.nbFires %}
                 <tr data-href="{{ url }}" class="rb-kind-{{ kind }}">
+                    <td class="rb-col-thumb">{% include 'Decklist/thumbnail.html.twig' %}</td>
                     <td class="rb-col-format">
                         <span class="rb-fmt">{{ format_names[decklist.targetFormat] ?? (decklist.targetFormat ?: '—') }}</span>
                     </td>

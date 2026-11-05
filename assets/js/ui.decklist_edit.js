@@ -8,6 +8,13 @@
      */
     ui.setup_event_handlers = function setup_event_handlers()
     {
+        // the thumbnail: the chosen card's top half, or the deck's cultures
+        $('#thumbnail').on('change', function () {
+            var image = $(this).find('option:selected').data('image');
+            $('#thumb-card').prop('hidden', !image).find('img').attr('src', image || '');
+            $('#thumb-cultures').prop('hidden', !!image);
+        }).trigger('change');
+
         // play records: add a blank row
         $('#btn-add-play').on('click', function () {
             var row = $('#plays .play-row').last().clone();

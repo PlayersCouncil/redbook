@@ -216,7 +216,7 @@ class PublishedDeckManager
         if (!$decklists) {
             return;
         }
-        foreach (['d.cultures c LEFT JOIN c.culture cu' => 'c, cu', 'd.user u' => 'u', 'd.plays p' => 'p'] as $join => $select) {
+        foreach (['d.cultures c LEFT JOIN c.culture cu' => 'c, cu', 'd.user u' => 'u', 'd.plays p' => 'p', 'd.thumbnailCard tc' => 'tc'] as $join => $select) {
             $this->doctrine->createQuery('SELECT d, ' . $select . ' FROM ' . PublishedDeck::class . ' d LEFT JOIN ' . $join . ' WHERE d IN (:decks)')
                 ->setParameter('decks', $decklists)
                 ->getResult();

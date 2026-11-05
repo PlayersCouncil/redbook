@@ -719,6 +719,10 @@ decklist.plays.players: Players
 decklist.plays.add: Add an event
 decklist.publish.half: Deck half
 decklist.publish.half_hint: "Publish only one side, for others to pair with their own."
+decklist.publish.thumbnail: Thumbnail
+decklist.publish.thumbnail_cultures: The deck's two main cultures
+decklist.publish.thumbnail_rb: Ring-bearer and Ring
+decklist.publish.thumbnail_hint: "What the deck lists show for this deck: a card from it, or its two main cultures."
 decklist.list.title: Decklists
 decklist.browse.presets: Presets
 decklist.browse.preset.new: Newest

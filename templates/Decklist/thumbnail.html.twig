@@ -1,0 +1,17 @@
+{# A published deck's thumbnail (Ketura, 2026-11-05), the size of a half-thumb in the deckbuilder:
+   its chosen card's top half, or else a tile of its two main cultures' icons, each enlarged
+   past the edges and cropped, split down the middle or along the diagonal (.rb-thumb-split,
+   .rb-thumb-diagonal, set by whatever shows the thumbnails).
+   Variables: decklist; thumb_card to show another card instead, or false for the cultures #}
+{% set card = thumb_card ?? decklist.thumbnailCard %}
+{% if card and card.imageUrl %}
+    <span class="rb-thumb rb-thumb-card" data-hover-code="{{ card.code }}"><img src="{{ card.imageUrl }}" alt="{{ card.fullName }}" loading="lazy"></span>
+{% else %}
+    {% set cultures = decklist.thumbnailCultures %}
+    <span class="rb-thumb rb-thumb-cultures rb-thumb-n{{ cultures | length }}" role="img" aria-label="{{ cultures | map(c => c.name) | join(' / ') }}">
+        {% for culture in cultures %}
+            {%- set file = culture.code == 'uruk_hai' ? 'uruk' : culture.code -%}
+            <span class="rb-thumb-part" style="--c: var(--rb-culture-{{ culture.code | replace({'_': '-'}) }}); --icon: url({{ asset('images/cultures/' ~ file ~ '.svg') }})"><span class="rb-thumb-icon"></span></span>
+        {% endfor %}
+    </span>
+{% endif %}

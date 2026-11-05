@@ -45,6 +45,12 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await page.fill('#descriptionMd', 'Published by the **smoke test**. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');
   await page.fill('input[name="play_event[]"]', `E2E Regionals ${runId}`);
   await page.fill('input[name="play_placing[]"]', '1st');
+  // the thumbnail: the cultures until a card is chosen, then that card (Ketura, 2026-11-05)
+  await expect(page.locator('#thumb-cultures .rb-thumb-cultures')).toBeVisible();
+  await expect(page.locator('#thumbnail optgroup')).toHaveCount(3);
+  await page.locator('#thumbnail').selectOption({ label: 'Gimli, Dwarf of Erebor' });
+  await expect(page.locator('#thumb-card img')).toHaveAttribute('src', /.+/);
+  await expect(page.locator('#thumb-cultures')).toBeHidden();
   await snap(page, 'publish form');
   await page.click('form[action="/decklist/create"] button[type=submit]');
 
@@ -181,6 +187,7 @@ test('the decklist shows up in search and in the favourites list', async ({ page
   // format first, then the size per side
   await expect(row.locator('.rb-col-format')).toHaveText('Fellowship Block');
   await expect(row.locator('.rb-size')).toHaveText('30/30');
+  await expect(row.locator('.rb-thumb-card img')).toHaveAttribute('alt', 'Gimli, Dwarf of Erebor');
   await expect(row).toHaveClass(/rb-kind-whole/);
   await snap(page, 'search by name');
 

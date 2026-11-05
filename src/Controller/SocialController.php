@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\Persistence\ManagerRegistry;
+use App\Classes\DeckContent;
 use App\Entity\Card;
 use App\Entity\Comment;
 use App\Entity\CommentInterface;
@@ -230,6 +231,7 @@ class SocialController extends AbstractController
                 $this->dateFrom($request->request->get('effective_date')),
             );
             $this->applyPlays($decklist, $request);
+            $decklist->setThumbnailCard($this->thumbnailFrom($request, $decklist));
         } catch (Exception $e) {
             return $this->render(
                 'Default/error.html.twig',
@@ -360,6 +362,7 @@ class SocialController extends AbstractController
         $decklist->setPrecedent($precedent);
         $decklist->setTournament($tournament);
         $decklist->setHalf($this->halfFrom($request));
+        $decklist->setThumbnailCard($this->thumbnailFrom($request, $decklist));
         $effectiveDate = $this->dateFrom($request->request->get('effective_date'));
         if ($effectiveDate) {
             $decklist->setEffectiveDate($effectiveDate);
@@ -1010,6 +1013,18 @@ class SocialController extends AbstractController
     }
 
     /** free_peoples or shadow from the publish form; anything else is a whole deck */
+    /** The thumbnail card the form chose: one of the deck's cards, not a site; none for the cultures */
+    private function thumbnailFrom(Request $request, PublishedDeck $decklist): ?Card
+    {
+        $code = (string) $request->request->get('thumbnail');
+        foreach ($decklist->getSlots() as $slot) {
+            if ($slot->getCard()->getCode() === $code && $slot->getRole() !== DeckContent::ROLE_SITE) {
+                return $slot->getCard();
+            }
+        }
+        return null;
+    }
+
     private function halfFrom(Request $request): ?string
     {
         $half = $request->request->get('half');
