@@ -102,8 +102,10 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   decklistUrl = page.url();
   decklistId = decklistUrl.match(/\/decklist\/view\/(\d+)\//)![1];
 
-  // Authors can't like their own decklist
+  // Authors can't like their own decklist, nor set it on fire
   await expect(page.locator('#social-like')).toBeDisabled();
+  await expect(page.locator('#social-fire')).toBeDisabled();
+  await expect(page.locator('#social-fire')).toHaveClass(/is-tucked/);
 });
 
 test('another user likes, favourites and comments on it', async ({ pageAs }) => {
@@ -112,11 +114,22 @@ test('another user likes, favourites and comments on it', async ({ pageAs }) => 
 
   // buttons that show what this user has done (Ketura, 2026-11-04)
   const like = page.locator('#social-like');
+  const fire = page.locator('#social-fire');
   await expect(like.locator('.num')).toHaveText('0');
   await expect(like).toHaveAttribute('aria-pressed', 'false');
+  // the fire waits behind Like, its place kept so nothing moves when it comes out
+  await expect(fire).toHaveClass(/is-tucked/);
+  const likeBox = await like.boundingBox();
   await like.click();
   await expect(like.locator('.num')).toHaveText('1');
   await expect(like).toHaveAttribute('aria-pressed', 'true');
+  // liked: the fire slides out to the left, ready; Like hasn't moved
+  await expect(fire).not.toHaveClass(/is-tucked/);
+  await expect(fire).toBeEnabled();
+  expect(await like.boundingBox()).toEqual(likeBox);
+  await fire.click();
+  await expect(fire.locator('.num')).toHaveText('1');
+  await expect(fire).toHaveAttribute('aria-pressed', 'true');
 
   const favorite = page.locator('#social-favorite');
   await expect(favorite.locator('.num')).toHaveText('0');
@@ -144,6 +157,17 @@ test('another user likes, favourites and comments on it', async ({ pageAs }) => 
   await expect(page.locator('#social-favorite')).toHaveClass(/is-on/);
   await expect(page.locator('#social-comment .num')).toHaveText('1');
   await expect(page.locator('#social-comment')).toHaveClass(/is-on/);
+  await expect(page.locator('#social-fire')).toHaveClass(/is-on/);
+  await expect(page.locator('#social-fire .num')).toHaveText('1');
+  // unliking puts the fire out with it, and the button goes back behind Like
+  await page.locator('#social-like').click();
+  await expect(page.locator('#social-like .num')).toHaveText('0');
+  await expect(page.locator('#social-fire .num')).toHaveText('0');
+  await expect(page.locator('#social-fire')).toHaveClass(/is-tucked/);
+  await page.locator('#social-like').click();
+  await expect(page.locator('#social-like .num')).toHaveText('1');
+  await expect(page.locator('#social-fire')).toBeEnabled();
+  await expect(page.locator('#social-fire')).not.toHaveClass(/is-on/);
   await expect(page.locator('.comment-text').filter({ hasText: comment })).toBeVisible();
   await snap(page, 'after reload: counts and comment kept');
 });

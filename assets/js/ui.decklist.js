@@ -13,6 +13,7 @@
         $('.decklist-delete').on('click', ui.delete_form);
         $('#social-like').on('click', ui.send_like);
         $('#social-favorite').on('click', ui.send_favorite);
+        $('#social-fire').on('click', ui.send_fire);
         $('[data-copy-list]').on('click', ui.copy_list);
         $('#btn-compare').on('click', ui.compare_form);
         $('#btn-compare-submit').on('click', ui.compare_submit);
@@ -43,22 +44,58 @@
         }
     }
 
-    function toggle(button, route)
+    function toggle(button, route, done)
     {
         if(button.hasClass('processing')) {
             return;
         }
-        button.addClass('processing');
+        button.addClass('processing').data('touched', true);
         $.post(Routing.generate(route), {id: app.deck.get_id()}, function (data)
         {
             set_pressed(button, !button.hasClass('is-on'), data);
+            done && done(button.hasClass('is-on'));
         }).always(function () { button.removeClass('processing'); });
+    }
+
+    /**
+     * The fire button follows the like (Ketura, 2026-11-04): liking slides it out from behind
+     * Like, ready to use; unliking puts the user's fire out with it, and tucks the button away
+     * again when nobody's fire is left.
+     */
+    function set_fire(liked, fired, count)
+    {
+        var fire = $('#social-fire'),
+            num = count === undefined ? parseInt(fire.find('.num').text(), 10) || 0 : count;
+        fire.find('.num').text(num);
+        fire.prop('disabled', !liked).toggleClass('is-on', !!fired).attr('aria-pressed', !!fired)
+            .attr('title', !liked ? Translator.trans('decklist.reader.fire_locked') : fire.data(fired ? 'title-off' : 'title-on'))
+            .toggleClass('is-tucked', !liked && num === 0);
     }
 
     ui.send_like = function send_like(event)
     {
         event.preventDefault();
-        toggle($(this), 'decklist_like');
+        toggle($(this), 'decklist_like', function (liked) {
+            var fire = $('#social-fire'),
+                fired = fire.hasClass('is-on'),
+                num = parseInt(fire.find('.num').text(), 10) || 0;
+            // the server puts out this user's fire along with the like
+            set_fire(liked, liked && fired, !liked && fired ? num - 1 : num);
+        });
+    };
+
+    ui.send_fire = function send_fire(event)
+    {
+        event.preventDefault();
+        var fire = $(this);
+        if(fire.hasClass('processing') || fire.prop('disabled')) {
+            return;
+        }
+        fire.addClass('processing').data('touched', true);
+        $.post(Routing.generate('decklist_fire'), {id: app.deck.get_id()}, function (data)
+        {
+            set_fire(true, data.on, data.fires);
+        }).always(function () { fire.removeClass('processing'); });
     };
 
     ui.send_favorite = function send_favorite(event)
@@ -120,11 +157,21 @@
         if(!user) {
             return;
         }
-        set_pressed('#social-like', !!user.is_liked);
-        set_pressed('#social-favorite', !!user.is_favorite);
+        // a button clicked before this arrived already shows what the server said
+        var fresh = function (sel) { return !$(sel).data('touched'); },
+            liked = fresh('#social-like') ? !!user.is_liked : $('#social-like').hasClass('is-on');
+        fresh('#social-like') && set_pressed('#social-like', liked);
+        fresh('#social-favorite') && set_pressed('#social-favorite', !!user.is_favorite);
         set_pressed('#social-comment', _.contains(Commenters || [], user.name));
         if(user.is_author) {
             $('#social-like').prop('disabled', true).attr('title', Translator.trans('decklist.reader.own_deck'));
+        }
+        if(fresh('#social-fire') && fresh('#social-like')) {
+            // no animation for what was already so when the page opened
+            $('#social-fire').addClass('rb-no-anim');
+            set_fire(liked && !user.is_author, !!user.is_fired);
+            void $('#social-fire')[0].offsetWidth;
+            $('#social-fire').removeClass('rb-no-anim');
         }
     };
 
@@ -300,6 +347,8 @@
     {
         ui.setup_event_handlers();
         ui.setup_reader();
+        // who you are comes apart from the card data: the buttons needn't wait for the deck
+        app.user.loaded.always(ui.setup_social_icons);
     };
 
     /**
@@ -356,9 +405,6 @@
                 }).fail(function ()
                 {
                     $('<p>You must be logged in to post comments.</p>').insertAfter('#comment-form');
-                }).always(function ()
-                {
-                    ui.setup_social_icons();
                 });
             }
         ]);

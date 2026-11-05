@@ -18,6 +18,12 @@ use stdClass;
 #[ORM\Index(name: 'published_deck_review_idx', columns: ['review_status', 'reviewed_at'])]
 class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDeckInterface
 {
+    /** A fire counts as this many more likes in the popularity sorts (Ketura, 2026-11-04) */
+    public const FIRE_WEIGHT = 2;
+
+    /** The likes with each fire weighed in, for DQL on PublishedDeck d */
+    public const SCORE_DQL = '(d.nbVotes + ' . self::FIRE_WEIGHT . ' * d.nbFires)';
+
     use LotrDeckTrait;
 
     /** Free Peoples or Shadow only (decision 0023); null for a whole deck */
@@ -122,6 +128,13 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     protected $nbVotes;
 
     /**
+     * Fires (Ketura, 2026-11-04): a liker's super-upvote, worth FIRE_WEIGHT more likes in
+     * the popularity sorts. Only someone who has liked the deck can set it on fire.
+     */
+    #[ORM\Column(name: 'nb_fires', type: 'integer', options: ['default' => 0])]
+    protected int $nbFires = 0;
+
+    /**
      * @var int
      */
     #[ORM\Column(name: 'nb_favorites', type: 'integer')]
@@ -221,6 +234,11 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     #[ORM\JoinTable(name: 'vote', joinColumns: [new ORM\JoinColumn(name: 'published_deck_id', referencedColumnName: 'id')], inverseJoinColumns: [new ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id')])]
     protected $votes;
 
+    /** The users who set the deck on fire; each of them has liked it too */
+    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\JoinTable(name: 'fire', joinColumns: [new ORM\JoinColumn(name: 'published_deck_id', referencedColumnName: 'id', onDelete: 'CASCADE')], inverseJoinColumns: [new ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', onDelete: 'CASCADE')])]
+    protected $fires;
+
     /**
      * Constructor
      */
@@ -232,6 +250,7 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
         $this->children = new ArrayCollection();
         $this->favorites = new ArrayCollection();
         $this->votes = new ArrayCollection();
+        $this->fires = new ArrayCollection();
         $this->cultures = new ArrayCollection();
         $this->plays = new ArrayCollection();
     }
@@ -491,6 +510,21 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     public function getnbVotes()
     {
         return $this->nbVotes;
+    }
+
+    public function getNbFires(): int
+    {
+        return $this->nbFires;
+    }
+
+    public function setNbFires(int $nbFires): void
+    {
+        $this->nbFires = max(0, $nbFires);
+    }
+
+    public function getFires(): Collection
+    {
+        return $this->fires;
     }
 
     /**

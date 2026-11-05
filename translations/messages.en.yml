@@ -322,6 +322,7 @@ decklist:
     social:
       like: Like
       favorite: Favorite
+      fire: On fire
       comment: Comment
       version: Version
     derived:
@@ -1103,6 +1104,9 @@ decklist.reader.has_note: "The author has a note on this card"
 decklist.reader.loading: "Loading…"
 decklist.reader.archived: Archived
 decklist.reader.commentary: Author Commentary
+decklist.reader.fire: "Set this deck on fire: it counts as %count% more likes"
+decklist.reader.fire_out: "Put your fire out"
+decklist.reader.fire_locked: "Like this deck to set it on fire"
 decklist.reader.tags: Tags
 decklist.reader.social: "Like, favourite, comment"
 decklist.reader.copy_deck: Copy This Deck

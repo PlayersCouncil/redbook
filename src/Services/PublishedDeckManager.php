@@ -173,7 +173,7 @@ class PublishedDeckManager
     {
         $qb = $this->getQueryBuilder();
         $qb->addSelect(
-            '(1+d.nbVotes)/(1+POWER(DATE_DIFF(CURRENT_TIMESTAMP(), d.dateCreation), 2)) AS HIDDEN popularity'
+            '(1+' . PublishedDeck::SCORE_DQL . ')/(1+POWER(DATE_DIFF(CURRENT_TIMESTAMP(), d.dateCreation), 2)) AS HIDDEN popularity'
         );
         $qb->orderBy('popularity', 'DESC');
         return $this->getPaginator($qb->getQuery());
@@ -220,8 +220,10 @@ class PublishedDeckManager
     public function findDecklistsInHallOfFame()
     {
         $qb = $this->getQueryBuilder();
-        $qb->andWhere('d.nbVotes > 10');
-        $qb->orderBy('d.nbVotes', 'DESC');
+        // likes with the fires weighed in (Ketura, 2026-11-04)
+        $qb->addSelect(PublishedDeck::SCORE_DQL . ' AS HIDDEN score');
+        $qb->andWhere(PublishedDeck::SCORE_DQL . ' > 10');
+        $qb->orderBy('score', 'DESC');
         return $this->getPaginator($qb->getQuery());
     }
 
@@ -329,7 +331,8 @@ class PublishedDeckManager
                 $qb->orderBy('d.dateCreation', 'DESC');
                 break;
             case 'likes':
-                $qb->orderBy('d.nbVotes', 'DESC');
+                $qb->addSelect(PublishedDeck::SCORE_DQL . ' AS HIDDEN score');
+                $qb->orderBy('score', 'DESC');
                 break;
             case 'reputation':
                 if (!in_array('d.user', $joinTables)) {
@@ -341,7 +344,7 @@ class PublishedDeckManager
             case 'popularity':
             default:
                 $qb->addSelect(
-                    '(1+d.nbVotes)/(1+POWER(DATE_DIFF(CURRENT_TIMESTAMP(), d.dateCreation), 2))'
+                    '(1+' . PublishedDeck::SCORE_DQL . ')/(1+POWER(DATE_DIFF(CURRENT_TIMESTAMP(), d.dateCreation), 2))'
                     . ' AS HIDDEN popularity'
                 );
                 $qb->orderBy('popularity', 'DESC');

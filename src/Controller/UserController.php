@@ -202,6 +202,9 @@ class UserController extends AbstractController
                         where f.user_id=?
                         and d.id=?", array($user_id, $decklist_id))->fetchOne();
 
+                    $content['is_fired'] = (bool) $dbh->executeQuery("SELECT count(*) from fire f where f.user_id=? and f.published_deck_id=?",
+                        array($user_id, $decklist_id))->fetchOne();
+
                     $content['is_author'] = ($user_id == $decklist->getUser()->getId());
 
                     $content['can_delete'] = ($decklist->getNbcomments() == 0)

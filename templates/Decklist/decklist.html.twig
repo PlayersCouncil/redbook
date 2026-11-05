@@ -62,6 +62,19 @@
             <div class="rb-reader-actions">
                 {# like, favourite and comment as buttons, filled once you have (Ketura, 2026-11-04) #}
                 <div class="rb-social" role="group" aria-label="{{ 'decklist.reader.social' | trans }}">
+                    {#
+                       The fire (Ketura, 2026-11-04): a liker's super-upvote, worth FIRE_WEIGHT more
+                       likes. Its slot left of Like is always kept, so nothing moves when it slides
+                       out from behind Like; until then it is tucked away. A deck already on fire
+                       shows its count to everyone, usable once you've liked it.
+                    #}
+                    {% set fire_weight = constant('App\\Entity\\PublishedDeck::FIRE_WEIGHT') %}
+                    <span class="rb-fire-slot">
+                        <button type="button" id="social-fire" class="rb-social-btn is-fire{{ decklist.nbFires ? '' : ' is-tucked' }}" aria-pressed="false" disabled
+                                data-title-on="{{ 'decklist.reader.fire' | trans({'%count%': fire_weight}) }}" data-title-off="{{ 'decklist.reader.fire_out' | trans }}"
+                                title="{{ 'decklist.reader.fire_locked' | trans }}">
+                            <span class="fas fa-fire" aria-hidden="true"></span><span class="num">{{ decklist.nbFires }}</span></button>
+                    </span>
                     {% if is_granted('IS_AUTHENTICATED_REMEMBERED') %}
                         <button type="button" id="social-like" class="rb-social-btn is-like" aria-pressed="false" title="{{ 'decklist.view.social.like' | trans }}">
                             <span class="far fa-thumbs-up" aria-hidden="true"></span><span class="num">{{ decklist.nbVotes }}</span></button>
