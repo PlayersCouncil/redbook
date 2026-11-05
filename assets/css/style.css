@@ -1397,7 +1397,7 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 .rb-reader-col { min-width: 0; padding: 0; }
 /* the deck on white, the other columns on the page's tint, so the eye goes to the deck (Ketura, 2026-11-04) */
 .rb-reader-deck { background: #fff; }
-.rb-reader-col-head { flex: 0 0 auto; margin: 0; padding: 10px 14px 8px; border-bottom: 1px solid var(--rb-line); font-size: 15px; font-weight: 700; }
+.rb-reader-col-head { flex: 0 0 auto; margin: 0; padding: 10px 14px 8px; border-bottom: 1px solid var(--rb-line); font-size: 30px; line-height: 1.15; font-weight: 700; }
 .rb-reader-scroll { padding: 10px 14px 18px; }
 /* while the card data loads: the deck and Stats say so (Ketura, 2026-11-04) */
 .rb-reader-loading { padding: 40px 0; text-align: center; color: var(--rb-muted); }
