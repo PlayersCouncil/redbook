@@ -41,13 +41,14 @@ test('formats are copied from Gemp, without the debug format', async ({ page, re
   expect(formats.map((f) => f.code)).not.toContain('debug');
 });
 
-test('decklist listings load, the old tabs as presets', async ({ page }) => {
-  for (const [type, url] of [['popular', /\/decklists\?sort=rated$/], ['recent', /\/decklists$/], ['tournament', /\/decklists\?played=1$/]] as const) {
+test('decklist listings load, the old tabs as filters', async ({ page }) => {
+  for (const [type, url, also] of [['popular', /\/decklists\?sort=rated$/, 0], ['recent', /\/decklists$/, 0], ['tournament', /\/decklists\?played=1$/, 1]] as const) {
     const res = await page.goto(`/decklists/${type}`);
     expect(res?.status(), type).toBe(200);
     await expect(page).toHaveURL(url);
     await expect(page.locator('#browse-form')).toBeVisible();
-    await expect(page.locator('.rb-preset.is-active')).toHaveCount(1);
+    // a filter with no field of its own shows as a chip that drops it (Ketura, 2026-11-06)
+    await expect(page.locator('.rb-browse-also .rb-card-pick')).toHaveCount(also);
   }
   // the pager: first and previous off on page 1, nine pages at most
   await page.goto('/decklists?sort=old');

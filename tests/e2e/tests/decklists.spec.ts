@@ -199,7 +199,7 @@ test('the decklist shows up in search and in the favourites list', async ({ page
   await voter.goto('/decklists/favorites');
   await expect(voter).toHaveURL(/favorites=1/);
   await expect(voter.getByRole('link', { name: decklistName })).toBeVisible();
-  await expect(voter.locator('.rb-preset.is-active')).toHaveText('My Favourites');
+  await expect(voter.locator('.rb-browse-also')).toContainText('My Favourites');
   await snap(voter, "voter's favourites");
 });
 
@@ -239,11 +239,15 @@ test('the decklists page filters by card, kind and culture', async ({ page }) =>
   await page.locator('#browse-tag').fill('no-such-tag');
   await Promise.all([page.waitForURL(/no-such-tag/), page.locator('#browse-tag').press('Enter')]);
   await expect(page.locator('.rb-results-none')).toBeVisible();
-  // the page size: a filter for neither the presets nor Clear All
+  // the page size: not a filter, so nothing for Clear All
   await page.goto('/decklists?limit=10');
   expect(await page.locator('.rb-decks tbody tr').count()).toBeLessThanOrEqual(10);
   await expect(page.locator('select[name=limit]')).toHaveValue('10');
-  await expect(page.locator('.rb-preset.is-active')).toHaveText('Newest');
+  await expect(page.locator('.rb-browse-clear')).toHaveCount(0);
+  // submitted dates from the calendar, applied as they're picked (Ketura, 2026-11-06)
+  await page.goto(`/decklists?name=${encodeURIComponent(decklistName)}`);
+  await Promise.all([page.waitForURL(/to=2003-12-31/), page.locator('input[name=to]').fill('2003-12-31')]);
+  await expect(page.locator('.rb-results-none')).toBeVisible();
   // Clear All keeps nothing but the sort
   await page.goto(`/decklists?name=x&sort=rated`);
   await page.getByRole('link', { name: 'Clear All' }).click();

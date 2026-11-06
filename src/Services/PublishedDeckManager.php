@@ -68,20 +68,20 @@ class PublishedDeckManager
 
     /**
      * The decklists page's search and filters, from the query string (Ketura, 2026-11-05: one
-     * page, filters on top, results below; the old tabs are presets of these). Anything left
-     * out is not filtered on.
+     * page of filters and results; the old tabs are links that set these). Anything left out is
+     * not filtered on.
      *   name, author, event     text in the deck's name, its author, an event it was played at
      *   cards[]=<code>          has each of these cards
      *   format=<gemp code>      target format
      *   culture[]=<code>        has cards of each culture
-     *   from=YYYY, to=YYYY      effective date (the year the deck was played)
+     *   from=, to=YYYY-MM-DD    submitted on or after, on or before (Ketura, 2026-11-06)
      *   kind[]=whole|free_peoples|shadow  whole decks and fragments; all three when left out
      *   legal=1                 only decks Gemp accepts as they are
      *   played=1                only decks played at an event
      *   mine=1, favorites=1     the user's own decks, or their favourites
      *   tags[]=<tag>            tagged with each of these
      *   sort=new|old|rated|name|comments
-     *   limit=10|30|50|80|100   decks a page (not a filter: presets keep it)
+     *   limit=10|30|50|80|100   decks a page (not a filter: Clear All keeps it)
      * The old search's parameters still work: sort=date|popularity|likes|reputation, half=.
      */
     public function getFilters(): array
@@ -96,6 +96,13 @@ class PublishedDeckManager
             fn ($c) => preg_replace('/[^\w-]/', '', (string) $c),
             (array) ($all[$key] ?? [])
         ))));
+
+        // a day as the calendar picker sends it; anything else is left out
+        $date = function (string $key) use ($query): ?string {
+            $value = (string) $query->get($key);
+            $day = \DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+            return $day && $day->format('Y-m-d') === $value ? $value : null;
+        };
 
         $kind = array_values(array_intersect(self::KINDS, $codes('kind')));
         $half = $query->get('half');
@@ -115,8 +122,8 @@ class PublishedDeckManager
             'cards' => $codes('cards'),
             'format' => preg_replace('/[^\w-]/', '', (string) $query->get('format')),
             'culture' => $codes('culture'),
-            'from' => (int) $query->get('from') ?: null,
-            'to' => (int) $query->get('to') ?: null,
+            'from' => $date('from'),
+            'to' => $date('to'),
             'kind' => $kind,
             'legal' => (bool) $query->get('legal'),
             'played' => (bool) $query->get('played'),
@@ -180,10 +187,10 @@ class PublishedDeckManager
                 ->setParameter("culture$i", $code);
         }
         if (!empty($filters['from'])) {
-            $qb->andWhere('d.effectiveDate >= :from')->setParameter('from', $filters['from'] . '-01-01');
+            $qb->andWhere('d.dateCreation >= :from')->setParameter('from', new \DateTimeImmutable($filters['from']));
         }
         if (!empty($filters['to'])) {
-            $qb->andWhere('d.effectiveDate <= :to')->setParameter('to', $filters['to'] . '-12-31');
+            $qb->andWhere('d.dateCreation < :to')->setParameter('to', (new \DateTimeImmutable($filters['to']))->modify('+1 day'));
         }
         if (!empty($filters['kind'])) {
             $kinds = [

@@ -1539,16 +1539,14 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 .rb-browse-fields { display: flex; flex-direction: column; gap: 10px; }
 .rb-browse-pane { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--rb-line); border-radius: 10px; background: var(--rb-soft); }
 .rb-browse-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
-.rb-browse-title { margin: 0; font-size: calc(24px * (1 + (var(--rb-text-scale) - 1) * 0.73)); font-weight: 700; }
+/* the page's title, above the pane rather than in it (Ketura, 2026-11-06) */
+.rb-browse-title { margin: 0 0 10px; font-size: calc(34px * (1 + (var(--rb-text-scale) - 1) * 0.45)); line-height: 1.1; font-weight: 700; letter-spacing: -.01em; color: var(--rb-ink); }
 .rb-filters-toggle { display: none; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; font-size: calc(13px * var(--rb-text-scale)); font-weight: 600; }
 .rb-browse-pane.is-open .rb-filters-toggle { background: var(--rb-tan); }
-.rb-presets { display: flex; flex-wrap: wrap; gap: 4px; }
-.rb-preset { padding: 5px 12px; border: 1px solid var(--rb-line-strong); border-radius: 16px; background: #fff; color: var(--rb-ink); font-size: calc(13px * var(--rb-text-scale)); font-weight: 600; }
-.rb-preset:hover, .rb-preset:focus { background: var(--rb-tan); color: var(--rb-ink); text-decoration: none; }
-.rb-preset.is-active { background: var(--rb-ink); border-color: var(--rb-ink); color: #fff; }
 .rb-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; margin: 0; font-weight: 400; }
 .rb-field > span, .rb-field > label, .rb-browse-label { font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; margin: 0; }
-.rb-browse-search { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 2fr); gap: 10px; }
+.rb-browse-search { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.rb-field-cards, .rb-field-tags { grid-column: 1 / -1; }
 .rb-card-picks { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; height: auto; min-height: 30px; padding: 2px 4px; cursor: text; }
 .rb-card-picks .twitter-typeahead { flex: 1 1 120px; }
 .rb-card-picks #browse-tag { flex: 1 1 120px; min-width: 0; }
@@ -1560,12 +1558,14 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 .rb-card-picks .tt-suggestion.tt-cursor { background: #FBE38E; }
 .rb-browse-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 16px; }
 .rb-field-format select { width: 230px; }
-.rb-years { display: flex; align-items: center; gap: 4px; }
-.rb-years input { width: 76px; }
+.rb-dates { display: flex; align-items: center; gap: 4px; }
+.rb-dates input { flex: 1 1 0; width: auto; min-width: 0; max-width: 170px; }
+.rb-browse-also .rb-card-picks-row { display: flex; flex-wrap: wrap; gap: 4px; }
+.rb-browse-submit { display: flex; }
 .rb-toggles { display: flex; flex-wrap: wrap; gap: 4px; }
 .rb-toggle, .rb-culture-pick { position: relative; margin: 0; font-weight: 600; cursor: pointer; }
 .rb-toggle input, .rb-culture-pick input { position: absolute; opacity: 0; pointer-events: none; }
-.rb-toggle > span { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; font-size: calc(13px * var(--rb-text-scale)); color: var(--rb-muted); }
+.rb-toggle > span { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; white-space: nowrap; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; font-size: calc(13px * var(--rb-text-scale)); color: var(--rb-muted); }
 .rb-toggle input:checked + span { background: var(--rb-ink); border-color: var(--rb-ink); color: #fff; }
 .rb-toggle-free_peoples input:checked + span { background: var(--rb-side-fp); border-color: var(--rb-side-fp); }
 .rb-toggle-shadow input:checked + span { background: var(--rb-side-sh); border-color: var(--rb-side-sh); }
@@ -1602,11 +1602,14 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 @media (min-width: 992px) {
     #wrapper.rb-fill > .container.main.rb-browse {
         flex: 1 1 auto; min-height: 0; width: 100%; max-width: none; padding: 10px 12px 10px 8px;
-        display: grid; grid-template-columns: clamp(330px, 24vw, 460px) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); gap: 0 18px;
+        /* the pane a tenth of the window wider than it was, for the Show buttons on one line (Ketura, 2026-11-06) */
+        display: grid; grid-template-columns: clamp(400px, 34vw, 660px) minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); gap: 0 18px;
     }
-    .rb-browse > :not(.rb-browse-pane):not(.rb-browse-results) { grid-column: 1 / -1; }
-    .rb-browse > .rb-browse-pane { grid-column: 1; grid-row: 2; margin: 0; overflow-y: auto; scrollbar-gutter: stable; }
-    .rb-browse > .rb-browse-results { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; min-height: 0; }
+    .rb-browse > :not(.rb-browse-pane):not(.rb-browse-results):not(.rb-browse-title) { grid-column: 1 / -1; grid-row: 1; }
+    /* the title over the pane; the results start level with it */
+    .rb-browse > .rb-browse-title { grid-column: 1; grid-row: 2; }
+    .rb-browse > .rb-browse-pane { grid-column: 1; grid-row: 3; margin: 0; overflow-y: auto; scrollbar-gutter: stable; }
+    .rb-browse > .rb-browse-results { grid-column: 2; grid-row: 2 / 4; display: flex; flex-direction: column; min-height: 0; }
     .rb-results-head, .rb-results-foot { flex: 0 0 auto; }
     .rb-results-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-gutter: stable; border-top: 2px solid var(--rb-line-strong); }
     .rb-results-scroll .rb-decks thead th { position: sticky; top: 0; z-index: 1; background: #fff; }
@@ -1614,10 +1617,15 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
     .rb-browse-pane .rb-browse-search { grid-template-columns: minmax(0, 1fr); }
     .rb-browse-pane .rb-browse-filters { flex-direction: column; align-items: stretch; }
     .rb-browse-pane .rb-field-format select { width: 100%; }
-    .rb-browse-pane .rb-years input { flex: 1 1 0; width: auto; min-width: 0; }
+    .rb-browse-pane .rb-dates input { max-width: none; }
+    .rb-browse-pane .rb-toggles { flex-wrap: nowrap; }
     .rb-browse-pane .rb-browse-cultures .rb-browse-label { width: 100%; }
     .rb-browse-pane .rb-browse-cultures .rb-culture-sep { width: 100%; height: 0; margin: 2px 0; background: none; }
     .rb-browse-pane .rb-browse-actions { margin: 6px 0 0; width: 100%; justify-content: space-between; }
+}
+/* the filters' toggle is for a phone; above that the pane's top holds nothing */
+@media (min-width: 768px) {
+    .rb-browse-top { display: none; }
 }
 
 .rb-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; }
@@ -1635,16 +1643,19 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-browse-results.is-loading::after { content: ''; position: absolute; left: 50%; top: 90px; width: 44px; height: 44px; margin-left: -22px; border: 4px solid var(--rb-line); border-top-color: var(--rb-ink); border-radius: 50%; animation: rb-spin .8s linear infinite; }
 @keyframes rb-spin { to { transform: rotate(360deg); } }
 .rb-results-none { padding: 40px 0; text-align: center; color: var(--rb-muted); font-size: calc(15px * var(--rb-text-scale)); }
-/* the table sized to its content and centred, each column reading from its left (Ketura, 2026-11-05) */
+/* the table sized to its content and centred (Ketura, 2026-11-05) */
 .rb-decks { width: auto; margin: 0 auto; border-collapse: collapse; font-size: calc(14px * var(--rb-text-scale)); }
-.rb-decks th { padding: 6px 8px; border-bottom: 2px solid var(--rb-line-strong); font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; text-align: left; }
+.rb-decks th { padding: 6px 8px; border-bottom: 2px solid var(--rb-line-strong); font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; text-align: center; }
 .rb-decks th a { color: inherit; }
 .rb-decks th a.is-sorted { color: var(--rb-ink); }
 .rb-decks td { padding: 6px 8px; border-bottom: 1px solid var(--rb-line); vertical-align: middle; }
 .rb-decks tbody tr { cursor: pointer; }
 .rb-decks tbody tr:hover { background: #FFF7D6; }
-.rb-decks td { text-align: left; }
-.rb-col-format { min-width: 150px; max-width: 190px; }
+/* the headings centred, and every column but the deck's (Ketura, 2026-11-06) */
+.rb-decks td { text-align: center; }
+.rb-decks td.rb-col-deck { text-align: left; }
+.rb-decks .rb-row-cultures, .rb-decks .rb-row-tags { justify-content: center; }
+.rb-col-format { min-width: 110px; max-width: 190px; }
 .rb-decks td.rb-col-thumb { padding: 5px 6px 5px 0; }
 .rb-fmt { font-weight: 700; }
 .rb-col-size { white-space: nowrap; }
@@ -1659,9 +1670,9 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-size .is-none { color: var(--rb-grey); font-weight: 400; }
 .rb-col-cultures { white-space: nowrap; }
 /* a line per side: Free Peoples above, Shadow below */
-.rb-row-cultures { display: flex; align-items: center; gap: 2px; min-width: 120px; height: 20px; }
+.rb-row-cultures { display: flex; align-items: center; gap: 2px; min-width: 0; height: 20px; }
 .rb-row-cultures .culture-icon { width: 22px; height: 18px; }
-.rb-col-deck { min-width: 240px; max-width: 460px; }
+.rb-col-deck { min-width: 200px; max-width: 460px; }
 .rb-deck-name { display: block; font-size: calc(20px * var(--rb-text-scale)); line-height: 1.15; overflow-wrap: anywhere; font-weight: 700; color: var(--rb-ink); }
 .rb-deck-by { display: block; margin-top: 3px; font-size: calc(13px * var(--rb-text-scale)); color: var(--rb-muted); }
 .rb-deck-dot { margin: 0 3px; }
@@ -1672,10 +1683,6 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-score { color: var(--rb-blue); font-weight: 700; }
 .rb-comments { margin-left: 8px; color: var(--rb-good); }
 
-@media (max-width: 1100px) {
-    .rb-browse-search { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .rb-field-cards, .rb-field-tags { grid-column: 1 / -1; }
-}
 /* a phone: each deck a block of three lines (format, size and year; the name; cultures and rating) */
 @media (max-width: 767px) {
     .rb-browse-pane:not(.is-open) > :not(.rb-browse-top) { display: none; }
@@ -1704,6 +1711,9 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
     .rb-col-score .rb-comments { display: inline; margin-left: 6px; }
     .rb-fmt { min-width: 0; }
     .rb-decks td.rb-col-tags:empty { display: none; }
+    /* a phone's block of lines reads from the left */
+    .rb-decks td { text-align: left; }
+    .rb-decks .rb-row-cultures, .rb-decks .rb-row-tags { justify-content: flex-start; }
 }
 
 /* ---- a published deck's thumbnail (Ketura, 2026-11-05) ----

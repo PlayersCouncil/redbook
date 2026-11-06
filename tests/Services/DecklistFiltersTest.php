@@ -39,6 +39,13 @@ class DecklistFiltersTest extends TestCase
         $this->assertSame(['dwarven', 'ab'], $f['culture']);
     }
 
+    public function testSubmittedDatesAreDaysOrNothing(): void
+    {
+        // as the calendar picker sends them (Ketura, 2026-11-06); a year alone or a bad day is left out
+        $this->assertSame(['from' => '2004-03-01', 'to' => '2004-12-31'], $this->filters('from=2004-03-01&to=2004-12-31'));
+        $this->assertSame([], $this->filters('from=2004&to=2004-02-30'));
+    }
+
     public function testTheOldSearchStillReads(): void
     {
         $this->assertSame(['sort' => 'rated'], $this->filters('sort=likes'));

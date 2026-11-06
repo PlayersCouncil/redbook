@@ -1,12 +1,10 @@
 {#
 @file
-    The decklists page (Ketura, 2026-11-05): search and filters on top, the decks below. The
-    presets along the top are the old tabs, now links that set the filters.
+    The decklists page (Ketura, 2026-11-05): the search and filters, and the decks they find.
 
     Available variables:
     - decklists, total: this page of decks and how many match
     - filters: the active filters (PublishedDeckManager::getFilters)
-    - presets, preset: the presets' filters by name, and the one the filters match if any
     - formats: [{code, name, count}] the formats decks target, most used first
     - format_names: format names by code
     - cultures: every culture
@@ -17,10 +15,10 @@
 #}
 {% extends 'base.html.twig' %}
 
-{% macro culture_icon(culture, count) %}
+{% macro culture_icon(culture, count, colour = null) %}
     {%- set file = culture.code == 'uruk_hai' ? 'uruk' : culture.code -%}
     <span class="culture-icon" role="img" aria-label="{{ culture.name }}" title="{{ culture.name }}{% if count is not null %} · {{ count }}{% endif %}"
-          style="--icon:url({{ asset('images/cultures/' ~ file ~ '.svg') }}); color: var(--rb-culture-{{ culture.code | replace({'_': '-'}) }}, currentColor)"></span>
+          style="--icon:url({{ asset('images/cultures/' ~ file ~ '.svg') }}); color: {{ colour ?? 'var(--rb-culture-' ~ (culture.code | replace({'_': '-'})) ~ ', currentColor)' }}"></span>
 {%- endmacro %}
 
 {% block javascripts %}
@@ -37,6 +35,8 @@
 
     {% include 'alerts.html.twig' %}
 
+    <h1 class="rb-browse-title">{{ 'decklist.list.title' | trans }}</h1>
+
     <form method="get" action="{{ path('decklists_list') }}" class="rb-browse-pane" id="browse-form">
         <div class="rb-browse-top" id="browse-top">{{ block('browse_top') }}</div>
         <div class="rb-browse-fields" id="browse-fields">{{ block('browse_fields') }}</div>
@@ -49,12 +49,6 @@
 {# The parts the page replaces as the filters change (SocialController::listAction) #}
 {% block browse_top %}
 {% set f = filters %}
-            <h1 class="rb-browse-title">{{ 'decklist.list.title' | trans }}</h1>
-            <nav class="rb-presets" aria-label="{{ 'decklist.browse.presets' | trans }}">
-                {% for key, params in presets %}
-                    <a href="{{ list_path('decklists_list', f.limit is defined ? params | merge({limit: f.limit}) : params) }}" class="rb-preset{% if preset == key %} is-active{% endif %}">{{ ('decklist.browse.preset.' ~ key) | trans }}</a>
-                {% endfor %}
-            </nav>
             {% set active = f | filter((v, k) => k not in ['sort', 'limit']) | length %}
             <button type="button" class="rb-filters-toggle" aria-expanded="false" aria-controls="browse-form">
                 <span class="fas fa-sliders-h"></span> {{ 'decklist.browse.filters' | trans }}{% if active %} <span class="rb-more-count">{{ active }}</span>{% endif %}
@@ -65,6 +59,17 @@
 {% import _self as m %}
 {% set f = filters %}
 {% set active = f | filter((v, k) => k not in ['sort', 'limit']) | length %}
+        {# the format first: it's what anyone sets first (Ketura, 2026-11-06) #}
+        <label class="rb-field rb-field-format">
+            <span>{{ 'decklist.browse.format' | trans }}</span>
+            <select name="format" class="form-control input-sm" data-autosubmit>
+                <option value="">{{ 'decklist.browse.any_format' | trans }}</option>
+                {% for format in formats %}
+                    <option value="{{ format.code }}"{% if (f.format ?? '') == format.code %} selected{% endif %}>{{ format.name }} ({{ format.count }})</option>
+                {% endfor %}
+            </select>
+        </label>
+
         <div class="rb-browse-search">
             <label class="rb-field">
                 <span>{{ 'decklist.browse.name' | trans }}</span>
@@ -73,10 +78,6 @@
             <label class="rb-field">
                 <span>{{ 'decklist.browse.author' | trans }}</span>
                 <input type="search" name="author" class="form-control input-sm" value="{{ f.author ?? '' }}">
-            </label>
-            <label class="rb-field">
-                <span>{{ 'decklist.browse.event' | trans }}</span>
-                <input type="search" name="event" class="form-control input-sm" value="{{ f.event ?? '' }}">
             </label>
             <div class="rb-field rb-field-cards">
                 <label for="browse-card">{{ 'decklist.browse.cards' | trans }}</label>
@@ -100,21 +101,13 @@
         </div>
 
         <div class="rb-browse-filters">
-            <label class="rb-field rb-field-format">
-                <span>{{ 'decklist.browse.format' | trans }}</span>
-                <select name="format" class="form-control input-sm" data-autosubmit>
-                    <option value="">{{ 'decklist.browse.any_format' | trans }}</option>
-                    {% for format in formats %}
-                        <option value="{{ format.code }}"{% if (f.format ?? '') == format.code %} selected{% endif %}>{{ format.name }} ({{ format.count }})</option>
-                    {% endfor %}
-                </select>
-            </label>
-            <div class="rb-field rb-field-years">
-                <span>{{ 'decklist.browse.played' | trans }}</span>
-                <div class="rb-years">
-                    <input type="number" name="from" class="form-control input-sm" min="2001" max="2100" placeholder="{{ 'decklist.browse.from' | trans }}" value="{{ f.from ?? '' }}" aria-label="{{ 'decklist.browse.from' | trans }}">
+            {# when the deck was submitted, picked from a calendar (Ketura, 2026-11-06) #}
+            <div class="rb-field rb-field-dates">
+                <span>{{ 'decklist.browse.submitted' | trans }}</span>
+                <div class="rb-dates">
+                    <input type="date" name="from" class="form-control input-sm" min="2001-01-01" value="{{ f.from ?? '' }}" aria-label="{{ 'decklist.browse.submitted' | trans }}: {{ 'decklist.browse.from' | trans }}" data-autosubmit>
                     <span>–</span>
-                    <input type="number" name="to" class="form-control input-sm" min="2001" max="2100" placeholder="{{ 'decklist.browse.to' | trans }}" value="{{ f.to ?? '' }}" aria-label="{{ 'decklist.browse.to' | trans }}">
+                    <input type="date" name="to" class="form-control input-sm" min="2001-01-01" value="{{ f.to ?? '' }}" aria-label="{{ 'decklist.browse.submitted' | trans }}: {{ 'decklist.browse.to' | trans }}" data-autosubmit>
                 </div>
             </div>
             <div class="rb-field">
@@ -128,42 +121,44 @@
                     {% endfor %}
                 </div>
             </div>
-            <div class="rb-field">
-                <span>{{ 'decklist.browse.only' | trans }}</span>
-                <div class="rb-toggles">
-                    <label class="rb-toggle" title="{{ 'decklist.browse.played_title' | trans }}">
-                        <input type="checkbox" name="played" value="1" data-autosubmit{% if f.played ?? false %} checked{% endif %}>
-                        <span><span class="fas fa-trophy"></span> {{ 'decklist.browse.played_only' | trans }}</span>
-                    </label>
-                    <label class="rb-toggle" title="{{ 'decklist.browse.legal_title' | trans }}">
-                        <input type="checkbox" name="legal" value="1" data-autosubmit{% if f.legal ?? false %} checked{% endif %}>
-                        <span><span class="fas fa-check"></span> {{ 'decklist.browse.legal' | trans }}</span>
-                    </label>
-                    {% if app.user %}
-                        <label class="rb-toggle">
-                            <input type="checkbox" name="mine" value="1" data-autosubmit{% if f.mine ?? false %} checked{% endif %}>
-                            <span>{{ 'decklist.browse.preset.mine' | trans }}</span>
-                        </label>
-                        <label class="rb-toggle">
-                            <input type="checkbox" name="favorites" value="1" data-autosubmit{% if f.favorites ?? false %} checked{% endif %}>
-                            <span>{{ 'decklist.browse.preset.favorites' | trans }}</span>
-                        </label>
-                    {% endif %}
-                </div>
-            </div>
         </div>
 
         <div class="rb-browse-cultures">
             <span class="rb-browse-label">{{ 'decklist.browse.cultures' | trans }}</span>
+            {# Gollum ends the Free Peoples, and Men, Orc and Uruk-hai the Shadow, in black for
+               now (Ketura, 2026-11-06) #}
+            {% set late = ['gollum', 'men', 'orc', 'uruk_hai'] %}
             {% for side in ['free_peoples', 'shadow'] %}
                 {% if not loop.first %}<span class="rb-culture-sep"></span>{% endif %}
-                {% for culture in cultures | filter(c => c.side == side) %}
+                {% set sided = cultures | filter(c => c.side == side) %}
+                {% for culture in (sided | filter(c => c.code not in late)) | merge(sided | filter(c => c.code in late)) %}
                     <label class="rb-culture-pick" title="{{ culture.name }}">
                         <input type="checkbox" name="culture[]" value="{{ culture.code }}" data-autosubmit{% if culture.code in (f.culture ?? []) %} checked{% endif %}>
-                        <span>{{ m.culture_icon(culture, null) }}</span>
+                        <span>{{ m.culture_icon(culture, null, culture.code in late ? '#000' : null) }}</span>
                     </label>
                 {% endfor %}
             {% endfor %}
+        </div>
+
+        {# filters the pane has no field for, set by a link (the old tabs, Back after deleting a
+           deck): shown so they can be seen and dropped (Ketura, 2026-11-06) #}
+        {% set also = [] %}
+        {% if f.event is defined %}{% set also = also | merge([{name: 'event', value: f.event, label: 'decklist.browse.also_event' | trans({'%name%': f.event})}]) %}{% endif %}
+        {% for key in ['played', 'legal', 'mine', 'favorites'] | filter(k => f[k] is defined) %}
+            {% set also = also | merge([{name: key, value: 1, label: ('decklist.browse.also_' ~ key) | trans}]) %}
+        {% endfor %}
+        {% if also %}
+            <div class="rb-field rb-browse-also" title="{{ 'decklist.browse.also_title' | trans }}">
+                <span>{{ 'decklist.browse.also' | trans }}</span>
+                <div class="rb-card-picks-row">
+                    {% for item in also %}
+                        <span class="rb-card-pick"><input type="hidden" name="{{ item.name }}" value="{{ item.value }}">{{ item.label }}<button type="button" aria-label="{{ 'decklist.browse.remove' | trans }}">&times;</button></span>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="rb-browse-submit">
             <span class="rb-browse-actions">
                 {% if active %}<a href="{{ list_path('decklists_list', f | filter((v, k) => k in ['sort', 'limit'])) }}" class="rb-browse-clear">{{ 'decklist.browse.clear' | trans }}</a>{% endif %}
                 <button type="submit" class="btn btn-primary btn-sm"><span class="fas fa-search"></span> {{ 'decklist.browse.search' | trans }}</button>

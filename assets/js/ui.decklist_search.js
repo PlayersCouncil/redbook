@@ -38,7 +38,7 @@
 
     /**
      * Fetches the list at url and swaps it in. fields: also replace the filter fields, when
-     * the change didn't come from them (a preset, Clear All, Back); otherwise they stay, and
+     * the change didn't come from them (Clear All, Back); otherwise they stay, and
      * with them whatever has the focus.
      */
     function load(url, options)
@@ -206,8 +206,8 @@
             }
         });
 
-        // presets and Clear All set every filter; the column sorts and the pager set one thing
-        $(document).on('click', '.rb-preset, .rb-browse-clear', function (event)
+        // Clear All sets every filter; the column sorts and the pager set one thing
+        $(document).on('click', '.rb-browse-clear', function (event)
         {
             if(plain_click(event)) {
                 event.preventDefault();

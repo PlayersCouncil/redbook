@@ -435,7 +435,7 @@ class SocialController extends AbstractController
     }
 
     /**
-     * The old tabs, as presets of the decklists page (Ketura, 2026-11-05)
+     * The old tabs, as filters of the decklists page (Ketura, 2026-11-05)
      */
     private const LEGACY_LISTS = [
         'popular' => ['sort' => 'rated'],
@@ -449,8 +449,8 @@ class SocialController extends AbstractController
     ];
 
     /**
-     * The decklists page (Ketura, 2026-11-05): search and filters on top, the decks below. Its
-     * presets, the old tabs, are links that set the filters; see PublishedDeckManager::getFilters.
+     * The decklists page (Ketura, 2026-11-05): the search and filters, and the decks they find;
+     * see PublishedDeckManager::getFilters.
      */
     #[Route(path: '/decklists', name: 'decklists_list', methods: ['GET'])]
     public function listAction(
@@ -485,21 +485,12 @@ class SocialController extends AbstractController
         $cards = empty($filters['cards']) ? []
             : $this->managerRegistry->getRepository(Card::class)->findBy(['code' => $filters['cards']]);
 
-        $presets = ['new' => [], 'rated' => ['sort' => 'rated'], 'events' => ['played' => true]];
-        if ($user) {
-            $presets += ['mine' => ['mine' => true], 'favorites' => ['favorites' => true]];
-        }
-        // a preset is its filters; the page size isn't one
-        $preset = array_search(array_diff_key($filters, ['limit' => 0]), $presets, true);
-
         $params = [
             'pagetitle' => $translator->trans('decklist.list.title'),
             'pagedescription' => 'Browse thousands of Lord of the Rings TCG decks, from the Decipher era to today.',
             'decklists' => $decklists,
             'total' => $decklistManager->getMaxCount(),
             'filters' => $filters,
-            'presets' => $presets,
-            'preset' => $preset === false ? null : $preset,
             'formats' => $usedFormats,
             'format_names' => array_map(fn ($f) => $f->getName(), $allFormats),
             'cultures' => $this->managerRegistry->getRepository(Culture::class)->findBy([], ['name' => 'ASC']),

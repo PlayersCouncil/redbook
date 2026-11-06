@@ -724,12 +724,6 @@ decklist.publish.thumbnail_cultures: The deck's two main cultures
 decklist.publish.thumbnail_rb: Ring-bearer and Ring
 decklist.publish.thumbnail_hint: "What the deck lists show for this deck: a card from it, or its two main cultures."
 decklist.list.title: Decklists
-decklist.browse.presets: Presets
-decklist.browse.preset.new: Newest
-decklist.browse.preset.rated: Top Rated
-decklist.browse.preset.events: Event Decks
-decklist.browse.preset.mine: My Decks
-decklist.browse.preset.favorites: My Favourites
 decklist.browse.name: Deck Name
 decklist.browse.author: Author
 decklist.browse.event: Event
@@ -738,21 +732,23 @@ decklist.browse.cards_hint: Type a card name
 decklist.browse.remove: Remove
 decklist.browse.format: Format
 decklist.browse.any_format: Any format
-decklist.browse.played: Played
+decklist.browse.submitted: Submitted
 decklist.browse.from: From
 decklist.browse.to: To
 decklist.browse.show: Show
 decklist.browse.kind.whole: Whole Decks
-decklist.browse.kind.free_peoples: Free Peoples Only
-decklist.browse.kind.shadow: Shadow Only
+decklist.browse.kind.free_peoples: Free Peoples
+decklist.browse.kind.shadow: Shadow
 decklist.browse.kind_title.whole: "A whole deck: Free Peoples and Shadow"
 decklist.browse.kind_title.free_peoples: "A fragment: only the Free Peoples side"
 decklist.browse.kind_title.shadow: "A fragment: only the Shadow side"
-decklist.browse.only: Only
-decklist.browse.played_only: Played at an Event
-decklist.browse.played_title: Decks with a recorded event result
-decklist.browse.legal: Gemp Legal
-decklist.browse.legal_title: Decks Gemp accepts as they are, in their format
+decklist.browse.also: Also Filtered On
+decklist.browse.also_title: "Set by the link that brought you here; × to drop it"
+decklist.browse.also_event: "Event: %name%"
+decklist.browse.also_played: Played at an Event
+decklist.browse.also_legal: Gemp Legal
+decklist.browse.also_mine: My Decks
+decklist.browse.also_favorites: My Favourites
 decklist.browse.sort: Sort
 decklist.browse.sorts.new: Newest
 decklist.browse.sorts.old: Oldest
