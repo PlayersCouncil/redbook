@@ -68,8 +68,7 @@ class PublishedDeckManager
 
     /**
      * The decklists page's search and filters, from the query string (Ketura, 2026-11-05: one
-     * page of filters and results; the old tabs are links that set these). Anything left out is
-     * not filtered on.
+     * page of filters and results). Anything left out is not filtered on.
      *   name, author, event     text in the deck's name, its author, an event it was played at
      *   cards[]=<code>          has each of these cards
      *   format=<gemp code>      target format
@@ -82,7 +81,6 @@ class PublishedDeckManager
      *   tags[]=<tag>            tagged with each of these
      *   sort=new|old|rated|name|comments
      *   limit=10|30|50|80|100   decks a page (not a filter: Clear All keeps it)
-     * The old search's parameters still work: sort=date|popularity|likes|reputation, half=.
      */
     public function getFilters(): array
     {
@@ -105,15 +103,10 @@ class PublishedDeckManager
         };
 
         $kind = array_values(array_intersect(self::KINDS, $codes('kind')));
-        $half = $query->get('half');
-        if (!$kind && in_array($half, [CardEntity::SIDE_FREE_PEOPLES, CardEntity::SIDE_SHADOW], true)) {
-            $kind = [$half];
-        }
         if (count($kind) === count(self::KINDS)) {
             $kind = [];
         }
         $sort = (string) $query->get('sort');
-        $sort = ['date' => 'new', 'popularity' => 'rated', 'likes' => 'rated', 'reputation' => 'rated'][$sort] ?? $sort;
 
         return array_filter([
             'name' => $text('name'),

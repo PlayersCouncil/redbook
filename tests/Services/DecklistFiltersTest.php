@@ -46,11 +46,10 @@ class DecklistFiltersTest extends TestCase
         $this->assertSame([], $this->filters('from=2004&to=2004-02-30'));
     }
 
-    public function testTheOldSearchStillReads(): void
+    public function testUnknownParametersAreLeftOut(): void
     {
-        $this->assertSame(['sort' => 'rated'], $this->filters('sort=likes'));
-        $this->assertSame([], $this->filters('sort=date'));
-        $this->assertSame(['kind' => ['free_peoples']], $this->filters('half=free_peoples'));
-        $this->assertSame(['author' => 'Kralik'], $this->filters('author=<b>Kralik</b>&incomplete=1'));
+        // the old search's sorts and half= aren't read any more (Ketura, 2026-11-06)
+        $this->assertSame([], $this->filters('sort=likes&half=free_peoples&incomplete=1'));
+        $this->assertSame(['author' => 'Kralik'], $this->filters('author=<b>Kralik</b>'));
     }
 }

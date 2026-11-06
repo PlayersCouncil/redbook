@@ -41,15 +41,17 @@ test('formats are copied from Gemp, without the debug format', async ({ page, re
   expect(formats.map((f) => f.code)).not.toContain('debug');
 });
 
-test('decklist listings load, the old tabs as filters', async ({ page }) => {
-  for (const [type, url, also] of [['popular', /\/decklists\?sort=rated$/, 0], ['recent', /\/decklists$/, 0], ['tournament', /\/decklists\?played=1$/, 1]] as const) {
+test('decklist listings load; the old list addresses are gone', async ({ page }) => {
+  // one page of filters (Ketura, 2026-11-06): the tab and search addresses aren't kept
+  for (const type of ['popular', 'recent', 'tournament', 'favorites', 'mine', 'find', 'search']) {
     const res = await page.goto(`/decklists/${type}`);
-    expect(res?.status(), type).toBe(200);
-    await expect(page).toHaveURL(url);
-    await expect(page.locator('#browse-form')).toBeVisible();
-    // a filter with no field of its own shows as a chip that drops it (Ketura, 2026-11-06)
-    await expect(page.locator('.rb-browse-also .rb-card-pick')).toHaveCount(also);
+    expect(res?.status(), type).toBe(404);
   }
+  const res = await page.goto('/decklists?played=1');
+  expect(res?.status()).toBe(200);
+  await expect(page.locator('#browse-form')).toBeVisible();
+  // a filter with no field of its own shows as a chip that drops it (Ketura, 2026-11-06)
+  await expect(page.locator('.rb-browse-also .rb-card-pick')).toHaveCount(1);
   // the pager: first and previous off on page 1, nine pages at most
   await page.goto('/decklists?sort=old');
   const pager = page.locator('.rb-results-foot .rb-pager');
@@ -59,8 +61,6 @@ test('decklist listings load, the old tabs as filters', async ({ page }) => {
     await Promise.all([page.waitForURL(/page=2/), pager.getByRole('link', { name: 'Next Page' }).click()]);
     await expect(pager.locator('.rb-page.is-current')).toHaveText('2');
   }
-  await page.goto('/decklists/search');
-  await expect(page).toHaveURL(/\/decklists$/);
 });
 
 test('anonymous users are sent to the login page for their decks', async ({ page }) => {

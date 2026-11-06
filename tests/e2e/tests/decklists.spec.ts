@@ -114,6 +114,25 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await expect(page.locator('#social-fire')).toHaveClass(/is-tucked/);
 });
 
+test('the author edits the decklist from its page; nobody else gets Edit', async ({ page, pageAs }) => {
+  await page.goto(decklistUrl);
+  const edit = page.locator('.rb-reader-buttons .decklist-edit');
+  await expect(edit).toBeVisible();
+  await Promise.all([page.waitForURL(new RegExp(`/decklist/edit/${decklistId}$`)), edit.click()]);
+  await expect(page.locator('#name')).toHaveValue(decklistName);
+  await page.fill('#descriptionMd', 'Published by the **smoke test**, then edited. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');
+  await page.click('form[action*="/decklist/save/"] button[type=submit]');
+  await expect(page).toHaveURL(new RegExp(`/decklist/view/${decklistId}/`));
+  await expect(page.locator('body')).toContainText('Published by the smoke test, then edited.');
+  await snap(page, 'decklist edited');
+
+  const voter = await pageAs('voter');
+  await voter.goto(decklistUrl);
+  await expect(voter.locator('#social-like')).toBeVisible();
+  await expect(voter.locator('.decklist-edit')).toHaveCount(0);
+  expect((await voter.goto(`/decklist/edit/${decklistId}`))?.status()).toBe(403);
+});
+
 test('another user likes, favourites and comments on it', async ({ pageAs }) => {
   const page = await pageAs('voter');
   await page.goto(decklistUrl);
@@ -179,9 +198,7 @@ test('another user likes, favourites and comments on it', async ({ pageAs }) => 
 });
 
 test('the decklist shows up in search and in the favourites list', async ({ page, pageAs }) => {
-  // the old search address still works
-  await page.goto(`/decklists/find?name=${encodeURIComponent(decklistName)}&sort=likes`);
-  await expect(page).toHaveURL(/\/decklists\?/);
+  await page.goto(`/decklists?name=${encodeURIComponent(decklistName)}&sort=rated`);
   const row = page.locator('.rb-decks tbody tr').filter({ hasText: decklistName });
   await expect(row).toHaveCount(1);
   // format first, then the size per side
@@ -196,8 +213,7 @@ test('the decklist shows up in search and in the favourites list', async ({ page
   await snap(page, 'search by name');
 
   const voter = await pageAs('voter');
-  await voter.goto('/decklists/favorites');
-  await expect(voter).toHaveURL(/favorites=1/);
+  await voter.goto('/decklists?favorites=1');
   await expect(voter.getByRole('link', { name: decklistName })).toBeVisible();
   await expect(voter.locator('.rb-browse-also')).toContainText('My Favourites');
   await snap(voter, "voter's favourites");

@@ -435,20 +435,6 @@ class SocialController extends AbstractController
     }
 
     /**
-     * The old tabs, as filters of the decklists page (Ketura, 2026-11-05)
-     */
-    private const LEGACY_LISTS = [
-        'popular' => ['sort' => 'rated'],
-        'halloffame' => ['sort' => 'rated'],
-        'recent' => [],
-        'hottopics' => ['sort' => 'comments'],
-        'tournament' => ['played' => 1],
-        'favorites' => ['favorites' => 1],
-        'mine' => ['mine' => 1],
-        'find' => [],
-    ];
-
-    /**
      * The decklists page (Ketura, 2026-11-05): the search and filters, and the decks they find;
      * see PublishedDeckManager::getFilters.
      */
@@ -506,17 +492,6 @@ class SocialController extends AbstractController
             ]);
         }
         return $this->render('Decklist/decklists.html.twig', $params, $response);
-    }
-
-    /** The old tab and search addresses, onto the decklists page with the same filters */
-    #[Route(path: '/decklists/{type}/{page}', name: 'decklists_legacy', methods: ['GET'], defaults: ['page' => 1], requirements: ['type' => 'find|favorites|mine|recent|halloffame|hottopics|tournament|popular|search', 'page' => '\d+'])]
-    public function legacyListAction(Request $request, string $type, int $page = 1): Response
-    {
-        $params = $request->query->all() + (self::LEGACY_LISTS[$type] ?? []);
-        if ($page > 1) {
-            $params['page'] = $page;
-        }
-        return $this->redirectToRoute('decklists_list', $params, Response::HTTP_MOVED_PERMANENTLY);
     }
 
     /**
