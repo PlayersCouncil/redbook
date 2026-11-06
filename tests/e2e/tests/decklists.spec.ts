@@ -231,6 +231,19 @@ test('the decklists page filters by card, kind and culture', async ({ page }) =>
   await expect(page.getByRole('link', { name: decklistName })).toBeVisible();
   await page.goto(`/decklists?name=${encodeURIComponent(decklistName)}&culture[]=raider`);
   await expect(page.locator('.rb-results-none')).toBeVisible();
+  // a tag on a row searches for it, without leaving the page (Ketura, 2026-11-06)
+  await page.goto(`/decklists?name=${encodeURIComponent(decklistName)}`);
+  await Promise.all([page.waitForURL(/tags/), page.locator('.rb-tag-link', { hasText: 'dwarves' }).first().click()]);
+  await expect(page.locator('#browse-tags .rb-tag-pick')).toHaveText(/dwarves/);
+  await expect(page.getByRole('link', { name: decklistName })).toBeVisible();
+  await page.locator('#browse-tag').fill('no-such-tag');
+  await Promise.all([page.waitForURL(/no-such-tag/), page.locator('#browse-tag').press('Enter')]);
+  await expect(page.locator('.rb-results-none')).toBeVisible();
+  // the page size: a filter for neither the presets nor Clear All
+  await page.goto('/decklists?limit=10');
+  expect(await page.locator('.rb-decks tbody tr').count()).toBeLessThanOrEqual(10);
+  await expect(page.locator('select[name=limit]')).toHaveValue('10');
+  await expect(page.locator('.rb-preset.is-active')).toHaveText('Newest');
   // Clear All keeps nothing but the sort
   await page.goto(`/decklists?name=x&sort=rated`);
   await page.getByRole('link', { name: 'Clear All' }).click();

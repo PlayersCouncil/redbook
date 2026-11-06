@@ -60,6 +60,9 @@ class PublishedDeckManager
     /** The page's sorts (Ketura, 2026-11-05): the first is the default */
     public const SORTS = ['new', 'old', 'rated', 'name', 'comments'];
 
+    /** The page sizes the decklists page offers (Ketura, 2026-11-06); the default is 50 */
+    public const LIMITS = [10, 30, 50, 80, 100];
+
     /** Which decks a list shows by what they hold: whole decks, and fragments of either side */
     public const KINDS = ['whole', CardEntity::SIDE_FREE_PEOPLES, CardEntity::SIDE_SHADOW];
 
@@ -76,7 +79,9 @@ class PublishedDeckManager
      *   legal=1                 only decks Gemp accepts as they are
      *   played=1                only decks played at an event
      *   mine=1, favorites=1     the user's own decks, or their favourites
+     *   tags[]=<tag>            tagged with each of these
      *   sort=new|old|rated|name|comments
+     *   limit=10|30|50|80|100   decks a page (not a filter: presets keep it)
      * The old search's parameters still work: sort=date|popularity|likes|reputation, half=.
      */
     public function getFilters(): array
@@ -117,7 +122,12 @@ class PublishedDeckManager
             'played' => (bool) $query->get('played'),
             'mine' => (bool) $query->get('mine'),
             'favorites' => (bool) $query->get('favorites'),
+            'tags' => array_values(array_unique(array_filter(array_map(
+                fn ($t) => mb_substr(preg_replace('/\s+/u', '', strip_tags((string) $t)), 0, 60),
+                (array) ($all['tags'] ?? [])
+            )))),
             'sort' => in_array($sort, self::SORTS, true) && $sort !== self::SORTS[0] ? $sort : null,
+            'limit' => in_array((int) $query->get('limit'), self::LIMITS, true) && (int) $query->get('limit') !== 50 ? (int) $query->get('limit') : null,
         ]);
     }
 
@@ -154,6 +164,13 @@ class PublishedDeckManager
                 . " WHERE s$i.decklist = d AND k$i.code = :card$i AND c$i.name = k$i.name"
                 . " AND (c$i.subtitle = k$i.subtitle OR (c$i.subtitle IS NULL AND k$i.subtitle IS NULL)))")
                 ->setParameter("card$i", $code);
+        }
+        // the deck's tags are the deck it was published from's, separated by spaces
+        if (!empty($filters['tags'])) {
+            $qb->leftJoin('d.parent', 'tagged');
+            foreach ($filters['tags'] as $i => $tag) {
+                $qb->andWhere("CONCAT(' ', tagged.tags, ' ') LIKE :tag$i")->setParameter("tag$i", '% ' . addcslashes($tag, '%_') . ' %');
+            }
         }
         if (!empty($filters['format'])) {
             $qb->andWhere('d.targetFormat = :format')->setParameter('format', $filters['format']);

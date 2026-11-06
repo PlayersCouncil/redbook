@@ -783,6 +783,10 @@ decklist.browse.col.year: Year
 decklist.browse.col.rating: Rating
 decklist.browse.col.score: Score
 decklist.browse.col.tags: Tags
+decklist.browse.tags: Tags
+decklist.browse.tags_hint: Type a tag, then Enter
+decklist.browse.tag_search: Search for decks with this tag
+decklist.browse.per_page: Per Page
 decklist.browse.archive: archive
 decklist.browse.score_title: "%likes% likes, %fires% fires"
 decklist.browse.comments_title: "%count% comments"

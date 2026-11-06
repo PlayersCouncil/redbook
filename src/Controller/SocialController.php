@@ -473,7 +473,7 @@ class SocialController extends AbstractController
         }
         $response->setVary(['X-Requested-With']);
 
-        $decklistManager->setLimit(50);
+        $decklistManager->setLimit($filters['limit'] ?? 50);
         $decklistManager->setPage(max(1, (int) $request->query->get('page', 1)));
         $decklists = $decklistManager->browse($filters, $user);
 
@@ -489,7 +489,8 @@ class SocialController extends AbstractController
         if ($user) {
             $presets += ['mine' => ['mine' => true], 'favorites' => ['favorites' => true]];
         }
-        $preset = array_search($filters, $presets, true);
+        // a preset is its filters; the page size isn't one
+        $preset = array_search(array_diff_key($filters, ['limit' => 0]), $presets, true);
 
         $params = [
             'pagetitle' => $translator->trans('decklist.list.title'),

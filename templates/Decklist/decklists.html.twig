@@ -28,6 +28,10 @@
     <script src="{{ asset('js/ui.decklist_search.js') }}"></script>
 {% endblock %}
 
+{# a pane of filters beside the results, which alone scroll (Ketura, 2026-11-06); a narrow
+   window stacks them and scrolls as a page #}
+{% block wrapper_class %}rb-fill{% endblock %}
+
 {% block body %}
 <div class="main white container rb-browse">
 
@@ -48,10 +52,10 @@
             <h1 class="rb-browse-title">{{ 'decklist.list.title' | trans }}</h1>
             <nav class="rb-presets" aria-label="{{ 'decklist.browse.presets' | trans }}">
                 {% for key, params in presets %}
-                    <a href="{{ list_path('decklists_list', params) }}" class="rb-preset{% if preset == key %} is-active{% endif %}">{{ ('decklist.browse.preset.' ~ key) | trans }}</a>
+                    <a href="{{ list_path('decklists_list', f.limit is defined ? params | merge({limit: f.limit}) : params) }}" class="rb-preset{% if preset == key %} is-active{% endif %}">{{ ('decklist.browse.preset.' ~ key) | trans }}</a>
                 {% endfor %}
             </nav>
-            {% set active = f | filter((v, k) => k != 'sort') | length %}
+            {% set active = f | filter((v, k) => k not in ['sort', 'limit']) | length %}
             <button type="button" class="rb-filters-toggle" aria-expanded="false" aria-controls="browse-form">
                 <span class="fas fa-sliders-h"></span> {{ 'decklist.browse.filters' | trans }}{% if active %} <span class="rb-more-count">{{ active }}</span>{% endif %}
             </button>
@@ -60,7 +64,7 @@
 {% block browse_fields %}
 {% import _self as m %}
 {% set f = filters %}
-{% set active = f | filter((v, k) => k != 'sort') | length %}
+{% set active = f | filter((v, k) => k not in ['sort', 'limit']) | length %}
         <div class="rb-browse-search">
             <label class="rb-field">
                 <span>{{ 'decklist.browse.name' | trans }}</span>
@@ -81,6 +85,16 @@
                         <span class="rb-card-pick"><input type="hidden" name="cards[]" value="{{ card.code }}">{{ card.fullName }}<button type="button" aria-label="{{ 'decklist.browse.remove' | trans }}">&times;</button></span>
                     {% endfor %}
                     <input type="text" id="browse-card" autocomplete="off" placeholder="{{ 'decklist.browse.cards_hint' | trans }}">
+                </div>
+            </div>
+            {# tags: typed, or clicked on a deck's row (Ketura, 2026-11-06); a deck has them all #}
+            <div class="rb-field rb-field-tags">
+                <label for="browse-tag">{{ 'decklist.browse.tags' | trans }}</label>
+                <div class="rb-card-picks form-control input-sm" id="browse-tags">
+                    {% for tag in f.tags ?? [] %}
+                        <span class="rb-card-pick rb-tag-pick"><input type="hidden" name="tags[]" value="{{ tag }}">{{ tag }}<button type="button" aria-label="{{ 'decklist.browse.remove' | trans }}">&times;</button></span>
+                    {% endfor %}
+                    <input type="text" id="browse-tag" autocomplete="off" placeholder="{{ 'decklist.browse.tags_hint' | trans }}">
                 </div>
             </div>
         </div>
@@ -151,7 +165,7 @@
                 {% endfor %}
             {% endfor %}
             <span class="rb-browse-actions">
-                {% if active %}<a href="{{ list_path('decklists_list', f.sort is defined ? {sort: f.sort} : {}) }}" class="rb-browse-clear">{{ 'decklist.browse.clear' | trans }}</a>{% endif %}
+                {% if active %}<a href="{{ list_path('decklists_list', f | filter((v, k) => k in ['sort', 'limit'])) }}" class="rb-browse-clear">{{ 'decklist.browse.clear' | trans }}</a>{% endif %}
                 <button type="submit" class="btn btn-primary btn-sm"><span class="fas fa-search"></span> {{ 'decklist.browse.search' | trans }}</button>
             </span>
         </div>
@@ -163,7 +177,6 @@
 {% set query = app.request.query.all %}
         <div class="rb-results-head">
             <span class="rb-results-count">{{ 'decklist.browse.count' | trans({'%count%': total, '%n%': total | number_format}) }}</span>
-            {% include 'Decklist/pager.html.twig' %}
             <label class="rb-results-sort">
                 <span>{{ 'decklist.browse.sort' | trans }}</span>
                 <select name="sort" form="browse-form" class="form-control input-sm" data-autosubmit>
@@ -174,6 +187,7 @@
             </label>
         </div>
 
+        <div class="rb-results-scroll">
         {% if total %}
         {% set sorted = f.sort ?? 'new' %}
         <table class="rb-decks">
@@ -222,14 +236,26 @@
                         {% endfor %}
                     </td>
                     <td class="rb-col-tags">
-                        {% if tags %}<span class="rb-row-tags">{% for tag in tags %}<span class="rb-tag-chip">{{ tag }}</span>{% endfor %}</span>{% endif %}
+                        {% if tags %}<span class="rb-row-tags">{% for tag in tags %}<button type="button" class="rb-tag-chip rb-tag-link{% if tag in (f.tags ?? []) %} is-on{% endif %}" data-tag="{{ tag }}" title="{{ 'decklist.browse.tag_search' | trans }}">{{ tag }}</button>{% endfor %}</span>{% endif %}
                     </td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
-        <div class="rb-results-foot">{% include 'Decklist/pager.html.twig' %}</div>
+
         {% else %}
             <p class="rb-results-none">{{ 'decklist.browse.none' | trans }}</p>
         {% endif %}
+        </div>
+        <div class="rb-results-foot">
+            {% include 'Decklist/pager.html.twig' %}
+            <label class="rb-results-limit">
+                <span>{{ 'decklist.browse.per_page' | trans }}</span>
+                <select name="limit" form="browse-form" class="form-control input-sm" data-autosubmit>
+                    {% for n in [10, 30, 50, 80, 100] %}
+                        <option value="{{ n }}"{% if (f.limit ?? 50) == n %} selected{% endif %}>{{ n }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </div>
 {% endblock %}

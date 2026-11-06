@@ -51,7 +51,7 @@ test('decklist listings load, the old tabs as presets', async ({ page }) => {
   }
   // the pager: first and previous off on page 1, nine pages at most
   await page.goto('/decklists?sort=old');
-  const pager = page.locator('.rb-results-head .rb-pager');
+  const pager = page.locator('.rb-results-foot .rb-pager');
   if (await pager.count()) {
     await expect(pager.locator('.rb-page-step.is-disabled')).toHaveCount(2);
     expect(await pager.locator('.rb-page:not(.rb-page-step)').count()).toBeLessThanOrEqual(9);

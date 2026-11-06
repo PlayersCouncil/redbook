@@ -23,7 +23,7 @@
             if((field.type === 'checkbox' || field.type === 'radio') && !field.checked) {
                 return;
             }
-            if((field.name === 'sort' && field.value === 'new') || (field.name === 'kind[]' && allKinds)) {
+            if((field.name === 'sort' && field.value === 'new') || (field.name === 'limit' && field.value === '50') || (field.name === 'kind[]' && allKinds)) {
                 return;
             }
             params.push(encodeURIComponent(field.name) + '=' + encodeURIComponent(field.value));
@@ -100,6 +100,24 @@
         apply();
     }
 
+    /**
+     * A tag to search for (Ketura, 2026-11-06): typed into the Tags field, or clicked on a
+     * deck's row; a chip carrying the hidden tags[] input
+     */
+    function add_tag(tag)
+    {
+        tag = $.trim(String(tag)).replace(/\s+/g, '');
+        if(!tag || form.find('input[name="tags[]"]').filter(function () { return this.value === tag; }).length) {
+            return false;
+        }
+        $('<span class="rb-card-pick rb-tag-pick"><input type="hidden" name="tags[]"><button type="button">&times;</button></span>')
+            .find('input').val(tag).end()
+            .prepend(document.createTextNode(tag))
+            .find('button').attr('aria-label', Translator.trans('decklist.browse.remove')).end()
+            .insertBefore('#browse-tag');
+        return true;
+    }
+
     function setup_card_picker()
     {
         var input = $('#browse-card');
@@ -162,10 +180,29 @@
             var open = form.toggleClass('is-open').hasClass('is-open');
             $(this).attr('aria-expanded', open ? 'true' : 'false');
         });
-        $('#browse-fields').on('click', '#browse-cards', function (event)
+        $('#browse-fields').on('click', '#browse-cards, #browse-tags', function (event)
         {
             if(event.target === this) {
-                $('#browse-card').trigger('focus');
+                $(this).find('input[type=text]').trigger('focus');
+            }
+        });
+        // Enter in the Tags field adds the tag rather than submitting what's typed
+        $('#browse-fields').on('keydown', '#browse-tag', function (event)
+        {
+            if(event.key === 'Enter') {
+                event.preventDefault();
+                var added = add_tag(this.value);
+                this.value = '';
+                if(added) {
+                    apply();
+                }
+            }
+        });
+        $('#browse-results').on('click', '.rb-tag-link', function (event)
+        {
+            event.preventDefault();
+            if(add_tag($(this).data('tag'))) {
+                apply();
             }
         });
 
