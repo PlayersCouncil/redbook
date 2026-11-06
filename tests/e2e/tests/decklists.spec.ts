@@ -187,6 +187,10 @@ test('the decklist shows up in search and in the favourites list', async ({ page
   // format first, then the size per side
   await expect(row.locator('.rb-col-format')).toHaveText('Fellowship Block');
   await expect(row.locator('.rb-size')).toHaveText('30/30');
+  // the columns in Ketura's order, and the upload date beside the author as written
+  await expect(page.locator('.rb-decks thead th')).toHaveText(['', 'Score', 'Size', 'Deck', 'Format', 'Cultures', 'Tags']);
+  await expect(row.locator('.rb-deck-by time')).toHaveText(/^[A-Z][a-z]{2} \d{1,2}, \d{4}$/);
+  await expect(row.locator('.rb-row-tags')).toContainText('dwarves');
   await expect(row.locator('.rb-thumb-card img')).toHaveAttribute('alt', 'Gimli, Dwarf of Erebor');
   await expect(row).toHaveClass(/rb-kind-whole/);
   await snap(page, 'search by name');

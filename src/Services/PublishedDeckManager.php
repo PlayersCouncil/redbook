@@ -210,13 +210,13 @@ class PublishedDeckManager
         return $paginator;
     }
 
-    /** Loads what a row shows (cultures, author, plays) for a page of decks in three queries */
+    /** Loads what a row shows (cultures, author, plays, thumbnail card, the parent deck's tags) for a page of decks */
     private function preload(array $decklists): void
     {
         if (!$decklists) {
             return;
         }
-        foreach (['d.cultures c LEFT JOIN c.culture cu' => 'c, cu', 'd.user u' => 'u', 'd.plays p' => 'p', 'd.thumbnailCard tc' => 'tc'] as $join => $select) {
+        foreach (['d.cultures c LEFT JOIN c.culture cu' => 'c, cu', 'd.user u' => 'u', 'd.plays p' => 'p', 'd.thumbnailCard tc' => 'tc', 'd.parent pa' => 'pa'] as $join => $select) {
             $this->doctrine->createQuery('SELECT d, ' . $select . ' FROM ' . PublishedDeck::class . ' d LEFT JOIN ' . $join . ' WHERE d IN (:decks)')
                 ->setParameter('decks', $decklists)
                 ->getResult();

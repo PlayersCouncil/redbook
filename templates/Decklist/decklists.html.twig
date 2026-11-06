@@ -180,13 +180,12 @@
             <thead>
                 <tr>
                     <th class="rb-col-thumb"></th>
-                    <th class="rb-col-format">{{ 'decklist.browse.col.format' | trans }}</th>
+                    <th class="rb-col-score"><a href="{{ list_path('decklists_list', query | merge({sort: 'rated', page: null})) }}"{% if sorted == 'rated' %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.score' | trans }}</a></th>
                     <th class="rb-col-size" title="{{ 'decklist.browse.col.size_title' | trans }}">{{ 'decklist.browse.col.size' | trans }}</th>
-                    <th class="rb-col-cultures">{{ 'decklist.browse.cultures' | trans }}</th>
                     <th class="rb-col-deck"><a href="{{ list_path('decklists_list', query | merge({sort: 'name', page: null})) }}"{% if sorted == 'name' %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.deck' | trans }}</a></th>
-                    <th class="rb-col-event">{{ 'decklist.browse.col.event' | trans }}</th>
-                    <th class="rb-col-year"><a href="{{ list_path('decklists_list', query | merge({sort: sorted == 'new' ? 'old' : null, page: null})) }}"{% if sorted in ['new', 'old'] %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.year' | trans }}{% if sorted == 'new' %} <span class="fas fa-caret-down"></span>{% elseif sorted == 'old' %} <span class="fas fa-caret-up"></span>{% endif %}</a></th>
-                    <th class="rb-col-rating"><a href="{{ list_path('decklists_list', query | merge({sort: 'rated', page: null})) }}"{% if sorted == 'rated' %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.rating' | trans }}</a></th>
+                    <th class="rb-col-format">{{ 'decklist.browse.col.format' | trans }}</th>
+                    <th class="rb-col-cultures">{{ 'decklist.browse.cultures' | trans }}</th>
+                    <th class="rb-col-tags">{{ 'decklist.browse.col.tags' | trans }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -194,13 +193,27 @@
                 {% set url = path('decklist_detail', {decklist_id: decklist.id, decklist_name: decklist.nameCanonical | e('url')}) %}
                 {% set kind = decklist.kind %}
                 {% set score = decklist.nbVotes + 2 * decklist.nbFires %}
+                {# fire instead of the thumbs up once fires are a tenth of the votes (Ketura, 2026-11-05) #}
+                {% set fiery = decklist.nbVotes > 0 and decklist.nbFires * 10 >= decklist.nbVotes %}
+                {% set tags = decklist.parent and decklist.parent.tags ? decklist.parent.tags | split(' ') | filter(t => t) : [] %}
                 <tr data-href="{{ url }}" class="rb-kind-{{ kind }}">
                     <td class="rb-col-thumb">{% include 'Decklist/thumbnail.html.twig' %}</td>
-                    <td class="rb-col-format">
-                        <span class="rb-fmt">{{ format_names[decklist.targetFormat] ?? (decklist.targetFormat ?: '—') }}</span>
+                    <td class="rb-col-score">
+                        <span class="rb-score{% if not score %} is-zero{% endif %}{% if fiery %} is-fiery{% endif %}" title="{{ 'decklist.browse.score_title' | trans({'%likes%': decklist.nbVotes, '%fires%': decklist.nbFires}) }}"><span class="fas {{ fiery ? 'fa-fire' : 'fa-thumbs-up' }}"></span> {{ score }}</span>
+                        {% if decklist.nbComments %}<span class="rb-comments" title="{{ 'decklist.browse.comments_title' | trans({'%count%': decklist.nbComments}) }}"><span class="fas fa-comment"></span> {{ decklist.nbComments }}</span>{% endif %}
                     </td>
                     <td class="rb-col-size">
                         <span class="rb-size" title="{{ ('decklist.browse.kind_title.' ~ kind) | trans }}"><span class="rb-size-fp{% if not decklist.nbFreePeoples %} is-none{% endif %}">{{ decklist.nbFreePeoples ?: '–' }}</span><span class="rb-size-slash">/</span><span class="rb-size-sh{% if not decklist.nbShadow %} is-none{% endif %}">{{ decklist.nbShadow ?: '–' }}</span></span>
+                    </td>
+                    <td class="rb-col-deck">
+                        <a href="{{ url }}" class="rb-deck-name">{{ decklist.name }}</a>
+                        <span class="rb-deck-by">
+                            {{ decklist.user.displayName }}{% if decklist.user.historic %} <span class="rb-archive-mark" title="{{ 'user.historic.badge_title' | trans }}">{{ 'decklist.browse.archive' | trans }}</span>{% endif %}
+                            <span class="rb-deck-dot" aria-hidden="true">•</span> <time datetime="{{ decklist.dateCreation | date('Y-m-d') }}" data-absolute>{{ decklist.dateCreation | date('M j, Y') }}</time>
+                        </span>
+                    </td>
+                    <td class="rb-col-format">
+                        <span class="rb-fmt">{{ format_names[decklist.targetFormat] ?? (decklist.targetFormat ?: '—') }}</span>
                     </td>
                     <td class="rb-col-cultures">
                         {% set rows = decklist.cultures | filter(r => r.culture.side) | sort((a, b) => b.count <=> a.count) %}
@@ -208,24 +221,8 @@
                             <span class="rb-row-cultures rb-row-cultures-{{ side }}">{% for row in rows | filter(r => r.culture.side == side) %}{{ m.culture_icon(row.culture, row.count) }}{% endfor %}</span>
                         {% endfor %}
                     </td>
-                    <td class="rb-col-deck">
-                        <a href="{{ url }}" class="rb-deck-name">{{ decklist.name }}</a>
-                        <span class="rb-deck-by">
-                            {{ decklist.user.displayName }}{% if decklist.user.historic %} <span class="rb-archive-mark" title="{{ 'user.historic.badge_title' | trans }}">{{ 'decklist.browse.archive' | trans }}</span>{% endif %}
-                        </span>
-                    </td>
-                    <td class="rb-col-event">
-                        {% set play = decklist.plays | first %}
-                        {% if play %}
-                            <span class="rb-event" title="{{ decklist.plays | map(p => (p.placing ? p.placing ~ ' · ' : '') ~ p.eventName) | join("\n") }}">
-                                {% if play.placing %}<b>{{ play.placing }}</b> · {% endif %}{{ play.eventName }}{% if decklist.plays | length > 1 %} <span class="rb-more-plays">+{{ decklist.plays | length - 1 }}</span>{% endif %}
-                            </span>
-                        {% endif %}
-                    </td>
-                    <td class="rb-col-year">{{ decklist.effectiveDate ? decklist.effectiveDate | date('Y') : '' }}</td>
-                    <td class="rb-col-rating">
-                        {% if score %}<span class="rb-score" title="{{ 'decklist.browse.score_title' | trans({'%likes%': decklist.nbVotes, '%fires%': decklist.nbFires}) }}"><span class="fas fa-thumbs-up"></span> {{ score }}</span>{% endif %}
-                        {% if decklist.nbComments %}<span class="rb-comments" title="{{ 'decklist.browse.comments_title' | trans({'%count%': decklist.nbComments}) }}"><span class="fas fa-comment"></span> {{ decklist.nbComments }}</span>{% endif %}
+                    <td class="rb-col-tags">
+                        {% if tags %}<span class="rb-row-tags">{% for tag in tags %}<span class="rb-tag-chip">{{ tag }}</span>{% endfor %}</span>{% endif %}
                     </td>
                 </tr>
             {% endfor %}

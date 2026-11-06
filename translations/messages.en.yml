@@ -781,6 +781,8 @@ decklist.browse.col.deck: Deck
 decklist.browse.col.event: Event
 decklist.browse.col.year: Year
 decklist.browse.col.rating: Rating
+decklist.browse.col.score: Score
+decklist.browse.col.tags: Tags
 decklist.browse.archive: archive
 decklist.browse.score_title: "%likes% likes, %fires% fires"
 decklist.browse.comments_title: "%count% comments"

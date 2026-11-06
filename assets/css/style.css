@@ -1588,35 +1588,40 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-browse-results.is-loading::after { content: ''; position: absolute; left: 50%; top: 90px; width: 44px; height: 44px; margin-left: -22px; border: 4px solid var(--rb-line); border-top-color: var(--rb-ink); border-radius: 50%; animation: rb-spin .8s linear infinite; }
 @keyframes rb-spin { to { transform: rotate(360deg); } }
 .rb-results-none { padding: 40px 0; text-align: center; color: var(--rb-muted); font-size: 15px; }
-.rb-decks { width: 100%; border-collapse: collapse; font-size: 14px; }
+/* the table sized to its content and centred, each column reading from its left (Ketura, 2026-11-05) */
+.rb-decks { width: auto; margin: 0 auto; border-collapse: collapse; font-size: 14px; }
 .rb-decks th { padding: 6px 8px; border-bottom: 2px solid var(--rb-line-strong); font-size: 12px; font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; text-align: left; }
 .rb-decks th a { color: inherit; }
 .rb-decks th a.is-sorted { color: var(--rb-ink); }
 .rb-decks td { padding: 6px 8px; border-bottom: 1px solid var(--rb-line); vertical-align: middle; }
 .rb-decks tbody tr { cursor: pointer; }
 .rb-decks tbody tr:hover { background: #FFF7D6; }
-.rb-col-format { width: 1%; white-space: nowrap; }
-.rb-decks td.rb-col-thumb { width: 1%; padding: 5px 4px 5px 0; }
-.rb-fmt { display: inline-block; min-width: 128px; font-weight: 700; }
-.rb-col-size { width: 1%; white-space: nowrap; text-align: center !important; }
-.rb-size { display: inline-flex; align-items: baseline; justify-content: center; min-width: 66px; padding: 2px 6px; border-radius: 5px; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 14px; }
+.rb-decks td { text-align: left; }
+.rb-col-format { white-space: nowrap; }
+.rb-decks td.rb-col-thumb { padding: 5px 6px 5px 0; }
+.rb-fmt { font-weight: 700; }
+.rb-col-size { white-space: nowrap; }
+.rb-col-score { white-space: nowrap; font-size: 15px; }
+.rb-col-score .rb-comments { display: block; margin: 2px 0 0; font-size: 12px; }
+.rb-score.is-zero { color: var(--rb-grey); font-weight: 400; }
+.rb-score.is-fiery { color: #C2410C; }
+.rb-size { display: inline-flex; align-items: baseline; justify-content: flex-start; min-width: 0; padding: 2px 6px; border-radius: 5px; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 14px; }
 .rb-size-fp { color: var(--rb-side-fp); min-width: 2ch; text-align: right; }
 .rb-size-sh { color: var(--rb-side-sh); min-width: 2ch; text-align: left; }
 .rb-size-slash { margin: 0 2px; color: var(--rb-grey); font-weight: 400; }
 .rb-size .is-none { color: var(--rb-grey); font-weight: 400; }
-.rb-col-cultures { width: 1%; white-space: nowrap; }
+.rb-col-cultures { white-space: nowrap; }
 /* a line per side: Free Peoples above, Shadow below */
 .rb-row-cultures { display: flex; align-items: center; gap: 2px; min-width: 120px; height: 20px; }
 .rb-row-cultures .culture-icon { width: 22px; height: 18px; }
-.rb-col-deck { min-width: 220px; }
-.rb-deck-name { display: block; font-weight: 700; color: var(--rb-ink); }
-.rb-deck-by { display: block; font-size: 12px; color: var(--rb-muted); }
+.rb-col-deck { min-width: 260px; max-width: 560px; }
+.rb-deck-name { display: block; font-size: 28px; line-height: 1.15; font-weight: 700; color: var(--rb-ink); }
+.rb-deck-by { display: block; margin-top: 3px; font-size: 13px; color: var(--rb-muted); }
+.rb-deck-dot { margin: 0 3px; }
+.rb-col-tags { max-width: 220px; }
+.rb-row-tags { display: flex; flex-wrap: wrap; gap: 3px; }
+.rb-row-tags .rb-tag-chip { padding: 1px 8px; font-size: 12px; white-space: nowrap; }
 .rb-archive-mark { margin-left: 4px; padding: 0 5px; border-radius: 3px; background: var(--rb-tan); font-size: 11px; font-weight: 600; }
-.rb-col-event { width: 24%; max-width: 0; font-size: 13px; }
-.rb-event { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.rb-more-plays { color: var(--rb-muted); font-weight: 600; }
-.rb-col-year { width: 1%; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--rb-muted); }
-.rb-col-rating { width: 1%; white-space: nowrap; font-size: 13px; }
 .rb-score { color: var(--rb-blue); font-weight: 700; }
 .rb-comments { margin-left: 8px; color: var(--rb-good); }
 
@@ -1638,16 +1643,18 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
     .rb-page-jump { display: none; }
     .rb-decks thead { display: none; }
     .rb-decks, .rb-decks tbody { display: block; }
-    .rb-decks tr { display: grid; grid-template-columns: auto auto auto 1fr auto; grid-template-areas: "thumb fmt size . year" "thumb deck deck deck deck" "thumb event event event event" "thumb cult cult . rating"; gap: 2px 8px; padding: 8px 2px; border-bottom: 1px solid var(--rb-line); }
+    .rb-decks { width: 100%; }
+    .rb-decks tr { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); grid-template-areas: "thumb score size fmt" "thumb deck deck deck" "thumb cult cult cult" "thumb tags tags tags"; gap: 2px 8px; padding: 8px 2px; border-bottom: 1px solid var(--rb-line); }
+    .rb-deck-name { font-size: 20px; }
     .rb-decks td.rb-col-thumb { grid-area: thumb; padding: 0; }
     .rb-decks .rb-thumb { width: 80px; }
     .rb-decks td { padding: 0; border: 0; width: auto; max-width: none; min-width: 0; }
-    .rb-decks td.rb-col-format { grid-area: fmt; } .rb-decks td.rb-col-size { grid-area: size; }
-    .rb-decks td.rb-col-year { grid-area: year; } .rb-decks td.rb-col-deck { grid-area: deck; }
-    .rb-decks td.rb-col-event { grid-area: event; } .rb-decks td.rb-col-cultures { grid-area: cult; }
-    .rb-decks td.rb-col-rating { grid-area: rating; }
+    .rb-decks td.rb-col-format { grid-area: fmt; white-space: normal; } .rb-decks td.rb-col-size { grid-area: size; }
+    .rb-decks td.rb-col-score { grid-area: score; } .rb-decks td.rb-col-deck { grid-area: deck; }
+    .rb-decks td.rb-col-cultures { grid-area: cult; } .rb-decks td.rb-col-tags { grid-area: tags; }
+    .rb-col-score .rb-comments { display: inline; margin-left: 6px; }
     .rb-fmt { min-width: 0; }
-    .rb-decks td.rb-col-event:empty { display: none; }
+    .rb-decks td.rb-col-tags:empty { display: none; }
 }
 
 /* ---- a published deck's thumbnail (Ketura, 2026-11-05) ----

@@ -77,7 +77,8 @@
     $(document).ready(function ()
     {
         $('[data-toggle="tooltip"]').tooltip();
-        $('time').each(function (index, element)
+        // dates as "3 days ago", with the full date on hover; data-absolute keeps a date as written
+        $('time:not([data-absolute])').each(function (index, element)
         {
             var datetime = moment($(element).attr('datetime'));
             $(element).html(datetime.fromNow());
