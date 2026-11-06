@@ -46,6 +46,8 @@ class ThumbnailCulturesTest extends TestCase
     {
         $this->assertSame(['Elven:full'], $this->shown([['free_peoples', 'Elven', 20], ['free_peoples', 'Gandalf', 16]]));
         $this->assertSame(['Gollum:full'], $this->shown([['shadow', 'Gollum', 18], ['shadow', 'Moria', 12]]));
+        // the side it was counted on, for Gollum's Shadow colours and framing
+        $this->assertSame('shadow', PublishedDeck::pickThumbnailCultures(['shadow' => ['gollum' => ['name' => 'Gollum', 'count' => 18]]])[0]['side']);
     }
 
     public function testNoCultures(): void

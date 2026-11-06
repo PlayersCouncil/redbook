@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace DoctrineMigrations;
 
 use App\Entity\PublishedDeck;
+use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\Migrations\AbstractMigration;
 
@@ -27,7 +28,13 @@ final class Version20261105020000 extends AbstractMigration
 
     public function postUp(Schema $schema): void
     {
-        $rows = $this->connection->fetchAllAssociative(<<<'SQL'
+        self::fill($this->connection);
+    }
+
+    /** Works out every published deck's thumbnail cultures from its draw deck (also Version20261105030000) */
+    public static function fill(Connection $connection): void
+    {
+        $rows = $connection->fetchAllAssociative(<<<'SQL'
             SELECT s.published_deck_id AS deck, c.side, cu.code, cu.name, SUM(s.quantity) AS n
             FROM published_deck_slot s
             JOIN card c ON c.id = s.card_id
@@ -40,7 +47,7 @@ final class Version20261105020000 extends AbstractMigration
             $counts[$row['deck']][$row['side']][$row['code']] = ['name' => $row['name'], 'count' => (int) $row['n']];
         }
         foreach ($counts as $deck => $bySide) {
-            $this->connection->executeStatement(
+            $connection->executeStatement(
                 'UPDATE published_deck SET thumbnail_cultures = ? WHERE id = ?',
                 [json_encode(PublishedDeck::pickThumbnailCultures($bySide)), $deck]
             );

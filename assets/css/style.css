@@ -1334,6 +1334,41 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
     --rb-culture-sauron: #791217; --rb-culture-sauron-light: #D5B4A2;
     --rb-culture-shire: #3F523C; --rb-culture-shire-light: #C3C79F;
     --rb-culture-uruk-hai: #398129; --rb-culture-uruk-hai-light: #A6AC9B;
+    /* each culture's five card-template colours, from Ketura's thumbnail tuner (2026-11-05) */
+    /* Dwarven: the thumbnail's background is base2 */
+    --rb-culture-dwarven-background: #D6D1B4; --rb-culture-dwarven-base1: #8F6B2D; --rb-culture-dwarven-base2: #282617; --rb-culture-dwarven-contrast: #814D37; --rb-culture-dwarven-symbol: #5C513F;
+    /* Elven: the thumbnail's background is base2 */
+    --rb-culture-elven-background: #BEBEC0; --rb-culture-elven-base1: #5699B7; --rb-culture-elven-base2: #346186; --rb-culture-elven-contrast: #91A9C5; --rb-culture-elven-symbol: #4D2315;
+    /* Gandalf: the thumbnail's background is base2 */
+    --rb-culture-gandalf-background: #DCC29F; --rb-culture-gandalf-base1: #99823E; --rb-culture-gandalf-base2: #55392B; --rb-culture-gandalf-contrast: #6A9CB5; --rb-culture-gandalf-symbol: #CEAC87;
+    /* Gollum (Free Peoples): the thumbnail's background is base1 */
+    --rb-culture-gollum-background: #C6C8C7; --rb-culture-gollum-base1: #BD9E99; --rb-culture-gollum-base2: #6C3C3C; --rb-culture-gollum-contrast: #7B939F; --rb-culture-gollum-symbol: #8A7E56;
+    /* Gondor: the thumbnail's background is base2 */
+    --rb-culture-gondor-background: #E8E3DF; --rb-culture-gondor-base1: #DED9E0; --rb-culture-gondor-base2: #44484B; --rb-culture-gondor-contrast: #5C4998; --rb-culture-gondor-symbol: #887D85;
+    /* Rohan: the thumbnail's background is base1 */
+    --rb-culture-rohan-background: #C9CCDD; --rb-culture-rohan-base1: #77404B; --rb-culture-rohan-base2: #362426; --rb-culture-rohan-contrast: #1577BA; --rb-culture-rohan-symbol: #8A9EB5;
+    /* Shire: the thumbnail's background is background */
+    --rb-culture-shire-background: #CAD0AE; --rb-culture-shire-base1: #91916B; --rb-culture-shire-base2: #4B4930; --rb-culture-shire-contrast: #4D5C73; --rb-culture-shire-symbol: #55743B;
+    /* Dunland: the thumbnail's background is base1 */
+    --rb-culture-dunland-background: #CFC7B4; --rb-culture-dunland-base1: #676E7D; --rb-culture-dunland-base2: #241F19; --rb-culture-dunland-contrast: #8F98A9; --rb-culture-dunland-symbol: #040000;
+    /* Gollum (Shadow): the thumbnail's background is base2 */
+    --rb-culture-gollum-shadow-background: #DAD5CF; --rb-culture-gollum-shadow-base1: #BBAE9D; --rb-culture-gollum-shadow-base2: #252F27; --rb-culture-gollum-shadow-contrast: #7B939F; --rb-culture-gollum-shadow-symbol: #7E5E37;
+    /* Isengard: the thumbnail's background is contrast */
+    --rb-culture-isengard-background: #C4CFC1; --rb-culture-isengard-base1: #444D54; --rb-culture-isengard-base2: #080A09; --rb-culture-isengard-contrast: #223B28; --rb-culture-isengard-symbol: #E7E2DF;
+    /* Men: the thumbnail's background is base2 */
+    --rb-culture-men-background: #BCBDC1; --rb-culture-men-base1: #9D9A8B; --rb-culture-men-base2: #1F2024; --rb-culture-men-contrast: #D19F48; --rb-culture-men-symbol: #9C783A;
+    /* Moria: the thumbnail's background is base1 */
+    --rb-culture-moria-background: #CFC9A7; --rb-culture-moria-base1: #5F3423; --rb-culture-moria-base2: #1B1F20; --rb-culture-moria-contrast: #BB5F1E; --rb-culture-moria-symbol: #8E8586;
+    /* Orc: the thumbnail's background is base2 */
+    --rb-culture-orc-background: #D2CAB7; --rb-culture-orc-base1: #7B767C; --rb-culture-orc-base2: #4B5054; --rb-culture-orc-contrast: #AF5137; --rb-culture-orc-symbol: #8B9050;
+    /* Raider: the thumbnail's background is contrast */
+    --rb-culture-raider-background: #F4EAB9; --rb-culture-raider-base1: #B69670; --rb-culture-raider-base2: #241C19; --rb-culture-raider-contrast: #EFD344; --rb-culture-raider-symbol: #AB7944;
+    /* Ringwraith: the thumbnail's background is base2 */
+    --rb-culture-ringwraith-background: #C5BDBA; --rb-culture-ringwraith-base1: #353A3D; --rb-culture-ringwraith-base2: #040404; --rb-culture-ringwraith-contrast: #265765; --rb-culture-ringwraith-symbol: #4E4F54;
+    /* Sauron: the thumbnail's background is base2 */
+    --rb-culture-sauron-background: #D7C1AA; --rb-culture-sauron-base1: #898981; --rb-culture-sauron-base2: #2B2B29; --rb-culture-sauron-contrast: #B91317; --rb-culture-sauron-symbol: #7A251E;
+    /* Uruk-hai: the thumbnail's background is base1 */
+    --rb-culture-uruk-hai-background: #D6DFCE; --rb-culture-uruk-hai-base1: #315671; --rb-culture-uruk-hai-base2: #0F2231; --rb-culture-uruk-hai-contrast: #017136; --rb-culture-uruk-hai-symbol: #6A7D9E;
 }
 
 /* ---- the reader (Ketura, 2026-11-04) ----
@@ -1616,53 +1651,62 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 }
 
 /* ---- a published deck's thumbnail (Ketura, 2026-11-05) ----
-   The size of a half-thumb: a card's top half, or a raised tile of the deck's cultures, their
-   icons enlarged past the edges and cropped. A whole deck: its main Free Peoples culture top
-   left, its main Shadow culture bottom right, divided corner to corner. A fragment: its main
-   culture filling the tile. */
+   The size of a half-thumb: a card's top half, or a raised tile of the deck's cultures, drawn
+   with the cultures' card art (public/images/cultures/art) enlarged past the edges and cropped.
+   A whole deck: its main Free Peoples culture top left, its main Shadow culture bottom right,
+   divided corner to corner; a fragment: its main culture filling the tile. Each half's ground
+   is the culture's chosen card-template colour, lit from behind the symbol and lightly grained
+   so it carries some of the card's texture. */
 .rb-thumb { position: relative; display: block; width: 104px; aspect-ratio: 260 / 231; overflow: hidden; border-radius: 7px; background: #EFE9DC; }
 .rb-thumb-card img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
 .rb-thumb-card { box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
-.rb-thumb-cultures { border: 1px solid #A89C83; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), inset 0 -3px 6px rgba(0, 0, 0, .14), 0 1px 3px rgba(0, 0, 0, .25); }
-.rb-thumb-part { position: absolute; inset: 0; background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, .55), transparent 60%), color-mix(in srgb, var(--c, #8A8A8A) 16%, #F2ECDF); }
-/* the icon: a box of --size (percent of the tile) centred on the corner's point (--cx, --cy),
-   moved by the culture's --x, --y (percent of the tile) and scaled by its --s */
+.rb-thumb-cultures { border: 1px solid #A89C83; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -3px 6px rgba(0, 0, 0, .2), 0 1px 3px rgba(0, 0, 0, .25); }
+.rb-thumb-part {
+    position: absolute; inset: 0; --bg: #B5AC9C;
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+        radial-gradient(90% 85% at var(--cx) var(--cy), color-mix(in srgb, var(--bg) 62%, #fff) 0%, var(--bg) 48%, color-mix(in srgb, var(--bg) 62%, #000) 100%);
+    background-blend-mode: soft-light, normal;
+}
+/* the art: a box of --size (percent of the tile) centred on the corner's point (--cx, --cy),
+   moved by the culture's --x, --y (percent of the tile), scaled by --s, mirrored by --m: -1 */
 .rb-thumb-icon {
     --w: var(--size); position: absolute; width: var(--w); height: var(--w);
     left: calc(var(--cx) - var(--w) / 2 + var(--x, 0%)); top: calc(var(--cy) - var(--w) / 2 + var(--y, 0%));
     transform: scale(calc(var(--s, 1) * var(--m, 1)), var(--s, 1));
-    background-color: var(--c, #6B645A); -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat;
-    filter: drop-shadow(0 1px 0 rgba(255, 255, 255, .7));
+    background: var(--art) center / contain no-repeat;
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .35));
 }
 .rb-thumb-fp { clip-path: polygon(0 0, 100% 0, 0 100%); --cx: 30%; --cy: 30%; --size: 95%; --x: var(--corner-x); --y: var(--corner-y); --s: var(--corner-s); --m: var(--corner-m); }
 .rb-thumb-shadow { clip-path: polygon(100% 0, 100% 100%, 0 100%); --cx: 70%; --cy: 70%; --size: 95%; --x: var(--corner-x); --y: var(--corner-y); --s: var(--corner-s); --m: var(--corner-m); }
 .rb-thumb-full { --cx: 50%; --cy: 50%; --size: 125%; --x: var(--full-x); --y: var(--full-y); --s: var(--full-s); --m: var(--full-m); }
 .rb-thumb-shadow::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to bottom right, transparent calc(50% - 1.5px), rgba(255, 255, 255, .9) calc(50% - 1px), rgba(255, 255, 255, .9) calc(50% + 1px), transparent calc(50% + 1.5px)); }
-/* each culture's framing, in its corner and filling the tile: moved by x and y (percent of the
-   tile, + is right and down), scaled by s, mirrored by m: -1. Ketura's settings from the
-   thumbnail tuner go here; Gollum, on either side, has a corner for each. */
+/* Ketura's settings from the thumbnail tuner (2026-11-05; the full record is in
+   _planning/thumbnail-tuning): each culture's ground colour, and its art's framing in its
+   corner and filling the tile: moved by x and y (percent of the tile, + is right and down),
+   scaled by s, mirrored by m: -1. Gollum, on either side, has a set for each. */
 .rb-thumb-part { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --corner-m: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; --full-m: 1; }
-/* Free Peoples */
-.rb-thumb-c-dwarven    { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
-.rb-thumb-c-elven      { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
-.rb-thumb-c-gandalf    { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
-.rb-thumb-c-gondor     { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
-.rb-thumb-c-rohan      { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
-.rb-thumb-c-shire      { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
-/* Gollum, on either side */
-.rb-thumb-c-gollum     { --full-x: 0%; --full-y: 0%; --full-s: 1; }
-.rb-thumb-fp.rb-thumb-c-gollum { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; }
-.rb-thumb-shadow.rb-thumb-c-gollum { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; }
-/* Shadow */
-.rb-thumb-c-dunland    { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
-.rb-thumb-c-isengard   { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
-.rb-thumb-c-men        { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
-.rb-thumb-c-moria      { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
-.rb-thumb-c-orc        { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
-.rb-thumb-c-raider     { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
-.rb-thumb-c-ringwraith { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
-.rb-thumb-c-sauron     { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
-.rb-thumb-c-uruk-hai   { --corner-x: 0%; --corner-y: 0%; --corner-s: 1; --full-x: 0%; --full-y: 0%; --full-s: 1; }
+.rb-thumb-c-dwarven { --bg: var(--rb-culture-dwarven-base2); --corner-x: 21%; --corner-y: 12.5%; --corner-s: 0.96; --corner-m: 1; --full-x: 0%; --full-y: 0%; --full-s: 0.7; --full-m: 1; }
+.rb-thumb-c-elven { --bg: var(--rb-culture-elven-base2); --corner-x: 12%; --corner-y: 17%; --corner-s: 0.76; --corner-m: 1; --full-x: 0%; --full-y: 0%; --full-s: 0.56; --full-m: 1; }
+.rb-thumb-c-gandalf { --bg: var(--rb-culture-gandalf-base2); --corner-x: -2%; --corner-y: -2.5%; --corner-s: 0.82; --corner-m: 1; --full-x: 0%; --full-y: 0%; --full-s: 0.64; --full-m: 1; }
+.rb-thumb-c-gollum { --bg: var(--rb-culture-gollum-base1); }
+.rb-thumb-fp.rb-thumb-c-gollum { --corner-x: 9%; --corner-y: 10.5%; --corner-s: 0.83; --corner-m: 1; }
+.rb-thumb-full.rb-thumb-side-free_peoples.rb-thumb-c-gollum { --full-x: 6%; --full-y: 0%; --full-s: 0.66; --full-m: 1; }
+.rb-thumb-c-gondor { --bg: var(--rb-culture-gondor-base2); --corner-x: 10%; --corner-y: 14%; --corner-s: 1; --corner-m: 1; --full-x: 0%; --full-y: 0%; --full-s: 0.6; --full-m: 1; }
+.rb-thumb-c-rohan { --bg: var(--rb-culture-rohan-base1); --corner-x: -4.5%; --corner-y: 12%; --corner-s: 1.03; --corner-m: 1; --full-x: -1%; --full-y: -5.5%; --full-s: 0.55; --full-m: 1; }
+.rb-thumb-c-shire { --bg: var(--rb-culture-shire-background); --corner-x: 23%; --corner-y: -2%; --corner-s: 1.15; --corner-m: 1; --full-x: 0%; --full-y: 0%; --full-s: 0.62; --full-m: 1; }
+.rb-thumb-c-dunland { --bg: var(--rb-culture-dunland-base1); --corner-x: 11.5%; --corner-y: 6%; --corner-s: 1.11; --corner-m: 1; --full-x: 1%; --full-y: 6%; --full-s: 0.7; --full-m: 1; }
+.rb-thumb-shadow.rb-thumb-c-gollum, .rb-thumb-side-shadow.rb-thumb-c-gollum { --bg: var(--rb-culture-gollum-shadow-base2); }
+.rb-thumb-shadow.rb-thumb-c-gollum { --corner-x: 10%; --corner-y: 9.5%; --corner-s: 0.81; --corner-m: 1; }
+.rb-thumb-full.rb-thumb-side-shadow.rb-thumb-c-gollum { --full-x: 6%; --full-y: 0%; --full-s: 0.62; --full-m: 1; }
+.rb-thumb-c-isengard { --bg: var(--rb-culture-isengard-contrast); --corner-x: 5%; --corner-y: 0%; --corner-s: 0.63; --corner-m: 1; --full-x: 0%; --full-y: 0%; --full-s: 0.58; --full-m: 1; }
+.rb-thumb-c-men { --bg: var(--rb-culture-men-base2); --corner-x: -5%; --corner-y: 0%; --corner-s: 0.84; --corner-m: 1; --full-x: 0%; --full-y: 0%; --full-s: 0.59; --full-m: 1; }
+.rb-thumb-c-moria { --bg: var(--rb-culture-moria-base1); --corner-x: -9%; --corner-y: -1%; --corner-s: 0.82; --corner-m: 1; --full-x: 0%; --full-y: 0%; --full-s: 0.67; --full-m: 1; }
+.rb-thumb-c-orc { --bg: var(--rb-culture-orc-base2); --corner-x: 0%; --corner-y: -5.5%; --corner-s: 0.89; --corner-m: 1; --full-x: 0%; --full-y: 0%; --full-s: 0.66; --full-m: 1; }
+.rb-thumb-c-raider { --bg: var(--rb-culture-raider-contrast); --corner-x: -7%; --corner-y: 0%; --corner-s: 0.84; --corner-m: 1; --full-x: 0%; --full-y: 0%; --full-s: 0.64; --full-m: 1; }
+.rb-thumb-c-ringwraith { --bg: var(--rb-culture-ringwraith-base2); --corner-x: -7.5%; --corner-y: -5.5%; --corner-s: 0.59; --corner-m: 1; --full-x: 0%; --full-y: 0%; --full-s: 0.57; --full-m: 1; }
+.rb-thumb-c-sauron { --bg: var(--rb-culture-sauron-base2); --corner-x: -22.5%; --corner-y: 8.5%; --corner-s: 1.34; --corner-m: 1; --full-x: 0%; --full-y: 4%; --full-s: 0.77; --full-m: 1; }
+.rb-thumb-c-uruk-hai { --bg: var(--rb-culture-uruk-hai-base1); --corner-x: 0%; --corner-y: 0%; --corner-s: 0.73; --corner-m: 1; --full-x: 0%; --full-y: 0%; --full-s: 0.67; --full-m: 1; }
 
 /* the thumbnail's choice on the publish form, with how it will look */
 .rb-thumb-pick { display: flex; align-items: flex-start; gap: 14px; }

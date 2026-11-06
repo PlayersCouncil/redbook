@@ -327,7 +327,7 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
         $this->thumbnailCard = $card;
     }
 
-    /** @return array<array{code: string, name: string, corner: string}> see pickThumbnailCultures */
+    /** @return array<array{code: string, name: string, corner: string, side: string}> see pickThumbnailCultures */
     public function getThumbnailCultures(): array
     {
         return $this->thumbnailCultures ?? [];
@@ -341,7 +341,7 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
      * one side only: that side's main culture filling the tile. Ties go to the first by name.
      *
      * @param array<string, array<string, array{name: string, count: int}>> $counts side => culture code => name and count
-     * @return array<array{code: string, name: string, corner: string}> corner: fp, shadow or full
+     * @return array<array{code: string, name: string, corner: string, side: string}> corner: fp, shadow or full
      */
     public static function pickThumbnailCultures(array $counts): array
     {
@@ -357,12 +357,15 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
         };
         $fp = $top(Card::SIDE_FREE_PEOPLES);
         $shadow = $top(Card::SIDE_SHADOW);
-        $part = fn (array $row, string $corner) => ['code' => $row['code'], 'name' => $row['name'], 'corner' => $corner];
+        // side: the side whose cards the culture was counted on, for Gollum's colours and framing
+        $part = fn (array $row, string $corner, string $side) => ['code' => $row['code'], 'name' => $row['name'], 'corner' => $corner, 'side' => $side];
         if ($fp && $shadow) {
-            return [$part($fp, 'fp'), $part($shadow, 'shadow')];
+            return [$part($fp, 'fp', Card::SIDE_FREE_PEOPLES), $part($shadow, 'shadow', Card::SIDE_SHADOW)];
         }
-        $only = $fp ?? $shadow;
-        return $only ? [$part($only, 'full')] : [];
+        if ($fp) {
+            return [$part($fp, 'full', Card::SIDE_FREE_PEOPLES)];
+        }
+        return $shadow ? [$part($shadow, 'full', Card::SIDE_SHADOW)] : [];
     }
 
     /** Recounts the draw deck's Free Peoples and Shadow cards (see $nbFreePeoples), and picks the thumbnail's cultures */
