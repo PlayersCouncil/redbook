@@ -28,11 +28,13 @@
                 Member since {{ user.dateCreation|date('Y-m-d') }}.
                 {% endif %}
             <div>
-                {% if user.decklists|length > 1 %}
-                    <a href="{{ path('decklists_list',{author:user.displayName}) }}">{{ user.decklists|length }}
+                {# not counting withdrawn ones (Ketura, 2026-11-07) #}
+                {% set public_count = user.decklists | filter(d => not d.withdrawn) | length %}
+                {% if public_count > 1 %}
+                    <a href="{{ path('decklists_list',{author:user.displayName}) }}">{{ public_count }}
                         published decklists.</a>
                 {% else %}
-                    {% if user.decklists|length == 1 %}
+                    {% if public_count == 1 %}
                         <a href="{{ path('decklists_list',{author:user.displayName}) }}">One published
                             decklist.</a>
                     {% else %}

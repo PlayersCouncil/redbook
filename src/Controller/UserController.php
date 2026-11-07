@@ -148,7 +148,7 @@ class UserController extends AbstractController
      * @return Response
      */
     #[Route(path: '/api/public/user/info', name: 'user_info', methods: ['GET'])]
-    public function infoAction(Request $request, RouterInterface $router)
+    public function infoAction(Request $request, RouterInterface $router, \Symfony\Component\Security\Csrf\CsrfTokenManagerInterface $tokens)
     {
         $jsonp = $request->query->get('jsonp');
 
@@ -207,9 +207,17 @@ class UserController extends AbstractController
 
                     $content['is_author'] = ($user_id == $decklist->getUser()->getId());
 
-                    $content['can_delete'] = ($decklist->getNbcomments() == 0)
-                        && ($decklist->getNbfavorites() == 0)
-                        && ($decklist->getnbVotes() == 0);
+                    // the author's undo publish while the grace period lasts; deleting is for
+                    // moderators (Ketura, 2026-11-07)
+                    $content['can_withdraw'] = $content['is_author'] && $decklist->canWithdraw();
+                    if ($content['can_withdraw']) {
+                        $content['withdraw_until'] = $decklist->getGraceEnds()->format('c');
+                        // never in a JSONP answer, which another site could read
+                        if ($jsonp === null) {
+                            $content['state_token'] = $tokens->getToken('decklist_state')->getValue();
+                        }
+                    }
+                    $content['can_delete'] = $this->isGranted('ROLE_ADMIN');
                 }
             }
 

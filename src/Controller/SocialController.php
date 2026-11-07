@@ -14,6 +14,7 @@ use App\Entity\PublishedDeck;
 use App\Entity\PublishedDeckInterface;
 use App\Entity\Culture;
 use App\Entity\PublishedDeckPlay;
+use App\Entity\PublishedDeckRevision;
 use App\Repository\FormatRepository;
 use App\Entity\Tournament;
 use App\Entity\User;
@@ -58,6 +59,8 @@ class SocialController extends AbstractController
     /**
      * Publishing a deck: the decklist form in Create mode (Ketura, 2026-11-06). The
      * decklist is made from the deck as it stands and kept only when the form is sent.
+     * A deck published before defaults to the next version of that decklist's line
+     * (Ketura, 2026-11-07); the author can pick another of their lines, or none.
      */
     #[Route(path: '/deck/publish/{deck_uuid}', name: 'deck_publish_form', methods: ['GET', 'POST'], requirements: ['deck_uuid' => '[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}'])]
     public function publishAction(
@@ -81,8 +84,15 @@ class SocialController extends AbstractController
         }
 
         $decklist = $decklistFactory->createDecklistFromDeck($deck, $deck->getName(), $deck->getDescriptionMd());
+        $repo = $em->getRepository(PublishedDeck::class);
 
         if ($request->isMethod('POST')) {
+            // the line it continues: one of the author's own decklists, or a new line
+            $previous = $repo->find((int) $request->request->get('previous_version'));
+            if ($previous && $previous->getUser()->getId() !== $user->getId()) {
+                $previous = null;
+            }
+            $decklistFactory->continueLine($decklist, $previous);
             $this->applyDecklistForm($decklist, $request, FormMode::Create, $texts, $formats, $validator);
             $em->persist($decklist);
             $em->flush();
@@ -97,7 +107,7 @@ class SocialController extends AbstractController
         // there is one (it was a warning per copy, a wall of them for a common deck)
         $content = json_encode($deck->getSlots()->getContent());
         $same = array_filter(
-            $em->getRepository(PublishedDeck::class)->findBy(['signature' => md5($content)], ['dateCreation' => 'DESC']),
+            $repo->findBy(['signature' => md5($content), 'withdrawn' => false], ['dateCreation' => 'DESC']),
             fn (PublishedDeck $published) => json_encode($published->getSlots()->getContent()) == $content,
         );
         $own = array_filter($same, fn (PublishedDeck $published) => $published->getUser()->getId() === $user->getId());
@@ -110,19 +120,24 @@ class SocialController extends AbstractController
             $this->addFlash('warning', $translator->trans('decklist.publish.warnings.published', ['%url%' => $url]));
         }
 
-        return $this->renderDecklistForm(
-            FormMode::Create,
-            $decklist,
-            $this->generateUrl('deck_publish_form', ['deck_uuid' => $deck->getUuid()]),
-            $this->generateUrl('deck_edit', ['deck_uuid' => $deck->getUuid()]),
-            $formats,
-            $translator,
-        );
+        // what a new version can follow: the latest of each of the author's lines
+        $lines = [];
+        foreach ($repo->findLatestOfLines($user) as $latest) {
+            $lines[] = ['decklist' => $latest, 'next' => $latest->getVersion() + 1];
+        }
+
+        return $this->renderDecklistForm(FormMode::Create, $decklist, $formats, $translator, [
+            'action' => $this->generateUrl('deck_publish_form', ['deck_uuid' => $deck->getUuid()]),
+            'cancel' => $this->generateUrl('deck_edit', ['deck_uuid' => $deck->getUuid()]),
+            'lines' => $lines,
+            'previous' => $decklistFactory->defaultPrevious($deck),
+        ]);
     }
 
     /**
      * Changing a published decklist: the decklist form in Edit mode (Ketura,
-     * 2026-11-06). The author, or a super admin.
+     * 2026-11-06). The author, or a super admin. The commentary can always change; the
+     * cards, half, format and date only while it's withdrawn (Ketura, 2026-11-07).
      */
     #[Route(path: '/decklist/edit/{decklist_id}', name: 'decklist_edit', methods: ['GET', 'POST'], requirements: ['decklist_id' => '\d+'])]
     public function editAction(
@@ -133,24 +148,8 @@ class SocialController extends AbstractController
         DeckValidator $validator,
         int $decklist_id
     ): Response {
-        $user = $this->getUser();
-        if (!$user) {
-            throw $this->createAccessDeniedException("Anonymous access denied");
-        }
-
+        $decklist = $this->editableDecklist($decklist_id);
         $em = $this->managerRegistry->getManager();
-        $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
-        if (!$decklist) {
-            throw $this->createNotFoundException("Published deck not found");
-        }
-        if (!$this->isGranted('ROLE_SUPER_ADMIN') && $user->getId() !== $decklist->getUser()->getId()) {
-            throw $this->createAccessDeniedException("Access denied");
-        }
-
-        $view = $this->generateUrl('decklist_detail', [
-            'decklist_id' => $decklist->getId(),
-            'decklist_name' => $decklist->getNameCanonical(),
-        ]);
 
         if ($request->isMethod('POST')) {
             $this->applyDecklistForm($decklist, $request, FormMode::Edit, $texts, $formats, $validator);
@@ -163,28 +162,169 @@ class SocialController extends AbstractController
             ]);
         }
 
-        return $this->renderDecklistForm(
-            FormMode::Edit,
-            $decklist,
-            $this->generateUrl('decklist_edit', ['decklist_id' => $decklist->getId()]),
-            $view,
-            $formats,
-            $translator,
-        );
+        // the version before this one, for "version 2 of …"
+        $previous = null;
+        foreach ($em->getRepository(PublishedDeck::class)->findVersions($decklist) as $version) {
+            if ($version->getVersion() < $decklist->getVersion()) {
+                $previous = $version;
+                break;
+            }
+        }
+        $deck = $decklist->getParent();
+
+        return $this->renderDecklistForm(FormMode::Edit, $decklist, $formats, $translator, [
+            'action' => $this->generateUrl('decklist_edit', ['decklist_id' => $decklist->getId()]),
+            'cancel' => $this->generateUrl('decklist_detail', [
+                'decklist_id' => $decklist->getId(),
+                'decklist_name' => $decklist->getNameCanonical(),
+            ]),
+            'previous' => $previous,
+            // the deck a withdrawn decklist takes its cards from again, if it's still the author's
+            'source_deck' => $deck instanceof Deck && $deck->getUser()->getId() === $decklist->getUser()->getId() ? $deck : null,
+        ]);
+    }
+
+    /**
+     * Undo publishing (Ketura, 2026-11-07): within the grace period the author takes the
+     * decklist down to fix it. It disappears for everyone else and keeps its number, to
+     * come back at the same address when it's published again.
+     */
+    #[Route(path: '/decklist/withdraw/{decklist_id}', name: 'decklist_withdraw', methods: ['POST'], requirements: ['decklist_id' => '\d+'])]
+    public function withdrawAction(Request $request, TranslatorInterface $translator, int $decklist_id): Response
+    {
+        $decklist = $this->editableDecklist($decklist_id, true);
+        $this->requireStateToken($request);
+        if (!$decklist->canWithdraw()) {
+            throw new BadRequestHttpException($translator->trans('decklist.state.errors.locked'));
+        }
+        $decklist->setWithdrawn(true);
+        $this->managerRegistry->getManager()->flush();
+
+        $this->addFlash('notice', $translator->trans('decklist.state.withdrawn'));
+        $edit = $this->generateUrl('decklist_edit', ['decklist_id' => $decklist->getId()]);
+        return $request->isXmlHttpRequest() ? new JsonResponse(['success' => true, 'url' => $edit]) : $this->redirect($edit);
+    }
+
+    /** Publishing a withdrawn decklist again: public at its old address, with a fresh grace period */
+    #[Route(path: '/decklist/republish/{decklist_id}', name: 'decklist_republish', methods: ['POST'], requirements: ['decklist_id' => '\d+'])]
+    public function republishAction(Request $request, TranslatorInterface $translator, int $decklist_id): Response
+    {
+        $decklist = $this->editableDecklist($decklist_id, true);
+        $this->requireStateToken($request);
+        if (!$decklist->isWithdrawn()) {
+            throw new BadRequestHttpException('This decklist is already public.');
+        }
+        $decklist->setWithdrawn(false);
+        $decklist->setDatePublished(new DateTime());
+        $decklist->setDateUpdate(new DateTime());
+        $this->managerRegistry->getManager()->flush();
+
+        $this->addFlash('notice', $translator->trans('decklist.state.republished'));
+        return $this->redirectToRoute('decklist_detail', [
+            'decklist_id' => $decklist->getId(),
+            'decklist_name' => $decklist->getNameCanonical(),
+        ]);
+    }
+
+    /**
+     * A withdrawn decklist takes the cards of the deck it was published from again
+     * (Ketura, 2026-11-07): fix the deck in the deckbuilder, bring the fix over, publish again.
+     */
+    #[Route(path: '/decklist/replace-cards/{decklist_id}', name: 'decklist_replace_cards', methods: ['POST'], requirements: ['decklist_id' => '\d+'])]
+    public function replaceCardsAction(Request $request, TranslatorInterface $translator, PublishedDeckFactory $decklistFactory, int $decklist_id): Response
+    {
+        $decklist = $this->editableDecklist($decklist_id, true);
+        $this->requireStateToken($request);
+        $deck = $decklist->getParent();
+        if (!$decklist->isWithdrawn() || !$deck instanceof Deck || $deck->getUser()->getId() !== $decklist->getUser()->getId()) {
+            throw new BadRequestHttpException($translator->trans('decklist.state.errors.no_deck'));
+        }
+        $decklistFactory->replaceCardsFromDeck($decklist, $deck);
+        $this->managerRegistry->getManager()->flush();
+
+        $this->addFlash('notice', $translator->trans('decklist.state.replaced'));
+        return $this->redirectToRoute('decklist_edit', ['decklist_id' => $decklist->getId()]);
+    }
+
+    /**
+     * Public decklists for the derived-from picker (Ketura, 2026-11-07): by author and
+     * name, or one by id or address.
+     */
+    #[Route(path: '/decklist/lookup', name: 'decklist_lookup', methods: ['GET'])]
+    public function lookupAction(Request $request): JsonResponse
+    {
+        if (!$this->getUser()) {
+            throw $this->createAccessDeniedException();
+        }
+        $repo = $this->managerRegistry->getRepository(PublishedDeck::class);
+        $except = $request->query->getInt('except') ?: null;
+        $id = trim((string) $request->query->get('id'));
+        if ($id !== '') {
+            $id = preg_match('/^\d+$/', $id) ? (int) $id : (preg_match('#/decklist/view/(\d+)#', $id, $m) ? (int) $m[1] : 0);
+            $found = $id && $id !== $except ? $repo->find($id) : null;
+            $decklists = $found && !$found->isWithdrawn() ? [$found] : [];
+        } else {
+            $author = trim((string) $request->query->get('author'));
+            $name = trim((string) $request->query->get('name'));
+            $decklists = ($author === '' && $name === '') ? [] : $repo->lookup($author, $name, $except);
+        }
+        return new JsonResponse(array_map(fn (PublishedDeck $d) => $this->decklistCard($d), $decklists));
+    }
+
+    /** What the picker shows of a decklist: enough to tell it's the right one */
+    private function decklistCard(PublishedDeck $decklist): array
+    {
+        return [
+            'id' => $decklist->getId(),
+            'name' => $decklist->getName(),
+            'version' => $decklist->getVersion(),
+            'author' => $decklist->getUser()->getDisplayName(),
+            'date' => $decklist->getDateCreation()->format('Y-m-d'),
+            'url' => $this->generateUrl('decklist_detail', [
+                'decklist_id' => $decklist->getId(),
+                'decklist_name' => $decklist->getNameCanonical(),
+            ]),
+        ];
+    }
+
+    /**
+     * A decklist the user may edit: their own, or any for a super admin. $authorOnly for
+     * withdrawing and publishing again, which are the author's alone.
+     */
+    private function editableDecklist(int $decklist_id, bool $authorOnly = false): PublishedDeck
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            throw $this->createAccessDeniedException("Anonymous access denied");
+        }
+        $decklist = $this->managerRegistry->getRepository(PublishedDeck::class)->find($decklist_id);
+        if (!$decklist) {
+            throw $this->createNotFoundException("Published deck not found");
+        }
+        $isAuthor = $user->getId() === $decklist->getUser()->getId();
+        if (!$isAuthor && ($authorOnly || !$this->isGranted('ROLE_SUPER_ADMIN'))) {
+            throw $this->createAccessDeniedException("Access denied");
+        }
+        return $decklist;
+    }
+
+    private function requireStateToken(Request $request): void
+    {
+        if (!$this->isCsrfTokenValid('decklist_state', (string) $request->request->get('_token'))) {
+            throw new BadRequestHttpException('The form has expired; reload the page and try again.');
+        }
     }
 
     /**
      * The decklist form, for either mode: it posts back to the address that showed it.
-     * The format comes from the deck when publishing, so it shows but can't be changed
-     * there; afterwards it can be set or corrected (archived decks arrive without one).
+     * The format comes from the deck; only an archive deck's can be corrected here.
      */
     private function renderDecklistForm(
         FormMode $mode,
         PublishedDeck $decklist,
-        string $action,
-        string $cancel,
         FormatRepository $formats,
         TranslatorInterface $translator,
+        array $params,
     ): Response {
         $choices = $formats->findSelectable();
         $current = $decklist->getTargetFormat() ? $formats->findOneByCode($decklist->getTargetFormat()) : null;
@@ -192,18 +332,21 @@ class SocialController extends AbstractController
             array_unshift($choices, $current);
         }
 
-        return $this->render('Decklist/decklist_form.html.twig', [
+        return $this->render('Decklist/decklist_form.html.twig', $params + [
             'mode' => $mode->value,
             'pagetitle' => $translator->trans('decklist.form.title.' . $mode->value),
-            'action' => $action,
-            'cancel' => $cancel,
             'decklist' => $decklist,
+            // the cards, half and date: set when publishing, then only while withdrawn
+            'content_editable' => $mode === FormMode::Create || $decklist->isContentEditable(),
             'formats' => $choices,
             'tournaments' => $this->managerRegistry->getRepository(Tournament::class)->findAll(),
+            'previous' => null,
+            'lines' => [],
+            'source_deck' => null,
         ]);
     }
 
-    /** What the decklist form sends, onto the decklist; the mode decides what may change */
+    /** What the decklist form sends, onto the decklist; the mode and state decide what may change */
     private function applyDecklistForm(
         PublishedDeck $decklist,
         Request $request,
@@ -216,37 +359,42 @@ class SocialController extends AbstractController
             throw new BadRequestHttpException('The form has expired; reload the page and try again.');
         }
         $form = $request->request;
+        $em = $this->managerRegistry->getManager();
 
         // an empty name keeps the one it had: the deck's when publishing
         $name = mb_substr(trim(strip_tags((string) $form->get('name'))), 0, 60) ?: ($decklist->getName() ?: 'Untitled');
         $descriptionMd = trim((string) $form->get('descriptionMd'));
+        // what the commentary said before is kept (Ketura, 2026-11-07)
+        if ($mode === FormMode::Edit && ($name !== $decklist->getName() || $descriptionMd !== trim((string) $decklist->getDescriptionMd()))) {
+            $em->persist(new PublishedDeckRevision($decklist));
+        }
         $decklist->setName($name);
         $decklist->setNameCanonical($texts->slugify($name) . '-' . $decklist->getVersion());
         $decklist->setDescriptionMd($descriptionMd);
         $decklist->setDescriptionHtml($texts->markdown($descriptionMd));
 
-        $tournament = (int) $form->get('tournament');
-        $decklist->setTournament($tournament ? $this->managerRegistry->getRepository(Tournament::class)->find($tournament) : null);
-
-        // an id, or a decklist's address; never the decklist itself
+        // derived from: a public decklist, by id or address, never the decklist itself
         $precedent = trim((string) $form->get('precedent'));
         if (!preg_match('/^\d+$/', $precedent)) {
-            $precedent = preg_match('/view\/(\d+)/', $precedent, $matches) ? $matches[1] : null;
+            $precedent = preg_match('#/decklist/view/(\d+)#', $precedent, $matches) ? $matches[1] : null;
         }
         $precedent = ($precedent && (int) $precedent !== $decklist->getId())
-            ? $this->managerRegistry->getRepository(PublishedDeck::class)->find($precedent)
+            ? $em->getRepository(PublishedDeck::class)->find($precedent)
             : null;
-        $decklist->setPrecedent($precedent);
+        $decklist->setPrecedent($precedent && !$precedent->isWithdrawn() ? $precedent : null);
 
-        $decklist->setHalf($this->halfFrom($request));
         $decklist->setThumbnailCard($this->thumbnailFrom($request, $decklist));
-        $effectiveDate = $this->dateFrom($form->get('effective_date'));
-        if ($effectiveDate) {
-            $decklist->setEffectiveDate($effectiveDate);
-        }
         $this->applyPlays($decklist, $request);
 
-        if ($mode === FormMode::Edit) {
+        if ($mode === FormMode::Create || $decklist->isContentEditable()) {
+            $decklist->setHalf($this->halfFrom($request));
+            $effectiveDate = $this->dateFrom($form->get('effective_date'));
+            if ($effectiveDate) {
+                $decklist->setEffectiveDate($effectiveDate);
+            }
+        }
+        // a user's decklist has its deck's format; historians correct an archive deck's
+        if ($mode === FormMode::Edit && $decklist->isArchived()) {
             $format = $formats->findOneByCode((string) $form->get('target_format'));
             if ($format !== null && $format->getCode() !== $decklist->getTargetFormat()) {
                 $decklist->setTargetFormat($format->getCode());
@@ -256,53 +404,31 @@ class SocialController extends AbstractController
     }
 
     /**
-     * Deletes a decklist if it has no comment, no vote, no favorite.
-     *
-     *
-     * @param string $decklist_id
-     * @param Request $request
-     * @return RedirectResponse
-     * @throws ORMException
-     * @throws OptimisticLockException
+     * Deleting a decklist is for moderators (Ketura, 2026-11-07): once published it
+     * stays, and its author withdraws it within the grace period instead.
      */
     #[Route(path: '/decklist/delete/{decklist_id}', name: 'decklist_delete', methods: ['POST'], requirements: ['decklist_id' => '\d+'])]
     public function deleteAction($decklist_id, Request $request)
     {
-        /* @var $em EntityManager */
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
         $em = $this->managerRegistry->getManager();
 
-        $user = $this->getUser();
-        if (!$user) {
-            throw new UnauthorizedHttpException("You must be logged in for this operation.");
-        }
-
         /* @var PublishedDeckInterface $decklist */
-        $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
-        if (!$decklist || $decklist->getUser()->getId() != $user->getId()) {
-            throw new UnauthorizedHttpException("You don't have access to this decklist.");
-        }
-
-        if ($decklist->getnbVotes() || $decklist->getNbfavorites() || $decklist->getNbcomments()) {
-            throw new UnauthorizedHttpException("Cannot delete this decklist.");
-        }
+        $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id)
+            ?? throw $this->createNotFoundException("Published deck not found");
 
         $precedent = $decklist->getPrecedent();
-
-        $children_decks = $decklist->getChildren();
-        foreach ($children_decks as $children_deck) {
+        foreach ($decklist->getChildren() as $children_deck) {
             $children_deck->setParent($precedent);
         }
-
-        $successor_decklists = $decklist->getSuccessors();
-        /* @var PublishedDeckInterface $successor_decklist */
-        foreach ($successor_decklists as $successor_decklist) {
+        foreach ($decklist->getSuccessors() as $successor_decklist) {
             $successor_decklist->setPrecedent($precedent);
         }
 
         $em->remove($decklist);
         $em->flush();
 
-        return $this->redirectToRoute('decklists_list', ['mine' => 1]);
+        return $this->redirectToRoute('decklists_list');
     }
 
     /**
@@ -388,9 +514,24 @@ class SocialController extends AbstractController
             throw $this->createNotFoundException($translator->trans('decklist.view.errors.notfound'));
         }
 
+        // a withdrawn decklist (Ketura, 2026-11-07): its author sees it, everyone else
+        // learns it was withdrawn; never cached, since who's asking decides
+        if ($decklist->isWithdrawn()) {
+            $response->setPrivate();
+            $response->setMaxAge(0);
+            $user = $this->getUser();
+            if (!$user || ($user->getId() !== $decklist->getUser()->getId() && !$this->isGranted('ROLE_SUPER_ADMIN'))) {
+                $response->setStatusCode(Response::HTTP_GONE);
+                return $this->render('Decklist/withdrawn.html.twig', [
+                    'pagetitle' => $translator->trans('decklist.state.gone_title'),
+                ], $response);
+            }
+        }
+
         $duplicate = $decklistRepo->findDuplicate($decklist);
         if (
-            $duplicate->getDateCreation() >= $decklist->getDateCreation()
+            !$duplicate
+            || $duplicate->getDateCreation() >= $decklist->getDateCreation()
             || $duplicate->getId() === $decklist->getId()
         ) {
             $duplicate = null;
@@ -404,6 +545,7 @@ class SocialController extends AbstractController
         );
 
         $versions = $decklistRepo->findVersions($decklist);
+        $precedent = $decklist->getPrecedent();
 
         return $this->render(
             'Decklist/decklist.html.twig',
@@ -413,6 +555,10 @@ class SocialController extends AbstractController
                 'duplicate' => $duplicate,
                 'commenters' => $commenters,
                 'versions' => $versions,
+                'newer' => $decklistRepo->findNewerVersion($decklist),
+                // what it came from and led to, leaving out withdrawn decklists
+                'precedent' => $precedent && !$precedent->isWithdrawn() ? $precedent : null,
+                'successors' => array_filter($decklist->getSuccessors()->toArray(), fn (PublishedDeck $d) => !$d->isWithdrawn()),
                 'format' => $formats->findOneByCode($decklist->getTargetFormat()),
                 'reader' => $readerNotes->build($decklist),
             ),
@@ -443,7 +589,8 @@ class SocialController extends AbstractController
 
         /* @var PublishedDeckInterface $decklist */
         $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
-        if (!$decklist) {
+        // a withdrawn decklist takes no comments or likes (Ketura, 2026-11-07)
+        if (!$decklist || $decklist->isWithdrawn()) {
             throw new NotFoundHttpException('Wrong id');
         }
 
@@ -512,7 +659,7 @@ class SocialController extends AbstractController
             ->find($decklist_id);
 
         $comment_text = trim($request->get('comment'));
-        if ($decklist && !empty($comment_text)) {
+        if ($decklist && !$decklist->isWithdrawn() && !empty($comment_text)) {
             $comment_text = preg_replace(
                 '%(?<!\()\b(?:(?:https?|ftp)://)(?:((?:(?:[a-z\d\x{00a1}-\x{ffff}]+-?)*[a-z\d\x{00a1}-\x{ffff}]+)'
                 . '(?:\.(?:[a-z\d\x{00a1}-\x{ffff}]+-?)*[a-z\d\x{00a1}-\x{ffff}]+)*(?:\.[a-z\x{00a1}-\x{ffff}]{2,6}))'
@@ -667,6 +814,9 @@ class SocialController extends AbstractController
         $decklist_id = filter_var($request->get('id'), FILTER_SANITIZE_NUMBER_INT);
 
         $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
+        if (!$decklist || $decklist->isWithdrawn()) {
+            throw new NotFoundHttpException('Wrong id');
+        }
 
         if ($decklist->getUser()->getId() != $user->getId()) {
             $query = $em->getRepository(PublishedDeck::class)
@@ -721,7 +871,7 @@ class SocialController extends AbstractController
         $em = $this->managerRegistry->getManager();
         /** @var PublishedDeck|null $decklist */
         $decklist = $em->getRepository(PublishedDeck::class)->find((int) $request->get('id'));
-        if (!$decklist) {
+        if (!$decklist || $decklist->isWithdrawn()) {
             throw new NotFoundHttpException('Wrong id');
         }
         $author = $decklist->getUser();
@@ -828,7 +978,7 @@ class SocialController extends AbstractController
 
         /* @var PublishedDeckInterface $decklist */
         $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
-        if (!$decklist) {
+        if (!$decklist || ($decklist->isWithdrawn() && $decklist->getUser()->getId() !== $this->getUser()?->getId())) {
             throw new NotFoundHttpException("Unable to find decklist.");
         }
 

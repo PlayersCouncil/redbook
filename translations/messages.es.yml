@@ -575,4 +575,39 @@ tournamentLegality:
   melee: Contienda
 decklist.form.title.create: Publicar Mazo
 decklist.form.title.edit: Editar Lista
-decklist.form.format_from_deck: "El formato del propio mazo. Cámbialo en el constructor antes de publicar, o aquí después."
+decklist.form.format_from_deck: "El formato del propio mazo, fijo una vez publicado. Para cambiarlo, cambia antes el mazo en el constructor."
+decklist.form.version_new: "Publicando una lista nueva."
+decklist.form.version_of: "Publicando la <b>versión %version%</b> de %name%."
+decklist.form.version_is: "<b>Versión %version%</b>, después de %name%."
+decklist.form.version_first: "<b>Versión %version%</b>: la primera de su línea."
+decklist.form.previous: Nueva Versión De
+decklist.form.previous_none: "Ninguna: una lista propia"
+decklist.form.previous_hint: "Elige una de tus listas publicadas para publicar esta como su siguiente versión, o ninguna para empezar una nueva."
+decklist.form.format_with_cards: "El formato del mazo, que viene con sus cartas. Para cambiarlo, deshaz la publicación y reemplaza las cartas."
+decklist.form.derived: Derivada De
+decklist.form.derived_clear: Quitar
+decklist.form.derived_author: Autor
+decklist.form.derived_name: "Nombre del mazo, o su id o dirección"
+decklist.form.derived_hint: "Una lista en la que se basa esta. Tus propias versiones anteriores van en Nueva Versión De."
+decklist.form.derived_none: Ninguna lista pública coincide.
+decklist.view.newer: "Hay una versión más reciente de este mazo: %link%."
+decklist.state.withdraw: Deshacer Publicación
+decklist.state.withdraw_until: "Retírala para corregirla; posible hasta %date%"
+decklist.state.withdraw_confirm: "¿Deshacer la publicación? La lista desaparece para todos menos para ti y conserva su número hasta que la publiques de nuevo."
+decklist.state.withdraw_failed: "No se pudo retirar. Recarga la página e inténtalo de nuevo."
+decklist.state.withdrawn: "Retirada. Corrige el mazo, reemplaza las cartas aquí y publícala de nuevo."
+decklist.state.republished: Publicada de nuevo.
+decklist.state.replaced: Las cartas se reemplazaron desde el mazo.
+decklist.state.republish: Publicar de Nuevo
+decklist.state.replace_cards: Reemplazar Cartas Desde el Mazo
+decklist.state.open_deck: Abrir el Mazo
+decklist.state.no_deck: "El mazo desde el que se publicó ya no existe, así que sus cartas no se pueden reemplazar."
+decklist.state.withdrawn_help: "Retirada: solo tú puedes ver esta lista. Corrige el mazo en el constructor, reemplaza aquí las cartas y publícala de nuevo en la misma dirección, con un nuevo periodo de gracia."
+decklist.state.grace_help: "Hasta %date% puedes deshacer la publicación para corregir las cartas. Después, las cartas, el formato, la mitad y la fecha quedan fijos, y cambiarlos significa publicar una nueva versión."
+decklist.state.fixed_help: "Las cartas, el formato, la mitad y la fecha son fijos. Para cambiarlos, publica una nueva versión desde el mazo."
+decklist.state.withdrawn_note: "Retirada: solo tú puedes ver esta lista."
+decklist.state.gone_title: Lista Retirada
+decklist.state.gone_text: "Su autor ha retirado esta lista, quizá para corregirla. Puede que vuelva pronto a esta dirección."
+decklist.state.gone_browse: Ver las listas
+decklist.state.errors.locked: "El periodo de gracia ha terminado, así que esta lista no se puede retirar."
+decklist.state.errors.no_deck: El mazo desde el que se publicó ya no existe.

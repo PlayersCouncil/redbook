@@ -356,6 +356,8 @@ class BuilderController extends AbstractController
         }
         $em = $this->managerRegistry->getManager();
         $decklist = $publishedDeckFactory->createDecklistFromDeck($deck, $deck->getName(), $deck->getDescriptionMd());
+        // a submission starts a line of its own (Ketura, 2026-11-07)
+        $publishedDeckFactory->continueLine($decklist, null);
         $decklist->markUnverified();
         $decklist->setReviewFlags([['code' => 'submitted', 'detail' => $user instanceof User ? $user->getDisplayName() : '']]);
         $em->persist($decklist);
@@ -604,6 +606,9 @@ class BuilderController extends AbstractController
         $user = $this->requireUser();
         $decklist = $this->managerRegistry->getRepository(PublishedDeck::class)->find($decklist_id)
             ?? throw new NotFoundHttpException('No such decklist');
+        if ($decklist->isWithdrawn() && $decklist->getUser()->getId() !== $user->getId()) {
+            throw new NotFoundHttpException('No such decklist');
+        }
         if (count($user->getDecks()) >= $user->getMaxNbDecks()) {
             $this->addFlash('error', $translator->trans('decks.save.outOfSlots'));
             return $this->redirectToRoute('decks_list');

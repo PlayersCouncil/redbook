@@ -1801,3 +1801,20 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 
 /* a form's buttons: the action, then Cancel (Ketura, 2026-11-06) */
 .rb-form-actions { display: flex; gap: 10px; margin: 20px 0; }
+
+/* the decklist form's version line, state panel and derived-from picker (Ketura, 2026-11-07) */
+.rb-version-line { font-size: 1.1em; margin-bottom: 8px; }
+.rb-inline-form { display: inline-block; margin: 0; }
+.rb-state p { margin-bottom: 8px; }
+.rb-state p:last-child { margin-bottom: 0; }
+.rb-state-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.alert-default { background: #f5f5f5; border-color: #ddd; color: #555; }
+.rb-derived-chosen { display: flex; align-items: center; gap: 8px; }
+.rb-derived-chosen[hidden], .rb-derived-search[hidden], .rb-derived-results[hidden] { display: none; }
+.rb-derived-card { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 8px 12px; background: #fafafa; }
+.rb-derived-name { font-weight: bold; margin-right: 8px; }
+.rb-derived-meta { color: #777; font-size: .9em; }
+.rb-derived-results { margin: 6px 0 0; max-height: 260px; overflow-y: auto; }
+.rb-derived-result { text-align: left; }
+.rb-reader-version { font-size: .85em; color: #777; margin-left: 6px; }
+.rb-withdrawn-note form, .rb-withdrawn-note .btn { margin-left: 6px; }

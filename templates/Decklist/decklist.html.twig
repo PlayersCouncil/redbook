@@ -28,6 +28,23 @@
 <div class="rb-reader">
     <header class="rb-reader-head">
         {% include 'alerts.html.twig' %}
+        {# withdrawn: only its author gets this far (Ketura, 2026-11-07) #}
+        {% if decklist.withdrawn %}
+            <div class="alert alert-info rb-withdrawn-note">
+                {{ 'decklist.state.withdrawn_note' | trans }}
+                <a class="btn btn-xs btn-default" href="{{ path('decklist_edit', {decklist_id: decklist.id}) }}">{{ 'forms.edit' | trans }}</a>
+                <form class="rb-inline-form" method="post" action="{{ path('decklist_republish', {decklist_id: decklist.id}) }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('decklist_state') }}">
+                    <button type="submit" class="btn btn-xs btn-success">{{ 'decklist.state.republish' | trans }}</button>
+                </form>
+            </div>
+        {% endif %}
+        {% if newer %}
+            <div class="alert alert-info rb-newer-note">
+                {% set newerlink %}<a href="{{ path('decklist_detail', {decklist_id: newer.id, decklist_name: newer.nameCanonical|e('url')}) }}">v{{ newer.version }}</a>{% endset %}
+                {{ 'decklist.view.newer' | trans({'%link%': newerlink}) | raw }}
+            </div>
+        {% endif %}
         {% if decklist.unverified %}
             <div class="alert alert-warning rb-review-note">
                 {{ 'decklist.review.unverified_note' | trans }}
@@ -39,18 +56,23 @@
         <div class="rb-reader-title">
             <div class="rb-reader-name">
                 <h1 class="decklist-name">{{ decklist.name }}</h1>
-                <span class="dropdown rb-reader-versions">
-                    <button class="rb-btn rb-btn-small dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="dropdownVersions"
-                            title="{{ 'decklist.view.versions' | trans }}">{{ decklist.version }} <span class="caret"></span></button>
-                    <ul class="dropdown-menu" aria-labelledby="dropdownVersions">
-                        <li class="dropdown-header">{{ 'decklist.view.versions' | trans }}</li>
-                        {% for other_decklist in versions %}
-                            <li class="{% if other_decklist.id == decklist.id %}disabled{% endif %}">
-                                <a href="{{ path('decklist_detail', { 'decklist_id': other_decklist.id, 'decklist_name': other_decklist.nameCanonical|e('url') }) }}">{{ other_decklist.version }}</a>
-                            </li>
-                        {% endfor %}
-                    </ul>
-                </span>
+                {# its line of versions (Ketura, 2026-11-07); a menu once there's more than one #}
+                {% if versions | length > 1 %}
+                    <span class="dropdown rb-reader-versions">
+                        <button class="rb-btn rb-btn-small dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="dropdownVersions"
+                                title="{{ 'decklist.view.versions' | trans }}">v{{ decklist.version }} <span class="caret"></span></button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownVersions">
+                            <li class="dropdown-header">{{ 'decklist.view.versions' | trans }}</li>
+                            {% for other_decklist in versions %}
+                                <li class="{% if other_decklist.id == decklist.id %}disabled{% endif %}">
+                                    <a href="{{ path('decklist_detail', { 'decklist_id': other_decklist.id, 'decklist_name': other_decklist.nameCanonical|e('url') }) }}">v{{ other_decklist.version }} &middot; {{ other_decklist.name }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </span>
+                {% else %}
+                    <span class="rb-reader-version" title="{{ 'decklist.view.versions' | trans }}">v{{ decklist.version }}</span>
+                {% endif %}
                 {# the deck's tags, from the deck it was published from (Ketura, 2026-11-04) #}
                 {% set tags = decklist.parent and decklist.parent.tags ? decklist.parent.tags | split(' ') | filter(t => t) : [] %}
                 {% if tags %}
@@ -108,7 +130,7 @@
                 <span class="small text-muted rb-review-note">{{ 'decklist.review.verified_by' | trans({'%name%': decklist.reviewedBy.displayName, '%date%': decklist.reviewedAt | date('Y-m-d')}) }}</span>
             {% endif %}
             {% if duplicate %}
-                {% set duplink %}<a href="{{ path('decklist_detail', { 'decklist_id': duplicate.id, 'decklist_name': duplicate.nameCanonical|e('url') }) }}">{{ duplicate.name }} {{ duplicate.version }}</a>{% endset %}
+                {% set duplink %}<a href="{{ path('decklist_detail', { 'decklist_id': duplicate.id, 'decklist_name': duplicate.nameCanonical|e('url') }) }}">{{ duplicate.name }} v{{ duplicate.version }}</a>{% endset %}
                 <small class="text-muted">{{ 'decklist.view.duplicate' | trans({'%duplicate%': duplink}) | raw }}</small>
             {% endif %}
         </div>

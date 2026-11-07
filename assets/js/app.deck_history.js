@@ -44,7 +44,7 @@
 
     function published_row(p)
     {
-        return '<tr class="rb-history-published"><td>' + moment(p.date_creation).calendar() + '</td><td>' + _.escape(p.version || '') + '</td><td>'
+        return '<tr class="rb-history-published"><td>' + moment(p.date_creation).calendar() + '</td><td>' + (p.version ? 'v' + p.version : '') + '</td><td>'
             + '<span class="fas fa-share" aria-hidden="true"></span> ' + t('deckbuilder.history.published') + ' <a href="' + p.url + '">' + _.escape(p.name) + '</a>'
             + (p.review === 'unverified' ? ' <span class="label label-warning">' + t('decklist.review.unverified') + '</span>' : '')
             + '<span class="rb-history-social">'

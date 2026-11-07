@@ -1194,4 +1194,39 @@ decklist.reader.download: Download Text File
 decklist.reader.archive_comments: "{1} 1 Imported Archive Comment|]1,Inf] %count% Imported Archive Comments"
 decklist.form.title.create: Publish Deck
 decklist.form.title.edit: Edit Decklist
-decklist.form.format_from_deck: "The deck's own format. Change it in the deckbuilder before publishing, or here afterwards."
+decklist.form.format_from_deck: "The deck's own format, fixed once published. To change it, change the deck in the deckbuilder first."
+decklist.form.version_new: "Publishing a new decklist."
+decklist.form.version_of: "Publishing <b>version %version%</b> of %name%."
+decklist.form.version_is: "<b>Version %version%</b>, following %name%."
+decklist.form.version_first: "<b>Version %version%</b>: the first of its line."
+decklist.form.previous: New Version Of
+decklist.form.previous_none: "None: a decklist of its own"
+decklist.form.previous_hint: "Pick one of your published decklists to post this as its next version, or none to start a new one."
+decklist.form.format_with_cards: "The deck's format, which comes with its cards. To change it, undo publishing and replace the cards."
+decklist.form.derived: Derived From
+decklist.form.derived_clear: Clear
+decklist.form.derived_author: Author
+decklist.form.derived_name: "Deck name, or its id or address"
+decklist.form.derived_hint: "A decklist this one builds on. Your own earlier versions go in New Version Of instead."
+decklist.form.derived_none: No public decklists match.
+decklist.view.newer: "There's a newer version of this deck: %link%."
+decklist.state.withdraw: Undo Publish
+decklist.state.withdraw_until: "Take it down to fix it; possible until %date%"
+decklist.state.withdraw_confirm: "Undo publishing? The decklist disappears for everyone but you and keeps its number until you publish it again."
+decklist.state.withdraw_failed: "It couldn't be withdrawn. Reload the page and try again."
+decklist.state.withdrawn: "Withdrawn. Fix the deck, replace the cards here, then publish it again."
+decklist.state.republished: Published again.
+decklist.state.replaced: The cards were replaced from the deck.
+decklist.state.republish: Publish Again
+decklist.state.replace_cards: Replace Cards From Deck
+decklist.state.open_deck: Open the Deck
+decklist.state.no_deck: "The deck it was published from is gone, so its cards can't be replaced."
+decklist.state.withdrawn_help: "Withdrawn: only you can see this decklist. Fix the deck in the deckbuilder, replace the cards with it here, then publish it again at the same address, with a fresh grace period."
+decklist.state.grace_help: "Until %date% you can undo publishing to fix the cards. After that the cards, format, half and date are fixed, and changing them means publishing a new version."
+decklist.state.fixed_help: "The cards, format, half and date are fixed. To change them, publish a new version from the deck."
+decklist.state.withdrawn_note: "Withdrawn: only you can see this decklist."
+decklist.state.gone_title: Decklist Withdrawn
+decklist.state.gone_text: "Its author has withdrawn this decklist, perhaps to fix it. It may be back at this address soon."
+decklist.state.gone_browse: Browse the decklists
+decklist.state.errors.locked: "The grace period is over, so this decklist can't be withdrawn."
+decklist.state.errors.no_deck: The deck it was published from is gone.

@@ -1,9 +1,14 @@
-{# The reader's buttons (Ketura, 2026-11-04): the author's Edit and Delete, then Copy This Deck,
-   Copy List and Download Text File. On a phone the last three fold into an Actions menu. #}
+{# The reader's buttons (Ketura, 2026-11-04): the author's Edit and, within the grace period,
+   Undo Publish (Ketura, 2026-11-07); a moderator's Delete; then Copy This Deck, Copy List and
+   Download Text File. On a phone the last three fold into an Actions menu. #}
 <a href="{{ path('decklist_edit', {decklist_id:decklist.id}) }}" title="{{ 'decklist.view.toolbar.edit' | trans }}"
    class="rb-btn rb-btn-small decklist-edit" style="display:none">
     <span class="fas fa-pencil-alt text-primary" aria-hidden="true"></span> {{ 'forms.edit' | trans }}
 </a>
+<button type="button" class="rb-btn rb-btn-small decklist-withdraw" style="display:none"
+        data-url="{{ path('decklist_withdraw', {decklist_id: decklist.id}) }}">
+    <span class="fas fa-undo" aria-hidden="true"></span> {{ 'decklist.state.withdraw' | trans }}
+</button>
 <a href="#" title="Delete decklist" class="rb-btn rb-btn-small decklist-delete" style="display:none">
     <span class="fas fa-trash-alt text-danger" aria-hidden="true"></span> {{ 'forms.delete' | trans }}
 </a>

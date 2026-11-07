@@ -16,8 +16,16 @@ use stdClass;
 #[ORM\Table(name: 'published_deck')]
 #[ORM\Index(name: 'published_deck_format_idx', columns: ['target_format', 'completeness', 'half'])]
 #[ORM\Index(name: 'published_deck_review_idx', columns: ['review_status', 'reviewed_at'])]
+#[ORM\UniqueConstraint(name: 'published_deck_line_version', columns: ['line_id', 'version'])]
 class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDeckInterface
 {
+    /**
+     * How long after publishing the author can still withdraw a decklist to fix it
+     * (Ketura, 2026-11-07). After that its cards, half, format and date are fixed, and
+     * changing them means publishing a new version.
+     */
+    public const GRACE_HOURS = 72;
+
     /** A fire counts as this many more likes in the popularity sorts (Ketura, 2026-11-04) */
     public const FIRE_WEIGHT = 2;
 
@@ -172,11 +180,24 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     #[ORM\Column(name: 'nb_comments', type: 'integer')]
     protected $nbComments;
 
-    /**
-     * @var string
-     */
-    #[ORM\Column(name: 'version', type: 'string', length: 8)]
+    /** Its number within its line of versions: 1, 2, 3 (Ketura, 2026-11-07) */
+    #[ORM\Column(name: 'version', type: 'integer')]
     protected $version;
+
+    #[ORM\ManyToOne(targetEntity: DecklistLine::class, inversedBy: 'decklists', cascade: ['persist'])]
+    #[ORM\JoinColumn(name: 'line_id', referencedColumnName: 'id', nullable: false)]
+    protected ?DecklistLine $line = null;
+
+    /**
+     * Withdrawn by its author while the grace period lasts (Ketura, 2026-11-07): hidden
+     * from everyone else, its number kept, until it is published again.
+     */
+    #[ORM\Column(name: 'withdrawn', type: 'boolean', options: ['default' => false])]
+    protected bool $withdrawn = false;
+
+    /** When it last went public; the grace period counts from here, and starts again on re-publishing */
+    #[ORM\Column(name: 'date_published', type: 'datetime', nullable: true)]
+    protected ?\DateTimeInterface $datePublished = null;
 
     /**
      * @var Collection
@@ -922,6 +943,70 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     /**
      * @inheritdoc
      */
+    public function getLine(): ?DecklistLine
+    {
+        return $this->line;
+    }
+
+    public function setLine(DecklistLine $line): void
+    {
+        $this->line = $line;
+    }
+
+    public function isWithdrawn(): bool
+    {
+        return $this->withdrawn;
+    }
+
+    public function setWithdrawn(bool $withdrawn): void
+    {
+        $this->withdrawn = $withdrawn;
+    }
+
+    public function getDatePublished(): ?\DateTimeInterface
+    {
+        return $this->datePublished;
+    }
+
+    public function setDatePublished(?\DateTimeInterface $datePublished): void
+    {
+        $this->datePublished = $datePublished;
+    }
+
+    /**
+     * An archive deck, brought in from the archives or submitted for the historians: no
+     * grace period and nothing locks, since historians correct them
+     */
+    public function isArchived(): bool
+    {
+        return $this->source !== null || $this->reviewStatus !== null;
+    }
+
+    /** Until when the author can withdraw it; null for archive decks */
+    public function getGraceEnds(): ?\DateTimeInterface
+    {
+        if ($this->isArchived() || $this->datePublished === null) {
+            return null;
+        }
+        return \DateTimeImmutable::createFromInterface($this->datePublished)->modify('+' . self::GRACE_HOURS . ' hours');
+    }
+
+    /** Public and still within the grace period, so it can be withdrawn */
+    public function canWithdraw(): bool
+    {
+        $ends = $this->getGraceEnds();
+        return !$this->withdrawn && $ends !== null && $ends > new \DateTimeImmutable();
+    }
+
+    /**
+     * Whether the cards, half, format and date can change: only while withdrawn, or on an
+     * archive deck, which historians correct
+     */
+    public function isContentEditable(): bool
+    {
+        return $this->withdrawn || $this->isArchived();
+    }
+
     public function setVersion($version)
     {
         $this->version = $version;
@@ -951,6 +1036,7 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
             'slots' => $slots->getContent() ?: new stdClass(),
             'gemp' => $slots->toGempString(),
             'version' => $this->getVersion(),
+            'line' => $this->line?->getId(),
             'half' => $this->half,
             'plays' => array_map(fn (PublishedDeckPlay $play) => $play->serialize(), $this->plays->toArray()),
             'legacy_author' => $this->source?->getLegacyAuthor(),

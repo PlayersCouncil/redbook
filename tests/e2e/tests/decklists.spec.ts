@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { test, expect, runId, snap, waitForCardData } from '../helpers/test';
 import { storageFor } from '../helpers/users';
+import { appConsole } from '../helpers/console';
 
 // Publishing a deck as a decklist, and what other users can do with it:
 // like, favourite, comment, find it in search; plus its public API entry.
@@ -124,15 +125,22 @@ test('the author edits the decklist from its page; nobody else gets Edit', async
   await expect(edit).toBeVisible();
   await Promise.all([page.waitForURL(new RegExp(`/decklist/edit/${decklistId}$`)), edit.click()]);
   await expect(page.locator('#name')).toHaveValue(decklistName);
-  // the same form, editing: the format can be corrected now, and Cancel goes back to the decklist
+  // the same form, editing, and Cancel goes back to the decklist; within the grace period
+  // (Ketura, 2026-11-07) the cards, format, half and date change only by undoing publishing
   await expect(page.locator('h1')).toHaveText('Edit Decklist');
-  await expect(page.locator('#target_format')).toBeEnabled();
+  await expect(page.locator('#decklist-state')).toHaveAttribute('data-state', 'grace');
+  await expect(page.locator('#target_format')).toBeDisabled();
+  await expect(page.locator('#half')).toBeDisabled();
+  await expect(page.locator('#version-line')).toContainText('Version 1');
   await expect(page.locator('.rb-form-actions a')).toHaveAttribute('href', new URL(decklistUrl).pathname);
   await page.fill('#descriptionMd', 'Published by the **smoke test**, then edited. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');
   await page.click(`form[action$="/decklist/edit/${decklistId}"] button[type=submit]:has-text("Save")`);
   await expect(page).toHaveURL(new RegExp(`/decklist/view/${decklistId}/`));
   await expect(page.locator('body')).toContainText('Published by the smoke test, then edited.');
   await snap(page, 'decklist edited');
+  // what the description said before is kept
+  expect(appConsole(['dbal:run-sql', `SELECT description_md FROM published_deck_revision WHERE published_deck_id = ${decklistId}`]))
+    .toContain('Published by the **smoke test**. Lead with');
 
   const voter = await pageAs('voter');
   await voter.goto(decklistUrl);

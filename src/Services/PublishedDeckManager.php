@@ -141,6 +141,8 @@ class PublishedDeckManager
             return $this->getEmptyList();
         }
         $qb = $this->doctrine->createQueryBuilder()->select('d')->from(PublishedDeck::class, 'd');
+        // withdrawn decklists are their author's alone (Ketura, 2026-11-07)
+        $qb->andWhere('d.withdrawn = false');
 
         if (!empty($filters['name'])) {
             $qb->andWhere('d.name LIKE :name')->setParameter('name', '%' . addcslashes($filters['name'], '%_') . '%');
@@ -244,7 +246,7 @@ class PublishedDeckManager
     public function countFormats(): array
     {
         $rows = $this->doctrine->createQuery('SELECT d.targetFormat AS code, COUNT(d.id) AS n FROM ' . PublishedDeck::class
-            . " d WHERE d.targetFormat IS NOT NULL AND d.targetFormat <> '' GROUP BY d.targetFormat ORDER BY n DESC")
+            . " d WHERE d.withdrawn = false AND d.targetFormat IS NOT NULL AND d.targetFormat <> '' GROUP BY d.targetFormat ORDER BY n DESC")
             ->getArrayResult();
         return array_column($rows, 'n', 'code');
     }
@@ -252,6 +254,7 @@ class PublishedDeckManager
     /** The home page's lists: whole decks Gemp accepts (decision 0023) */
     private function applyHomeFilters(QueryBuilder $qb): void
     {
+        $qb->andWhere('d.withdrawn = false');
         $qb->andWhere('d.half IS NULL');
         $qb->andWhere('d.completeness = :complete')->setParameter('complete', CommonDeckInterface::COMPLETENESS_COMPLETE);
     }

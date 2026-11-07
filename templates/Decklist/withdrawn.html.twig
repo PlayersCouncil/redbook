@@ -1,0 +1,9 @@
+{% extends 'base.html.twig' %}
+{# A withdrawn decklist, to anyone but its author (Ketura, 2026-11-07) #}
+{% block body %}
+    <div class="main white container">
+        <h1>{{ pagetitle }}</h1>
+        <p>{{ 'decklist.state.gone_text' | trans }}</p>
+        <p><a href="{{ path('decklists_list') }}">{{ 'decklist.state.gone_browse' | trans }}</a></p>
+    </div>
+{% endblock %}

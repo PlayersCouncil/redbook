@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Entity\Deck;
+use App\Entity\DecklistLine;
 use App\Entity\DeckInterface;
 use App\Entity\PublishedDeckPlay;
 use App\Entity\PublishedDeck;
@@ -52,21 +53,7 @@ class PublishedDeckFactory
         $decklist->setTargetFormat($deck->getTargetFormat());
         $decklist->setEffectiveDate($deck->getEffectiveDate());
 
-        foreach ($decklist->getSlots()->getSlots() as $slot) {
-            $decklist->getSlots()->removeElement($slot);
-            $this->em->remove($slot);
-        }
-        foreach ($deck->getSlots() as $slot) {
-            $decklistslot = new PublishedDeckSlot();
-            $decklistslot->setQuantity($slot->getQuantity());
-            $decklistslot->setCard($slot->getCard());
-            $decklistslot->setRole($slot->getRole());
-            $decklistslot->setDecklist($decklist);
-            $decklist->getSlots()->add($decklistslot);
-        }
-        $decklist->updateCultures();
-        $decklist->updateSizes();
-        $this->copyNotes($deck, $decklist);
+        $this->replaceSlots($decklist, $deck);
         // the deck was validated as it was saved
         $decklist->setValidation($deck->getValidation());
 
@@ -91,6 +78,73 @@ class PublishedDeckFactory
         }
     }
 
+    /** The decklist's cards, cultures, sizes and notes, from the deck as it stands */
+    private function replaceSlots(PublishedDeck $decklist, DeckInterface $deck): void
+    {
+        foreach ($decklist->getSlots()->getSlots() as $slot) {
+            $decklist->getSlots()->removeElement($slot);
+            $this->em->remove($slot);
+        }
+        foreach ($deck->getSlots() as $slot) {
+            $decklistslot = new PublishedDeckSlot();
+            $decklistslot->setQuantity($slot->getQuantity());
+            $decklistslot->setCard($slot->getCard());
+            $decklistslot->setRole($slot->getRole());
+            $decklistslot->setDecklist($decklist);
+            $decklist->getSlots()->add($decklistslot);
+        }
+        $decklist->updateCultures();
+        $decklist->updateSizes();
+        if ($deck instanceof Deck) {
+            $this->copyNotes($deck, $decklist);
+        }
+    }
+
+    /**
+     * A withdrawn decklist takes its deck's cards again (Ketura, 2026-11-07), keeping its
+     * id and version: the fix for a list published wrong. The format, faction, last pack
+     * and date come with them, and it's validated afresh.
+     */
+    public function replaceCardsFromDeck(PublishedDeck $decklist, Deck $deck): void
+    {
+        $decklist->setSignature(md5(json_encode($deck->getSlots()->getContent())));
+        $decklist->setFaction($deck->getFaction());
+        $decklist->setLastPack($deck->getLastPack());
+        $decklist->setTargetFormat($deck->getTargetFormat());
+        $decklist->setEffectiveDate($deck->getEffectiveDate());
+        $decklist->setDateUpdate(new DateTime());
+        $this->replaceSlots($decklist, $deck);
+        $this->validator->validateDeck($decklist);
+    }
+
+    /**
+     * Which line the decklist goes in (Ketura, 2026-11-07): the next version after
+     * $previous, or the first of a new line. Sets the version and the address name with it.
+     */
+    public function continueLine(PublishedDeck $decklist, ?PublishedDeck $previous): void
+    {
+        $line = $previous?->getLine() ?? new DecklistLine();
+        $decklist->setLine($line);
+        $decklist->setVersion($this->em->getRepository(PublishedDeck::class)->nextVersion($line));
+        $decklist->setNameCanonical($this->texts->slugify($decklist->getName()) . '-' . $decklist->getVersion());
+    }
+
+    /**
+     * The line a deck's next publication continues by default: the latest decklist
+     * published from it, if it's still the author's
+     */
+    public function defaultPrevious(DeckInterface $deck): ?PublishedDeck
+    {
+        $latest = null;
+        foreach ($deck->getChildren() as $child) {
+            if ($child->getUser()?->getId() === $deck->getUser()?->getId()
+                && ($latest === null || $child->getDateCreation() > $latest->getDateCreation())) {
+                $latest = $child;
+            }
+        }
+        return $latest;
+    }
+
     /**
      * @param string|null $half free_peoples or shadow for a deck half
      */
@@ -110,12 +164,11 @@ class PublishedDeckFactory
 
         $decklist = new PublishedDeck();
         $decklist->setName($name);
-        $decklist->setVersion($deck->getVersion());
-        $decklist->setNameCanonical($this->texts->slugify($name) . '-' . $decklist->getVersion());
         $decklist->setDescriptionMd($descriptionMd);
         $decklist->setDescriptionHtml($this->texts->markdown($descriptionMd));
         $decklist->setDateCreation(new DateTime());
         $decklist->setDateUpdate(new DateTime());
+        $decklist->setDatePublished(new DateTime());
         $decklist->setSignature(md5(json_encode($deck->getSlots()->getContent())));
         $decklist->setFaction($deck->getFaction());
         $decklist->setLastPack($deck->getLastPack());
@@ -126,24 +179,13 @@ class PublishedDeckFactory
         $decklist->setTargetFormat($deck->getTargetFormat());
         $decklist->setEffectiveDate($effectiveDate ?? $deck->getEffectiveDate());
         $decklist->setHalf($half);
-        foreach ($deck->getSlots() as $slot) {
-            $decklistslot = new PublishedDeckSlot();
-            $decklistslot->setQuantity($slot->getQuantity());
-            $decklistslot->setCard($slot->getCard());
-            $decklistslot->setRole($slot->getRole());
-            $decklistslot->setDecklist($decklist);
-            $decklist->getSlots()->add($decklistslot);
-        }
-        $decklist->updateCultures();
-        $decklist->updateSizes();
-        if ($deck instanceof Deck) {
-            $this->copyNotes($deck, $decklist);
-        }
-        if (count($deck->getChildren())) {
-            $decklist->setPrecedent($deck->getChildren()[0]);
-        } elseif ($deck->getParent()) {
+        $this->replaceSlots($decklist, $deck);
+        // derived from: what the deck was copied from; its own earlier publications are
+        // versions now, in its line (Ketura, 2026-11-07)
+        if ($deck->getParent()) {
             $decklist->setPrecedent($deck->getParent());
         }
+        $this->continueLine($decklist, $this->defaultPrevious($deck));
         $decklist->setParent($deck);
         $deck->setMinorVersion(1);
 

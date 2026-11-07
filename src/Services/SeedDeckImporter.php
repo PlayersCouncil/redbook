@@ -213,8 +213,12 @@ class SeedDeckImporter
         $effective = self::effectiveDate($deck) ?? $posted;
 
         $decklist->setName($name);
-        $decklist->setNameCanonical($this->texts->slugify($name) . '-1.0');
-        $decklist->setVersion('1.0');
+        // each archive deck is a line of one (Ketura, 2026-11-07)
+        if ($decklist->getLine() === null) {
+            $decklist->setLine(new \App\Entity\DecklistLine());
+            $decklist->setVersion(1);
+        }
+        $decklist->setNameCanonical($this->texts->slugify($name) . '-' . $decklist->getVersion());
         $decklist->setDescriptionMd($description);
         $decklist->setDescriptionHtml($this->texts->markdown($description));
         if ($isNew) {

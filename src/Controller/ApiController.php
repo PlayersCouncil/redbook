@@ -427,7 +427,7 @@ class ApiController extends AbstractController
 
         /* @var PublishedDeckInterface $decklist */
         $decklist = $this->managerRegistry->getRepository(PublishedDeck::class)->find($decklist_id);
-        if (!$decklist instanceof PublishedDeck) {
+        if (!$decklist instanceof PublishedDeck || $decklist->isWithdrawn()) {
             throw $this->createNotFoundException();
         }
 
@@ -486,6 +486,7 @@ class ApiController extends AbstractController
         $criteria = Criteria::create();
         $criteria->where($expr->gte('dateCreation', $start));
         $criteria->andWhere($expr->lt('dateCreation', $end));
+        $criteria->andWhere($expr->eq('withdrawn', false));
 
         $decklists = $this->managerRegistry->getRepository(PublishedDeck::class)->matching($criteria);
         if (!$decklists) {
@@ -535,7 +536,7 @@ class ApiController extends AbstractController
         $response->setMaxAge($cacheExpiration);
         $response->headers->add(array('Access-Control-Allow-Origin' => '*'));
 
-        $decklists = $this->managerRegistry->getRepository(PublishedDeck::class)->findAll();
+        $decklists = $this->managerRegistry->getRepository(PublishedDeck::class)->findBy(['withdrawn' => false]);
         $lastModified = null;
         /* @var PublishedDeckInterface $decklist */
         foreach ($decklists as $decklist) {

@@ -175,17 +175,37 @@
         }
     };
 
+    /**
+     * The author's Edit, and Undo Publish while the grace period lasts (Ketura, 2026-11-07);
+     * Delete is a moderator's
+     */
     ui.add_author_actions = function add_author_actions()
     {
-        if(app.user.data && app.user.data.is_author) {
-            $('.decklist-edit').show();
-            if(app.user.data.can_delete) {
-                $('.decklist-delete').show();
-            } else {
-                $('.decklist-delete').remove();
-            }
-        } else {
+        var data = app.user.data || {};
+        $('.decklist-edit').toggle(!!data.is_author);
+        if(!data.is_author) {
             $('.decklist-edit').remove();
+        }
+        if(data.can_withdraw && data.state_token) {
+            var until = new Date(data.withdraw_until);
+            $('.decklist-withdraw').show()
+                .attr('title', Translator.trans('decklist.state.withdraw_until', {date: until.toLocaleString()}))
+                .off('click').on('click', function () {
+                    if(!confirm(Translator.trans('decklist.state.withdraw_confirm'))) {
+                        return;
+                    }
+                    $.post($(this).data('url'), {_token: data.state_token}, function (response) {
+                        location.href = response.url;
+                    }, 'json').fail(function () {
+                        alert(Translator.trans('decklist.state.withdraw_failed'));
+                    });
+                });
+        } else {
+            $('.decklist-withdraw').remove();
+        }
+        if(data.can_delete) {
+            $('.decklist-delete').show();
+        } else {
             $('.decklist-delete').remove();
         }
     };
