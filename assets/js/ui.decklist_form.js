@@ -1,6 +1,6 @@
 /* global Translator, _, app */
 
-(function ui_decklist_edit(ui, $)
+(function ui_decklist_form(ui, $)
 {
     /**
      * sets up event handlers ; dataloaded not fired yet
@@ -47,7 +47,8 @@
     {
         ui.setup_event_handlers();
         $('#descriptionMd').markdown({
-            autofocus: true,
+            // no autofocus: it scrolled the page past the name and format to the description
+            autofocus: false,
             iconlibrary: 'fa',
             hiddenButtons: ['cmdHeading', 'cmdImage', 'cmdCode'],
             footer: Translator.trans('decklist.publish.editor.hint'),

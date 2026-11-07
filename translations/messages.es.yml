@@ -573,3 +573,6 @@ tournamentLegality:
   title: Tournament Legality
   joust: Justa
   melee: Contienda
+decklist.form.title.create: Publicar Mazo
+decklist.form.title.edit: Editar Lista
+decklist.form.format_from_deck: "El formato del propio mazo. Cámbialo en el constructor antes de publicar, o aquí después."

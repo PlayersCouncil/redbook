@@ -1192,3 +1192,6 @@ decklist.reader.copied: "Copied to clipboard!"
 decklist.reader.own_deck: "Your own deck"
 decklist.reader.download: Download Text File
 decklist.reader.archive_comments: "{1} 1 Imported Archive Comment|]1,Inf] %count% Imported Archive Comments"
+decklist.form.title.create: Publish Deck
+decklist.form.title.edit: Edit Decklist
+decklist.form.format_from_deck: "The deck's own format. Change it in the deckbuilder before publishing, or here afterwards."

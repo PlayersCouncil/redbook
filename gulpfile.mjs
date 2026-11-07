@@ -104,7 +104,7 @@ export function copyPageSpecificJs() {
       "assets/js/app.deck_notes.js",
       "assets/js/app.deck_stats.js",
       "assets/js/ui.decks.js",
-      "assets/js/ui.decklist_edit.js",
+      "assets/js/ui.decklist_form.js",
       "assets/js/ui.decklist.js",
       "assets/js/ui.decklist_search.js",
       "assets/js/panels.js",

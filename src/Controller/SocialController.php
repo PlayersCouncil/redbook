@@ -5,6 +5,7 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Classes\DeckContent;
+use App\Classes\FormMode;
 use App\Entity\Card;
 use App\Entity\Comment;
 use App\Entity\CommentInterface;
@@ -55,333 +56,203 @@ class SocialController extends AbstractController
     }
 
     /**
-     * Checks to see if a deck can be published in its current saved state
-     * If it is, displays the decklist edit form for initial publication of a deck.
-     *
-     *
-     * @param TranslatorInterface $translator
-     * @param SessionInterface $session
-     * @param PublishedDeckFactory $decklistFactory
-     * @param string $deck_uuid
-     * @return RedirectResponse|Response
-     * @throws NoResultException
-     * @throws NonUniqueResultException
+     * Publishing a deck: the decklist form in Create mode (Ketura, 2026-11-06). The
+     * decklist is made from the deck as it stands and kept only when the form is sent.
      */
-    #[Route(path: '/deck/publish/{deck_uuid}', name: 'deck_publish_form', methods: ['GET'], requirements: ['deck_uuid' => '[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}'])]
-    public function publishFormAction(
+    #[Route(path: '/deck/publish/{deck_uuid}', name: 'deck_publish_form', methods: ['GET', 'POST'], requirements: ['deck_uuid' => '[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}'])]
+    public function publishAction(
+        Request $request,
         TranslatorInterface $translator,
-        SessionInterface $session,
         PublishedDeckFactory $decklistFactory,
         FormatRepository $formats,
-        $deck_uuid
-    ) {
-        /* @var EntityManager $em */
-        $em = $this->managerRegistry->getManager();
-
-        /* @var UserInterface $user */
+        Texts $texts,
+        DeckValidator $validator,
+        string $deck_uuid
+    ): Response {
         $user = $this->getUser();
         if (!$user) {
             throw $this->createAccessDeniedException($translator->trans('login_required'));
         }
 
-        /* @var DeckInterface $deck */
+        $em = $this->managerRegistry->getManager();
         $deck = $em->getRepository(Deck::class)->findOneBy(['uuid' => $deck_uuid]);
         if (!$deck || $deck->getUser()->getId() != $user->getId()) {
             throw $this->createAccessDeniedException($translator->trans('decklist.publish.errors.unauthorized'));
         }
 
-        $yesterday = (new DateTime())->modify('-24 hours');
-        if (false && $user->getDateCreation() > $yesterday) {
-            $this->addFlash('error', $translator->trans('decklist.publish.errors.antispam.newbie'));
+        $decklist = $decklistFactory->createDecklistFromDeck($deck, $deck->getName(), $deck->getDescriptionMd());
 
-            return $this->redirectToRoute('deck_view', ['deck_uuid' => $deck->getUuid()]);
+        if ($request->isMethod('POST')) {
+            $this->applyDecklistForm($decklist, $request, FormMode::Create, $texts, $formats, $validator);
+            $em->persist($decklist);
+            $em->flush();
+
+            return $this->redirectToRoute('decklist_detail', [
+                'decklist_id' => $decklist->getId(),
+                'decklist_name' => $decklist->getNameCanonical(),
+            ]);
         }
 
-        $query = $em->createQuery(
-            "SELECT COUNT(d) FROM App\Entity\PublishedDeck d WHERE d.dateCreation>:date AND d.user=:user"
+        // the same cards already published: one warning, linking the user's own copy if
+        // there is one (it was a warning per copy, a wall of them for a common deck)
+        $content = json_encode($deck->getSlots()->getContent());
+        $same = array_filter(
+            $em->getRepository(PublishedDeck::class)->findBy(['signature' => md5($content)], ['dateCreation' => 'DESC']),
+            fn (PublishedDeck $published) => json_encode($published->getSlots()->getContent()) == $content,
         );
-        $query->setParameter('date', $yesterday);
-        $query->setParameter('user', $user);
-        $decklistsSinceYesterday = $query->getSingleScalarResult();
-
-        if (false && $decklistsSinceYesterday > $user->getReputation()) {
-            $this->addFlash('error', $translator->trans('decklist.publish.errors.antispam.limit'));
-
-            return $this->redirectToRoute('deck_view', ['deck_uuid' => $deck->getUuid()]);
+        $own = array_filter($same, fn (PublishedDeck $published) => $published->getUser()->getId() === $user->getId());
+        $published = reset($own) ?: reset($same);
+        if ($published) {
+            $url = $this->generateUrl('decklist_detail', [
+                'decklist_id' => $published->getId(),
+                'decklist_name' => $published->getNameCanonical(),
+            ]);
+            $this->addFlash('warning', $translator->trans('decklist.publish.warnings.published', ['%url%' => $url]));
         }
 
-        $new_content = json_encode($deck->getSlots()->getContent());
-        $new_signature = md5($new_content);
-        $old_decklists = $em->getRepository(PublishedDeck::class)->findBy(['signature' => $new_signature]);
-
-        /* @var PublishedDeckInterface $decklist */
-        foreach ($old_decklists as $decklist) {
-            if (json_encode($decklist->getSlots()->getContent()) == $new_content) {
-                $url = $this->generateUrl(
-                    'decklist_detail',
-                    array(
-                        'decklist_id' => $decklist->getId(),
-                        'decklist_name' => $decklist->getNameCanonical(),
-                    )
-                );
-                $this->addFlash('warning', $translator->trans('decklist.publish.warnings.published', array("%url%" => $url)));
-            }
-        }
-
-        // decklist for the form ; won't be persisted
-        $decklist = $decklistFactory->createDecklistFromDeck(
-            $deck,
-            $deck->getName(),
-            $deck->getDescriptionMd()
-        );
-
-        $tournaments = $em->getRepository(Tournament::class)->findAll();
-
-        return $this->render(
-            'Decklist/decklist_edit.html.twig',
-            [
-                'url' => $this->generateUrl('decklist_create'),
-                'deck' => $deck,
-                'decklist' => $decklist,
-                'tournaments' => $tournaments,
-                'format' => $formats->findOneByCode($deck->getTargetFormat()),
-            ]
+        return $this->renderDecklistForm(
+            FormMode::Create,
+            $decklist,
+            $this->generateUrl('deck_publish_form', ['deck_uuid' => $deck->getUuid()]),
+            $this->generateUrl('deck_edit', ['deck_uuid' => $deck->getUuid()]),
+            $formats,
+            $translator,
         );
     }
 
     /**
-     * Creates a new decklist from a deck (publish action).
-     *
-     *
-     * @param Request $request
-     * @param PublishedDeckFactory $decklistFactory
-     * @param TranslatorInterface $translator
-     * @return RedirectResponse|Response
-     * @throws NonUniqueResultException
-     * @throws ORMException
-     * @throws OptimisticLockException
+     * Changing a published decklist: the decklist form in Edit mode (Ketura,
+     * 2026-11-06). The author, or a super admin.
      */
-    #[Route(path: '/decklist/create', name: 'decklist_create', methods: ['POST'])]
-    public function createAction(Request $request, PublishedDeckFactory $decklistFactory, TranslatorInterface $translator)
-    {
-        /* @var $em EntityManager */
-        $em = $this->managerRegistry->getManager();
-        /* @var UserInterface $user */
+    #[Route(path: '/decklist/edit/{decklist_id}', name: 'decklist_edit', methods: ['GET', 'POST'], requirements: ['decklist_id' => '\d+'])]
+    public function editAction(
+        Request $request,
+        TranslatorInterface $translator,
+        FormatRepository $formats,
+        Texts $texts,
+        DeckValidator $validator,
+        int $decklist_id
+    ): Response {
         $user = $this->getUser();
-
-        $yesterday = (new DateTime())->modify('-24 hours');
-        if (false && $user->getDateCreation() > $yesterday) {
-            return $this->render(
-                'Default/error.html.twig',
-                [
-                    'pagetitle' => $translator->trans('decklist.publish.errors.pagetitle.spam'),
-                    'error' => $translator->trans('decklist.publish.errors.antispam.newbie'),
-                ]
-            );
+        if (!$user) {
+            throw $this->createAccessDeniedException("Anonymous access denied");
         }
 
-        $query = $em->createQuery(
-            "SELECT COUNT(d) FROM App\Entity\PublishedDeck d WHERE d.dateCreation>:date AND d.user=:user"
-        );
-        $query->setParameter('date', $yesterday);
-        $query->setParameter('user', $user);
-        $decklistsSinceYesterday = $query->getSingleScalarResult();
-
-        if (false && $decklistsSinceYesterday > $user->getReputation()) {
-            return $this->render(
-                'Default/error.html.twig',
-                [
-                    'pagetitle' => $translator->trans('decklist.publish.errors.pagetitle.spam'),
-                    'error' => $translator->trans('decklist.publish.errors.antispam.limit'),
-                ]
-            );
+        $em = $this->managerRegistry->getManager();
+        $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
+        if (!$decklist) {
+            throw $this->createNotFoundException("Published deck not found");
+        }
+        if (!$this->isGranted('ROLE_SUPER_ADMIN') && $user->getId() !== $decklist->getUser()->getId()) {
+            throw $this->createAccessDeniedException("Access denied");
         }
 
-        $deck_id = intval(filter_var($request->request->get('deck_id'), FILTER_SANITIZE_NUMBER_INT));
-
-        /* @var DeckInterface $deck */
-        $deck = $this->managerRegistry->getRepository(Deck::class)->find($deck_id);
-        if ($user->getId() !== $deck->getUser()->getId()) {
-            throw $this->createAccessDeniedException("Access denied to this object.");
-        }
-
-        $name = trim(strip_tags((string) $request->request->get('name')));
-        $descriptionMd = trim((string) $request->request->get('descriptionMd'));
-
-        $tournament_id = (int) $request->request->get('tournament');
-        $tournament = $em->getRepository(Tournament::class)->find($tournament_id);
-
-        $precedent_id = trim((string) $request->request->get('precedent'));
-        if (!preg_match('/^\d+$/', $precedent_id)) {
-            // route decklist_detail hard-coded
-            if (preg_match('/view\/(\d+)/', $precedent_id, $matches)) {
-                $precedent_id = $matches[1];
-            } else {
-                $precedent_id = null;
-            }
-        }
-        $precedent = $precedent_id ? $em->getRepository(PublishedDeck::class)->find($precedent_id) : null;
-
-        try {
-            $decklist = $decklistFactory->createDecklistFromDeck(
-                $deck,
-                $name,
-                $descriptionMd,
-                $this->halfFrom($request),
-                $this->dateFrom($request->request->get('effective_date')),
-            );
-            $this->applyPlays($decklist, $request);
-            $decklist->setThumbnailCard($this->thumbnailFrom($request, $decklist));
-        } catch (Exception $e) {
-            return $this->render(
-                'Default/error.html.twig',
-                [
-                    'pagetitle' => "Error",
-                    'error' => $e,
-                ]
-            );
-        }
-
-        $decklist->setTournament($tournament);
-        $decklist->setPrecedent($precedent);
-        $em->persist($decklist);
-        $em->flush();
-
-        return $this->redirectToRoute('decklist_detail', array(
+        $view = $this->generateUrl('decklist_detail', [
             'decklist_id' => $decklist->getId(),
             'decklist_name' => $decklist->getNameCanonical(),
-        ));
-    }
+        ]);
 
-    /**
-     * Displays the decklist edit form.
-     *
-     *
-     * @param int $decklist_id
-     * @return Response
-     */
-    #[Route(path: '/decklist/edit/{decklist_id}', name: 'decklist_edit', methods: ['GET'], requirements: ['decklist_id' => '\d+'])]
-    public function editFormAction($decklist_id, FormatRepository $formats)
-    {
-        /* @var $em EntityManager */
-        $em = $this->managerRegistry->getManager();
+        if ($request->isMethod('POST')) {
+            $this->applyDecklistForm($decklist, $request, FormMode::Edit, $texts, $formats, $validator);
+            $decklist->setDateUpdate(new DateTime());
+            $em->flush();
 
-        /* @var UserInterface $user */
-        $user = $this->getUser();
-        if (!$user) {
-            throw $this->createAccessDeniedException("Anonymous access denied");
+            return $this->redirectToRoute('decklist_detail', [
+                'decklist_id' => $decklist->getId(),
+                'decklist_name' => $decklist->getNameCanonical(),
+            ]);
         }
 
-        $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
-        if (!$decklist) {
-            throw $this->createNotFoundException("Published deck not found");
-        }
-
-        if (
-            !$this->isGranted('ROLE_SUPER_ADMIN')
-            && $user->getId() !== $decklist->getUser()->getId()
-        ) {
-            throw $this->createAccessDeniedException("Access denied");
-        }
-
-        $tournaments = $this->managerRegistry->getManager()->getRepository(Tournament::class)->findAll();
-
-        return $this->render(
-            'Decklist/decklist_edit.html.twig',
-            [
-                'url' => $this->generateUrl('decklist_save', ['decklist_id' => $decklist->getId()]),
-                'deck' => null,
-                'decklist' => $decklist,
-                'tournaments' => $tournaments,
-                'formats' => $formats->findSelectable(),
-            ]
+        return $this->renderDecklistForm(
+            FormMode::Edit,
+            $decklist,
+            $this->generateUrl('decklist_edit', ['decklist_id' => $decklist->getId()]),
+            $view,
+            $formats,
+            $translator,
         );
     }
 
     /**
-     * Save the name and description of a decklist by its publisher.
-     *
-     *
-     * @param Request $request
-     * @param Texts $texts
-     * @param string $decklist_id
-     * @return RedirectResponse
-     * @throws ORMException
-     * @throws OptimisticLockException
+     * The decklist form, for either mode: it posts back to the address that showed it.
+     * The format comes from the deck when publishing, so it shows but can't be changed
+     * there; afterwards it can be set or corrected (archived decks arrive without one).
      */
-    #[Route(path: '/decklist/save/{decklist_id}', name: 'decklist_save', methods: ['POST'], requirements: ['decklist_id' => '\d+'])]
-    public function saveAction(Request $request, Texts $texts, FormatRepository $formats, DeckValidator $validator, $decklist_id)
-    {
-        /* @var EntityManager $em*/
-        $em = $this->managerRegistry->getManager();
-
-        $user = $this->getUser();
-        if (!$user) {
-            throw $this->createAccessDeniedException("Anonymous access denied");
+    private function renderDecklistForm(
+        FormMode $mode,
+        PublishedDeck $decklist,
+        string $action,
+        string $cancel,
+        FormatRepository $formats,
+        TranslatorInterface $translator,
+    ): Response {
+        $choices = $formats->findSelectable();
+        $current = $decklist->getTargetFormat() ? $formats->findOneByCode($decklist->getTargetFormat()) : null;
+        if ($current !== null && !in_array($current, $choices, true)) {
+            array_unshift($choices, $current);
         }
 
-        $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
-        if (!$decklist) {
-            throw $this->createNotFoundException("Published deck not found");
+        return $this->render('Decklist/decklist_form.html.twig', [
+            'mode' => $mode->value,
+            'pagetitle' => $translator->trans('decklist.form.title.' . $mode->value),
+            'action' => $action,
+            'cancel' => $cancel,
+            'decklist' => $decklist,
+            'formats' => $choices,
+            'tournaments' => $this->managerRegistry->getRepository(Tournament::class)->findAll(),
+        ]);
+    }
+
+    /** What the decklist form sends, onto the decklist; the mode decides what may change */
+    private function applyDecklistForm(
+        PublishedDeck $decklist,
+        Request $request,
+        FormMode $mode,
+        Texts $texts,
+        FormatRepository $formats,
+        DeckValidator $validator,
+    ): void {
+        if (!$this->isCsrfTokenValid('decklist_form', (string) $request->request->get('_token'))) {
+            throw new BadRequestHttpException('The form has expired; reload the page and try again.');
         }
+        $form = $request->request;
 
-        if (
-            !$this->isGranted('ROLE_SUPER_ADMIN')
-            && $user->getId() !== $decklist->getUser()->getId()
-        ) {
-            throw $this->createAccessDeniedException("Access denied");
-        }
-
-        $name = mb_substr(trim(strip_tags((string) $request->request->get('name'))), 0, 60);
-        if (empty($name)) {
-            $name = "Untitled";
-        }
-        $descriptionMd = trim((string) $request->request->get('descriptionMd'));
-        $descriptionHtml = $texts->markdown($descriptionMd);
-
-        $tournament_id = (int) $request->request->get('tournament');
-        $tournament = $em->getRepository(Tournament::class)->find($tournament_id);
-
-        $precedent_id = trim((string) $request->request->get('precedent'));
-        if (!preg_match('/^\d+$/', $precedent_id)) {
-            // route decklist_detail hard-coded
-            if (preg_match('/view\/(\d+)/', $precedent_id, $matches)) {
-                $precedent_id = $matches[1];
-            } else {
-                $precedent_id = null;
-            }
-        }
-        $precedent = ($precedent_id && $precedent_id != $decklist_id)
-            ? $em->getRepository(PublishedDeck::class)->find($precedent_id)
-            : null;
-
+        // an empty name keeps the one it had: the deck's when publishing
+        $name = mb_substr(trim(strip_tags((string) $form->get('name'))), 0, 60) ?: ($decklist->getName() ?: 'Untitled');
+        $descriptionMd = trim((string) $form->get('descriptionMd'));
         $decklist->setName($name);
         $decklist->setNameCanonical($texts->slugify($name) . '-' . $decklist->getVersion());
         $decklist->setDescriptionMd($descriptionMd);
-        $decklist->setDescriptionHtml($descriptionHtml);
+        $decklist->setDescriptionHtml($texts->markdown($descriptionMd));
+
+        $tournament = (int) $form->get('tournament');
+        $decklist->setTournament($tournament ? $this->managerRegistry->getRepository(Tournament::class)->find($tournament) : null);
+
+        // an id, or a decklist's address; never the decklist itself
+        $precedent = trim((string) $form->get('precedent'));
+        if (!preg_match('/^\d+$/', $precedent)) {
+            $precedent = preg_match('/view\/(\d+)/', $precedent, $matches) ? $matches[1] : null;
+        }
+        $precedent = ($precedent && (int) $precedent !== $decklist->getId())
+            ? $this->managerRegistry->getRepository(PublishedDeck::class)->find($precedent)
+            : null;
         $decklist->setPrecedent($precedent);
-        $decklist->setTournament($tournament);
+
         $decklist->setHalf($this->halfFrom($request));
         $decklist->setThumbnailCard($this->thumbnailFrom($request, $decklist));
-        $effectiveDate = $this->dateFrom($request->request->get('effective_date'));
+        $effectiveDate = $this->dateFrom($form->get('effective_date'));
         if ($effectiveDate) {
             $decklist->setEffectiveDate($effectiveDate);
         }
         $this->applyPlays($decklist, $request);
-        // the format can be set or corrected after publishing (archived decks arrive
-        // without one, phase3/06); a change asks Gemp again
-        $format = $formats->findOneByCode((string) $request->request->get('target_format'));
-        if ($format !== null && $format->getCode() !== $decklist->getTargetFormat()) {
-            $decklist->setTargetFormat($format->getCode());
-            $validator->validateDeck($decklist);
-        }
-        $decklist->setDateUpdate(new DateTime());
-        $em->flush();
 
-        return $this->redirectToRoute('decklist_detail', array(
-            'decklist_id' => $decklist_id,
-            'decklist_name' => $decklist->getNameCanonical(),
-        ));
+        if ($mode === FormMode::Edit) {
+            $format = $formats->findOneByCode((string) $form->get('target_format'));
+            if ($format !== null && $format->getCode() !== $decklist->getTargetFormat()) {
+                $decklist->setTargetFormat($format->getCode());
+                $validator->validateDeck($decklist);
+            }
+        }
     }
 
     /**

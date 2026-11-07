@@ -40,6 +40,10 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await page.click('#btn-visibility');
   await page.click('#menu-visibility [data-visibility=published]');
   await expect(page).toHaveURL(/\/deck\/publish\//);
+  // one form for publishing and editing (Ketura, 2026-11-06): publishing takes the deck's format
+  await expect(page.locator('h1')).toHaveText('Publish Deck');
+  await expect(page.locator('#target_format')).toBeDisabled();
+  await expect(page.locator('#target_format')).toHaveValue('fotr_block');
   await page.fill('#name', decklistName);
   // [[card]] links resolve when the text is saved (Ketura, 2026-11-03)
   await page.fill('#descriptionMd', 'Published by the **smoke test**. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');
@@ -52,7 +56,7 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await expect(page.locator('#thumb-card img')).toHaveAttribute('src', /.+/);
   await expect(page.locator('#thumb-cultures')).toBeHidden();
   await snap(page, 'publish form');
-  await page.click('form[action="/decklist/create"] button[type=submit]');
+  await page.click('form[action*="/deck/publish/"] button[type=submit]:has-text("Publish")');
 
   await expect(page).toHaveURL(/\/decklist\/view\/(\d+)\//);
   await expect(page.locator('h1')).toContainText(decklistName);
@@ -120,8 +124,12 @@ test('the author edits the decklist from its page; nobody else gets Edit', async
   await expect(edit).toBeVisible();
   await Promise.all([page.waitForURL(new RegExp(`/decklist/edit/${decklistId}$`)), edit.click()]);
   await expect(page.locator('#name')).toHaveValue(decklistName);
+  // the same form, editing: the format can be corrected now, and Cancel goes back to the decklist
+  await expect(page.locator('h1')).toHaveText('Edit Decklist');
+  await expect(page.locator('#target_format')).toBeEnabled();
+  await expect(page.locator('.rb-form-actions a')).toHaveAttribute('href', new URL(decklistUrl).pathname);
   await page.fill('#descriptionMd', 'Published by the **smoke test**, then edited. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');
-  await page.click('form[action*="/decklist/save/"] button[type=submit]');
+  await page.click(`form[action$="/decklist/edit/${decklistId}"] button[type=submit]:has-text("Save")`);
   await expect(page).toHaveURL(new RegExp(`/decklist/view/${decklistId}/`));
   await expect(page.locator('body')).toContainText('Published by the smoke test, then edited.');
   await snap(page, 'decklist edited');

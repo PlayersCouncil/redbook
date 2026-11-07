@@ -1798,3 +1798,6 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-thumb-choice { flex: 1 1 auto; min-width: 0; }
 .rb-thumb-preview { flex: 0 0 auto; }
 .rb-thumb-preview [hidden] { display: none; }
+
+/* a form's buttons: the action, then Cancel (Ketura, 2026-11-06) */
+.rb-form-actions { display: flex; gap: 10px; margin: 20px 0; }
