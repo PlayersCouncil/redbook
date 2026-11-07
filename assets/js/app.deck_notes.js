@@ -97,24 +97,28 @@
 
     /* ---- starting notes ---- */
 
+    /**
+     * The starting companions as pills, each with an x to take it off; + adds one from the
+     * deck (Ketura, 2026-11-07). #starting-field carries them for the decklist form.
+     */
     function render_starting()
     {
         var codes = app.deck.get_starting(),
             list = $('#starting-list');
+        $('#starting-field').val(JSON.stringify(codes));
         if(!app.data.cards) {
             return;
         }
         if(!codes.length) {
-            list.html('<span class="rb-hint">' + _.escape(list.data('none') || t('deckbuilder.notes.starting_none')) + '</span>');
+            list.html('<span class="rb-hint">' + t('deckbuilder.notes.starting_none') + '</span>');
             return;
         }
-        var cards = _.compact(_.map(codes, function (code) { return app.data.cards.findById(code); })),
-            twilight = _.reduce(cards, function (sum, card) { return sum + (card.twilight || 0); }, 0);
-        list.html('<span class="rb-starting-label">' + t('deckbuilder.notes.starting_fellowship') + '</span> '
-            + _.map(cards, function (card) {
-                return '<a href="' + card.url + '" class="rb-starting-card card-tip" data-code="' + card.code + '">' + _.escape(card.label) + '</a>';
-            }).join('')
-            + '<span class="rb-starting-cost">' + t('deckbuilder.notes.starting_twilight', {cost: twilight}) + '</span>');
+        var cards = _.compact(_.map(codes, function (code) { return app.data.cards.findById(code); }));
+        list.html(_.map(cards, function (card) {
+            return '<span class="rb-starting-pill"><button type="button" class="rb-starting-remove" data-unstart="' + card.code + '" aria-label="'
+                + t('deckbuilder.notes.start_remove', {card: _.escape(card.label)}) + '">&times;</button>'
+                + '<a href="' + card.url + '" class="rb-starting-card card-tip" data-code="' + card.code + '">' + _.escape(card.label) + '</a></span>';
+        }).join(''));
     }
 
     /* ---- card annotations ---- */
@@ -140,25 +144,16 @@
         }).join('') : '<p class="rb-hint">' + t('deckbuilder.notes.annotations_none') + '</p>');
     }
 
-    /** Lower case without accents, as the card pool's search does */
-    function fold(s)
-    {
-        return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\u2022/g, '').toLowerCase();
-    }
-
+    /**
+     * Cards to annotate: names beginning with what's typed first, as the # completion does,
+     * the deck's own cards first within each (Ketura, 2026-11-07)
+     */
     function annotation_matches(typed)
     {
-        typed = fold(typed);
         var in_deck = app.deck.get_content ? app.deck.get_content() : {},
             have = _.pluck(app.deck.get_annotations(), 'code'),
-            found = _.filter(app.data.cards.find(), function (card) {
-                return have.indexOf(card.code) === -1 && fold(card.label).indexOf(typed) !== -1;
-            });
-        // the deck's own cards first
-        found.sort(function (a, b) {
-            return (in_deck[b.code] ? 1 : 0) - (in_deck[a.code] ? 1 : 0) || a.label.localeCompare(b.label);
-        });
-        return found.slice(0, 12);
+            cards = _.filter(app.data.cards.find(), function (card) { return have.indexOf(card.code) === -1; });
+        return app.textcomplete.rank(cards, typed, function (card) { return in_deck[card.code] ? 0 : 1; }).slice(0, 12);
     }
 
     function in_deck_now(code)
@@ -171,13 +166,13 @@
     {
         var typed = ($('#annot-search').val() || '').trim(),
             box = $('.rb-annot-suggest');
-        if(typed.length < 2) {
+        if(!typed.length) {
             box.prop('hidden', true).empty();
             return;
         }
         var rows = annotation_matches(typed);
         box.html(rows.length ? _.map(rows, function (card) {
-            return '<button type="button" data-annotate="' + card.code + '" data-hover-code="' + card.code + '">' + _.escape(card.label)
+            return '<button type="button" data-annotate="' + card.code + '" data-hover-code="' + card.code + '"><span>' + app.textcomplete.highlight(card.label, typed) + '</span>'
                 + ' <small>' + card.code + (in_deck_now(card.code) ? ' &middot; ' + t('deckbuilder.notes.in_deck') : '') + '</small></button>';
         }).join('') : '<p class="rb-hint">' + t('deckbuilder.notes.no_card') + '</p>').prop('hidden', false);
     }
@@ -203,31 +198,65 @@
 
     /* ---- + then a card in the deck (Ketura, 2026-11-03) ---- */
 
+    /** false, 'annot' (a card to annotate) or 'start' (a companion to start; Ketura, 2026-11-07) */
     var picking = false;
 
-    function set_picking(on)
+    function is_companion(code)
     {
-        picking = !!on;
-        $('#annot-pick').attr('aria-pressed', picking ? 'true' : 'false');
-        $('#deck').toggleClass('rb-picking', picking);
+        var card = app.data.cards && app.data.cards.findById(code);
+        return !!card && card.type_code === 'companion';
     }
 
-    /** While picking, a click on a deck card annotates it and does nothing else */
+    /** While picking a companion, the other cards are greyed out */
+    function mark_pickable()
+    {
+        $('#deck .rb-line[data-code], #deck .rb-tile[data-code]').each(function () {
+            $(this).toggleClass('rb-pick-off', picking === 'start' && !is_companion($(this).data('code') + ''));
+        });
+    }
+
+    function set_picking(mode)
+    {
+        picking = mode || false;
+        $('#annot-pick').attr('aria-pressed', picking === 'annot' ? 'true' : 'false');
+        $('#start-pick').attr('aria-pressed', picking === 'start' ? 'true' : 'false');
+        $('#deck').toggleClass('rb-picking', !!picking).toggleClass('rb-picking-start', picking === 'start');
+        mark_pickable();
+    }
+
+    function add_starting(code)
+    {
+        if(!app.deck.is_starting(code)) {
+            app.deck.toggle_starting(code);
+            on_edit();
+        }
+    }
+
+    /** While picking, a click on a deck card annotates it, or starts it, and does nothing else */
     function pick_click(event)
     {
         if(!picking) {
             return;
         }
         var target = $(event.target);
-        if(target.closest('#annot-pick').length) {
+        if(target.closest('#annot-pick, #start-pick').length) {
             return;
         }
         var item = target.closest('#deck .rb-line[data-code], #deck .rb-tile[data-code]');
         if(item.length) {
             event.preventDefault();
             event.stopPropagation();
+            var code = item.data('code') + '';
+            if(picking === 'start') {
+                // only a companion can start; a click on anything else does nothing
+                if(is_companion(code)) {
+                    set_picking(false);
+                    add_starting(code);
+                }
+                return;
+            }
             set_picking(false);
-            add_annotation(item.data('code') + '');
+            add_annotation(code);
         } else if(!target.closest('#deck').length) {
             set_picking(false);
         }
@@ -312,8 +341,20 @@
 
         // annotations
         root.on('click', '#annot-pick', function () {
-            set_picking(!picking);
+            set_picking(picking === 'annot' ? false : 'annot');
         });
+        root.on('click', '#start-pick', function () {
+            set_picking(picking === 'start' ? false : 'start');
+        });
+        root.on('click', '[data-unstart]', function () {
+            var code = $(this).data('unstart') + '';
+            if(app.deck.is_starting(code)) {
+                app.deck.toggle_starting(code);
+                on_edit();
+            }
+        });
+        // the deck redrawn while picking keeps its greyed-out cards
+        $(document).on('deck.rendered', mark_pickable);
         document.addEventListener('click', pick_click, true);
         $(document).on('keydown', function (event) {
             if(picking && event.key === 'Escape') {

@@ -4,6 +4,9 @@
  * toolbar, with Preview in place of a second pane, and the same editor in the deckbuilder's
  * Notes tab and the decklist form. # in the text, or the card button, puts in a
  * [[card]] link; the preview renders those as the page will.
+ * Fullscreen (Ketura, 2026-11-07) is a box over most of the page with the rest dimmed,
+ * headed "Editing <field> for <deck>", with Done under the text to close it. The field's
+ * name comes from the textarea's data-md-title; the deck's from the page's name field.
  */
 (function app_md_editor(editor, $)
 {
@@ -82,7 +85,13 @@
         if(!textarea.length || textarea.closest('.md-editor').length) {
             return;
         }
+        var box;
         textarea.markdown({
+            onFullscreen: function (e) {
+                var deck = $.trim($('#deck-name').val() || $('#name').val() || '');
+                box.find('.rb-md-title').text(t('deckbuilder.notes.editing', {field: textarea.data('md-title') || '', deck: deck}));
+                e.$textarea.focus();
+            },
             autofocus: false,
             savable: false,
             iconlibrary: 'fa',
@@ -111,6 +120,17 @@
                     };
                 })
             }]]
+        });
+        var instance = textarea.data('markdown');
+        box = textarea.closest('.md-editor');
+        box.prepend('<div class="rb-md-title"></div>');
+        $('<div class="rb-md-done"><button type="button" class="btn btn-primary">' + t('deckbuilder.notes.done') + '</button></div>')
+            .appendTo(box)
+            .on('click', 'button', function () { instance.setFullscreen(false); });
+        textarea.on('keydown', function (event) {
+            if(event.key === 'Escape' && box.hasClass('md-fullscreen-mode')) {
+                instance.setFullscreen(false);
+            }
         });
         // # then a card's name
         app.textcomplete && app.textcomplete.setup(textarea, {icons: false, card_syntax: 'wiki'});

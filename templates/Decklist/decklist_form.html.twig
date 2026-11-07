@@ -142,7 +142,7 @@
                             </div>
 
                             {# the deckbuilder's Notes tab, the same component #}
-                            {% include 'Deck/notes-editor.html.twig' with {notes_tags: decklist.tags, notes_description: decklist.descriptionMd, starting_none: 'decklist.form.starting_none' | trans} %}
+                            {% include 'Deck/notes-editor.html.twig' with {notes_tags: decklist.tags, notes_description: decklist.descriptionMd} %}
 
                             {# its line of versions (Ketura, 2026-11-07): chosen when publishing, fixed after #}
                             <div class="form-group rb-version-pick">

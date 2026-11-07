@@ -451,6 +451,8 @@
             pin_option_widths();
         }
         fit_sites();
+        // for whatever marks the deck's cards from outside, such as the Notes tab's picking
+        $(document).trigger('deck.rendered');
     };
 
     /**

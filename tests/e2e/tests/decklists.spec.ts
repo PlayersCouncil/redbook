@@ -51,6 +51,12 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await expect(page.locator('#starting-list')).toContainText('Gimli, Dwarf of Erebor');
   await expect(page.locator('#starting-notes')).toHaveValue('Start [[Gimli, Dwarf of Erebor]] and bid low.');
   await expect(page.locator('#tag-input .rb-tag-chip')).toContainText('dwarves');
+  // the starting fellowship can be changed here too, picking from the deck on the left
+  await page.locator('#starting-list [data-unstart="1_12"]').click();
+  await expect(page.locator('#starting-list')).toHaveText('No starting companions');
+  await page.click('#start-pick');
+  await page.locator('#deck .rb-line[data-code="1_12"]').click();
+  await expect(page.locator('#starting-list .rb-starting-pill')).toHaveText(/Gimli, Dwarf of Erebor/);
   await page.fill('#name', decklistName);
   // [[card]] links resolve when the text is saved (Ketura, 2026-11-03)
   await page.fill('#description', 'Published by the **smoke test**. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');

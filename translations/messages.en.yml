@@ -967,7 +967,7 @@ deckbuilder.notes.starting: Starting Notes
 deckbuilder.notes.bid: Bid
 deckbuilder.notes.bid_placeholder: "e.g. 2-3"
 deckbuilder.notes.starting_placeholder: "What to bid, which fellowship to start, what to do on the first turn…"
-deckbuilder.notes.starting_none: "Mark companions with their S in the deck to list your starting fellowship here."
+deckbuilder.notes.starting_none: No starting companions
 deckbuilder.notes.starting_fellowship: "Starting fellowship:"
 deckbuilder.notes.starting_twilight: "(twilight %cost%)"
 deckbuilder.notes.preview: Preview
@@ -1238,4 +1238,7 @@ decklist.form.release_date_hint: "What date did this deck become public? Default
 decklist.form.release_note: "This will release your decklist to the public. You will have <strong>three days</strong> to undo this if you made a mistake, after which the published list will become permanent."
 decklist.form.version: Version
 deckbuilder.notes.editor_hint: "Press # to insert a card name."
-decklist.form.starting_none: "No starting fellowship: it comes from the deck, where companions are marked with their S."
+deckbuilder.notes.start_pick: "Add a starting companion: click one in the deck"
+deckbuilder.notes.start_remove: "Take %card% out of the starting fellowship"
+deckbuilder.notes.editing: "Editing %field% for %deck%"
+deckbuilder.notes.done: Done

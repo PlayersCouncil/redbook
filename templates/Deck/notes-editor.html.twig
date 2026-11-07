@@ -4,7 +4,6 @@
    and the description. Both text fields use the markdown editor with its own preview.
    app.deck_notes runs it from app.deck; the named fields are what the decklist form sends.
    - notes_tags, notes_description: the starting values
-   - starting_none (optional): what to say when no companion is marked to start
 #}
 <div class="rb-notes" id="deck-notes">
     <div class="rb-notes-tags">
@@ -20,18 +19,35 @@
         </div>
     </div>
 
+    {# the bid, under the tags (Ketura, 2026-11-07) #}
+    <div class="rb-notes-bid">
+        <label for="starting-bid">{{ 'deckbuilder.notes.bid' | trans }}</label>
+        <input type="text" id="starting-bid" name="starting_bid_" maxlength="30" autocomplete="off" placeholder="{{ 'deckbuilder.notes.bid_placeholder' | trans }}">
+    </div>
+
     <section class="rb-notes-section rb-notes-start" aria-labelledby="starting-title">
-        <div class="rb-notes-head">
-            <h3 id="starting-title">{{ 'deckbuilder.notes.starting' | trans }}</h3>
-            <label class="rb-bid"><span>{{ 'deckbuilder.notes.bid' | trans }}</span>
-                <input type="text" id="starting-bid" name="starting_bid_" maxlength="30" autocomplete="off" placeholder="{{ 'deckbuilder.notes.bid_placeholder' | trans }}"></label>
+        <div class="rb-notes-head"><h3 id="starting-title">{{ 'deckbuilder.notes.starting' | trans }}</h3></div>
+        {# + then a companion in the deck, the others greyed out; x on a pill takes it off (Ketura, 2026-11-07) #}
+        <div class="rb-starting-row">
+            <span class="rb-starting-label">{{ 'deckbuilder.notes.starting_fellowship' | trans }}</span>
+            <button type="button" class="rb-btn rb-btn-small rb-start-pick" id="start-pick" aria-pressed="false"
+                    title="{{ 'deckbuilder.notes.start_pick' | trans }}" aria-label="{{ 'deckbuilder.notes.start_pick' | trans }}">+</button>
+            <div class="rb-starting-list" id="starting-list"></div>
         </div>
-        <div class="rb-starting-list" id="starting-list" data-none="{{ starting_none | default('') }}"></div>
+        <input type="hidden" name="starting_" id="starting-field">
         <div class="rb-md-editor">
-            <textarea id="starting-notes" name="starting_notes_" rows="5" placeholder="{{ 'deckbuilder.notes.starting_placeholder' | trans }}" aria-label="{{ 'deckbuilder.notes.starting' | trans }}"></textarea>
+            <textarea id="starting-notes" name="starting_notes_" rows="5" data-md-title="{{ 'deckbuilder.notes.starting' | trans }}" placeholder="{{ 'deckbuilder.notes.starting_placeholder' | trans }}" aria-label="{{ 'deckbuilder.notes.starting' | trans }}"></textarea>
         </div>
     </section>
 
+    <section class="rb-notes-section rb-notes-desc" aria-labelledby="desc-title">
+        <div class="rb-notes-head"><h3 id="desc-title">{{ 'decks.edit.notes.notes.label' | trans }}</h3></div>
+        <div class="rb-md-editor">
+            <textarea name="description_" id="description" rows="12" data-md-title="{{ 'decks.edit.notes.notes.label' | trans }}" placeholder="{{ 'decks.edit.notes.notes.hint' | trans }}">{{ notes_description }}</textarea>
+        </div>
+    </section>
+
+    {# card annotations, below the notes (Ketura, 2026-11-07) #}
     <section class="rb-notes-section rb-notes-annot" aria-labelledby="annot-title">
         <div class="rb-notes-head">
             <h3 id="annot-title">{{ 'deckbuilder.notes.annotations' | trans }}</h3>
@@ -44,12 +60,5 @@
         </div>
         <div class="rb-annot-list" id="annot-list"></div>
         <input type="hidden" name="annotations_" id="annotations-field">
-    </section>
-
-    <section class="rb-notes-section rb-notes-desc" aria-labelledby="desc-title">
-        <div class="rb-notes-head"><h3 id="desc-title">{{ 'decks.edit.notes.notes.label' | trans }}</h3></div>
-        <div class="rb-md-editor">
-            <textarea name="description_" id="description" rows="12" placeholder="{{ 'decks.edit.notes.notes.hint' | trans }}">{{ notes_description }}</textarea>
-        </div>
     </section>
 </div>

@@ -201,6 +201,18 @@ test('deck notes, stats and history: starting fellowship, tags, annotations, tes
 
   await page.click('a[href="#tab-pane-infos"]');
   await expect(page.locator('#starting-list')).toContainText('Legolas');
+  // + then a companion in the deck starts it too; the other cards are greyed out and
+  // can't be picked; x on a pill takes it off again (Ketura, 2026-11-07)
+  const line = (code: string) => page.locator(`#deck .rb-line[data-code="${code}"], #deck .rb-tile[data-code="${code}"]`).first();
+  await page.click('#start-pick');
+  await expect(line('1_178')).toHaveClass(/rb-pick-off/);
+  await line('1_178').click();
+  await expect(page.locator('#start-pick')).toHaveAttribute('aria-pressed', 'true');
+  await line('1_12').click();
+  await expect(page.locator('#starting-list .rb-starting-pill')).toHaveCount(2);
+  await expect(page.locator('#deck .rb-pick-off')).toHaveCount(0);
+  await page.locator('#starting-list [data-unstart="1_12"]').click();
+  await expect(page.locator('#starting-list .rb-starting-pill')).toHaveCount(1);
   await page.fill('#starting-bid', '2-3');
   await page.fill('#starting-notes', 'Mulligan without **Gimli**');
   // the markdown editor's Preview (Ketura, 2026-11-07), shared with the decklist form
@@ -216,6 +228,12 @@ test('deck notes, stats and history: starting fellowship, tags, annotations, tes
   await expect(desc.locator('.md-preview a.rb-cardlink[href$="/card/53_38#v1"]')).toHaveCount(1);
   await expect(desc.locator('.md-preview code')).toHaveText('[[3_38]]');
   await desc.locator('button[data-handler="bootstrap-markdown-cmdPreview"]').click();
+  // fullscreen: a box headed with the field and the deck, closed by Done (Ketura, 2026-11-07)
+  await desc.locator('.md-control-fullscreen').click();
+  await expect(desc.locator('.md-editor')).toHaveClass(/md-fullscreen-mode/);
+  await expect(desc.locator('.rb-md-title')).toHaveText(/^Editing Notes for E2E/);
+  await desc.locator('.rb-md-done button').click();
+  await expect(desc.locator('.md-editor')).not.toHaveClass(/md-fullscreen-mode/);
   await page.fill('#tag-entry', 'elves');
   await page.keyboard.press('Enter');
   await expect(page.locator('#tag-input .rb-tag-chip')).toContainText('elves');
@@ -225,7 +243,10 @@ test('deck notes, stats and history: starting fellowship, tags, annotations, tes
   await expect(page.locator('#annot-list .rb-annot[data-code="1_178"]')).toBeVisible();
   expect(await page.evaluate(() => (window as any).app.deck.get_content()['1_178'])).toBe(1);
   await page.locator('#annot-list [data-unannotate="1_178"]').click();
-  // a note on a card that isn't in the deck
+  // a note on a card that isn't in the deck; one letter is enough to search, names
+  // beginning with it come first, the match in bold (Ketura, 2026-11-07)
+  await page.fill('#annot-search', 'g');
+  await expect(page.locator('.rb-annot-suggest [data-annotate] b').first()).toHaveText('G');
   await page.fill('#annot-search', 'the one ring, the ruling');
   await page.locator('.rb-annot-suggest [data-annotate]').first().click();
   await page.locator('#annot-list textarea').fill('Cut for the Isildur\'s Bane ring');

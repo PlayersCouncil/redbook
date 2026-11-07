@@ -372,6 +372,17 @@ class SocialController extends AbstractController
         $decklist->setTags(mb_substr(implode(' ', $tags), 0, 4000) ?: null);
         $decklist->setStartingBid(mb_substr(trim(strip_tags((string) $form->get('starting_bid_'))), 0, 30) ?: null);
         $decklist->setStartingNotes(trim((string) $form->get('starting_notes_')) ?: null);
+        // the starting fellowship: companions the decklist holds (Ketura, 2026-11-07)
+        $starting = json_decode((string) $form->get('starting_'), true);
+        if (is_array($starting)) {
+            $companions = [];
+            foreach ($decklist->getSlots() as $slot) {
+                if ($slot->getCard()->getType()?->getCode() === 'companion') {
+                    $companions[$slot->getCard()->getCode()] = true;
+                }
+            }
+            $decklist->setStarting(array_values(array_filter($starting, fn ($code) => is_string($code) && isset($companions[$code]))));
+        }
         $annotations = json_decode((string) $form->get('annotations_'), true);
         if (is_array($annotations)) {
             $rows = [];
