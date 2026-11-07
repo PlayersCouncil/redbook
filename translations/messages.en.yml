@@ -135,7 +135,7 @@ decks:
         hint: Tags are for easy filtering in your list of decks, e.g. <i>competitive</i> or <i>melee</i>. Separate tags with spaces.
       notes:
         label: Notes
-        hint: "Type # to enter a card name. Type $ to enter a symbol."
+        hint: "What the deck is about, how to play it, what to watch for. Type # to enter a card name."
     form:
       name: Name
       cancel: Cancel edits
@@ -324,7 +324,8 @@ decklist:
       pagetitle:
         spam: Spam prevention
     warnings:
-      published: "This deck <a href='%url%'>has already been published</a> before. You are going to create a duplicate."
+      published: "This exact decklist <a href='%url%'>has been published before</a>."
+      claim: "If that is your own archived deck, please <a href='%url%'>claim that archived account</a>."
   view:
     versions: Versions
     published: published
@@ -1167,7 +1168,7 @@ historian.review.unresolved_hint: "Click a line to search the card pool for it, 
 historian.review.search_title: "Search the card pool for this line"
 historian.review.added: "Added %name%"
 historian.review.guessed: "{1} 1 line matched by a loose rule|]1,Inf] %count% lines matched by a loose rule"
-decklist.reader.played: "Played %date%"
+decklist.reader.played: "Released %date%"
 decklist.reader.published: Published
 decklist.reader.tools: Tools
 decklist.reader.details: Details
@@ -1195,7 +1196,7 @@ decklist.reader.archive_comments: "{1} 1 Imported Archive Comment|]1,Inf] %count
 decklist.form.title.create: Publish Deck
 decklist.form.title.edit: Edit Decklist
 decklist.form.format_from_deck: "The deck's own format, fixed once published. To change it, change the deck in the deckbuilder first."
-decklist.form.version_new: "Publishing a new decklist."
+decklist.form.version_new: "A deck of its own: version 1 of a new line."
 decklist.form.version_of: "Publishing <b>version %version%</b> of %name%."
 decklist.form.version_is: "<b>Version %version%</b>, following %name%."
 decklist.form.version_first: "<b>Version %version%</b>: the first of its line."
@@ -1221,12 +1222,20 @@ decklist.state.republish: Publish Again
 decklist.state.replace_cards: Replace Cards From Deck
 decklist.state.open_deck: Open the Deck
 decklist.state.no_deck: "The deck it was published from is gone, so its cards can't be replaced."
-decklist.state.withdrawn_help: "Withdrawn: only you can see this decklist. Fix the deck in the deckbuilder, replace the cards with it here, then publish it again at the same address, with a fresh grace period."
-decklist.state.grace_help: "Until %date% you can undo publishing to fix the cards. After that the cards, format, half and date are fixed, and changing them means publishing a new version."
-decklist.state.fixed_help: "The cards, format, half and date are fixed. To change them, publish a new version from the deck."
+decklist.state.withdrawn_help: "Withdrawn: only you can see this decklist. Fix the deck in the deckbuilder, replace the cards with it here, then publish it again at the same address, with a fresh three days to undo it."
+decklist.state.grace_help: "Until %date% you can undo publishing to fix the cards. After that the cards and release date are fixed, and changing them means publishing a new version."
+decklist.state.fixed_help: "The cards and release date are fixed. To change them, publish a new version from the deck."
 decklist.state.withdrawn_note: "Withdrawn: only you can see this decklist."
 decklist.state.gone_title: Decklist Withdrawn
 decklist.state.gone_text: "Its author has withdrawn this decklist, perhaps to fix it. It may be back at this address soon."
 decklist.state.gone_browse: Browse the decklists
 decklist.state.errors.locked: "The grace period is over, so this decklist can't be withdrawn."
 decklist.state.errors.no_deck: The deck it was published from is gone.
+decklist.form.name: Deck Name
+decklist.form.deck_label: The deck as it is published
+decklist.form.release_date: Release Date
+decklist.form.release_date_hint: "What date did this deck become public? Defaults to today, but if this was a historical deck, it should be the date it was first played at an event or published on a website."
+decklist.form.release_note: "This will release your decklist to the public. You will have <strong>three days</strong> to undo this if you made a mistake, after which the published list will become permanent."
+decklist.form.version: Version
+deckbuilder.notes.editor_hint: "Press # to insert a card name."
+decklist.form.starting_none: "No starting fellowship: it comes from the deck, where companions are marked with their S."

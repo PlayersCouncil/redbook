@@ -1,0 +1,55 @@
+{#
+   A deck's notes, shared by the deckbuilder's Notes tab and the decklist form (Ketura,
+   2026-11-07): tags, the starting fellowship with its bid and notes, card annotations,
+   and the description. Both text fields use the markdown editor with its own preview.
+   app.deck_notes runs it from app.deck; the named fields are what the decklist form sends.
+   - notes_tags, notes_description: the starting values
+   - starting_none (optional): what to say when no companion is marked to start
+#}
+<div class="rb-notes" id="deck-notes">
+    <div class="rb-notes-tags">
+        <label for="tag-entry">{{ 'decks.edit.notes.tags.label' | trans }}</label>
+        {# the entry box at a set width; the chosen tags fill the room to its right (Ketura, 2026-11-03) #}
+        <div class="rb-tag-input" id="tag-input">
+            <input type="hidden" name="tags_" value="{{ notes_tags }}">
+            <div class="rb-tag-entry">
+                <input type="text" id="tag-entry" autocomplete="off" placeholder="{{ 'deckbuilder.notes.tag_placeholder' | trans }}" aria-label="{{ 'deckbuilder.notes.tag_add' | trans }}">
+                <div class="rb-tag-suggest" role="listbox" hidden></div>
+            </div>
+            <div class="rb-tag-chips" aria-live="polite"></div>
+        </div>
+    </div>
+
+    <section class="rb-notes-section rb-notes-start" aria-labelledby="starting-title">
+        <div class="rb-notes-head">
+            <h3 id="starting-title">{{ 'deckbuilder.notes.starting' | trans }}</h3>
+            <label class="rb-bid"><span>{{ 'deckbuilder.notes.bid' | trans }}</span>
+                <input type="text" id="starting-bid" name="starting_bid_" maxlength="30" autocomplete="off" placeholder="{{ 'deckbuilder.notes.bid_placeholder' | trans }}"></label>
+        </div>
+        <div class="rb-starting-list" id="starting-list" data-none="{{ starting_none | default('') }}"></div>
+        <div class="rb-md-editor">
+            <textarea id="starting-notes" name="starting_notes_" rows="5" placeholder="{{ 'deckbuilder.notes.starting_placeholder' | trans }}" aria-label="{{ 'deckbuilder.notes.starting' | trans }}"></textarea>
+        </div>
+    </section>
+
+    <section class="rb-notes-section rb-notes-annot" aria-labelledby="annot-title">
+        <div class="rb-notes-head">
+            <h3 id="annot-title">{{ 'deckbuilder.notes.annotations' | trans }}</h3>
+            {# + then a click on a card in the deck; the search is for cards that aren't in it #}
+            <button type="button" class="rb-btn rb-btn-small rb-annot-pick" id="annot-pick" aria-pressed="false">{{ 'deckbuilder.notes.pick' | trans }}</button>
+            <div class="rb-annot-add">
+                <input type="search" id="annot-search" autocomplete="off" placeholder="{{ 'deckbuilder.notes.annotate_placeholder' | trans }}" aria-label="{{ 'deckbuilder.notes.annotate' | trans }}">
+                <div class="rb-annot-suggest" role="listbox" hidden></div>
+            </div>
+        </div>
+        <div class="rb-annot-list" id="annot-list"></div>
+        <input type="hidden" name="annotations_" id="annotations-field">
+    </section>
+
+    <section class="rb-notes-section rb-notes-desc" aria-labelledby="desc-title">
+        <div class="rb-notes-head"><h3 id="desc-title">{{ 'decks.edit.notes.notes.label' | trans }}</h3></div>
+        <div class="rb-md-editor">
+            <textarea name="description_" id="description" rows="12" placeholder="{{ 'decks.edit.notes.notes.hint' | trans }}">{{ notes_description }}</textarea>
+        </div>
+    </section>
+</div>

@@ -167,11 +167,10 @@ class PublishedDeckManager
                 . " AND (c$i.subtitle = k$i.subtitle OR (c$i.subtitle IS NULL AND k$i.subtitle IS NULL)))")
                 ->setParameter("card$i", $code);
         }
-        // the deck's tags are the deck it was published from's, separated by spaces
+        // the decklist's own tags, separated by spaces (Ketura, 2026-11-07)
         if (!empty($filters['tags'])) {
-            $qb->leftJoin('d.parent', 'tagged');
             foreach ($filters['tags'] as $i => $tag) {
-                $qb->andWhere("CONCAT(' ', tagged.tags, ' ') LIKE :tag$i")->setParameter("tag$i", '% ' . addcslashes($tag, '%_') . ' %');
+                $qb->andWhere("CONCAT(' ', d.tags, ' ') LIKE :tag$i")->setParameter("tag$i", '% ' . addcslashes($tag, '%_') . ' %');
             }
         }
         if (!empty($filters['format'])) {

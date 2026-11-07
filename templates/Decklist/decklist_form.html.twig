@@ -3,212 +3,209 @@
 
 {% block javascripts %}
     {{ parent() }}
+    <script src="{{ asset('js/app.deck_editor.js') }}"></script>
+    <script src="{{ asset('js/app.md_editor.js') }}"></script>
+    <script src="{{ asset('js/app.deck_notes.js') }}"></script>
     <script src="{{ asset('js/ui.decklist_form.js') }}"></script>
     <script type="text/javascript">
       app.deck.init({{ decklist|json_encode|raw }});
     </script>
 {% endblock %}
 
-{# The decklist form (Ketura, 2026-11-06): publishing a deck (mode 'create') and editing
+{% block wrapper_class %}rb-fill{% endblock %}
+
+{#
+   The decklist form (Ketura, 2026-11-06): publishing a deck (mode 'create') and editing
    the published decklist (mode 'edit') are one page; what a mode doesn't allow is
-   disabled or left out here. After publishing, the cards, half, format and date change
-   only while the decklist is withdrawn (Ketura, 2026-11-07): content_editable says so. #}
+   disabled or left out here. Laid out as the deckbuilder is (Ketura, 2026-11-07): the deck
+   as it will be published on the left, read-only, with its format, legality and whether
+   it's a half; the form on the right as if it were one of the deckbuilder's tabs. Its notes
+   are the deckbuilder's Notes tab (Deck/notes-editor). After publishing, the release date
+   changes only while the decklist is withdrawn: content_editable says so.
+#}
 {% block body %}
     {% set is_author = app.user and app.user.id == decklist.user.id %}
-    <div class="main white container">
-
+    <div class="main white container rb-builder rb-publish">
         {% include 'alerts.html.twig' %}
-        <h1>{{ pagetitle }}</h1>
-        <div class="row">
-            <div class="col-sm-9">
-                {# where the decklist stands: within the grace period, withdrawn, or fixed #}
-                {% if mode == 'edit' and not decklist.archived %}
-                    {% if decklist.withdrawn %}
-                        <div class="alert alert-warning rb-state" id="decklist-state" data-state="withdrawn">
-                            <p>{{ 'decklist.state.withdrawn_help' | trans }}</p>
-                            {% if is_author %}
-                                <div class="rb-state-actions">
-                                    {% if source_deck %}
-                                        <a class="btn btn-default btn-sm" href="{{ path('deck_edit', {deck_uuid: source_deck.uuid}) }}">{{ 'decklist.state.open_deck' | trans }}</a>
-                                        <form class="rb-inline-form" method="post" action="{{ path('decklist_replace_cards', {decklist_id: decklist.id}) }}">
-                                            <input type="hidden" name="_token" value="{{ csrf_token('decklist_state') }}">
-                                            <button type="submit" class="btn btn-default btn-sm">{{ 'decklist.state.replace_cards' | trans }}</button>
-                                        </form>
-                                    {% else %}
-                                        <span class="small">{{ 'decklist.state.no_deck' | trans }}</span>
-                                    {% endif %}
-                                    <form class="rb-inline-form" method="post" action="{{ path('decklist_republish', {decklist_id: decklist.id}) }}">
-                                        <input type="hidden" name="_token" value="{{ csrf_token('decklist_state') }}">
-                                        <button type="submit" class="btn btn-success btn-sm">{{ 'decklist.state.republish' | trans }}</button>
-                                    </form>
-                                </div>
-                            {% endif %}
-                        </div>
-                    {% elseif decklist.canWithdraw %}
-                        <div class="alert alert-info rb-state" id="decklist-state" data-state="grace">
-                            <p>{{ 'decklist.state.grace_help' | trans({'%date%': decklist.graceEnds | date('Y-m-d H:i T')}) }}</p>
-                            {% if is_author %}
-                                <form class="rb-inline-form" method="post" action="{{ path('decklist_withdraw', {decklist_id: decklist.id}) }}">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('decklist_state') }}">
-                                    <button type="submit" class="btn btn-default btn-sm">{{ 'decklist.state.withdraw' | trans }}</button>
-                                </form>
-                            {% endif %}
-                        </div>
-                    {% else %}
-                        <div class="alert alert-default rb-state" id="decklist-state" data-state="fixed">
-                            <p>{{ 'decklist.state.fixed_help' | trans }}</p>
-                        </div>
+        <div class="row rb-builder-row">
+            <!-- Left: the deck, as it is published -->
+            <div class="col-md-6 rb-col-left">
+                <section class="rb-info rb-publish-info" aria-label="{{ 'decklist.form.deck_label' | trans }}">
+                    <div class="rb-publish-facts">
+                        {% if format %}<span class="rb-publish-format">{{ format.name }}</span>{% endif %}
+                        {% include 'Deck/completeness-label.html.twig' with {deck: decklist} %}
+                    </div>
+                    {# the pill says it's legal; problems get the whole list #}
+                    {% if decklist.validation is null or not decklist.validation.isValid %}
+                        {% include 'Deck/validation.html.twig' with {deck: decklist} %}
                     {% endif %}
-                {% endif %}
-                <form action="{{ action }}" method="post" enctype="application/x-www-form-urlencoded">
-                    <input type="hidden" name="_token" value="{{ csrf_token('decklist_form') }}">
-                    {# its line of versions (Ketura, 2026-11-07): chosen when publishing, fixed after #}
-                    <div class="form-group rb-version-pick">
-                        {% if mode == 'create' %}
-                            <p class="rb-version-line" id="version-line"
-                               data-new="{{ 'decklist.form.version_new' | trans }}"
-                               data-of="{{ 'decklist.form.version_of' | trans({'%version%': '__V__', '%name%': '__N__'}) }}"></p>
-                            <label for="previous_version">{{ 'decklist.form.previous' | trans }}</label>
-                            <select class="form-control" name="previous_version" id="previous_version">
-                                <option value="">{{ 'decklist.form.previous_none' | trans }}</option>
-                                {% for line in lines %}
-                                    <option value="{{ line.decklist.id }}" data-next="{{ line.next }}" data-name="{{ line.decklist.name }}"
-                                            {%- if previous and previous.line.id == line.decklist.line.id %} selected{% endif %}>{{ line.decklist.name }} (v{{ line.decklist.version }})</option>
-                                {% endfor %}
-                            </select>
-                            <span class="help-block small">{{ 'decklist.form.previous_hint' | trans }}</span>
-                        {% else %}
-                            <p class="rb-version-line" id="version-line">
-                                {% if previous %}
-                                    {% set prevlink %}<a href="{{ path('decklist_detail', {decklist_id: previous.id, decklist_name: previous.nameCanonical|e('url')}) }}">{{ previous.name }}</a>{% endset %}
-                                    {{ 'decklist.form.version_is' | trans({'%version%': decklist.version, '%name%': prevlink}) | raw }}
-                                {% else %}
-                                    {{ 'decklist.form.version_first' | trans({'%version%': decklist.version}) | raw }}
-                                {% endif %}
-                            </p>
-                        {% endif %}
-                    </div>
-                    <div class="form-group">
-                        <label for="name">{{ 'decklist.publish.name' | trans }}</label>
-                        <input type="text" class="form-control" name="name" id="name" value="{{ decklist.name }}">
-                    </div>
-                    {# the deck's format comes with its cards; historians correct an archive deck's #}
-                    {% set format_editable = mode == 'edit' and decklist.archived %}
-                    <div class="form-group">
-                        <label for="target_format">{{ 'deck.target_format' | trans }}</label>
-                        <select class="form-control" name="target_format" id="target_format"{% if not format_editable %} disabled{% endif %}>
-                            {% if not decklist.targetFormat %}<option value="">{{ 'decklist.publish.format_unknown' | trans }}</option>{% endif %}
-                            {% for f in formats %}<option value="{{ f.code }}"{% if f.code == decklist.targetFormat %} selected{% endif %}>{{ f.name }}</option>{% endfor %}
-                        </select>
-                        {% if not format_editable %}<span class="help-block small">{{ ('decklist.form.format_' ~ (mode == 'create' ? 'from_deck' : 'with_cards')) | trans }}</span>{% endif %}
-                    </div>
-                    <div class="row">
-                        <div class="col-sm-6 form-group">
-                            <label for="effective_date">{{ 'deck.effective_date' | trans }}</label>
-                            <input type="date" class="form-control" name="effective_date" id="effective_date" value="{{ decklist.effectiveDate | date('Y-m-d') }}"{% if not content_editable %} disabled{% endif %}>
-                            <span class="help-block small">{{ 'deck.effective_date_hint' | trans }}</span>
-                        </div>
-                        <div class="col-sm-6 form-group">
-                            <label for="half">{{ 'decklist.publish.half' | trans }}</label>
-                            <select class="form-control" name="half" id="half"{% if not content_editable %} disabled{% endif %}>
-                                <option value="">{{ 'deck.half.none' | trans }}</option>
-                                {% for side in ['free_peoples', 'shadow'] %}
-                                    <option value="{{ side }}"{% if decklist.half == side %} selected{% endif %}>{{ ('deck.half.' ~ side) | trans }}</option>
-                                {% endfor %}
-                            </select>
-                            <span class="help-block small">{{ 'decklist.publish.half_hint' | trans }}</span>
-                        </div>
-                    </div>
-                    {# the thumbnail the lists show (Ketura, 2026-11-05): a card of the deck, or its cultures #}
-                    <div class="form-group rb-thumb-field">
-                        <label for="thumbnail">{{ 'decklist.publish.thumbnail' | trans }}</label>
-                        <div class="rb-thumb-pick">
-                            <div class="rb-thumb-preview" aria-hidden="true">
-                                <span id="thumb-cultures">{% include 'Decklist/thumbnail.html.twig' with {thumb_card: false} %}</span>
-                                <span class="rb-thumb rb-thumb-card" id="thumb-card" hidden><img alt=""></span>
-                            </div>
-                            <div class="rb-thumb-choice">
-                                {% set chosen = decklist.thumbnailCard ? decklist.thumbnailCard.code : '' %}
-                                <select class="form-control" name="thumbnail" id="thumbnail">
-                                    <option value="">{{ 'decklist.publish.thumbnail_cultures' | trans }}</option>
-                                    {% set slots = decklist.slots | filter(s => s.role != 'site' and s.card.imageUrl) %}
-                                    {% for group in [
-                                        {label: 'decklist.publish.thumbnail_rb', slots: slots | filter(s => s.role == 'ring_bearer' or s.role == 'ring')},
-                                        {label: 'deck.half.free_peoples', slots: slots | filter(s => s.role == 'draw' and s.card.side == 'free_peoples')},
-                                        {label: 'deck.half.shadow', slots: slots | filter(s => s.role == 'draw' and s.card.side == 'shadow')},
-                                    ] %}
-                                        {% if group.slots | length %}
-                                            <optgroup label="{{ group.label | trans }}">
-                                                {% for slot in group.slots | sort((a, b) => a.card.fullName <=> b.card.fullName) %}
-                                                    <option value="{{ slot.card.code }}" data-image="{{ slot.card.imageUrl }}"{% if slot.card.code == chosen %} selected{% endif %}>{{ slot.card.fullName }}</option>
-                                                {% endfor %}
-                                            </optgroup>
-                                        {% endif %}
-                                    {% endfor %}
-                                </select>
-                                <span class="help-block small">{{ 'decklist.publish.thumbnail_hint' | trans }}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>{{ 'decklist.plays.title' | trans }}</label>
-                        <div id="plays">
-                            {% set plays = decklist.plays | length ? decklist.plays : [null] %}
-                            {% for play in plays %}
-                                <div class="row play-row" style="margin-bottom:5px">
-                                    <div class="col-sm-4"><input type="text" class="form-control input-sm" name="play_event[]" placeholder="{{ 'decklist.plays.event' | trans }}" value="{{ play ? play.eventName : '' }}"></div>
-                                    <div class="col-sm-2"><input type="date" class="form-control input-sm" name="play_date[]" value="{{ play and play.eventDate ? play.eventDate | date('Y-m-d') : '' }}"></div>
-                                    <div class="col-sm-2"><select class="form-control input-sm" name="play_tier[]"><option value=""></option>{% for tier in tournaments %}<option value="{{ tier.id }}"{% if play and play.tier and play.tier.id == tier.id %} selected{% endif %}>{{ tier.description }}</option>{% endfor %}</select></div>
-                                    <div class="col-sm-1"><input type="text" class="form-control input-sm" name="play_placing[]" placeholder="{{ 'decklist.plays.placing' | trans }}" value="{{ play ? play.placing : '' }}"></div>
-                                    <div class="col-sm-1"><input type="number" min="0" class="form-control input-sm" name="play_players[]" placeholder="{{ 'decklist.plays.players' | trans }}" value="{{ play ? play.playerCount : '' }}"></div>
-                                    <div class="col-sm-2"><input type="url" class="form-control input-sm" name="play_url[]" placeholder="URL" value="{{ play ? play.url : '' }}">
-                                    </div>
-                                    <div class="col-sm-12 text-right"><button type="button" class="btn btn-link btn-xs btn-remove-play">{{ 'forms.delete' | trans }}</button></div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                        <button type="button" class="btn btn-default btn-xs" id="btn-add-play">{{ 'decklist.plays.add' | trans }}</button>
-                    </div>
-                    {#
-                       Derived from (Ketura, 2026-11-07): search by author and deck name, or paste
-                       a decklist's id or address; the pick shows as a card to check it's the right one.
-                    #}
-                    {% set derived = decklist.precedent and not decklist.precedent.withdrawn ? decklist.precedent : null %}
-                    <div class="form-group rb-derived" data-lookup="{{ path('decklist_lookup') }}" data-except="{{ decklist.id }}">
-                        <label for="derived-name">{{ 'decklist.form.derived' | trans }}</label>
-                        <input type="hidden" name="precedent" id="precedent" value="{{ derived ? derived.id : '' }}">
-                        <div class="rb-derived-chosen" id="derived-chosen"{% if not derived %} hidden{% endif %}>
-                            <div class="rb-derived-card">
-                                {% if derived %}
-                                    <a href="{{ path('decklist_detail', {decklist_id: derived.id, decklist_name: derived.nameCanonical|e('url')}) }}" target="_blank" class="rb-derived-name">{{ derived.name }}</a>
-                                    <span class="rb-derived-meta">v{{ derived.version }} &middot; {{ derived.user.displayName }} &middot; {{ derived.dateCreation | date('Y-m-d') }}</span>
-                                {% endif %}
-                            </div>
-                            <button type="button" class="btn btn-link btn-sm" id="derived-clear">{{ 'decklist.form.derived_clear' | trans }}</button>
-                        </div>
-                        <div class="rb-derived-search" id="derived-search"{% if derived %} hidden{% endif %}>
-                            <div class="row">
-                                <div class="col-sm-5"><input type="text" class="form-control" id="derived-author" autocomplete="off" placeholder="{{ 'decklist.form.derived_author' | trans }}"></div>
-                                <div class="col-sm-7"><input type="text" class="form-control" id="derived-name" autocomplete="off" placeholder="{{ 'decklist.form.derived_name' | trans }}"></div>
-                            </div>
-                            <div class="list-group rb-derived-results" id="derived-results" hidden></div>
-                        </div>
-                        <span class="help-block small">{{ 'decklist.form.derived_hint' | trans }}</span>
-                    </div>
-                    <div class="form-group">
-                        <label for="descriptionMd">{{ 'decklist.publish.description' | trans }}</label>
-                        <textarea class="form-control" autocapitalize="none" autocomplete="off" rows="25"
-                                  name="descriptionMd" id="descriptionMd">{{ decklist.descriptionMd }}</textarea>
-                    </div>
-                    <div class="rb-form-actions">
-                        <button type="submit" class="btn btn-success">{{ (mode == 'create' ? 'forms.publish' : 'forms.save') | trans }}</button>
-                        <a href="{{ cancel }}" class="btn btn-default">{{ 'forms.cancel' | trans }}</a>
-                    </div>
-                </form>
+                </section>
+                <div class="rb-deck-toolbar" id="deck-toolbar"></div>
+                <section class="rb-deck" id="deck" aria-label="{{ 'deckbuilder.deck_label' | trans }}">
+                    <div class="deck-loading"><i class="fas fa-spinner fa-spin fa-3x"></i></div>
+                </section>
             </div>
-            <div class="col-sm-3">
-                {% include 'Deck/validation.html.twig' with {deck: decklist} %}
-                <div id="decklist" class="small"></div>
+
+            <!-- Right: the form, as the deckbuilder's tabs are -->
+            <div class="col-md-6 rb-col-right">
+                <ul class="nav nav-tabs rb-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#tab-pane-publish" aria-controls="tab-pane-publish" role="tab" data-toggle="tab">{{ pagetitle }}</a></li>
+                </ul>
+                <div class="tab-content rb-tab-content">
+                    <div role="tabpanel" class="tab-pane active rb-scroll-pane" id="tab-pane-publish">
+                        {% if mode == 'create' %}
+                            {# what publishing means (Ketura, 2026-11-07) #}
+                            <div class="alert alert-info rb-release-note" id="release-note">{{ 'decklist.form.release_note' | trans | raw }}</div>
+                        {% elseif not decklist.archived %}
+                            {# where the decklist stands: within the grace period, withdrawn, or fixed #}
+                            {% if decklist.withdrawn %}
+                                <div class="alert alert-warning rb-state" id="decklist-state" data-state="withdrawn">
+                                    <p>{{ 'decklist.state.withdrawn_help' | trans }}</p>
+                                    {% if is_author %}
+                                        <div class="rb-state-actions">
+                                            {% if source_deck %}
+                                                <a class="btn btn-default btn-sm" href="{{ path('deck_edit', {deck_uuid: source_deck.uuid}) }}">{{ 'decklist.state.open_deck' | trans }}</a>
+                                                <form class="rb-inline-form" method="post" action="{{ path('decklist_replace_cards', {decklist_id: decklist.id}) }}">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('decklist_state') }}">
+                                                    <button type="submit" class="btn btn-default btn-sm">{{ 'decklist.state.replace_cards' | trans }}</button>
+                                                </form>
+                                            {% else %}
+                                                <span class="small">{{ 'decklist.state.no_deck' | trans }}</span>
+                                            {% endif %}
+                                            <form class="rb-inline-form" method="post" action="{{ path('decklist_republish', {decklist_id: decklist.id}) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('decklist_state') }}">
+                                                <button type="submit" class="btn btn-success btn-sm">{{ 'decklist.state.republish' | trans }}</button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% elseif decklist.canWithdraw %}
+                                <div class="alert alert-info rb-state" id="decklist-state" data-state="grace">
+                                    <p>{{ 'decklist.state.grace_help' | trans({'%date%': decklist.graceEnds | date('Y-m-d H:i T')}) }}</p>
+                                    {% if is_author %}
+                                        <form class="rb-inline-form" method="post" action="{{ path('decklist_withdraw', {decklist_id: decklist.id}) }}">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('decklist_state') }}">
+                                            <button type="submit" class="btn btn-default btn-sm">{{ 'decklist.state.withdraw' | trans }}</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <div class="alert alert-default rb-state" id="decklist-state" data-state="fixed">
+                                    <p>{{ 'decklist.state.fixed_help' | trans }}</p>
+                                </div>
+                            {% endif %}
+                        {% endif %}
+
+                        <form action="{{ action }}" method="post" enctype="application/x-www-form-urlencoded" id="decklist-form">
+                            <input type="hidden" name="_token" value="{{ csrf_token('decklist_form') }}">
+                            <div class="form-group">
+                                <label for="name">{{ 'decklist.form.name' | trans }}</label>
+                                <input type="text" class="form-control" name="name" id="name" maxlength="60" value="{{ decklist.name }}">
+                            </div>
+
+                            {# the thumbnail the lists show (Ketura, 2026-11-05): a card of the deck, or its cultures #}
+                            <div class="form-group rb-thumb-field">
+                                <label for="thumbnail">{{ 'decklist.publish.thumbnail' | trans }}</label>
+                                <div class="rb-thumb-pick">
+                                    <div class="rb-thumb-preview" aria-hidden="true">
+                                        <span id="thumb-cultures">{% include 'Decklist/thumbnail.html.twig' with {thumb_card: false} %}</span>
+                                        <span class="rb-thumb rb-thumb-card" id="thumb-card" hidden><img alt=""></span>
+                                    </div>
+                                    <div class="rb-thumb-choice">
+                                        {% set chosen = decklist.thumbnailCard ? decklist.thumbnailCard.code : '' %}
+                                        <select class="form-control" name="thumbnail" id="thumbnail">
+                                            <option value="">{{ 'decklist.publish.thumbnail_cultures' | trans }}</option>
+                                            {% set slots = decklist.slots | filter(s => s.role != 'site' and s.card.imageUrl) %}
+                                            {% for group in [
+                                                {label: 'decklist.publish.thumbnail_rb', slots: slots | filter(s => s.role == 'ring_bearer' or s.role == 'ring')},
+                                                {label: 'deck.half.free_peoples', slots: slots | filter(s => s.role == 'draw' and s.card.side == 'free_peoples')},
+                                                {label: 'deck.half.shadow', slots: slots | filter(s => s.role == 'draw' and s.card.side == 'shadow')},
+                                            ] %}
+                                                {% if group.slots | length %}
+                                                    <optgroup label="{{ group.label | trans }}">
+                                                        {% for slot in group.slots | sort((a, b) => a.card.fullName <=> b.card.fullName) %}
+                                                            <option value="{{ slot.card.code }}" data-image="{{ slot.card.imageUrl }}"{% if slot.card.code == chosen %} selected{% endif %}>{{ slot.card.fullName }}</option>
+                                                        {% endfor %}
+                                                    </optgroup>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                        <span class="help-block small">{{ 'decklist.publish.thumbnail_hint' | trans }}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group rb-release-date">
+                                <label for="effective_date">{{ 'decklist.form.release_date' | trans }}</label>
+                                <input type="date" class="form-control" name="effective_date" id="effective_date" value="{{ decklist.effectiveDate | date('Y-m-d') }}"{% if not content_editable %} disabled{% endif %}>
+                                <span class="help-block small">{{ 'decklist.form.release_date_hint' | trans }}</span>
+                            </div>
+
+                            {# the deckbuilder's Notes tab, the same component #}
+                            {% include 'Deck/notes-editor.html.twig' with {notes_tags: decklist.tags, notes_description: decklist.descriptionMd, starting_none: 'decklist.form.starting_none' | trans} %}
+
+                            {# its line of versions (Ketura, 2026-11-07): chosen when publishing, fixed after #}
+                            <div class="form-group rb-version-pick">
+                                {% if mode == 'create' %}
+                                    <label for="previous_version">{{ 'decklist.form.previous' | trans }}</label>
+                                    <select class="form-control" name="previous_version" id="previous_version">
+                                        <option value="">{{ 'decklist.form.previous_none' | trans }}</option>
+                                        {% for line in lines %}
+                                            <option value="{{ line.decklist.id }}" data-next="{{ line.next }}" data-name="{{ line.decklist.name }}"
+                                                    {%- if previous and previous.line.id == line.decklist.line.id %} selected{% endif %}>{{ line.decklist.name }} (v{{ line.decklist.version }})</option>
+                                        {% endfor %}
+                                    </select>
+                                    <p class="rb-version-line" id="version-line"
+                                       data-new="{{ 'decklist.form.version_new' | trans }}"
+                                       data-of="{{ 'decklist.form.version_of' | trans({'%version%': '__V__', '%name%': '__N__'}) }}"></p>
+                                    <span class="help-block small">{{ 'decklist.form.previous_hint' | trans }}</span>
+                                {% else %}
+                                    <label>{{ 'decklist.form.version' | trans }}</label>
+                                    <p class="rb-version-line" id="version-line">
+                                        {% if previous %}
+                                            {% set prevlink %}<a href="{{ path('decklist_detail', {decklist_id: previous.id, decklist_name: previous.nameCanonical|e('url')}) }}">{{ previous.name }}</a>{% endset %}
+                                            {{ 'decklist.form.version_is' | trans({'%version%': decklist.version, '%name%': prevlink}) | raw }}
+                                        {% else %}
+                                            {{ 'decklist.form.version_first' | trans({'%version%': decklist.version}) | raw }}
+                                        {% endif %}
+                                    </p>
+                                {% endif %}
+                            </div>
+
+                            {#
+                               Derived from (Ketura, 2026-11-07): search by author and deck name, or paste
+                               a decklist's id or address; the pick shows as a card to check it's the right one.
+                            #}
+                            {% set derived = decklist.precedent and not decklist.precedent.withdrawn ? decklist.precedent : null %}
+                            <div class="form-group rb-derived" data-lookup="{{ path('decklist_lookup') }}" data-except="{{ decklist.id }}">
+                                <label for="derived-name">{{ 'decklist.form.derived' | trans }}</label>
+                                <input type="hidden" name="precedent" id="precedent" value="{{ derived ? derived.id : '' }}">
+                                <div class="rb-derived-chosen" id="derived-chosen"{% if not derived %} hidden{% endif %}>
+                                    <div class="rb-derived-card">
+                                        {% if derived %}
+                                            <a href="{{ path('decklist_detail', {decklist_id: derived.id, decklist_name: derived.nameCanonical|e('url')}) }}" target="_blank" class="rb-derived-name">{{ derived.name }}</a>
+                                            <span class="rb-derived-meta">v{{ derived.version }} &middot; {{ derived.user.displayName }} &middot; {{ derived.dateCreation | date('Y-m-d') }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <button type="button" class="btn btn-link btn-sm" id="derived-clear">{{ 'decklist.form.derived_clear' | trans }}</button>
+                                </div>
+                                <div class="rb-derived-search" id="derived-search"{% if derived %} hidden{% endif %}>
+                                    <div class="row">
+                                        <div class="col-sm-5"><input type="text" class="form-control" id="derived-author" autocomplete="off" placeholder="{{ 'decklist.form.derived_author' | trans }}"></div>
+                                        <div class="col-sm-7"><input type="text" class="form-control" id="derived-name" autocomplete="off" placeholder="{{ 'decklist.form.derived_name' | trans }}"></div>
+                                    </div>
+                                    <div class="list-group rb-derived-results" id="derived-results" hidden></div>
+                                </div>
+                                <span class="help-block small">{{ 'decklist.form.derived_hint' | trans }}</span>
+                            </div>
+
+                            <div class="rb-form-actions">
+                                <button type="submit" class="btn btn-success">{{ (mode == 'create' ? 'forms.publish' : 'forms.save') | trans }}</button>
+                                <a href="{{ cancel }}" class="btn btn-default">{{ 'forms.cancel' | trans }}</a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

@@ -408,6 +408,8 @@ class SeedDeckImporter
         $private->setTargetFormat($decklist->getTargetFormat());
         $private->setEffectiveDate($decklist->getEffectiveDate());
         $private->setTags(implode(' ', array_map(fn ($t) => preg_replace('/\s+/', '-', trim((string) $t)), $deck['tags'] ?? [])));
+        // the decklist carries its own copy (Ketura, 2026-11-07)
+        $decklist->setTags($private->getTags() ?: null);
         $private->setValidation($decklist->getValidation());
         $private->setStarting($decklist->getStarting());
         $private->setStartingBid($decklist->getStartingBid());

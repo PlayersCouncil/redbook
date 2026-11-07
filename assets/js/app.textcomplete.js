@@ -31,6 +31,10 @@
                 },
                 replace: function (value)
                 {
+                    // a [[card]] link for text that resolves them (Ketura, 2026-11-07)
+                    if(options.card_syntax === 'wiki') {
+                        return '[[' + value.label + ']]';
+                    }
                     return '[' + value.label + ']('
                             + Routing.generate('cards_zoom', {card_code: value.code})
                             + ')';

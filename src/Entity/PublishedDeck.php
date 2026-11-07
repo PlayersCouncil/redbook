@@ -195,6 +195,13 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     #[ORM\Column(name: 'withdrawn', type: 'boolean', options: ['default' => false])]
     protected bool $withdrawn = false;
 
+    /**
+     * Its tags (Ketura, 2026-11-07): taken from the deck when it's published, then the
+     * decklist's own, editable with the rest of its notes. Space-separated, as the deck's.
+     */
+    #[ORM\Column(name: 'tags', type: 'string', length: 4000, nullable: true)]
+    protected ?string $tags = null;
+
     /** When it last went public; the grace period counts from here, and starts again on re-publishing */
     #[ORM\Column(name: 'date_published', type: 'datetime', nullable: true)]
     protected ?\DateTimeInterface $datePublished = null;
@@ -943,6 +950,16 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     /**
      * @inheritdoc
      */
+    public function getTags(): ?string
+    {
+        return $this->tags;
+    }
+
+    public function setTags(?string $tags): void
+    {
+        $this->tags = $tags;
+    }
+
     public function getLine(): ?DecklistLine
     {
         return $this->line;
@@ -1038,6 +1055,7 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
             'version' => $this->getVersion(),
             'line' => $this->line?->getId(),
             'half' => $this->half,
+            'tags' => $this->tags,
             'plays' => array_map(fn (PublishedDeckPlay $play) => $play->serialize(), $this->plays->toArray()),
             'legacy_author' => $this->source?->getLegacyAuthor(),
         ] + $this->lotrDeckJson();

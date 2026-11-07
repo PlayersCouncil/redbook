@@ -73,8 +73,8 @@
                 {% else %}
                     <span class="rb-reader-version" title="{{ 'decklist.view.versions' | trans }}">v{{ decklist.version }}</span>
                 {% endif %}
-                {# the deck's tags, from the deck it was published from (Ketura, 2026-11-04) #}
-                {% set tags = decklist.parent and decklist.parent.tags ? decklist.parent.tags | split(' ') | filter(t => t) : [] %}
+                {# the decklist's tags (Ketura, 2026-11-04), its own since 2026-11-07 #}
+                {% set tags = decklist.tags ? decklist.tags | split(' ') | filter(t => t) : [] %}
                 {% if tags %}
                     <ul class="rb-reader-tags" aria-label="{{ 'decklist.reader.tags' | trans }}">
                         {% for tag in tags %}<li class="rb-tag-chip">{{ tag }}</li>{% endfor %}

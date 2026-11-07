@@ -5,10 +5,13 @@
  * - Tags as chips. The entry box suggests tags from the user's own decks, with how
  *   many decks carry each, filtering as they type; any other word is a new tag.
  * - Starting notes: the companions marked S (hover for the card), the bid as written
- *   ("2", "2-3"), and free text with its own preview.
+ *   ("2", "2-3"), and free text.
  * - Card annotations: a note on any card, in the deck or not (rejected options,
  *   cards to watch for). Search a card by name to add one.
- * - The deck's notes, with their preview.
+ * - The deck's notes.
+ * The two text fields are markdown editors with their own Preview (app.md_editor;
+ * Ketura, 2026-11-07). The decklist form uses the same tab (Deck/notes-editor), sending
+ * its named fields; #annotations-field carries the annotations as JSON.
  */
 (function app_deck_notes(notes, $)
 {
@@ -20,9 +23,10 @@
         return Translator.trans(key, params || {});
     }
 
-    function md(text)
+    /** The annotations as the decklist form sends them */
+    function sync_annotations()
     {
-        return app.markdown ? app.markdown.render(text) : _.escape(text || '');
+        $('#annotations-field').val(JSON.stringify(app.deck.get_annotations()));
     }
 
     /* ---- tags ---- */
@@ -101,7 +105,7 @@
             return;
         }
         if(!codes.length) {
-            list.html('<span class="rb-hint">' + t('deckbuilder.notes.starting_none') + '</span>');
+            list.html('<span class="rb-hint">' + _.escape(list.data('none') || t('deckbuilder.notes.starting_none')) + '</span>');
             return;
         }
         var cards = _.compact(_.map(codes, function (code) { return app.data.cards.findById(code); })),
@@ -119,6 +123,7 @@
     {
         var rows = app.deck.get_annotations(),
             in_deck = app.deck.get_content ? app.deck.get_content() : {};
+        sync_annotations();
         if(!app.data.cards) {
             return;
         }
@@ -236,8 +241,6 @@
         render_chips();
         $('#starting-bid').val(app.deck.get_starting_bid());
         $('#starting-notes').val(app.deck.get_starting_notes());
-        $('#starting-preview').html(md(app.deck.get_starting_notes()));
-        $('#description-preview').html(md($('#description').val()));
         render_starting();
         render_annotations();
     };
@@ -246,6 +249,8 @@
     {
         on_edit = edit_callback || on_edit;
         var root = $('#deck-notes');
+        app.md_editor && app.md_editor.attach('#starting-notes');
+        app.md_editor && app.md_editor.attach('#description');
 
         // tags
         root.on('focus click', '#tag-entry', show_suggestions);
@@ -302,7 +307,6 @@
         });
         root.on('input', '#starting-notes', function () {
             app.deck.set_starting_notes($(this).val());
-            $('#starting-preview').html(md($(this).val()));
             on_edit();
         });
 
@@ -339,6 +343,7 @@
             if(row) {
                 row.text = $(this).val();
                 app.deck.set_annotations(rows);
+                sync_annotations();
                 on_edit();
             }
         });
@@ -347,11 +352,6 @@
             app.deck.set_annotations(_.reject(app.deck.get_annotations(), function (row) { return row.code === code; }));
             render_annotations();
             on_edit();
-        });
-
-        // the description's own preview
-        root.on('input', '#description', function () {
-            $('#description-preview').html(md($(this).val()));
         });
 
         // the S marks and the deck's cards change outside this tab

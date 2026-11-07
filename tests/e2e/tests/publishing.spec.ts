@@ -39,7 +39,7 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   // never published: a new decklist
   await page.goto(`/deck/publish/${deckUuid}`);
   await expect(page.locator('#previous_version')).toHaveValue('');
-  await expect(page.locator('#version-line')).toHaveText('Publishing a new decklist.');
+  await expect(page.locator('#version-line')).toHaveText('A deck of its own: version 1 of a new line.');
   v1 = await publish(page, `${lineName} one`);
   await expect(page.locator('.rb-reader-version')).toHaveText('v1');
 
@@ -48,7 +48,7 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   await expect(page.locator('#previous_version')).toHaveValue(v1.id);
   await expect(page.locator('#version-line')).toHaveText(`Publishing version 2 of ${lineName} one.`);
   await page.selectOption('#previous_version', '');
-  await expect(page.locator('#version-line')).toHaveText('Publishing a new decklist.');
+  await expect(page.locator('#version-line')).toHaveText('A deck of its own: version 1 of a new line.');
   await page.selectOption('#previous_version', v1.id);
   await snap(page, 'publishing version 2');
   v2 = await publish(page, `${lineName} two`);
@@ -69,8 +69,8 @@ test('the author undoes publishing, replaces the cards and publishes again', asy
   page.once('dialog', (dialog) => dialog.accept());
   await Promise.all([page.waitForURL(new RegExp(`/decklist/edit/${v2.id}$`)), withdraw.click()]);
   await expect(page.locator('#decklist-state')).toHaveAttribute('data-state', 'withdrawn');
-  // while withdrawn, the half and date can change too
-  await expect(page.locator('#half')).toBeEnabled();
+  // while withdrawn, the release date can change too
+  await expect(page.locator('#effective_date')).toBeEnabled();
   await snap(page, 'withdrawn decklist');
 
   // gone for everyone else: the page says so, the lists and the line leave it out
@@ -104,7 +104,6 @@ test('after the grace period the cards are fixed', async ({ page }) => {
   appConsole(['dbal:run-sql', `UPDATE published_deck SET date_published = DATE_SUB(NOW(), INTERVAL 4 DAY) WHERE id = ${v1.id}`]);
   await page.goto(`/decklist/edit/${v1.id}`);
   await expect(page.locator('#decklist-state')).toHaveAttribute('data-state', 'fixed');
-  await expect(page.locator('#half')).toBeDisabled();
   await expect(page.locator('#effective_date')).toBeDisabled();
   await expect(page.getByRole('button', { name: 'Undo Publish' })).toHaveCount(0);
   await page.goto(v1.url);

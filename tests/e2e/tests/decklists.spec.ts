@@ -41,15 +41,23 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await page.click('#btn-visibility');
   await page.click('#menu-visibility [data-visibility=published]');
   await expect(page).toHaveURL(/\/deck\/publish\//);
-  // one form for publishing and editing (Ketura, 2026-11-06): publishing takes the deck's format
-  await expect(page.locator('h1')).toHaveText('Publish Deck');
-  await expect(page.locator('#target_format')).toBeDisabled();
-  await expect(page.locator('#target_format')).toHaveValue('fotr_block');
+  // one form for publishing and editing (Ketura, 2026-11-06), laid out as the deckbuilder
+  // (2026-11-07): the deck on the left with its format, the form as a tab on the right
+  await expect(page.locator('.rb-tabs .active')).toHaveText('Publish Deck');
+  await expect(page.locator('.rb-publish-format')).toHaveText('Fellowship Block');
+  await expect(page.locator('#deck.rb-readonly')).toContainText('Gimli');
+  await expect(page.locator('#release-note')).toContainText('three days');
+  // the deck's notes came with it, in the Notes tab's own editor
+  await expect(page.locator('#starting-list')).toContainText('Gimli, Dwarf of Erebor');
+  await expect(page.locator('#starting-notes')).toHaveValue('Start [[Gimli, Dwarf of Erebor]] and bid low.');
+  await expect(page.locator('#tag-input .rb-tag-chip')).toContainText('dwarves');
   await page.fill('#name', decklistName);
   // [[card]] links resolve when the text is saved (Ketura, 2026-11-03)
-  await page.fill('#descriptionMd', 'Published by the **smoke test**. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');
-  await page.fill('input[name="play_event[]"]', `E2E Regionals ${runId}`);
-  await page.fill('input[name="play_placing[]"]', '1st');
+  await page.fill('#description', 'Published by the **smoke test**. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');
+  // a note on a card, picked from the deck on the left
+  await page.click('#annot-pick');
+  await page.locator('#deck .rb-line[data-code="1_12"]').click();
+  await page.fill('#annot-list textarea[data-annotation="1_12"]', 'The only companion.');
   // the thumbnail: the cultures until a card is chosen, then that card (Ketura, 2026-11-05)
   await expect(page.locator('#thumb-cultures .rb-thumb-cultures')).toBeVisible();
   await expect(page.locator('#thumbnail optgroup')).toHaveCount(3);
@@ -67,7 +75,7 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await expect(page.locator('a.rb-cardlink.is-ambiguous')).toHaveText('Gandalf');
   await expect(page.locator('.rb-cardlink.is-missing')).toHaveText('[[Nobody At All]]');
   await expect(page.locator('.deck-validation')).toContainText('Legal in Fellowship Block');
-  await expect(page.locator('.decklist-plays')).toContainText(`E2E Regionals ${runId}`);
+  await expect(page.locator('#reader-notes')).toContainText('The only companion.');
   // the reader: the deckbuilder's deck, read-only, "4x Card" lines
   await expect(page.locator('#deck.rb-readonly')).toContainText('Ring-bearer');
   await expect(page.locator('#deck .rb-qty-text').first()).toHaveText(/^\dx$/);
@@ -126,14 +134,14 @@ test('the author edits the decklist from its page; nobody else gets Edit', async
   await Promise.all([page.waitForURL(new RegExp(`/decklist/edit/${decklistId}$`)), edit.click()]);
   await expect(page.locator('#name')).toHaveValue(decklistName);
   // the same form, editing, and Cancel goes back to the decklist; within the grace period
-  // (Ketura, 2026-11-07) the cards, format, half and date change only by undoing publishing
-  await expect(page.locator('h1')).toHaveText('Edit Decklist');
+  // (Ketura, 2026-11-07) the cards and release date change only by undoing publishing
+  await expect(page.locator('.rb-tabs .active')).toHaveText('Edit Decklist');
+  await expect(page.locator('#annot-list textarea[data-annotation="1_12"]')).toHaveValue('The only companion.');
   await expect(page.locator('#decklist-state')).toHaveAttribute('data-state', 'grace');
-  await expect(page.locator('#target_format')).toBeDisabled();
-  await expect(page.locator('#half')).toBeDisabled();
+  await expect(page.locator('#effective_date')).toBeDisabled();
   await expect(page.locator('#version-line')).toContainText('Version 1');
   await expect(page.locator('.rb-form-actions a')).toHaveAttribute('href', new URL(decklistUrl).pathname);
-  await page.fill('#descriptionMd', 'Published by the **smoke test**, then edited. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');
+  await page.fill('#description', 'Published by the **smoke test**, then edited. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');
   await page.click(`form[action$="/decklist/edit/${decklistId}"] button[type=submit]:has-text("Save")`);
   await expect(page).toHaveURL(new RegExp(`/decklist/view/${decklistId}/`));
   await expect(page.locator('body')).toContainText('Published by the smoke test, then edited.');

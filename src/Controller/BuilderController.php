@@ -312,14 +312,12 @@ class BuilderController extends AbstractController
                 $mine[$tag] = ($mine[$tag] ?? 0) + 1;
             }
         }
-        // the most used tags on the site, counted only over decks that are already public:
-        // published as a decklist, or archive decks (Ketura, 2026-11-03). Private decks'
-        // tags stay private.
+        // the most used tags on the site, counted only over decks that are already public
+        // (Ketura, 2026-11-03): decklists' own tags, archive decks' included, since they
+        // have their own (2026-11-07). Private decks' tags stay private.
         $public = [];
         $rows = $this->managerRegistry->getManager()->getConnection()->fetchFirstColumn(
-            "SELECT d.tags FROM deck d JOIN user u ON u.id = d.user_id
-             WHERE d.tags IS NOT NULL AND d.tags <> ''
-               AND (u.historic = 1 OR EXISTS (SELECT 1 FROM published_deck p WHERE p.parent_deck_id = d.id))"
+            "SELECT p.tags FROM published_deck p WHERE p.tags IS NOT NULL AND p.tags <> '' AND p.withdrawn = 0"
         );
         foreach ($rows as $tags) {
             foreach (array_unique(preg_split('/\s+/', trim((string) $tags), -1, PREG_SPLIT_NO_EMPTY)) as $tag) {

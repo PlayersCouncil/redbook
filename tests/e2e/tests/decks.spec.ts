@@ -203,12 +203,19 @@ test('deck notes, stats and history: starting fellowship, tags, annotations, tes
   await expect(page.locator('#starting-list')).toContainText('Legolas');
   await page.fill('#starting-bid', '2-3');
   await page.fill('#starting-notes', 'Mulligan without **Gimli**');
-  await expect(page.locator('#starting-preview strong')).toHaveText('Gimli');
+  // the markdown editor's Preview (Ketura, 2026-11-07), shared with the decklist form
+  const start = page.locator('.rb-notes-start');
+  await start.locator('button[data-handler="bootstrap-markdown-cmdPreview"]').click();
+  await expect(start.locator('.md-preview strong')).toHaveText('Gimli');
+  await start.locator('button[data-handler="bootstrap-markdown-cmdPreview"]').click();
   // [[card]] links in the preview, the same forms the server resolves
   await page.fill('#description', 'Like [[HTTWC]], [[3R38]] and [[3_38.1]]; `[[3_38]]` stays code.');
-  await expect(page.locator('#description-preview a.rb-cardlink[data-code="3_38"]')).toHaveCount(2);
-  await expect(page.locator('#description-preview a.rb-cardlink[href$="/card/53_38#v1"]')).toHaveCount(1);
-  await expect(page.locator('#description-preview code')).toHaveText('[[3_38]]');
+  const desc = page.locator('.rb-notes-desc');
+  await desc.locator('button[data-handler="bootstrap-markdown-cmdPreview"]').click();
+  await expect(desc.locator('.md-preview a.rb-cardlink[data-code="3_38"]')).toHaveCount(2);
+  await expect(desc.locator('.md-preview a.rb-cardlink[href$="/card/53_38#v1"]')).toHaveCount(1);
+  await expect(desc.locator('.md-preview code')).toHaveText('[[3_38]]');
+  await desc.locator('button[data-handler="bootstrap-markdown-cmdPreview"]').click();
   await page.fill('#tag-entry', 'elves');
   await page.keyboard.press('Enter');
   await expect(page.locator('#tag-input .rb-tag-chip')).toContainText('elves');

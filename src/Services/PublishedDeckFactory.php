@@ -25,10 +25,14 @@ class PublishedDeckFactory
     ) {
     }
 
-    /** The starting fellowship, starting notes and card annotations go with the deck */
+    /**
+     * The deck's notes: its tags, bid, starting notes and card annotations. Copied when it's
+     * published and when a historian verifies it; replacing a withdrawn decklist's cards
+     * leaves the notes written for the decklist alone (Ketura, 2026-11-07).
+     */
     private function copyNotes(Deck $deck, PublishedDeck $decklist): void
     {
-        $decklist->setStarting($deck->getStarting());
+        $decklist->setTags(trim((string) $deck->getTags()) ?: null);
         $decklist->setStartingBid($deck->getStartingBid());
         $decklist->setStartingNotes($deck->getStartingNotes());
         $decklist->setAnnotations($deck->getAnnotations());
@@ -54,6 +58,7 @@ class PublishedDeckFactory
         $decklist->setEffectiveDate($deck->getEffectiveDate());
 
         $this->replaceSlots($decklist, $deck);
+        $this->copyNotes($deck, $decklist);
         // the deck was validated as it was saved
         $decklist->setValidation($deck->getValidation());
 
@@ -78,7 +83,11 @@ class PublishedDeckFactory
         }
     }
 
-    /** The decklist's cards, cultures, sizes and notes, from the deck as it stands */
+    /**
+     * The decklist's cards, cultures and sizes, and the starting fellowship marked among
+     * them, from the deck as it stands. Whether it's a half follows from the cards
+     * (Ketura, 2026-11-07): one side only is that side's half.
+     */
     private function replaceSlots(PublishedDeck $decklist, DeckInterface $deck): void
     {
         foreach ($decklist->getSlots()->getSlots() as $slot) {
@@ -95,8 +104,10 @@ class PublishedDeckFactory
         }
         $decklist->updateCultures();
         $decklist->updateSizes();
+        $kind = $decklist->getKind();
+        $decklist->setHalf($kind === 'whole' ? null : $kind);
         if ($deck instanceof Deck) {
-            $this->copyNotes($deck, $decklist);
+            $decklist->setStarting($deck->getStarting());
         }
     }
 
@@ -111,7 +122,6 @@ class PublishedDeckFactory
         $decklist->setFaction($deck->getFaction());
         $decklist->setLastPack($deck->getLastPack());
         $decklist->setTargetFormat($deck->getTargetFormat());
-        $decklist->setEffectiveDate($deck->getEffectiveDate());
         $decklist->setDateUpdate(new DateTime());
         $this->replaceSlots($decklist, $deck);
         $this->validator->validateDeck($decklist);
@@ -146,13 +156,19 @@ class PublishedDeckFactory
     }
 
     /**
-     * @param string|null $half free_peoples or shadow for a deck half
+     * The release date a deck is published with (Ketura, 2026-11-07): today, or for a
+     * historical deck the date it was used, which its card versions already follow
      */
+    public static function releaseDate(DeckInterface $deck): DateTimeInterface
+    {
+        $historic = $deck instanceof Deck ? $deck->getHistoric() : null;
+        return !empty($historic['date_used']) ? $deck->getEffectiveDate() : new DateTime('today');
+    }
+
     public function createDecklistFromDeck(
         DeckInterface $deck,
         ?string $name = null,
         ?string $descriptionMd = null,
-        ?string $half = null,
         ?DateTimeInterface $effectiveDate = null,
     ): PublishedDeck {
         // increasing deck version
@@ -177,9 +193,11 @@ class PublishedDeckFactory
         $decklist->setNbcomments(0);
         $decklist->setUser($deck->getUser());
         $decklist->setTargetFormat($deck->getTargetFormat());
-        $decklist->setEffectiveDate($effectiveDate ?? $deck->getEffectiveDate());
-        $decklist->setHalf($half);
+        $decklist->setEffectiveDate($effectiveDate ?? self::releaseDate($deck));
         $this->replaceSlots($decklist, $deck);
+        if ($deck instanceof Deck) {
+            $this->copyNotes($deck, $decklist);
+        }
         // derived from: what the deck was copied from; its own earlier publications are
         // versions now, in its line (Ketura, 2026-11-07)
         if ($deck->getParent()) {

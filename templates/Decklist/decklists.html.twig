@@ -204,7 +204,7 @@
                 {% set score = decklist.nbVotes + 2 * decklist.nbFires %}
                 {# fire instead of the thumbs up once fires are a tenth of the votes (Ketura, 2026-11-05) #}
                 {% set fiery = decklist.nbVotes > 0 and decklist.nbFires * 10 >= decklist.nbVotes %}
-                {% set tags = decklist.parent and decklist.parent.tags ? decklist.parent.tags | split(' ') | filter(t => t) : [] %}
+                {% set tags = decklist.tags ? decklist.tags | split(' ') | filter(t => t) : [] %}
                 <tr data-href="{{ url }}" class="rb-kind-{{ kind }}">
                     <td class="rb-col-thumb">{% include 'Decklist/thumbnail.html.twig' %}</td>
                     <td class="rb-col-score">

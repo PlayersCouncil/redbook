@@ -131,7 +131,7 @@ decks:
         hint: Las etiquetas son útiles para filtrar tu lista de mazos, p. ej., <i>competitivo</i> o <i>justa</i>. Separa las etiquetas con espacios.
       notes:
         label: Notas
-        hint: "Escribe # para introducir el nombre de una carta. Escribe $ para introducir un símbolo."
+        hint: "De qué va el mazo, cómo jugarlo, qué vigilar. Escribe # para introducir el nombre de una carta."
     form:
       name: Nombre
       cancel: Cancelar cambios
@@ -319,7 +319,8 @@ decklist:
       pagetitle:
         spam: Prevención de spam
     warnings:
-      published: "Este mazo <a href='%url%'>ya ha sido publicado</a> antes. Vas a crear un duplicado."
+      published: "Esta misma lista <a href='%url%'>ya se ha publicado antes</a>."
+      claim: "Si es tu propio mazo archivado, <a href='%url%'>reclama esa cuenta archivada</a>."
   view:
     versions: Versiones
     published: publicado
@@ -576,7 +577,7 @@ tournamentLegality:
 decklist.form.title.create: Publicar Mazo
 decklist.form.title.edit: Editar Lista
 decklist.form.format_from_deck: "El formato del propio mazo, fijo una vez publicado. Para cambiarlo, cambia antes el mazo en el constructor."
-decklist.form.version_new: "Publicando una lista nueva."
+decklist.form.version_new: "Un mazo propio: la versión 1 de una línea nueva."
 decklist.form.version_of: "Publicando la <b>versión %version%</b> de %name%."
 decklist.form.version_is: "<b>Versión %version%</b>, después de %name%."
 decklist.form.version_first: "<b>Versión %version%</b>: la primera de su línea."
@@ -602,12 +603,21 @@ decklist.state.republish: Publicar de Nuevo
 decklist.state.replace_cards: Reemplazar Cartas Desde el Mazo
 decklist.state.open_deck: Abrir el Mazo
 decklist.state.no_deck: "El mazo desde el que se publicó ya no existe, así que sus cartas no se pueden reemplazar."
-decklist.state.withdrawn_help: "Retirada: solo tú puedes ver esta lista. Corrige el mazo en el constructor, reemplaza aquí las cartas y publícala de nuevo en la misma dirección, con un nuevo periodo de gracia."
-decklist.state.grace_help: "Hasta %date% puedes deshacer la publicación para corregir las cartas. Después, las cartas, el formato, la mitad y la fecha quedan fijos, y cambiarlos significa publicar una nueva versión."
-decklist.state.fixed_help: "Las cartas, el formato, la mitad y la fecha son fijos. Para cambiarlos, publica una nueva versión desde el mazo."
+decklist.state.withdrawn_help: "Retirada: solo tú puedes ver esta lista. Corrige el mazo en el constructor, reemplaza aquí las cartas y publícala de nuevo en la misma dirección, con otros tres días para deshacerlo."
+decklist.state.grace_help: "Hasta %date% puedes deshacer la publicación para corregir las cartas. Después, las cartas y la fecha de lanzamiento quedan fijas, y cambiarlas significa publicar una nueva versión."
+decklist.state.fixed_help: "Las cartas y la fecha de lanzamiento son fijas. Para cambiarlas, publica una nueva versión desde el mazo."
 decklist.state.withdrawn_note: "Retirada: solo tú puedes ver esta lista."
 decklist.state.gone_title: Lista Retirada
 decklist.state.gone_text: "Su autor ha retirado esta lista, quizá para corregirla. Puede que vuelva pronto a esta dirección."
 decklist.state.gone_browse: Ver las listas
 decklist.state.errors.locked: "El periodo de gracia ha terminado, así que esta lista no se puede retirar."
 decklist.state.errors.no_deck: El mazo desde el que se publicó ya no existe.
+decklist.reader.played: "Lanzada %date%"
+decklist.form.name: Nombre del Mazo
+decklist.form.deck_label: El mazo tal como se publica
+decklist.form.release_date: Fecha de Lanzamiento
+decklist.form.release_date_hint: "¿En qué fecha se hizo público este mazo? Por defecto es hoy, pero si es un mazo histórico, debería ser la fecha en que se jugó por primera vez en un evento o se publicó en una web."
+decklist.form.release_note: "Esto hará pública tu lista. Tendrás <strong>tres días</strong> para deshacerlo si te has equivocado; después, la lista publicada será permanente."
+decklist.form.version: Versión
+deckbuilder.notes.editor_hint: "Pulsa # para insertar el nombre de una carta."
+decklist.form.starting_none: "Sin comunidad inicial: viene del mazo, donde los compañeros se marcan con su S."

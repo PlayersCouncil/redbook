@@ -13,14 +13,11 @@ use App\Entity\Deck;
 use App\Entity\PublishedDeck;
 use App\Entity\PublishedDeckInterface;
 use App\Entity\Culture;
-use App\Entity\PublishedDeckPlay;
 use App\Entity\PublishedDeckRevision;
 use App\Repository\FormatRepository;
-use App\Entity\Tournament;
 use App\Entity\User;
 use App\Services\PublishedDeckFactory;
 use App\Services\PublishedDeckManager;
-use App\Services\DeckValidator;
 use App\Services\Texts;
 use DateTime;
 use Doctrine\ORM\NonUniqueResultException;
@@ -69,7 +66,6 @@ class SocialController extends AbstractController
         PublishedDeckFactory $decklistFactory,
         FormatRepository $formats,
         Texts $texts,
-        DeckValidator $validator,
         string $deck_uuid
     ): Response {
         $user = $this->getUser();
@@ -93,7 +89,7 @@ class SocialController extends AbstractController
                 $previous = null;
             }
             $decklistFactory->continueLine($decklist, $previous);
-            $this->applyDecklistForm($decklist, $request, FormMode::Create, $texts, $formats, $validator);
+            $this->applyDecklistForm($decklist, $request, FormMode::Create, $texts);
             $em->persist($decklist);
             $em->flush();
 
@@ -110,14 +106,22 @@ class SocialController extends AbstractController
             $repo->findBy(['signature' => md5($content), 'withdrawn' => false], ['dateCreation' => 'DESC']),
             fn (PublishedDeck $published) => json_encode($published->getSlots()->getContent()) == $content,
         );
+        // the user's own copy first, then an archive account's, which they may be able to claim
         $own = array_filter($same, fn (PublishedDeck $published) => $published->getUser()->getId() === $user->getId());
-        $published = reset($own) ?: reset($same);
+        $archived = array_filter($same, fn (PublishedDeck $published) => $published->getUser()->isHistoric());
+        $published = reset($own) ?: (reset($archived) ?: reset($same));
         if ($published) {
             $url = $this->generateUrl('decklist_detail', [
                 'decklist_id' => $published->getId(),
                 'decklist_name' => $published->getNameCanonical(),
             ]);
-            $this->addFlash('warning', $translator->trans('decklist.publish.warnings.published', ['%url%' => $url]));
+            $warning = $translator->trans('decklist.publish.warnings.published', ['%url%' => $url]);
+            if (!$own && $published->getUser()->isHistoric()) {
+                $warning .= ' ' . $translator->trans('decklist.publish.warnings.claim', [
+                    '%url%' => $this->generateUrl('historic_claim_form', ['user_id' => $published->getUser()->getId()]),
+                ]);
+            }
+            $this->addFlash('warning', $warning);
         }
 
         // what a new version can follow: the latest of each of the author's lines
@@ -145,14 +149,13 @@ class SocialController extends AbstractController
         TranslatorInterface $translator,
         FormatRepository $formats,
         Texts $texts,
-        DeckValidator $validator,
         int $decklist_id
     ): Response {
         $decklist = $this->editableDecklist($decklist_id);
         $em = $this->managerRegistry->getManager();
 
         if ($request->isMethod('POST')) {
-            $this->applyDecklistForm($decklist, $request, FormMode::Edit, $texts, $formats, $validator);
+            $this->applyDecklistForm($decklist, $request, FormMode::Edit, $texts);
             $decklist->setDateUpdate(new DateTime());
             $em->flush();
 
@@ -317,7 +320,8 @@ class SocialController extends AbstractController
 
     /**
      * The decklist form, for either mode: it posts back to the address that showed it.
-     * The format comes from the deck; only an archive deck's can be corrected here.
+     * Laid out as the deckbuilder is (Ketura, 2026-11-07): the deck on the left as it will
+     * be published, its format, legality and half with it; the form on the right.
      */
     private function renderDecklistForm(
         FormMode $mode,
@@ -326,35 +330,25 @@ class SocialController extends AbstractController
         TranslatorInterface $translator,
         array $params,
     ): Response {
-        $choices = $formats->findSelectable();
-        $current = $decklist->getTargetFormat() ? $formats->findOneByCode($decklist->getTargetFormat()) : null;
-        if ($current !== null && !in_array($current, $choices, true)) {
-            array_unshift($choices, $current);
-        }
-
         return $this->render('Decklist/decklist_form.html.twig', $params + [
             'mode' => $mode->value,
             'pagetitle' => $translator->trans('decklist.form.title.' . $mode->value),
             'decklist' => $decklist,
-            // the cards, half and date: set when publishing, then only while withdrawn
+            'format' => $decklist->getTargetFormat() ? $formats->findOneByCode($decklist->getTargetFormat()) : null,
+            // the release date: set when publishing, then only while withdrawn
             'content_editable' => $mode === FormMode::Create || $decklist->isContentEditable(),
-            'formats' => $choices,
-            'tournaments' => $this->managerRegistry->getRepository(Tournament::class)->findAll(),
             'previous' => null,
             'lines' => [],
             'source_deck' => null,
         ]);
     }
 
-    /** What the decklist form sends, onto the decklist; the mode and state decide what may change */
-    private function applyDecklistForm(
-        PublishedDeck $decklist,
-        Request $request,
-        FormMode $mode,
-        Texts $texts,
-        FormatRepository $formats,
-        DeckValidator $validator,
-    ): void {
+    /**
+     * What the decklist form sends, onto the decklist; the mode and state decide what may
+     * change. The notes fields are the deckbuilder's Notes tab, shared (Ketura, 2026-11-07).
+     */
+    private function applyDecklistForm(PublishedDeck $decklist, Request $request, FormMode $mode, Texts $texts): void
+    {
         if (!$this->isCsrfTokenValid('decklist_form', (string) $request->request->get('_token'))) {
             throw new BadRequestHttpException('The form has expired; reload the page and try again.');
         }
@@ -363,7 +357,7 @@ class SocialController extends AbstractController
 
         // an empty name keeps the one it had: the deck's when publishing
         $name = mb_substr(trim(strip_tags((string) $form->get('name'))), 0, 60) ?: ($decklist->getName() ?: 'Untitled');
-        $descriptionMd = trim((string) $form->get('descriptionMd'));
+        $descriptionMd = trim((string) $form->get('description_'));
         // what the commentary said before is kept (Ketura, 2026-11-07)
         if ($mode === FormMode::Edit && ($name !== $decklist->getName() || $descriptionMd !== trim((string) $decklist->getDescriptionMd()))) {
             $em->persist(new PublishedDeckRevision($decklist));
@@ -372,6 +366,22 @@ class SocialController extends AbstractController
         $decklist->setNameCanonical($texts->slugify($name) . '-' . $decklist->getVersion());
         $decklist->setDescriptionMd($descriptionMd);
         $decklist->setDescriptionHtml($texts->markdown($descriptionMd));
+
+        // the rest of the notes: tags, the bid, starting notes and card annotations
+        $tags = array_unique(array_filter(preg_split('/\s+/', strip_tags((string) $form->get('tags_')))));
+        $decklist->setTags(mb_substr(implode(' ', $tags), 0, 4000) ?: null);
+        $decklist->setStartingBid(mb_substr(trim(strip_tags((string) $form->get('starting_bid_'))), 0, 30) ?: null);
+        $decklist->setStartingNotes(trim((string) $form->get('starting_notes_')) ?: null);
+        $annotations = json_decode((string) $form->get('annotations_'), true);
+        if (is_array($annotations)) {
+            $rows = [];
+            foreach ($annotations as $row) {
+                if (is_array($row) && is_string($row['code'] ?? null) && preg_match('/^\d+_\d+$/', $row['code'])) {
+                    $rows[] = ['code' => $row['code'], 'text' => mb_substr((string) ($row['text'] ?? ''), 0, 2000)];
+                }
+            }
+            $decklist->setAnnotations($rows ?: null);
+        }
 
         // derived from: a public decklist, by id or address, never the decklist itself
         $precedent = trim((string) $form->get('precedent'));
@@ -384,21 +394,11 @@ class SocialController extends AbstractController
         $decklist->setPrecedent($precedent && !$precedent->isWithdrawn() ? $precedent : null);
 
         $decklist->setThumbnailCard($this->thumbnailFrom($request, $decklist));
-        $this->applyPlays($decklist, $request);
 
         if ($mode === FormMode::Create || $decklist->isContentEditable()) {
-            $decklist->setHalf($this->halfFrom($request));
-            $effectiveDate = $this->dateFrom($form->get('effective_date'));
-            if ($effectiveDate) {
-                $decklist->setEffectiveDate($effectiveDate);
-            }
-        }
-        // a user's decklist has its deck's format; historians correct an archive deck's
-        if ($mode === FormMode::Edit && $decklist->isArchived()) {
-            $format = $formats->findOneByCode((string) $form->get('target_format'));
-            if ($format !== null && $format->getCode() !== $decklist->getTargetFormat()) {
-                $decklist->setTargetFormat($format->getCode());
-                $validator->validateDeck($decklist);
+            $releaseDate = $this->dateFrom($form->get('effective_date'));
+            if ($releaseDate) {
+                $decklist->setEffectiveDate($releaseDate);
             }
         }
     }
@@ -1000,7 +1000,6 @@ class SocialController extends AbstractController
         return $response;
     }
 
-    /** free_peoples or shadow from the publish form; anything else is a whole deck */
     /** The thumbnail card the form chose: one of the deck's cards, not a site; none for the cultures */
     private function thumbnailFrom(Request $request, PublishedDeck $decklist): ?Card
     {
@@ -1013,52 +1012,12 @@ class SocialController extends AbstractController
         return null;
     }
 
-    private function halfFrom(Request $request): ?string
-    {
-        $half = $request->request->get('half');
-        return in_array($half, [Card::SIDE_FREE_PEOPLES, Card::SIDE_SHADOW], true) ? $half : null;
-    }
-
     private function dateFrom(mixed $value): ?DateTime
     {
         if (!is_string($value) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $value)) {
             return null;
         }
         return DateTime::createFromFormat('!Y-m-d', $value) ?: null;
-    }
-
-    /**
-     * Play records from the publish and edit forms (phase3/03): parallel arrays
-     * play_event[], play_date[], play_tier[], play_placing[], play_players[], play_url[].
-     * The submitted rows replace the decklist's records.
-     */
-    private function applyPlays(PublishedDeck $decklist, Request $request): void
-    {
-        $form = $request->request->all();
-        if (!isset($form['play_event'])) {
-            return;
-        }
-        foreach ($decklist->getPlays()->toArray() as $play) {
-            $decklist->removePlay($play);
-        }
-        $tiers = $this->managerRegistry->getRepository(Tournament::class);
-        foreach ((array) $form['play_event'] as $i => $event) {
-            $event = mb_substr(trim(strip_tags((string) $event)), 0, 255);
-            if ($event === '') {
-                continue;
-            }
-            $play = new PublishedDeckPlay();
-            $play->setEventName($event);
-            $play->setEventDate($this->dateFrom($form['play_date'][$i] ?? null));
-            $tierId = (int) ($form['play_tier'][$i] ?? 0);
-            $play->setTier($tierId ? $tiers->find($tierId) : null);
-            $play->setPlacing(mb_substr(trim(strip_tags((string) ($form['play_placing'][$i] ?? ''))), 0, 50) ?: null);
-            $players = (int) ($form['play_players'][$i] ?? 0);
-            $play->setPlayerCount($players > 0 ? min($players, 32000) : null);
-            $url = trim((string) ($form['play_url'][$i] ?? ''));
-            $play->setUrl(filter_var($url, FILTER_VALIDATE_URL) && preg_match('#^https?://#', $url) ? mb_substr($url, 0, 500) : null);
-            $decklist->addPlay($play);
-        }
     }
 
     /**

@@ -835,7 +835,7 @@ abbr.legality.banned {
     .rb-notes-start { flex: 1 1 0; }
     .rb-notes-annot { flex: 0.8 1 0; }
     .rb-notes-desc { flex: 1.3 1 0; }
-    .rb-md-pair { flex: 1 1 auto; min-height: 0; }
+    .rb-md-editor { flex: 1 1 auto; min-height: 0; }
     .rb-build-pane .rb-filters { flex: 0 0 auto; max-height: 58%; overflow: hidden; }
     .rb-filters-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
     .rb-build-pane .rb-pool { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
@@ -1270,10 +1270,6 @@ abbr.legality.banned {
 a.rb-starting-card, a.rb-starting-card:visited, a.rb-starting-card:hover, a.rb-starting-card:focus { color: #111; text-decoration: none; }
 a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline; }
 .rb-starting-cost { color: var(--rb-muted); }
-.rb-md-pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; min-height: 120px; }
-.rb-md-pair textarea { width: 100%; height: 100%; min-height: 0; resize: none; padding: 6px 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: calc(13px * var(--rb-text-scale)); overflow-y: auto; }
-.rb-md-preview { min-height: 0; overflow-y: auto; padding: 6px 10px; border: 1px dashed var(--rb-line); border-radius: 6px; background: var(--rb-soft); font-size: calc(13px * var(--rb-text-scale)); }
-.rb-md-preview:empty::before { content: attr(aria-label); color: var(--rb-grey); font-style: italic; }
 .rb-annot-pick { margin-left: auto; }
 .rb-annot-pick[aria-pressed=true] { background: var(--rb-blue, #2F6DB5); border-color: transparent; color: #fff; }
 .rb-annot-add { position: relative; flex: 0 1 260px; }
@@ -1290,7 +1286,7 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 .rb-annot-remove { width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--rb-muted); font-size: calc(16px * var(--rb-text-scale)); line-height: 1; cursor: pointer; }
 .rb-annot-remove:hover { color: var(--rb-red); }
 .rb-annot textarea { width: 100%; resize: vertical; padding: 4px 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: calc(13px * var(--rb-text-scale)); }
-@media (max-width: 600px) { .rb-md-pair, .rb-annot { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 600px) { .rb-annot { grid-template-columns: minmax(0, 1fr); } }
 
 /* the Stats tab (Ketura, 2026-11-03) */
 /* room inside the tab, so nothing runs into the pane's edges (Ketura, 2026-11-03) */
@@ -1818,3 +1814,28 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-derived-result { text-align: left; }
 .rb-reader-version { font-size: .85em; color: #777; margin-left: 6px; }
 .rb-withdrawn-note form, .rb-withdrawn-note .btn { margin-left: 6px; }
+
+/* the notes' markdown editors (Ketura, 2026-11-07): the toolbar, then the text or its
+   preview; in the deckbuilder's Notes pane they fill their sections */
+.rb-md-editor { display: flex; flex-direction: column; min-height: 0; }
+.rb-md-editor .md-editor { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; margin: 0; border-radius: 6px; }
+.rb-md-editor .md-editor > textarea,
+.rb-md-editor .md-editor > .md-preview { flex: 1 1 auto; min-height: 60px; height: auto !important; resize: none; overflow-y: auto; font-family: inherit; font-size: calc(13px * var(--rb-text-scale)); padding: 6px 8px; }
+.rb-md-editor .md-editor > .md-header { padding: 4px; }
+.rb-md-editor .md-editor .btn-sm { padding: 2px 8px; }
+.rb-md-editor .md-footer { padding: 3px 8px; font-size: calc(12px * var(--rb-text-scale)); color: var(--rb-muted); }
+
+/* the decklist form, laid out as the deckbuilder (Ketura, 2026-11-07): the deck on the left,
+   the form scrolling on the right with the notes at their natural height */
+.rb-publish-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rb-publish-format { font-weight: 700; font-size: calc(16px * var(--rb-text-scale)); }
+.rb-publish-info .deck-validation .alert { margin-bottom: 4px; }
+.rb-publish-info .deck-validation p { margin: 0; }
+.rb-publish #tab-pane-publish { padding: 10px 8px 24px 4px; }
+.rb-publish #tab-pane-publish > * { flex: none; }
+.rb-publish .rb-notes, .rb-publish .rb-notes-section, .rb-publish .rb-md-editor { flex: none; }
+.rb-publish .rb-notes { padding: 0; margin: 4px 0 18px; gap: 14px; }
+.rb-publish .rb-md-editor .md-editor > textarea, .rb-publish .rb-md-editor .md-editor > .md-preview { min-height: 130px; }
+.rb-publish .rb-notes-desc .md-editor > textarea, .rb-publish .rb-notes-desc .md-editor > .md-preview { min-height: 320px; }
+.rb-publish .rb-annot-list { flex: none; overflow: visible; }
+.rb-publish .rb-release-date input { max-width: 220px; }

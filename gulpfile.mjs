@@ -101,6 +101,7 @@ export function copyPageSpecificJs() {
       "assets/js/app.card_terms.js",
       "assets/js/app.deck_editor.js",
       "assets/js/app.pool.js",
+      "assets/js/app.md_editor.js",
       "assets/js/app.deck_notes.js",
       "assets/js/app.deck_stats.js",
       "assets/js/ui.decks.js",
