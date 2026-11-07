@@ -1237,8 +1237,9 @@ decklist.form.release_date: Release Date
 decklist.form.release_date_hint: "What date did this deck become public? Defaults to today, but if this was a historical deck, it should be the date it was first played at an event or published on a website."
 decklist.form.release_note: "This will release your decklist to the public. You will have <strong>three days</strong> to undo this if you made a mistake, after which the published list will become permanent."
 decklist.form.version: Version
-deckbuilder.notes.editor_hint: "Press # to insert a card name."
+deckbuilder.notes.editor_hint: "Type # to insert a card name."
 deckbuilder.notes.start_pick: "Add a starting companion: click one in the deck"
 deckbuilder.notes.start_remove: "Take %card% out of the starting fellowship"
 deckbuilder.notes.editing: "Editing %field% for %deck%"
 deckbuilder.notes.done: Done
+deckbuilder.notes.card_button: "Insert a card name (#)"

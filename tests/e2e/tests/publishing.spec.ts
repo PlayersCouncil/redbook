@@ -20,7 +20,7 @@ let v2 = { id: '', url: '' };
 
 async function publish(page: Page, name: string): Promise<{ id: string; url: string }> {
   await page.fill('#name', name);
-  await page.click('form[action*="/deck/publish/"] button[type=submit]:has-text("Publish")');
+  await page.click('.rb-form-actions button[form=decklist-form]:has-text("Publish")');
   await expect(page).toHaveURL(/\/decklist\/view\/(\d+)\//);
   const url = page.url();
   return { id: url.match(/\/decklist\/view\/(\d+)\//)![1], url };
@@ -127,7 +127,7 @@ test('derived from: search by author and name, or paste an address', async ({ pa
   await expect(page.locator('#derived-chosen')).toContainText('v2');
   await expect(page.locator('#precedent')).toHaveValue(v2.id);
   await snap(page, 'derived-from picked');
-  await page.click(`form[action$="/decklist/edit/${v1.id}"] button[type=submit]:has-text("Save")`);
+  await page.click('.rb-form-actions button[form=decklist-form]:has-text("Save")');
   await expect(page.locator('#table-predecessor')).toContainText(`${lineName} two`);
 
   // clear it, then paste an address: picked straight away

@@ -51,28 +51,63 @@
         e.$textarea.trigger('input');
     }
 
-    /** The selected text's matching cards, as a menu; the pick goes in as [[card]] */
+    /**
+     * The card button types a # where the cursor is, which opens the card list as typing
+     * one does (Ketura, 2026-11-07)
+     */
     function on_button_card(e)
     {
-        var button = e.$editor.find('button[data-handler=bootstrap-markdown-cmdCard]');
-        button.attr('data-toggle', 'dropdown');
-        button.next('.dropdown-menu').remove();
+        var selected = e.getSelection(), before = e.getContent().substr(0, selected.start);
+        var chunk = (/\S$/.test(before) ? ' ' : '') + '#';
+        e.replaceSelection(chunk);
+        var cursor = selected.start + chunk.length;
+        e.setSelection(cursor, cursor);
+        e.$textarea.focus().trigger('input');
+        // once the click is over: the list closes on a click outside it, this one included
+        setTimeout(function () { e.$textarea.trigger($.Event('keyup', {keyCode: 51, which: 51})); }, 0);
+    }
 
-        var menu = $('<ul class="dropdown-menu">').insertAfter(button).on('click', 'li', function (event)
-        {
-            event.preventDefault();
-            replace_selection(e, e.getSelection(), '[[' + $(this).data('name') + ']]');
-            menu.remove();
-            button.off('click');
-        });
+    /** The deck's own cards come first in the card list, and fill it before anything's typed */
+    function in_deck(card)
+    {
+        var content = app.deck && app.deck.get_content ? app.deck.get_content() : {};
+        return content[card.code] || content['rb:' + card.code] ? 0 : 1;
+    }
 
-        var typed = e.getSelection().text,
-            cards = app.data.cards ? app.data.cards.find({label: new RegExp(typed.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i'), kind: 'card'}, {'$orderBy': {label: 1}}) : [];
-        cards.slice(0, 10).forEach(function (card)
+    /**
+     * Room to scroll past the last line until it's at the top, as text editors allow; a
+     * click down there puts the cursor at the end of the text (Ketura, 2026-11-07)
+     */
+    function scroll_past_end(textarea)
+    {
+        var el = textarea[0];
+        function pad()
         {
-            menu.append('<li data-name="' + _.escape(card.label) + '"><a href="#">' + _.escape(card.label) + ' <small><i>' + _.escape(card.pack_name || '') + '</i></small></a></li>');
+            if(!el.clientHeight) {
+                return;
+            }
+            // the box's height is set by its container, never by this padding
+            var style = getComputedStyle(el),
+                line = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.4,
+                want = Math.max(8, Math.round(el.clientHeight - (parseFloat(style.paddingTop) || 0) - line));
+            if(Math.abs((parseFloat(style.paddingBottom) || 0) - want) > 1) {
+                el.style.setProperty('padding-bottom', want + 'px', 'important');
+            }
+        }
+        if(window.ResizeObserver) {
+            new ResizeObserver(pad).observe(el);
+        }
+        $(window).on('resize', _.debounce(pad, 100));
+        pad();
+        textarea.on('mouseup', function (event) {
+            var style = getComputedStyle(el),
+                text_bottom = el.scrollHeight - (parseFloat(style.paddingBottom) || 0),
+                y = event.clientY - el.getBoundingClientRect().top + el.scrollTop;
+            if(y > text_bottom && el.selectionStart === el.selectionEnd) {
+                var end = el.value.length;
+                el.setSelectionRange(end, end);
+            }
         });
-        button.dropdown();
     }
 
     /**
@@ -105,7 +140,7 @@
                 name: 'groupCard',
                 data: [{
                     name: 'cmdCard',
-                    title: t('decklist.publish.editor.cardtolink'),
+                    title: t('deckbuilder.notes.card_button'),
                     icon: 'fas fa-clone',
                     callback: on_button_card
                 }]
@@ -123,6 +158,12 @@
         });
         var instance = textarea.data('markdown');
         box = textarea.closest('.md-editor');
+        // Preview shows whether it's on: plain off, blue on (Ketura, 2026-11-07)
+        var preview = box.find('button[data-handler="bootstrap-markdown-cmdPreview"]').removeClass('btn-primary').addClass('btn-default rb-md-preview-btn');
+        box.on('click', 'button', function () {
+            setTimeout(function () { preview.toggleClass('active', !!instance.$isPreview).attr('aria-pressed', instance.$isPreview ? 'true' : 'false'); }, 0);
+        });
+        scroll_past_end(textarea);
         box.prepend('<div class="rb-md-title"></div>');
         $('<div class="rb-md-done"><button type="button" class="btn btn-primary">' + t('deckbuilder.notes.done') + '</button></div>')
             .appendTo(box)
@@ -133,7 +174,7 @@
             }
         });
         // # then a card's name
-        app.textcomplete && app.textcomplete.setup(textarea, {icons: false, card_syntax: 'wiki'});
+        app.textcomplete && app.textcomplete.setup(textarea, {icons: false, card_syntax: 'wiki', prefer: in_deck});
     };
 
 })(app.md_editor = {}, jQuery);

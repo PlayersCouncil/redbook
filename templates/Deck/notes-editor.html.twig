@@ -19,20 +19,21 @@
         </div>
     </div>
 
-    {# the bid, under the tags (Ketura, 2026-11-07) #}
-    <div class="rb-notes-bid">
-        <label for="starting-bid">{{ 'deckbuilder.notes.bid' | trans }}</label>
-        <input type="text" id="starting-bid" name="starting_bid_" maxlength="30" autocomplete="off" placeholder="{{ 'deckbuilder.notes.bid_placeholder' | trans }}">
-    </div>
-
     <section class="rb-notes-section rb-notes-start" aria-labelledby="starting-title">
         <div class="rb-notes-head"><h3 id="starting-title">{{ 'deckbuilder.notes.starting' | trans }}</h3></div>
-        {# + then a companion in the deck, the others greyed out; x on a pill takes it off (Ketura, 2026-11-07) #}
-        <div class="rb-starting-row">
-            <span class="rb-starting-label">{{ 'deckbuilder.notes.starting_fellowship' | trans }}</span>
-            <button type="button" class="rb-btn rb-btn-small rb-start-pick" id="start-pick" aria-pressed="false"
-                    title="{{ 'deckbuilder.notes.start_pick' | trans }}" aria-label="{{ 'deckbuilder.notes.start_pick' | trans }}">+</button>
-            <div class="rb-starting-list" id="starting-list"></div>
+        {# the bid, then the starting companions: + then a companion in the deck, the others
+           greyed out; x on a pill takes it off (Ketura, 2026-11-07) #}
+        <div class="rb-starting-fields">
+            <div class="rb-starting-row">
+                <label class="rb-starting-label" for="starting-bid">{{ 'deckbuilder.notes.bid' | trans }}:</label>
+                <input type="text" class="rb-starting-bid" id="starting-bid" name="starting_bid_" maxlength="30" autocomplete="off" placeholder="{{ 'deckbuilder.notes.bid_placeholder' | trans }}">
+            </div>
+            <div class="rb-starting-row">
+                <span class="rb-starting-label">{{ 'deckbuilder.notes.starting_fellowship' | trans }}</span>
+                <button type="button" class="rb-btn rb-btn-small rb-start-pick" id="start-pick" aria-pressed="false"
+                        title="{{ 'deckbuilder.notes.start_pick' | trans }}" aria-label="{{ 'deckbuilder.notes.start_pick' | trans }}">+</button>
+                <div class="rb-starting-list" id="starting-list"></div>
+            </div>
         </div>
         <input type="hidden" name="starting_" id="starting-field">
         <div class="rb-md-editor">

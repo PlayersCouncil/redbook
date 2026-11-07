@@ -61,7 +61,8 @@
     };
 
     /**
-     * options: cards, icons, users
+     * options: cards, icons, users; card_syntax 'wiki' puts in [[card]]; prefer(card) gives
+     * 0 for cards to list first (the deck's own) and 1 for the rest
      */
     textcomplete.setup = function setup(textarea, options)
     {
@@ -78,7 +79,15 @@
                 {
                     // names beginning with it first, the match in bold (Ketura, 2026-11-07)
                     typed = term;
-                    callback(term ? textcomplete.rank(app.data.cards.find({kind: 'card'}), term).slice(0, 10) : []);
+                    var cards = app.data.cards.find({kind: 'card'});
+                    if(!term) {
+                        // just the #: a list straight away, the preferred cards (the deck's) first
+                        callback(_.sortBy(cards, function (card) {
+                            return (options.prefer ? options.prefer(card) : 0) + ' ' + card.label;
+                        }).slice(0, 10));
+                        return;
+                    }
+                    callback(textcomplete.rank(cards, term, options.prefer).slice(0, 10));
                 },
                 template: function (value)
                 {

@@ -223,11 +223,22 @@ test('deck notes, stats and history: starting fellowship, tags, annotations, tes
   // [[card]] links in the preview, the same forms the server resolves
   await page.fill('#description', 'Like [[HTTWC]], [[3R38]] and [[3_38.1]]; `[[3_38]]` stays code.');
   const desc = page.locator('.rb-notes-desc');
-  await desc.locator('button[data-handler="bootstrap-markdown-cmdPreview"]').click();
+  // Preview is blue while it's on (Ketura, 2026-11-07)
+  const preview = desc.locator('button[data-handler="bootstrap-markdown-cmdPreview"]');
+  await preview.click();
+  await expect(preview).toHaveClass(/active/);
   await expect(desc.locator('.md-preview a.rb-cardlink[data-code="3_38"]')).toHaveCount(2);
   await expect(desc.locator('.md-preview a.rb-cardlink[href$="/card/53_38#v1"]')).toHaveCount(1);
   await expect(desc.locator('.md-preview code')).toHaveText('[[3_38]]');
-  await desc.locator('button[data-handler="bootstrap-markdown-cmdPreview"]').click();
+  await preview.click();
+  await expect(preview).not.toHaveClass(/active/);
+  // room to scroll the last line up to the top
+  expect(await page.locator('#description').evaluate((el) => parseFloat(getComputedStyle(el).paddingBottom))).toBeGreaterThan(40);
+  // the card button types a #, which opens the card list straight away, the deck's cards first
+  await desc.locator('button[data-handler="bootstrap-markdown-cmdCard"]').click();
+  await expect(page.locator('#description')).toHaveValue(/ #$/);
+  await expect(page.locator('body > ul.dropdown-menu li.textcomplete-item:visible').first()).toBeVisible();
+  await page.keyboard.press('Escape');
   // fullscreen: a box headed with the field and the deck, closed by Done (Ketura, 2026-11-07)
   await desc.locator('.md-control-fullscreen').click();
   await expect(desc.locator('.md-editor')).toHaveClass(/md-fullscreen-mode/);

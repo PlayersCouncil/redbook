@@ -832,9 +832,11 @@ abbr.legality.banned {
     /* panes that fill the space and keep their scrolling inside (Notes, Stats) */
     .rb-fixed-pane.active { overflow: hidden; padding-top: 10px; display: flex; flex-direction: column; }
     .rb-notes { flex: 1 1 auto; min-height: 0; }
-    .rb-notes-start { flex: 1 1 0; }
-    .rb-notes-annot { flex: 0.8 1 0; }
-    .rb-notes-desc { flex: 1.3 1 0; }
+    /* the two editors share the height; the annotations, now last, take what they need up to a
+       third, their list scrolling (Ketura, 2026-11-07) */
+    .rb-notes .rb-notes-start { flex: 1 1 0; min-height: 270px; }
+    .rb-notes .rb-notes-desc { flex: 1.5 1 0; min-height: 170px; }
+    .rb-notes-annot { flex: 0 1 auto; max-height: 34%; }
     .rb-md-editor { flex: 1 1 auto; min-height: 0; }
     .rb-build-pane .rb-filters { flex: 0 0 auto; max-height: 58%; overflow: hidden; }
     .rb-filters-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
@@ -1258,7 +1260,7 @@ abbr.legality.banned {
 .rb-tag-suggest button:hover, .rb-annot-suggest button:hover { background: #F1ECE2; }
 .rb-tag-suggest small, .rb-annot-suggest small { color: var(--rb-muted); }
 .rb-notes-section { display: flex; flex-direction: column; gap: 5px; min-height: 0; }
-.rb-notes-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rb-notes-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
 .rb-notes-head h3 { margin: 0; font-size: calc(14px * var(--rb-text-scale)); font-weight: 700; }
 .rb-notes-head .rb-hint { margin-left: auto; font-size: calc(12px * var(--rb-text-scale)); color: var(--rb-muted); }
 .rb-notes-bid > label { display: block; margin: 0 0 3px; font-size: calc(13px * var(--rb-text-scale)); font-weight: 700; }
@@ -1271,7 +1273,9 @@ a.rb-starting-card, a.rb-starting-card:visited, a.rb-starting-card:hover, a.rb-s
 a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline; }
 /* the starting companions (Ketura, 2026-11-07): + to pick one from the deck, pills with x to take one off */
 .rb-starting-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.rb-start-pick { width: 26px; height: 26px; padding: 0; font-weight: 700; }
+.rb-starting-fields { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 4px; }
+.rb-starting-bid { width: 120px; height: 28px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-notes .rb-btn.rb-start-pick { width: 28px; height: 28px; padding: 0; justify-content: center; font-size: calc(18px * var(--rb-text-scale)); font-weight: 700; line-height: 1; }
 .rb-notes .rb-btn.rb-start-pick[aria-pressed=true] { background: #2F6DB5; border-color: transparent; color: #fff; }
 .rb-starting-pill { display: inline-flex; align-items: center; gap: 2px; padding: 1px 9px 1px 4px; border-radius: 12px; background: var(--rb-yellow); }
 .rb-starting-pill .rb-starting-card { padding: 0; background: none; }
@@ -1840,12 +1844,27 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-publish-format { font-weight: 700; font-size: calc(16px * var(--rb-text-scale)); }
 .rb-publish-info .deck-validation .alert { margin-bottom: 4px; }
 .rb-publish-info .deck-validation p { margin: 0; }
-.rb-publish #tab-pane-publish { padding: 10px 8px 24px 4px; }
-.rb-publish #tab-pane-publish > * { flex: none; }
+/* the right side (Ketura, 2026-11-07): a large title, the notice and deck name fixed at the
+   top, the buttons at the bottom, the rest scrolling between; at least a third of the width,
+   ahead of the deck, the reverse of the deckbuilder */
+@media (min-width: 992px) {
+    .rb-publish .rb-col-right { flex: 0 0 max(36%, 680px); width: auto; }
+    .rb-publish .rb-col-left { flex: 1 1 0; width: auto; }
+    .rb-publish-side { display: flex; flex-direction: column; min-height: 0; }
+    .rb-publish-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
+}
+.rb-publish-title { flex: none; }
+.rb-publish-top { flex: none; }
+.rb-publish-top .alert { margin-bottom: 10px; }
+.rb-publish-top .form-group { margin-bottom: 10px; }
+.rb-publish-scroll { padding: 10px 8px 16px 2px; border-top: 1px solid var(--rb-line); }
+.rb-publish-scroll > .form-group { margin-bottom: 20px; }
+.rb-publish .rb-form-actions { flex: none; margin: 0; padding: 10px 0 4px; border-top: 1px solid var(--rb-line); }
 .rb-publish .rb-notes, .rb-publish .rb-notes-section, .rb-publish .rb-md-editor { flex: none; }
-.rb-publish .rb-notes { padding: 0; margin: 4px 0 18px; gap: 14px; }
-.rb-publish .rb-md-editor .md-editor > textarea, .rb-publish .rb-md-editor .md-editor > .md-preview { min-height: 130px; }
-.rb-publish .rb-notes-desc .md-editor > textarea, .rb-publish .rb-notes-desc .md-editor > .md-preview { min-height: 320px; }
+.rb-publish .rb-notes { padding: 0; margin: 4px 0 20px; gap: 14px; }
+/* fixed heights here: the scroll-past-the-end padding mustn't grow them */
+.rb-publish .rb-md-editor .md-editor > textarea, .rb-publish .rb-md-editor .md-editor > .md-preview { flex: none; height: 170px !important; }
+.rb-publish .rb-notes-desc .md-editor > textarea, .rb-publish .rb-notes-desc .md-editor > .md-preview { height: 380px !important; }
 .rb-publish .rb-annot-list { flex: none; overflow: visible; }
 .rb-publish .rb-release-date input { max-width: 220px; }
 
@@ -1872,7 +1891,6 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-md-editor .md-editor.md-fullscreen-mode .md-header .btn { border: 1px solid #ccc; background: #fff; color: #333; }
 .rb-md-editor .md-editor.md-fullscreen-mode .md-header .btn:hover,
 .rb-md-editor .md-editor.md-fullscreen-mode .md-header .btn:focus { background: #e6e6e6; border-color: #adadad; color: #333; }
-.rb-md-editor .md-editor.md-fullscreen-mode .md-header .btn-primary,
 .rb-md-editor .md-editor.md-fullscreen-mode .md-header .btn.active { background: #337ab7; border-color: #2e6da4; color: #fff; }
 .rb-md-editor .md-editor.md-fullscreen-mode .md-input,
 .rb-md-editor .md-editor.md-fullscreen-mode .md-preview {
@@ -1890,3 +1908,10 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 /* the # completion's list hangs off the body: above the fullscreen editor too */
 body > ul.dropdown-menu b, .rb-annot-suggest b { font-weight: 800; }
 body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
+
+/* Preview: plain while off, blue while on (Ketura, 2026-11-07) */
+.rb-md-editor .md-header .btn.rb-md-preview-btn { background: #fff; border-color: #ccc; color: #111; box-shadow: none; }
+.rb-md-editor .md-header .btn.rb-md-preview-btn:hover { background: #e6e6e6; color: #111; }
+.rb-md-editor .md-header .btn.rb-md-preview-btn.active,
+.rb-md-editor .md-header .btn.rb-md-preview-btn.active:hover { background: #337ab7; border-color: #2e6da4; color: #fff; }
+.rb-md-editor .md-editor > .md-preview { width: auto !important; }

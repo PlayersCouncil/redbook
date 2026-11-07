@@ -43,7 +43,7 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await expect(page).toHaveURL(/\/deck\/publish\//);
   // one form for publishing and editing (Ketura, 2026-11-06), laid out as the deckbuilder
   // (2026-11-07): the deck on the left with its format, the form as a tab on the right
-  await expect(page.locator('.rb-tabs .active')).toHaveText('Publish Deck');
+  await expect(page.locator('.rb-publish-title')).toHaveText('Publish Deck');
   await expect(page.locator('.rb-publish-format')).toHaveText('Fellowship Block');
   await expect(page.locator('#deck.rb-readonly')).toContainText('Gimli');
   await expect(page.locator('#release-note')).toContainText('three days');
@@ -71,7 +71,7 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await expect(page.locator('#thumb-card img')).toHaveAttribute('src', /.+/);
   await expect(page.locator('#thumb-cultures')).toBeHidden();
   await snap(page, 'publish form');
-  await page.click('form[action*="/deck/publish/"] button[type=submit]:has-text("Publish")');
+  await page.click('.rb-form-actions button[form=decklist-form]:has-text("Publish")');
 
   await expect(page).toHaveURL(/\/decklist\/view\/(\d+)\//);
   await expect(page.locator('h1')).toContainText(decklistName);
@@ -141,14 +141,14 @@ test('the author edits the decklist from its page; nobody else gets Edit', async
   await expect(page.locator('#name')).toHaveValue(decklistName);
   // the same form, editing, and Cancel goes back to the decklist; within the grace period
   // (Ketura, 2026-11-07) the cards and release date change only by undoing publishing
-  await expect(page.locator('.rb-tabs .active')).toHaveText('Edit Decklist');
+  await expect(page.locator('.rb-publish-title')).toHaveText('Edit Decklist');
   await expect(page.locator('#annot-list textarea[data-annotation="1_12"]')).toHaveValue('The only companion.');
   await expect(page.locator('#decklist-state')).toHaveAttribute('data-state', 'grace');
   await expect(page.locator('#effective_date')).toBeDisabled();
   await expect(page.locator('#version-line')).toContainText('Version 1');
   await expect(page.locator('.rb-form-actions a')).toHaveAttribute('href', new URL(decklistUrl).pathname);
   await page.fill('#description', 'Published by the **smoke test**, then edited. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');
-  await page.click(`form[action$="/decklist/edit/${decklistId}"] button[type=submit]:has-text("Save")`);
+  await page.click('.rb-form-actions button[form=decklist-form]:has-text("Save")');
   await expect(page).toHaveURL(new RegExp(`/decklist/view/${decklistId}/`));
   await expect(page.locator('body')).toContainText('Published by the smoke test, then edited.');
   await snap(page, 'decklist edited');

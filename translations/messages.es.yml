@@ -619,9 +619,10 @@ decklist.form.release_date: Fecha de Lanzamiento
 decklist.form.release_date_hint: "¿En qué fecha se hizo público este mazo? Por defecto es hoy, pero si es un mazo histórico, debería ser la fecha en que se jugó por primera vez en un evento o se publicó en una web."
 decklist.form.release_note: "Esto hará pública tu lista. Tendrás <strong>tres días</strong> para deshacerlo si te has equivocado; después, la lista publicada será permanente."
 decklist.form.version: Versión
-deckbuilder.notes.editor_hint: "Pulsa # para insertar el nombre de una carta."
+deckbuilder.notes.editor_hint: "Escribe # para insertar el nombre de una carta."
 deckbuilder.notes.starting_none: Sin compañeros iniciales
 deckbuilder.notes.start_pick: "Añadir un compañero inicial: haz clic en uno del mazo"
 deckbuilder.notes.start_remove: "Quitar %card% de la comunidad inicial"
 deckbuilder.notes.editing: "Editando %field% de %deck%"
 deckbuilder.notes.done: Hecho
+deckbuilder.notes.card_button: "Insertar el nombre de una carta (#)"
