@@ -46,7 +46,10 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   // published before: version 2 of it, which can be cleared to stand alone
   await page.goto(`/deck/publish/${deckUuid}`);
   await expect(page.locator('#previous_version')).toHaveValue(v1.id);
-  await expect(page.locator('#version-line')).toHaveText(`Publishing version 2 of ${lineName} one.`);
+  await expect(page.locator('#version-line')).toHaveText('Publishing version 2 of:');
+  // the version it follows, as the derived-from pick shows: name, author, date, version
+  await expect(page.locator('#version-card .rb-derived-name')).toHaveText(`${lineName} one`);
+  await expect(page.locator('#version-card .rb-derived-meta')).toContainText('v1');
   await page.selectOption('#previous_version', '');
   await expect(page.locator('#version-line')).toHaveText('A deck of its own: version 1 of a new line.');
   await page.selectOption('#previous_version', v1.id);

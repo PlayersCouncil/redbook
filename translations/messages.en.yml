@@ -735,7 +735,7 @@ decklist.plays.add: Add an event
 decklist.publish.half: Deck half
 decklist.publish.half_hint: "Publish only one side, for others to pair with their own."
 decklist.publish.thumbnail: Thumbnail
-decklist.publish.thumbnail_cultures: The deck's two main cultures
+decklist.publish.thumbnail_cultures: Culture Banner
 decklist.publish.thumbnail_rb: Ring-bearer and Ring
 decklist.publish.thumbnail_hint: "What the deck lists show for this deck: a card from it, or its two main cultures."
 decklist.list.title: Decklists
@@ -1197,8 +1197,8 @@ decklist.form.title.create: Publish Deck
 decklist.form.title.edit: Edit Decklist
 decklist.form.format_from_deck: "The deck's own format, fixed once published. To change it, change the deck in the deckbuilder first."
 decklist.form.version_new: "A deck of its own: version 1 of a new line."
-decklist.form.version_of: "Publishing <b>version %version%</b> of %name%."
-decklist.form.version_is: "<b>Version %version%</b>, following %name%."
+decklist.form.version_of: "Publishing <b>version %version%</b> of:"
+decklist.form.version_is: "<b>Version %version%</b>, following:"
 decklist.form.version_first: "<b>Version %version%</b>: the first of its line."
 decklist.form.previous: New Version Of
 decklist.form.previous_none: "None: a decklist of its own"
@@ -1245,3 +1245,4 @@ deckbuilder.notes.done: Done
 deckbuilder.notes.card_button: "Insert a card name (#)"
 deckbuilder.notes.fullscreen: Fullscreen
 decklist.publish.thumbnail_sites: Sites
+decklist.form.resize: Drag to resize

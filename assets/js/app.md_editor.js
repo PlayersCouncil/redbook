@@ -95,6 +95,12 @@
                     menu.prop('hidden', true);
                 }
             });
+            // it stays where it opened: closed when something scrolls under it
+            document.addEventListener('scroll', function (event) {
+                if(!menu.prop('hidden') && !$(event.target).closest(menu).length) {
+                    menu.prop('hidden', true);
+                }
+            }, true);
             e.$textarea.add(menu).on('keydown', function (event) {
                 if(event.key === 'Escape' && !menu.prop('hidden')) {
                     event.stopPropagation();
@@ -103,6 +109,15 @@
             });
         }
         menu.prop('hidden', !menu.prop('hidden'));
+        // centred under the button (Ketura, 2026-11-07), fixed to the window so no scrolling pane
+        // cuts it off; above the button when there's no room below
+        if(!menu.prop('hidden')) {
+            var rect = button[0].getBoundingClientRect(), height = menu.outerHeight(),
+                up = window.innerHeight - rect.bottom < height + 12 && rect.top > height + 12;
+            menu.css({position: 'fixed', right: 'auto',
+                left: Math.max(8, Math.min(window.innerWidth - menu.outerWidth() - 8, rect.left + rect.width / 2 - menu.outerWidth() / 2)),
+                top: up ? rect.top - height - 4 : rect.bottom + 4});
+        }
     }
 
     /** The deck's own cards come first in the card list, and fill it before anything's typed */

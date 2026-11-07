@@ -1,0 +1,7 @@
+{# A decklist as the form refers to it (Ketura, 2026-11-07), to check it's the right one: its
+   name, linked, then author, date, version and tags. Variables: d (a decklist).
+   ui.decklist_form.js builds the same from the lookup's answer. #}
+<a href="{{ path('decklist_detail', {decklist_id: d.id, decklist_name: d.nameCanonical|e('url')}) }}" target="_blank" class="rb-derived-name">{{ d.name }}</a>
+<span class="rb-derived-meta">{{ d.user.displayName }} &middot; {{ d.dateCreation | date('Y-m-d') }} &middot; v{{ d.version }}</span>
+{%- set tags = d.tags ? d.tags | split(' ') | filter(t => t) : [] %}
+{% if tags %}<span class="rb-derived-tags">{% for tag in tags %}<span class="rb-tag-chip">{{ tag }}</span>{% endfor %}</span>{% endif %}

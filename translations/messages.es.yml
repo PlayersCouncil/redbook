@@ -578,8 +578,8 @@ decklist.form.title.create: Publicar Mazo
 decklist.form.title.edit: Editar Lista
 decklist.form.format_from_deck: "El formato del propio mazo, fijo una vez publicado. Para cambiarlo, cambia antes el mazo en el constructor."
 decklist.form.version_new: "Un mazo propio: la versión 1 de una línea nueva."
-decklist.form.version_of: "Publicando la <b>versión %version%</b> de %name%."
-decklist.form.version_is: "<b>Versión %version%</b>, después de %name%."
+decklist.form.version_of: "Publicando la <b>versión %version%</b> de:"
+decklist.form.version_is: "<b>Versión %version%</b>, después de:"
 decklist.form.version_first: "<b>Versión %version%</b>: la primera de su línea."
 decklist.form.previous: Nueva Versión De
 decklist.form.previous_none: "Ninguna: una lista propia"
@@ -628,3 +628,5 @@ deckbuilder.notes.done: Hecho
 deckbuilder.notes.card_button: "Insertar el nombre de una carta (#)"
 deckbuilder.notes.fullscreen: Pantalla completa
 decklist.publish.thumbnail_sites: Sitios
+decklist.publish.thumbnail_cultures: Estandarte de Culturas
+decklist.form.resize: Arrastra para cambiar el tamaño

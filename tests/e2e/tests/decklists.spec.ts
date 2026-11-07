@@ -64,11 +64,24 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await page.click('#annot-pick');
   await page.locator('#deck .rb-line[data-code="1_12"]').click();
   await page.fill('#annot-list textarea[data-annotation="1_12"]', 'The only companion.');
-  // the thumbnail: the cultures until a card is chosen, then that card (Ketura, 2026-11-05)
+  // the thumbnail: the culture banner until a card is chosen, then that card (Ketura, 2026-11-05)
   await expect(page.locator('#thumb-cultures .rb-thumb-cultures')).toBeVisible();
-  // ring-bearer and ring, each side, and the sites (Ketura, 2026-11-07)
-  await expect(page.locator('#thumbnail optgroup')).toHaveCount(4);
-  await page.locator('#thumbnail').selectOption({ label: 'Gimli, Dwarf of Erebor' });
+  await expect(page.locator('#thumb-select')).toHaveText('Culture Banner');
+  // a list of its own (Ketura, 2026-11-07): ring-bearer and ring, each side, the sites; the
+  // wheel steps one option, and hovering an option previews it
+  await page.locator('#thumb-select').hover();
+  await page.mouse.wheel(0, 100);
+  await expect(page.locator('#thumbnail')).toHaveValue(/^\d+_\d+$/);
+  await page.mouse.wheel(0, -100);
+  await expect(page.locator('#thumbnail')).toHaveValue('');
+  await page.click('#thumb-select');
+  await expect(page.locator('#thumb-options .rb-thumb-group')).toHaveCount(4);
+  // the starting companion first among the Free Peoples cards
+  await expect(page.locator('#thumb-options .rb-thumb-option[data-group="fp"]').first()).toHaveText('Gimli, Dwarf of Erebor');
+  await page.locator('#thumb-options .rb-thumb-option[data-group="sites"]').first().hover();
+  await expect(page.locator('#thumb-card')).toHaveClass(/rb-thumb-tpl-site/);
+  await page.locator('#thumb-options .rb-thumb-option', { hasText: 'Gimli, Dwarf of Erebor' }).click();
+  await expect(page.locator('#thumbnail')).toHaveValue('1_12');
   await expect(page.locator('#thumb-card img')).toHaveAttribute('src', /.+/);
   // framed to the picture by the card's template (Ketura, 2026-11-07)
   await expect(page.locator('#thumb-card')).toHaveClass(/rb-thumb-tpl-character/);

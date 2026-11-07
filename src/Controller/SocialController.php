@@ -109,6 +109,7 @@ class SocialController extends AbstractController
         $own = array_filter($same, fn (PublishedDeck $published) => $published->getUser()->getId() === $user->getId());
         $archived = array_filter($same, fn (PublishedDeck $published) => $published->getUser()->isHistoric());
         $published = reset($own) ?: (reset($archived) ?: reset($same));
+        $warning = null;
         if ($published) {
             $url = $this->generateUrl('decklist_detail', [
                 'decklist_id' => $published->getId(),
@@ -120,7 +121,6 @@ class SocialController extends AbstractController
                     '%url%' => $this->generateUrl('historic_claim_form', ['user_id' => $published->getUser()->getId()]),
                 ]);
             }
-            $this->addFlash('warning', $warning);
         }
 
         // what a new version can follow: the latest of each of the author's lines
@@ -134,6 +134,8 @@ class SocialController extends AbstractController
             'cancel' => $this->generateUrl('deck_edit', ['deck_uuid' => $deck->getUuid()]),
             'lines' => $lines,
             'previous' => $decklistFactory->defaultPrevious($deck),
+            // shown under the title (Ketura, 2026-11-07)
+            'duplicate_warning' => $warning,
         ]);
     }
 
@@ -286,6 +288,7 @@ class SocialController extends AbstractController
                 'decklist_id' => $decklist->getId(),
                 'decklist_name' => $decklist->getNameCanonical(),
             ]),
+            'tags' => array_values(array_filter(explode(' ', (string) $decklist->getTags()))),
         ];
     }
 
@@ -339,6 +342,7 @@ class SocialController extends AbstractController
             'previous' => null,
             'lines' => [],
             'source_deck' => null,
+            'duplicate_warning' => null,
         ]);
     }
 

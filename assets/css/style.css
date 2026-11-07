@@ -1282,23 +1282,24 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 .rb-starting-remove { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: none; color: #5a4a10; font-size: calc(15px * var(--rb-text-scale)); line-height: 1; cursor: pointer; }
 .rb-starting-remove:hover { background: #fff; color: var(--rb-red); }
 #deck.rb-picking-start .rb-pick-off { opacity: .3; filter: grayscale(1); cursor: not-allowed; }
-#deck.rb-picking-start .rb-pick-off:hover { outline: none; }
+#deck.rb-picking-start .rb-pick-off, #deck.rb-picking-start .rb-pick-off:hover { outline: none; }
 .rb-annot-pick { margin-left: auto; }
 .rb-notes .rb-btn.rb-annot-pick[aria-pressed=true] { background: #2F6DB5; border-color: transparent; color: #fff; }
 .rb-annot-add { position: relative; flex: 0 1 260px; }
 /* picking a card to annotate: the deck's cards light up under the pointer */
-#deck.rb-picking .rb-line[data-code], #deck.rb-picking .rb-tile[data-code] { cursor: copy; }
-#deck.rb-picking .rb-line[data-code]:hover, #deck.rb-picking .rb-tile[data-code]:hover { outline: 2px solid #2F6DB5; outline-offset: 1px; border-radius: 4px; }
+/* picking (Ketura, 2026-11-07): every card that can be picked outlined, gold under the pointer */
+#deck.rb-picking .rb-line[data-code], #deck.rb-picking .rb-tile[data-code] { cursor: copy; outline: 1px solid #9DB3CC; outline-offset: 1px; border-radius: 4px; }
+#deck.rb-picking .rb-line[data-code]:hover, #deck.rb-picking .rb-tile[data-code]:hover { outline: 2px solid #D4A017; }
 .rb-annot.is-new { animation: rb-annot-flash 1.2s ease-out; }
 @keyframes rb-annot-flash { from { background: #fdf3c8; } to { background: transparent; } }
 .rb-annot-add input { width: 100%; height: 28px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: calc(13px * var(--rb-text-scale)); }
 .rb-annot-list { flex: 1 1 auto; min-height: 60px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
-.rb-annot { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr) auto; gap: 8px; align-items: start; }
+.rb-annot { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr) auto; gap: 8px; align-items: center; }
 .rb-annot-card { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; font-size: calc(13px * var(--rb-text-scale)); }
 .rb-annot-out { margin-left: 1px; color: var(--rb-muted); font-weight: 700; cursor: help; }
 .rb-annot-remove { width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--rb-muted); font-size: calc(16px * var(--rb-text-scale)); line-height: 1; cursor: pointer; }
 .rb-annot-remove:hover { color: var(--rb-red); }
-.rb-annot textarea { width: 100%; resize: vertical; padding: 4px 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: calc(13px * var(--rb-text-scale));
+.rb-annot textarea { width: 100%; resize: none; padding: 4px 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: calc(13px * var(--rb-text-scale));
     /* never shorter than a line (Ketura, 2026-11-07) */
     min-height: calc(1.5em + 10px); line-height: 1.5; }
 @media (max-width: 600px) { .rb-annot { grid-template-columns: minmax(0, 1fr) auto; } .rb-annot-card { grid-column: 1 / -1; } }
@@ -1774,10 +1775,10 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-thumb-card img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
 /* just the picture (Ketura, 2026-11-07): each template's art window, covering the tile and
    centred in it. The windows, as fractions of the card: character x .11-.895 y .14-.565;
-   modifier x .22-.92 y .115-.50; site (landscape) x .10-.89 y .20-.74. The tile is 260:231. */
+   modifier x .22-.92 y .11-.485; site (landscape) x .10-.89 y .20-.74. The tile is 260:231. */
 .rb-thumb-card[class*="rb-thumb-tpl-"] img { position: absolute; max-width: none; height: auto; object-fit: fill; }
 .rb-thumb-tpl-character img { width: 150.2%; left: -25.48%; top: -32.95%; }
-.rb-thumb-tpl-modifier img { width: 165.8%; left: -44.5%; top: -29.9%; }
+.rb-thumb-tpl-modifier img { width: 170.2%; left: -47%; top: -29.3%; }
 .rb-thumb-tpl-site img { width: 228.6%; left: -63.2%; top: -37%; }
 .rb-thumb-card { box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
 .rb-thumb-cultures { border: 1px solid #A89C83; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -3px 6px rgba(0, 0, 0, .2), 0 1px 3px rgba(0, 0, 0, .25); }
@@ -1829,8 +1830,19 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-thumb-c-uruk-hai { --bg: var(--rb-culture-uruk-hai-base1); --corner-x: 0%; --corner-y: 0%; --corner-s: 0.73; --corner-m: 1; --full-x: 0%; --full-y: 0%; --full-s: 0.67; --full-m: 1; }
 
 /* the thumbnail's choice on the publish form, with how it will look */
-.rb-thumb-pick { display: flex; align-items: flex-start; gap: 14px; }
-.rb-thumb-choice { flex: 1 1 auto; min-width: 0; }
+.rb-thumb-pick { display: flex; align-items: center; gap: 14px; }
+.rb-thumb-choice { position: relative; flex: 1 1 auto; min-width: 0; }
+/* the thumbnail's own list (Ketura, 2026-11-07) */
+.rb-thumb-select { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; cursor: pointer; }
+.rb-thumb-current { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-thumb-options { position: absolute; z-index: 1000; top: calc(100% + 3px); left: 0; right: 0; max-height: 340px; overflow-y: auto; padding: 4px 0;
+    border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; box-shadow: 0 6px 18px rgba(34, 31, 26, .18); }
+.rb-thumb-options[hidden] { display: none; }
+.rb-thumb-group { padding: 6px 12px 2px; font-size: 12px; font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; }
+.rb-thumb-option { padding: 4px 12px 4px 22px; cursor: pointer; font-size: calc(14px * var(--rb-text-scale)); }
+.rb-thumb-option[data-value=""] { padding-left: 12px; }
+.rb-thumb-option.is-active { background: #F1ECE2; }
+.rb-thumb-option[aria-selected=true] { font-weight: 700; }
 .rb-thumb-preview { flex: 0 0 auto; }
 .rb-thumb-preview [hidden] { display: none; }
 
@@ -1878,19 +1890,28 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
     .rb-publish .rb-col-left { flex: 1 1 0; width: auto; }
     .rb-publish-side { display: flex; flex-direction: column; min-height: 0; }
     .rb-publish-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
+    /* the line between deck and form, dragged to resize them (Ketura, 2026-11-07) */
+    .rb-publish-splitter { flex: 0 0 9px; margin: 0 4px; cursor: col-resize; position: relative; }
+    .rb-publish-splitter::before { content: ""; position: absolute; top: 0; bottom: 0; left: 4px; width: 1px; background: var(--rb-line-strong); }
+    .rb-publish-splitter:hover::before, body.rb-resizing .rb-publish-splitter::before { left: 3px; width: 3px; background: #D4A017; }
+    body.rb-resizing { cursor: col-resize; user-select: none; }
 }
-.rb-publish-title { flex: none; }
+@media (max-width: 991px) { .rb-publish-splitter { display: none; } }
+.rb-publish-title { flex: none; margin-top: 18px; margin-bottom: 14px; }
 .rb-publish-top { flex: none; }
 .rb-publish-top .alert { margin-bottom: 10px; }
+.rb-derived-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 8px; vertical-align: middle; }
+.rb-derived-tags .rb-tag-chip { padding: 0 8px; font-size: 12px; }
+#version-card { margin: 6px 0; }
 .rb-publish-top .form-group { margin-bottom: 10px; }
-.rb-publish-scroll { padding: 10px 8px 16px 2px; border-top: 1px solid var(--rb-line); }
+.rb-publish-scroll { padding: 12px 12px 18px 8px; border-top: 1px solid var(--rb-line); }
 .rb-publish-scroll > .form-group { margin-bottom: 20px; }
 .rb-publish .rb-form-actions { flex: none; margin: 0; padding: 10px 0 4px; border-top: 1px solid var(--rb-line); }
 .rb-publish .rb-notes, .rb-publish .rb-notes-section, .rb-publish .rb-md-editor { flex: none; }
 .rb-publish .rb-notes { padding: 0; margin: 4px 0 20px; gap: 14px; }
 /* fixed heights here: the scroll-past-the-end padding mustn't grow them */
 .rb-publish .rb-md-editor .md-editor > textarea, .rb-publish .rb-md-editor .md-editor > .md-preview { flex: none; height: 170px !important; }
-.rb-publish .rb-notes-desc .md-editor > textarea, .rb-publish .rb-notes-desc .md-editor > .md-preview { height: 380px !important; }
+.rb-publish .rb-notes-desc .md-editor > textarea, .rb-publish .rb-notes-desc .md-editor > .md-preview { height: 170px !important; }
 .rb-publish .rb-annot-list { flex: none; overflow: visible; }
 .rb-publish .rb-release-date input { max-width: 220px; }
 
@@ -1942,35 +1963,34 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 .rb-md-editor .md-header .btn.rb-md-preview-btn.active:hover { background: #337ab7; border-color: #2e6da4; color: #fff; }
 .rb-md-editor .md-editor > .md-preview { width: auto !important; }
 
-/* game symbols in text (Ketura, 2026-11-07; MarkdownSymbols, app.symbols): the icon as a mask
-   in its culture's colour (blocks and twilight in the text colour), and its name in a tooltip
-   that shows at once */
+/* game symbols in text (Ketura, 2026-11-07; MarkdownSymbols, app.symbols): the icon as a mask,
+   black for readability, and its name in a tooltip that shows at once */
 .rb-sym { position: relative; display: inline-block; vertical-align: -0.2em; line-height: 1; }
 .rb-sym-icon { display: inline-block; width: 1.15em; height: 1.15em; background-color: currentColor;
     -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
-.rb-sym-twilight { color: #2B2620; }
+.rb-sym-icon { color: #111; }
 .rb-sym[data-tip]:hover::after {
     content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 5px); transform: translateX(-50%);
     padding: 2px 7px; border-radius: 4px; background: #2B2620; color: #fff; font-size: 12px; font-weight: 600; line-height: 1.5;
     white-space: nowrap; pointer-events: none; z-index: 60;
 }
-.rb-sym-dunland { --icon: url(/images/cultures/dunland.svg); color: var(--rb-culture-dunland, currentColor); }
-.rb-sym-dwarven { --icon: url(/images/cultures/dwarven.svg); color: var(--rb-culture-dwarven, currentColor); }
-.rb-sym-elven { --icon: url(/images/cultures/elven.svg); color: var(--rb-culture-elven, currentColor); }
-.rb-sym-gandalf { --icon: url(/images/cultures/gandalf.svg); color: var(--rb-culture-gandalf, currentColor); }
-.rb-sym-gollum { --icon: url(/images/cultures/gollum.svg); color: var(--rb-culture-gollum, currentColor); }
-.rb-sym-gondor { --icon: url(/images/cultures/gondor.svg); color: var(--rb-culture-gondor, currentColor); }
-.rb-sym-isengard { --icon: url(/images/cultures/isengard.svg); color: var(--rb-culture-isengard, currentColor); }
-.rb-sym-men { --icon: url(/images/cultures/men.svg); color: var(--rb-culture-men, currentColor); }
-.rb-sym-moria { --icon: url(/images/cultures/moria.svg); color: var(--rb-culture-moria, currentColor); }
-.rb-sym-orc { --icon: url(/images/cultures/orc.svg); color: var(--rb-culture-orc, currentColor); }
-.rb-sym-raider { --icon: url(/images/cultures/raider.svg); color: var(--rb-culture-raider, currentColor); }
-.rb-sym-ringwraith { --icon: url(/images/cultures/ringwraith.svg); color: var(--rb-culture-ringwraith, currentColor); }
-.rb-sym-rohan { --icon: url(/images/cultures/rohan.svg); color: var(--rb-culture-rohan, currentColor); }
-.rb-sym-sauron { --icon: url(/images/cultures/sauron.svg); color: var(--rb-culture-sauron, currentColor); }
-.rb-sym-shire { --icon: url(/images/cultures/shire.svg); color: var(--rb-culture-shire, currentColor); }
-.rb-sym-the-one-ring { --icon: url(/images/cultures/the_one_ring.svg); color: #9a7b12; }
-.rb-sym-uruk-hai { --icon: url(/images/cultures/uruk.svg); color: var(--rb-culture-uruk-hai, currentColor); }
+.rb-sym-dunland { --icon: url(/images/cultures/dunland.svg); }
+.rb-sym-dwarven { --icon: url(/images/cultures/dwarven.svg); }
+.rb-sym-elven { --icon: url(/images/cultures/elven.svg); }
+.rb-sym-gandalf { --icon: url(/images/cultures/gandalf.svg); }
+.rb-sym-gollum { --icon: url(/images/cultures/gollum.svg); }
+.rb-sym-gondor { --icon: url(/images/cultures/gondor.svg); }
+.rb-sym-isengard { --icon: url(/images/cultures/isengard.svg); }
+.rb-sym-men { --icon: url(/images/cultures/men.svg); }
+.rb-sym-moria { --icon: url(/images/cultures/moria.svg); }
+.rb-sym-orc { --icon: url(/images/cultures/orc.svg); }
+.rb-sym-raider { --icon: url(/images/cultures/raider.svg); }
+.rb-sym-ringwraith { --icon: url(/images/cultures/ringwraith.svg); }
+.rb-sym-rohan { --icon: url(/images/cultures/rohan.svg); }
+.rb-sym-sauron { --icon: url(/images/cultures/sauron.svg); }
+.rb-sym-shire { --icon: url(/images/cultures/shire.svg); }
+.rb-sym-the-one-ring { --icon: url(/images/cultures/the_one_ring.svg); }
+.rb-sym-uruk-hai { --icon: url(/images/cultures/uruk.svg); }
 .rb-sym-towers { --icon: url(/images/cultures/tower_block.svg); }
 .rb-sym-king { --icon: url(/images/cultures/king_block.svg); }
 .rb-sym-twilight-0 { --icon: url(/images/cultures/twilight_0.svg); }
@@ -1988,7 +2008,7 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 /* the editor's symbol menu (Ketura, 2026-11-07): cultures in columns, the blocks, then the
    twilight costs in a row */
 .rb-md-editor .md-header .btn-group { position: relative; }
-.rb-sym-menu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 100001; width: 430px; max-width: 80vw; padding: 8px;
+.rb-sym-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 100001; width: 430px; max-width: 80vw; padding: 8px;
     border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; box-shadow: 0 6px 18px rgba(34, 31, 26, .2); text-align: left; }
 .rb-sym-group { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; }
 .rb-sym-group + .rb-sym-group { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--rb-line); }
