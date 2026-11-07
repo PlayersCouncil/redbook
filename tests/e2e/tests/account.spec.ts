@@ -14,7 +14,10 @@ test('log in and log out', async ({ page }) => {
   await expect(page).toHaveURL(/\/decks/);
   await snap(page, 'logged in: my decks');
 
-  await page.goto('/logout');
+  // the account menu: My Account, (Admin), Logout
+  await page.locator('#login > a').click();
+  await expect(page.locator('#login .dropdown-menu a').first()).toHaveText('My Account');
+  await Promise.all([page.waitForURL((u) => !u.pathname.startsWith('/decks')), page.locator('#login .dropdown-menu a', { hasText: 'Logout' }).click()]);
   await page.goto('/decks');
   await expect(page).toHaveURL(/\/login/);
 });

@@ -8,6 +8,13 @@ test('home page renders with navigation', async ({ page }) => {
   await expect(page.locator('nav.navbar')).toBeVisible();
   await expect(page.locator('nav.navbar')).toContainText('Red Book');
   await expect(page.getByRole('link', { name: 'Decklists' }).first()).toBeVisible();
+  // the header (Ketura, 2026-11-06); sections not built yet are greyed out with no link
+  await expect(page.locator('nav.navbar .navbar-nav:not(.navbar-right) > li > a')).toHaveText(
+    ['Decklists', 'Deck Library', 'Card Stats', 'Players', 'Events', 'Posts', /Links/]);
+  await expect(page.locator('nav.navbar li.rb-nav-soon a[href]')).toHaveCount(0);
+  await expect(page.locator('nav.navbar .navbar-right > li > a')).toHaveText(['', 'My Decks', 'My Libraries', '']);
+  const links = page.locator('nav.navbar .dropdown-menu a', { hasText: /Gemp|Wiki|Forums|Discord/ });
+  await expect(links).toHaveText(['Play on Gemp', 'LOTR-TCG Wiki', 'PC Forums', 'PC Discord']);
   await snap(page, 'home page');
   // The built CSS and JS bundles (gulp output) are referenced and load
   const css = await page.locator('link[rel=stylesheet][href*="/css/"]').count();

@@ -49,49 +49,36 @@
                         <span class="fas fa-book"></span> {{ 'site.name' | trans }}
                     </a>
                 </div>
+                {# The header (Ketura, 2026-11-06): the public sections on the left, the user's own on the
+                   right. Sections not built yet show greyed out, with no link. #}
                 <div class="navbar-collapse collapse">
                     <ul class="nav navbar-nav">
-                        <li><a href="{{ path('decks_list') }}">{{ 'nav.mydecks' | trans }}</a></li>
                         <li><a href="{{ path('decklists_list') }}">{{ 'nav.decklists' | trans }}</a></li>
-                        <li><a href="{{ path('cards_search') }}">{{ 'nav.cards' | trans }}</a></li>
-                        <li class="hidden-sm"><a href="{{ path('card_reviews_list') }}">{{ 'nav.reviews' | trans }}</a>
-                        </li>
-                        <li><a href="{{ path('formats') }}">{{ 'nav.formats' | trans }}</a></li>
+                        {% for soon in ['nav.decklibrary', 'nav.cardstats', 'nav.players', 'nav.events', 'nav.posts'] %}
+                            <li class="disabled rb-nav-soon"><a title="{{ 'nav.notyet' | trans }}">{{ soon | trans }}</a></li>
+                        {% endfor %}
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button"
-                               aria-expanded="false">{{ 'nav.rules' | trans }} <span class="caret"></span></a>
+                               aria-expanded="false">{{ 'nav.links' | trans }} <span class="caret"></span></a>
                             <ul class="dropdown-menu" role="menu">
-                                <li><a href="https://wiki.lotrtcgpc.net/wiki/Comprehensive_Rules" rel="noopener">{{ 'nav.rulesreference' | trans }}</a></li>
-                                <li><a href="https://wiki.lotrtcgpc.net/wiki/PC_Errata" rel="noopener">{{ 'nav.pc_errata' | trans }}</a></li>
-                                <li><a href="https://wiki.lotrtcgpc.net/" rel="noopener">{{ 'nav.wiki' | trans }}</a></li>
                                 <li><a href="https://play.lotrtcgpc.net/" rel="noopener">{{ 'nav.gemp' | trans }}</a></li>
+                                <li><a href="https://wiki.lotrtcgpc.net/" rel="noopener">{{ 'nav.wiki' | trans }}</a></li>
+                                <li><a href="https://forum.lotrtcgpc.net/" rel="noopener">{{ 'nav.forums' | trans }}</a></li>
+                                <li><a href="https://lotrtcgpc.net/discord" rel="noopener">{{ 'nav.discord' | trans }}</a></li>
                             </ul>
                         </li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right">
-                        <li class="dropdown hidden-xs hidden-lg">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button"
-                               aria-expanded="false"><span class="fas fa-search"></span></a>
-                            <ul class="dropdown-menu" role="menu">
-                                <li>
-                                    <form action="{{ path('cards_find') }}">
-                                        <input type="text" placeholder="{{ 'nav.cardsearch' | trans }}"
-                                               class="form-control smart-filter-help" name="q">
-                                    </form>
-                                </li>
-                                <li><a href="">{{ 'nav.syntax' | trans }}</a></li>
-                            </ul>
-                        </li>
-                        <li class="hidden-xs hidden-sm hidden-md hidden-lg">
-                            <a href="{{ path('syntax') }}">{{ 'nav.syntax' | trans }}</a>
-                        </li>
+                        {# filled in by app.user.js: My Account, Admin, Logout #}
                         <li id="login">
-                            <a href="#" class="disabled"><span class="fas fa-user"></span></a>
+                            <a href="#" class="disabled" title="{{ 'nav.account' | trans }}"><span class="fas fa-user"></span></a>
                         </li>
+                        <li><a href="{{ path('decks_list') }}">{{ 'nav.mydecks' | trans }}</a></li>
+                        <li class="disabled rb-nav-soon"><a title="{{ 'nav.notyet' | trans }}">{{ 'nav.mylibraries' | trans }}</a></li>
                         <!-- locale selection -->
                         {% if _route is not empty %}
                             <li class="dropdown">
-                                <a class="dropdown-toggle" data-toggle="dropdown">
+                                <a class="dropdown-toggle" data-toggle="dropdown" title="{{ 'nav.language' | trans }}">
                                     <span class="lang-sm"
                                           lang="{{ app.request.locale | default(default_locale) }}"></span>
                                     <span class="caret"></span>
@@ -109,20 +96,6 @@
                             </li>
                         {% endif %}
                     </ul>
-                    <form class="navbar-form navbar-right visible-lg-block visible-xs-block external"
-                          action="{{ path('cards_find') }}">
-                        <div class="input-group">
-                            <input type="text" placeholder="{{ 'nav.cardsearch' | trans }}"
-                                   class="form-control smart-filter-help" name="q">
-                            <span class="input-group-btn">
-                                <button type="submit" class="btn btn-info"><span class="fas fa-search"></span></button>
-                            </span>
-                            <span class="input-group-btn">
-                                <a class="btn btn-link" href="{{ path('syntax') }}">{{ 'nav.syntax' | trans }}</a>
-                            </span>
-
-                        </div>
-                    </form>
                 </div><!--/.navbar-collapse -->
             {% endblock %}
         </div>

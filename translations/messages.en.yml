@@ -11,8 +11,20 @@ noimage: No image
 design_team_call_to_action: "If you are interested in playtesting cards like this, visit <a href=\"%url%\">The Citadel</a> for more info!"
 
 nav:
-  mydecks: My decks
+  mydecks: My Decks
+  mylibraries: My Libraries
   decklists: Decklists
+  decklibrary: Deck Library
+  cardstats: Card Stats
+  players: Players
+  events: Events
+  posts: Posts
+  links: Links
+  forums: PC Forums
+  discord: PC Discord
+  account: Account
+  language: Language
+  notyet: Not built yet
   cards: Cards
   reviews: Reviews
   rules: Rules
@@ -27,6 +39,8 @@ nav:
   cardsearch: Card Search
   user:
     loginregister: Login or register
+    myaccount: My Account
+    admin: Admin
     editaccount: Edit account
     profile: Public profile
     review_queue: Archive review queue
@@ -822,7 +836,7 @@ user.display_name_help: "Shown on your decks and comments. Your username is only
 user.display_name_taken: "Someone already goes by %name%. Choose another display name."
 decklist.publish.format_unknown: "Not known yet: choose the format for its era"
 nav.pc_errata: PC errata
-nav.wiki: The PC wiki
+nav.wiki: LOTR-TCG Wiki
 nav.gemp: Play on Gemp
 decklist.source.format_guessed: "The original didn't say which format; Red Book guessed %format%:"
 decklist.source.format_alternatives: "Also possible:"

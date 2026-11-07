@@ -11,7 +11,19 @@ design_team_call_to_action: "Si te interesa probar cartas como esta, ¡visita <a
 
 nav:
   mydecks: Mis mazos
+  mylibraries: Mis bibliotecas
   decklists: Mazos
+  decklibrary: Biblioteca de mazos
+  cardstats: Estadísticas de cartas
+  players: Jugadores
+  events: Eventos
+  posts: Artículos
+  links: Enlaces
+  forums: Foros del PC
+  discord: Discord del PC
+  account: Cuenta
+  language: Idioma
+  notyet: Todavía no está hecho
   cards: Cartas
   reviews: Reseñas
   rules: Reglas
@@ -25,6 +37,8 @@ nav:
   cardsearch: Buscar carta
   user:
     loginregister: Identificarse o registrarse
+    myaccount: Mi cuenta
+    admin: Administración
     editaccount: Editar cuenta
     profile: Perfil público
     logout: Salir
