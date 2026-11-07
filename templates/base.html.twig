@@ -73,8 +73,9 @@
                         <li id="login">
                             <a href="#" class="disabled" title="{{ 'nav.account' | trans }}"><span class="fas fa-user"></span></a>
                         </li>
-                        <li><a href="{{ path('decks_list') }}">{{ 'nav.mydecks' | trans }}</a></li>
-                        <li class="disabled rb-nav-soon"><a title="{{ 'nav.notyet' | trans }}">{{ 'nav.mylibraries' | trans }}</a></li>
+                        {# the user's own things, shown by app.user.js once logged in (Ketura, 2026-11-06) #}
+                        <li class="rb-nav-private hidden"><a href="{{ path('decks_list') }}">{{ 'nav.mydecks' | trans }}</a></li>
+                        <li class="rb-nav-private hidden disabled rb-nav-soon"><a title="{{ 'nav.notyet' | trans }}">{{ 'nav.mylibraries' | trans }}</a></li>
                         <!-- locale selection -->
                         {% if _route is not empty %}
                             <li class="dropdown">

@@ -94,6 +94,7 @@
     user.update = function update()
     {
         user.store();
+        $('.rb-nav-private').removeClass('hidden');
         // My Account, Admin, Logout (Ketura, 2026-11-06); Admin is a heading over the
         // tools the user's roles open, until there's an admin page of its own
         var admin = (user.data.historian ? '<li><a href="' + Routing.generate('historian_review') + '">' + Translator.trans('nav.user.review_queue') + '</a></li>' : '')

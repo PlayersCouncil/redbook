@@ -12,7 +12,8 @@ test('home page renders with navigation', async ({ page }) => {
   await expect(page.locator('nav.navbar .navbar-nav:not(.navbar-right) > li > a')).toHaveText(
     ['Decklists', 'Deck Library', 'Card Stats', 'Players', 'Events', 'Posts', /Links/]);
   await expect(page.locator('nav.navbar li.rb-nav-soon a[href]')).toHaveCount(0);
-  await expect(page.locator('nav.navbar .navbar-right > li > a')).toHaveText(['', 'My Decks', 'My Libraries', '']);
+  // logged out, the right side is just the account and language menus (Ketura, 2026-11-06)
+  await expect(page.locator('nav.navbar .navbar-right > li:visible > a')).toHaveText(['', '']);
   const links = page.locator('nav.navbar .dropdown-menu a', { hasText: /Gemp|Wiki|Forums|Discord/ });
   await expect(links).toHaveText(['Play on Gemp', 'LOTR-TCG Wiki', 'PC Forums', 'PC Discord']);
   await snap(page, 'home page');
