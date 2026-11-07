@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\Persistence\ManagerRegistry;
-use App\Classes\DeckContent;
 use App\Classes\FormMode;
 use App\Entity\Card;
 use App\Entity\Comment;
@@ -1011,12 +1010,12 @@ class SocialController extends AbstractController
         return $response;
     }
 
-    /** The thumbnail card the form chose: one of the deck's cards, not a site; none for the cultures */
+    /** The thumbnail card the form chose: one of the deck's cards, sites included (Ketura, 2026-11-07); none for the cultures */
     private function thumbnailFrom(Request $request, PublishedDeck $decklist): ?Card
     {
         $code = (string) $request->request->get('thumbnail');
         foreach ($decklist->getSlots() as $slot) {
-            if ($slot->getCard()->getCode() === $code && $slot->getRole() !== DeckContent::ROLE_SITE) {
+            if ($slot->getCard()->getCode() === $code) {
                 return $slot->getCard();
             }
         }

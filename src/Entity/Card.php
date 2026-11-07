@@ -268,6 +268,20 @@ class Card implements CardInterface
     public function setRarity(?RarityInterface $rarity): void { $this->rarity = $rarity; }
     public function getPack() { return $this->pack; }
     public function setPack(?PackInterface $pack = null) { $this->pack = $pack; return $this; }
+    /**
+     * Which card template frames its picture, for a decklist's thumbnail (Ketura, 2026-11-07):
+     * character (companions, allies, minions, followers), site, or modifier for the rest,
+     * The One Ring included
+     */
+    public function getThumbnailTemplate(): string
+    {
+        $type = $this->getType()?->getCode();
+        if (in_array($type, ['companion', 'ally', 'minion', 'follower'], true)) {
+            return 'character';
+        }
+        return $type === 'site' ? 'site' : 'modifier';
+    }
+
     public function getType() { return $this->type; }
     public function setType(?TypeInterface $type = null) { $this->type = $type; return $this; }
     public function getFaction() { return $this->faction; }

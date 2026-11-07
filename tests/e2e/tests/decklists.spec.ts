@@ -59,16 +59,19 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await expect(page.locator('#starting-list .rb-starting-pill')).toHaveText(/Gimli, Dwarf of Erebor/);
   await page.fill('#name', decklistName);
   // [[card]] links resolve when the text is saved (Ketura, 2026-11-03)
-  await page.fill('#description', 'Published by the **smoke test**. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');
+  await page.fill('#description', 'Published by the **smoke test**. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]]. Beware [Moria] at 3T for (X).');
   // a note on a card, picked from the deck on the left
   await page.click('#annot-pick');
   await page.locator('#deck .rb-line[data-code="1_12"]').click();
   await page.fill('#annot-list textarea[data-annotation="1_12"]', 'The only companion.');
   // the thumbnail: the cultures until a card is chosen, then that card (Ketura, 2026-11-05)
   await expect(page.locator('#thumb-cultures .rb-thumb-cultures')).toBeVisible();
-  await expect(page.locator('#thumbnail optgroup')).toHaveCount(3);
+  // ring-bearer and ring, each side, and the sites (Ketura, 2026-11-07)
+  await expect(page.locator('#thumbnail optgroup')).toHaveCount(4);
   await page.locator('#thumbnail').selectOption({ label: 'Gimli, Dwarf of Erebor' });
   await expect(page.locator('#thumb-card img')).toHaveAttribute('src', /.+/);
+  // framed to the picture by the card's template (Ketura, 2026-11-07)
+  await expect(page.locator('#thumb-card')).toHaveClass(/rb-thumb-tpl-character/);
   await expect(page.locator('#thumb-cultures')).toBeHidden();
   await snap(page, 'publish form');
   await page.click('.rb-form-actions button[form=decklist-form]:has-text("Publish")');
@@ -77,6 +80,10 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await expect(page.locator('h1')).toContainText(decklistName);
   await expect(page.locator('body')).toContainText('Published by the smoke test.');
   await expect(page.locator('a.rb-cardlink[data-code="3_38"]')).toHaveText('Aragorn, Heir to the White City');
+  // game symbols, rendered when the text is saved (Ketura, 2026-11-07)
+  await expect(page.locator('#deck-description .rb-sym[data-tip="Moria"] .rb-sym-moria')).toHaveCount(1);
+  await expect(page.locator('#deck-description .rb-sym[data-tip="Towers Block"]')).toHaveCount(1);
+  await expect(page.locator('#deck-description .rb-sym[data-tip="X Twilight"]')).toHaveCount(1);
   await expect(page.locator('a.rb-cardlink[href$="/card/53_38#v1"]')).toHaveAttribute('data-image', /LOTR-EN03S038\.1/);
   await expect(page.locator('a.rb-cardlink.is-ambiguous')).toHaveText('Gandalf');
   await expect(page.locator('.rb-cardlink.is-missing')).toHaveText('[[Nobody At All]]');

@@ -626,3 +626,5 @@ deckbuilder.notes.start_remove: "Quitar %card% de la comunidad inicial"
 deckbuilder.notes.editing: "Editando %field% de %deck%"
 deckbuilder.notes.done: Hecho
 deckbuilder.notes.card_button: "Insertar el nombre de una carta (#)"
+deckbuilder.notes.fullscreen: Pantalla completa
+decklist.publish.thumbnail_sites: Sitios

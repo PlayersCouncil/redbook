@@ -116,16 +116,17 @@
                                     {% set chosen = decklist.thumbnailCard ? decklist.thumbnailCard.code : '' %}
                                     <select class="form-control" name="thumbnail" id="thumbnail">
                                         <option value="">{{ 'decklist.publish.thumbnail_cultures' | trans }}</option>
-                                        {% set slots = decklist.slots | filter(s => s.role != 'site' and s.card.imageUrl) %}
+                                        {% set slots = decklist.slots | filter(s => s.card.imageUrl) %}
                                         {% for group in [
                                             {label: 'decklist.publish.thumbnail_rb', slots: slots | filter(s => s.role == 'ring_bearer' or s.role == 'ring')},
                                             {label: 'deck.half.free_peoples', slots: slots | filter(s => s.role == 'draw' and s.card.side == 'free_peoples')},
                                             {label: 'deck.half.shadow', slots: slots | filter(s => s.role == 'draw' and s.card.side == 'shadow')},
+                                            {label: 'decklist.publish.thumbnail_sites', slots: slots | filter(s => s.role == 'site')},
                                         ] %}
                                             {% if group.slots | length %}
                                                 <optgroup label="{{ group.label | trans }}">
                                                     {% for slot in group.slots | sort((a, b) => a.card.fullName <=> b.card.fullName) %}
-                                                        <option value="{{ slot.card.code }}" data-image="{{ slot.card.imageUrl }}"{% if slot.card.code == chosen %} selected{% endif %}>{{ slot.card.fullName }}</option>
+                                                        <option value="{{ slot.card.code }}" data-image="{{ slot.card.imageUrl }}" data-template="{{ slot.card.thumbnailTemplate }}"{% if slot.card.code == chosen %} selected{% endif %}>{{ slot.card.fullName }}</option>
                                                     {% endfor %}
                                                 </optgroup>
                                             {% endif %}

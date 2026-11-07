@@ -239,6 +239,15 @@ test('deck notes, stats and history: starting fellowship, tags, annotations, tes
   await expect(page.locator('#description')).toHaveValue(/ #$/);
   await expect(page.locator('body > ul.dropdown-menu li.textcomplete-item:visible').first()).toBeVisible();
   await page.keyboard.press('Escape');
+  // the symbol button: cultures, blocks and twilight; a pick goes in as text that shows as
+  // the icon (Ketura, 2026-11-07)
+  await desc.locator('button[data-handler="bootstrap-markdown-cmdSymbol"]').click();
+  await expect(desc.locator('.rb-sym-menu [data-insert]')).toHaveCount(30);
+  await desc.locator('.rb-sym-menu [data-insert="[Moria]"]').click();
+  await expect(page.locator('#description')).toHaveValue(/\[Moria\]$/);
+  await preview.click();
+  await expect(desc.locator('.md-preview .rb-sym[data-tip="Moria"]')).toHaveCount(1);
+  await preview.click();
   // fullscreen: a box headed with the field and the deck, closed by Done (Ketura, 2026-11-07)
   await desc.locator('.md-control-fullscreen').click();
   await expect(desc.locator('.md-editor')).toHaveClass(/md-fullscreen-mode/);
@@ -261,6 +270,12 @@ test('deck notes, stats and history: starting fellowship, tags, annotations, tes
   await page.fill('#annot-search', 'the one ring, the ruling');
   await page.locator('.rb-annot-suggest [data-annotate]').first().click();
   await page.locator('#annot-list textarea').fill('Cut for the Isildur\'s Bane ring');
+  // its own fullscreen, as the editors have (Ketura, 2026-11-07)
+  await page.locator('#annot-list [data-annot-full]').click();
+  await expect(page.locator('#annot-list .rb-annot')).toHaveClass(/is-full/);
+  await expect(page.locator('#annot-list .rb-annot-title')).toHaveText(/^Editing Notes on The One Ring/);
+  await page.locator('#annot-list [data-annot-done]').click();
+  await expect(page.locator('#annot-list .rb-annot')).not.toHaveClass(/is-full/);
   // not in the deck: an asterisk after the name
   await expect(page.locator('#annot-list .rb-annot-out')).toBeVisible();
 

@@ -72,6 +72,7 @@ export function buildAppJs() {
       "assets/js/app.draw_simulator.js",
       "assets/js/app.textcomplete.js",
       "assets/js/app.cultures.js",
+      "assets/js/app.symbols.js",
       "assets/js/app.cardlinks.js",
       "assets/js/app.markdown.js",
       "assets/js/app.smart_filter.js",

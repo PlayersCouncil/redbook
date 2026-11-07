@@ -1293,13 +1293,32 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 @keyframes rb-annot-flash { from { background: #fdf3c8; } to { background: transparent; } }
 .rb-annot-add input { width: 100%; height: 28px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: calc(13px * var(--rb-text-scale)); }
 .rb-annot-list { flex: 1 1 auto; min-height: 60px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
-.rb-annot { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); gap: 8px; align-items: start; }
+.rb-annot { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr) auto; gap: 8px; align-items: start; }
 .rb-annot-card { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; font-size: calc(13px * var(--rb-text-scale)); }
 .rb-annot-out { margin-left: 1px; color: var(--rb-muted); font-weight: 700; cursor: help; }
 .rb-annot-remove { width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--rb-muted); font-size: calc(16px * var(--rb-text-scale)); line-height: 1; cursor: pointer; }
 .rb-annot-remove:hover { color: var(--rb-red); }
-.rb-annot textarea { width: 100%; resize: vertical; padding: 4px 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: calc(13px * var(--rb-text-scale)); }
-@media (max-width: 600px) { .rb-annot { grid-template-columns: minmax(0, 1fr); } }
+.rb-annot textarea { width: 100%; resize: vertical; padding: 4px 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: calc(13px * var(--rb-text-scale));
+    /* never shorter than a line (Ketura, 2026-11-07) */
+    min-height: calc(1.5em + 10px); line-height: 1.5; }
+@media (max-width: 600px) { .rb-annot { grid-template-columns: minmax(0, 1fr) auto; } .rb-annot-card { grid-column: 1 / -1; } }
+/* an annotation's fullscreen button and fullscreen box, as the editors' (Ketura, 2026-11-07) */
+.rb-annot-title, .rb-annot-done { display: none; }
+.rb-annot-full { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0;
+    border: 1px solid #ccc; border-radius: 4px; background: #fff; color: #333; cursor: pointer; }
+.rb-annot-full:hover { background: #e6e6e6; border-color: #adadad; }
+.rb-annot.is-full {
+    position: fixed; top: 5vh; left: 5vw; width: 90vw; height: 90vh; z-index: 99999;
+    display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 16px 24px 18px; border-radius: 10px; background: #fff;
+    box-shadow: 0 0 0 100vmax rgba(28, 24, 16, .6), 0 10px 40px rgba(0, 0, 0, .45); animation: none;
+}
+.rb-annot.is-full .rb-annot-card { display: none; }
+.rb-annot.is-full .rb-annot-title { display: block; padding: 0 50px; text-align: center; font-size: calc(20px * var(--rb-text-scale)); font-weight: 700; }
+.rb-annot.is-full textarea { flex: 1 1 0; min-height: 0; resize: none; padding: 14px 18px; border-color: #ddd; font-size: calc(17px * var(--rb-text-scale)); line-height: 1.55; }
+.rb-annot.is-full .rb-annot-full { position: absolute; top: 14px; right: 18px; }
+.rb-annot.is-full .rb-annot-full .fa-expand::before { content: "\f066"; }
+.rb-annot.is-full .rb-annot-done { display: flex; justify-content: center; }
+.rb-annot.is-full .rb-annot-done .btn { min-width: 120px; }
 
 /* the Stats tab (Ketura, 2026-11-03) */
 /* room inside the tab, so nothing runs into the pane's edges (Ketura, 2026-11-03) */
@@ -1753,6 +1772,13 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
    so it carries some of the card's texture. */
 .rb-thumb { position: relative; display: block; width: 104px; aspect-ratio: 260 / 231; overflow: hidden; border-radius: 7px; background: #EFE9DC; }
 .rb-thumb-card img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+/* just the picture (Ketura, 2026-11-07): each template's art window, covering the tile and
+   centred in it. The windows, as fractions of the card: character x .11-.895 y .14-.565;
+   modifier x .22-.92 y .115-.50; site (landscape) x .10-.89 y .20-.74. The tile is 260:231. */
+.rb-thumb-card[class*="rb-thumb-tpl-"] img { position: absolute; max-width: none; height: auto; object-fit: fill; }
+.rb-thumb-tpl-character img { width: 150.2%; left: -25.48%; top: -32.95%; }
+.rb-thumb-tpl-modifier img { width: 165.8%; left: -44.5%; top: -29.9%; }
+.rb-thumb-tpl-site img { width: 228.6%; left: -63.2%; top: -37%; }
 .rb-thumb-card { box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
 .rb-thumb-cultures { border: 1px solid #A89C83; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -3px 6px rgba(0, 0, 0, .2), 0 1px 3px rgba(0, 0, 0, .25); }
 .rb-thumb-part {
@@ -1833,7 +1859,7 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-md-editor { display: flex; flex-direction: column; min-height: 0; }
 .rb-md-editor .md-editor { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; margin: 0; border-radius: 6px; }
 .rb-md-editor .md-editor > textarea,
-.rb-md-editor .md-editor > .md-preview { flex: 1 1 auto; min-height: 60px; height: auto !important; resize: none; overflow-y: auto; font-family: inherit; font-size: calc(13px * var(--rb-text-scale)); padding: 6px 8px; }
+.rb-md-editor .md-editor > .md-preview { flex: 1 1 0; min-height: 60px; height: auto !important; resize: none; overflow-y: auto; font-family: inherit; font-size: calc(13px * var(--rb-text-scale)); padding: 6px 8px; }
 .rb-md-editor .md-editor > .md-header { padding: 4px; }
 .rb-md-editor .md-editor .btn-sm { padding: 2px 8px; }
 .rb-md-editor .md-footer { padding: 3px 8px; font-size: calc(12px * var(--rb-text-scale)); color: var(--rb-muted); }
@@ -1915,3 +1941,60 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 .rb-md-editor .md-header .btn.rb-md-preview-btn.active,
 .rb-md-editor .md-header .btn.rb-md-preview-btn.active:hover { background: #337ab7; border-color: #2e6da4; color: #fff; }
 .rb-md-editor .md-editor > .md-preview { width: auto !important; }
+
+/* game symbols in text (Ketura, 2026-11-07; MarkdownSymbols, app.symbols): the icon as a mask
+   in its culture's colour (blocks and twilight in the text colour), and its name in a tooltip
+   that shows at once */
+.rb-sym { position: relative; display: inline-block; vertical-align: -0.2em; line-height: 1; }
+.rb-sym-icon { display: inline-block; width: 1.15em; height: 1.15em; background-color: currentColor;
+    -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+.rb-sym-twilight { color: #2B2620; }
+.rb-sym[data-tip]:hover::after {
+    content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 5px); transform: translateX(-50%);
+    padding: 2px 7px; border-radius: 4px; background: #2B2620; color: #fff; font-size: 12px; font-weight: 600; line-height: 1.5;
+    white-space: nowrap; pointer-events: none; z-index: 60;
+}
+.rb-sym-dunland { --icon: url(/images/cultures/dunland.svg); color: var(--rb-culture-dunland, currentColor); }
+.rb-sym-dwarven { --icon: url(/images/cultures/dwarven.svg); color: var(--rb-culture-dwarven, currentColor); }
+.rb-sym-elven { --icon: url(/images/cultures/elven.svg); color: var(--rb-culture-elven, currentColor); }
+.rb-sym-gandalf { --icon: url(/images/cultures/gandalf.svg); color: var(--rb-culture-gandalf, currentColor); }
+.rb-sym-gollum { --icon: url(/images/cultures/gollum.svg); color: var(--rb-culture-gollum, currentColor); }
+.rb-sym-gondor { --icon: url(/images/cultures/gondor.svg); color: var(--rb-culture-gondor, currentColor); }
+.rb-sym-isengard { --icon: url(/images/cultures/isengard.svg); color: var(--rb-culture-isengard, currentColor); }
+.rb-sym-men { --icon: url(/images/cultures/men.svg); color: var(--rb-culture-men, currentColor); }
+.rb-sym-moria { --icon: url(/images/cultures/moria.svg); color: var(--rb-culture-moria, currentColor); }
+.rb-sym-orc { --icon: url(/images/cultures/orc.svg); color: var(--rb-culture-orc, currentColor); }
+.rb-sym-raider { --icon: url(/images/cultures/raider.svg); color: var(--rb-culture-raider, currentColor); }
+.rb-sym-ringwraith { --icon: url(/images/cultures/ringwraith.svg); color: var(--rb-culture-ringwraith, currentColor); }
+.rb-sym-rohan { --icon: url(/images/cultures/rohan.svg); color: var(--rb-culture-rohan, currentColor); }
+.rb-sym-sauron { --icon: url(/images/cultures/sauron.svg); color: var(--rb-culture-sauron, currentColor); }
+.rb-sym-shire { --icon: url(/images/cultures/shire.svg); color: var(--rb-culture-shire, currentColor); }
+.rb-sym-the-one-ring { --icon: url(/images/cultures/the_one_ring.svg); color: #9a7b12; }
+.rb-sym-uruk-hai { --icon: url(/images/cultures/uruk.svg); color: var(--rb-culture-uruk-hai, currentColor); }
+.rb-sym-towers { --icon: url(/images/cultures/tower_block.svg); }
+.rb-sym-king { --icon: url(/images/cultures/king_block.svg); }
+.rb-sym-twilight-0 { --icon: url(/images/cultures/twilight_0.svg); }
+.rb-sym-twilight-1 { --icon: url(/images/cultures/twilight_1.svg); }
+.rb-sym-twilight-2 { --icon: url(/images/cultures/twilight_2.svg); }
+.rb-sym-twilight-3 { --icon: url(/images/cultures/twilight_3.svg); }
+.rb-sym-twilight-4 { --icon: url(/images/cultures/twilight_4.svg); }
+.rb-sym-twilight-5 { --icon: url(/images/cultures/twilight_5.svg); }
+.rb-sym-twilight-6 { --icon: url(/images/cultures/twilight_6.svg); }
+.rb-sym-twilight-7 { --icon: url(/images/cultures/twilight_7.svg); }
+.rb-sym-twilight-8 { --icon: url(/images/cultures/twilight_8.svg); }
+.rb-sym-twilight-9 { --icon: url(/images/cultures/twilight_9.svg); }
+.rb-sym-twilight-x { --icon: url(/images/cultures/twilight_x.svg); }
+
+/* the editor's symbol menu (Ketura, 2026-11-07): cultures in columns, the blocks, then the
+   twilight costs in a row */
+.rb-md-editor .md-header .btn-group { position: relative; }
+.rb-sym-menu { position: absolute; top: calc(100% + 4px); right: 0; z-index: 100001; width: 430px; max-width: 80vw; padding: 8px;
+    border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; box-shadow: 0 6px 18px rgba(34, 31, 26, .2); text-align: left; }
+.rb-sym-group { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; }
+.rb-sym-group + .rb-sym-group { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--rb-line); }
+.rb-sym-group-twilight { grid-template-columns: repeat(11, minmax(0, 1fr)); }
+.rb-sym-menu button { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border: 0; border-radius: 4px; background: none;
+    font-size: 13px; color: var(--rb-ink); text-align: left; cursor: pointer; }
+.rb-sym-group-twilight button { justify-content: center; padding: 4px 0; }
+.rb-sym-menu button:hover, .rb-sym-menu button:focus { background: #F1ECE2; }
+.rb-sym-menu .rb-sym { font-size: 18px; vertical-align: middle; }

@@ -1,5 +1,5 @@
 {# A published deck's thumbnail (Ketura, 2026-11-05), the size of a half-thumb in the deckbuilder:
-   its chosen card's top half, or else a raised tile of its cultures' card art, enlarged past the
+   its chosen card's picture, or else a raised tile of its cultures' card art, enlarged past the
    edges and cropped: a whole deck's main Free Peoples culture top left and main Shadow culture
    bottom right (Gollum can be either), divided along the diagonal; a fragment's main culture
    filling the tile (PublishedDeck::pickThumbnailCultures). Each
@@ -7,7 +7,9 @@
    Variables: decklist; thumb_card to show another card instead, or false for the cultures #}
 {% set card = thumb_card ?? decklist.thumbnailCard %}
 {% if card and card.imageUrl %}
-    <span class="rb-thumb rb-thumb-card" data-hover-code="{{ card.code }}"><img src="{{ card.imageUrl }}" alt="{{ card.fullName }}" loading="lazy"></span>
+    {# just the card's picture (Ketura, 2026-11-07), framed by its template: characters, sites,
+       and everything else (the ring included) #}
+    <span class="rb-thumb rb-thumb-card rb-thumb-tpl-{{ card.thumbnailTemplate }}" data-hover-code="{{ card.code }}"><img src="{{ card.imageUrl }}" alt="{{ card.fullName }}" loading="lazy"></span>
 {% else %}
     {% set parts = decklist.thumbnailCultures %}
     <span class="rb-thumb rb-thumb-cultures" role="img" aria-label="{{ parts | map(p => p.name) | join(' / ') }}">

@@ -168,7 +168,16 @@
                 return token;
             });
         }
-        var html = typeof marked === 'function' ? marked(parts.join('')) : _.escape(parts.join(''));
+        // and game symbols (app.symbols; Ketura, 2026-11-07)
+        var text_out = parts.join(''), symbols = null;
+        if(app.symbols) {
+            symbols = app.symbols.protect(text_out);
+            text_out = symbols[0];
+        }
+        var html = typeof marked === 'function' ? marked(text_out) : _.escape(text_out);
+        if(symbols) {
+            html = app.symbols.restore(html, symbols[1]);
+        }
         return n ? html.replace(/rbcardlink\d+x/g, function (token) { return links[token] || token; }) : html;
     };
 

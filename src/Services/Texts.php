@@ -25,12 +25,14 @@ class Texts
         $config = HTMLPurifier_Config::create(array('Cache.SerializerPath' => $kernelProjectDirectory));
         // bump when the definition changes, or the serializer cache keeps the old one
         $config->set('HTML.DefinitionID', 'redbook-texts');
-        $config->set('HTML.DefinitionRev', 2);
+        $config->set('HTML.DefinitionRev', 3);
         // null when the serializer cache already has this revision
         if ($def = $config->maybeGetRawHTMLDefinition()) {
             $def->addAttribute('a', 'data-code', 'Text');
             // a [[card.1]] link hovers that revision's image
             $def->addAttribute('a', 'data-image', 'URI');
+            // a game symbol's name, for its tooltip (MarkdownSymbols)
+            $def->addAttribute('span', 'data-tip', 'Text');
         }
         $this->purifier = new HTMLPurifier($config);
         $this->parsedown = new Parsedown();
@@ -80,12 +82,15 @@ class Texts
      */
     public function markdown($string)
     {
-        if (!$this->cardLinker) {
-            return $this->purify($this->imgResponsive($this->transform($string)));
+        // [[card]] links (Ketura, 2026-11-03) and game symbols (2026-11-07): kept out of
+        // markdown's way, then put back
+        $links = [];
+        if ($this->cardLinker) {
+            [$string, $links] = $this->cardLinker->protect((string) $string);
         }
-        // [[card]] links (Ketura, 2026-11-03): kept out of markdown's way, then put back
-        [$string, $links] = $this->cardLinker->protect((string) $string);
-        return $this->purify($this->cardLinker->restore($this->imgResponsive($this->transform($string)), $links));
+        [$string, $symbols] = MarkdownSymbols::protect((string) $string);
+        $html = MarkdownSymbols::restore($this->imgResponsive($this->transform($string)), $symbols);
+        return $this->purify($this->cardLinker ? $this->cardLinker->restore($html, $links) : $html);
     }
 
     /**

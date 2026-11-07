@@ -1243,3 +1243,5 @@ deckbuilder.notes.start_remove: "Take %card% out of the starting fellowship"
 deckbuilder.notes.editing: "Editing %field% for %deck%"
 deckbuilder.notes.done: Done
 deckbuilder.notes.card_button: "Insert a card name (#)"
+deckbuilder.notes.fullscreen: Fullscreen
+decklist.publish.thumbnail_sites: Sites

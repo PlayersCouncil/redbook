@@ -139,7 +139,11 @@
                 + '<div class="rb-annot-card"><span><a href="' + (card ? card.url : '#') + '" class="card-tip" data-code="' + row.code + '">' + _.escape(card ? card.label : row.code) + '</a>'
                 + '<span class="rb-annot-out" title="' + t('deckbuilder.notes.not_in_deck') + '"' + (held ? ' hidden' : '') + '>*</span></span>'
                 + '<button type="button" class="rb-annot-remove" data-unannotate="' + row.code + '" aria-label="' + t('deckbuilder.notes.annotation_remove') + '">&times;</button></div>'
+                + '<div class="rb-annot-title"></div>'
                 + '<textarea rows="2" data-annotation="' + row.code + '" aria-label="' + t('deckbuilder.notes.annotation_for', {card: _.escape(card ? card.label : row.code)}) + '">' + _.escape(row.text || '') + '</textarea>'
+                // fullscreen, as the notes' editors have (Ketura, 2026-11-07)
+                + '<button type="button" class="rb-annot-full" data-annot-full aria-label="' + t('deckbuilder.notes.fullscreen') + '" title="' + t('deckbuilder.notes.fullscreen') + '"><span class="fa fa-expand" aria-hidden="true"></span></button>'
+                + '<div class="rb-annot-done"><button type="button" class="btn btn-primary" data-annot-done>' + t('deckbuilder.notes.done') + '</button></div>'
                 + '</div>';
         }).join('') : '<p class="rb-hint">' + t('deckbuilder.notes.annotations_none') + '</p>');
     }
@@ -386,6 +390,32 @@
                 app.deck.set_annotations(rows);
                 sync_annotations();
                 on_edit();
+            }
+        });
+        // an annotation fullscreen: the box over most of the page, as the editors' (Ketura, 2026-11-07)
+        function annot_fullscreen(row, on)
+        {
+            if(on) {
+                var card = app.data.cards && app.data.cards.findById(row.data('code') + ''),
+                    deck = $.trim($('#deck-name').val() || $('#name').val() || '');
+                row.find('.rb-annot-title').text(t('deckbuilder.notes.editing', {field: t('deckbuilder.notes.annotation_for', {card: card ? card.label : row.data('code')}), deck: deck}));
+            }
+            row.toggleClass('is-full', on);
+            $('body').toggleClass('md-nooverflow', on);
+            if(on) {
+                row.find('textarea').focus();
+            }
+        }
+        root.on('click', '[data-annot-full]', function () {
+            var row = $(this).closest('.rb-annot');
+            annot_fullscreen(row, !row.hasClass('is-full'));
+        });
+        root.on('click', '[data-annot-done]', function () {
+            annot_fullscreen($(this).closest('.rb-annot'), false);
+        });
+        root.on('keydown', '.rb-annot.is-full textarea', function (event) {
+            if(event.key === 'Escape') {
+                annot_fullscreen($(this).closest('.rb-annot'), false);
             }
         });
         root.on('click', '[data-unannotate]', function () {

@@ -14,8 +14,10 @@
     {
         // the thumbnail: the chosen card's top half, or the deck's cultures
         $('#thumbnail').on('change', function () {
-            var image = $(this).find('option:selected').data('image');
-            $('#thumb-card').prop('hidden', !image).find('img').attr('src', image || '');
+            var option = $(this).find('option:selected'), image = option.data('image');
+            // framed to the card's picture by its template (Ketura, 2026-11-07)
+            $('#thumb-card').prop('hidden', !image).attr('class', 'rb-thumb rb-thumb-card rb-thumb-tpl-' + (option.data('template') || 'modifier'))
+                .find('img').attr('src', image || '');
             $('#thumb-cultures').prop('hidden', !!image);
         }).trigger('change');
 

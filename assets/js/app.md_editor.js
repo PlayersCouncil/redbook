@@ -67,6 +67,44 @@
         setTimeout(function () { e.$textarea.trigger($.Event('keyup', {keyCode: 51, which: 51})); }, 0);
     }
 
+    /**
+     * The symbol button (Ketura, 2026-11-07): a menu of the cultures, the blocks and the twilight
+     * costs, each putting in the text that shows as that icon ([Moria], [Towers], (3))
+     */
+    function symbol_menu(e)
+    {
+        var button = e.$editor.find('button[data-handler="bootstrap-markdown-cmdSymbol"]'),
+            menu = button.siblings('.rb-sym-menu');
+        if(!menu.length) {
+            var rows = app.symbols ? app.symbols.list() : [],
+                groups = _.groupBy(rows, 'group');
+            menu = $('<div class="rb-sym-menu" role="menu" hidden></div>').html(_.map(['cultures', 'blocks', 'twilight'], function (group) {
+                return '<div class="rb-sym-group rb-sym-group-' + group + '">' + _.map(groups[group] || [], function (row) {
+                    return '<button type="button" role="menuitem" data-insert="' + _.escape(row.text) + '" title="' + _.escape(row.name) + '">'
+                        + row.html.replace(' data-tip="' + _.escape(row.name) + '"', '')
+                        + (group === 'twilight' ? '' : '<span class="rb-sym-name">' + _.escape(row.name) + '</span>') + '</button>';
+                }).join('') + '</div>';
+            }).join('')).insertAfter(button);
+            menu.on('click', '[data-insert]', function () {
+                var selected = e.getSelection();
+                replace_selection(e, selected, $(this).data('insert') + '');
+                menu.prop('hidden', true);
+            });
+            $(document).on('mousedown', function (event) {
+                if(!$(event.target).closest(menu).length && !$(event.target).closest(button).length) {
+                    menu.prop('hidden', true);
+                }
+            });
+            e.$textarea.add(menu).on('keydown', function (event) {
+                if(event.key === 'Escape' && !menu.prop('hidden')) {
+                    event.stopPropagation();
+                    menu.prop('hidden', true);
+                }
+            });
+        }
+        menu.prop('hidden', !menu.prop('hidden'));
+    }
+
     /** The deck's own cards come first in the card list, and fill it before anything's typed */
     function in_deck(card)
     {
@@ -86,13 +124,18 @@
             if(!el.clientHeight) {
                 return;
             }
-            // the box's height is set by its container, never by this padding
+            // measured without the padding: a box can't be shorter than its padding, so padding
+            // left from a bigger size (fullscreen) would otherwise hold it at that size
+            var scroll = el.scrollTop;
+            el.style.removeProperty('padding-bottom');
             var style = getComputedStyle(el),
                 line = parseFloat(style.lineHeight) || parseFloat(style.fontSize) * 1.4,
-                want = Math.max(8, Math.round(el.clientHeight - (parseFloat(style.paddingTop) || 0) - line));
-            if(Math.abs((parseFloat(style.paddingBottom) || 0) - want) > 1) {
-                el.style.setProperty('padding-bottom', want + 'px', 'important');
-            }
+                bottom = parseFloat(style.paddingBottom) || 0,
+                // the text's own area, the toolbar and footer apart
+                visible = el.clientHeight - (parseFloat(style.paddingTop) || 0) - bottom,
+                want = Math.max(bottom, Math.round(visible + bottom - line));
+            el.style.setProperty('padding-bottom', want + 'px', 'important');
+            el.scrollTop = scroll;
         }
         if(window.ResizeObserver) {
             new ResizeObserver(pad).observe(el);
@@ -143,6 +186,11 @@
                     title: t('deckbuilder.notes.card_button'),
                     icon: 'fas fa-clone',
                     callback: on_button_card
+                }, {
+                    name: 'cmdSymbol',
+                    title: t('decklist.publish.editor.entersymbol'),
+                    icon: 'fas fa-shapes',
+                    callback: symbol_menu
                 }]
             }, {
                 name: 'groupCustom',
@@ -169,7 +217,7 @@
             .appendTo(box)
             .on('click', 'button', function () { instance.setFullscreen(false); });
         textarea.on('keydown', function (event) {
-            if(event.key === 'Escape' && box.hasClass('md-fullscreen-mode')) {
+            if(event.key === 'Escape' && box.hasClass('md-fullscreen-mode') && !box.find('.rb-sym-menu:not([hidden])').length) {
                 instance.setFullscreen(false);
             }
         });
