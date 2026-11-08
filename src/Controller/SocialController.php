@@ -583,6 +583,25 @@ class SocialController extends AbstractController
         );
     }
 
+    /**
+     * The tags on public decklists, most used first, for the decklist searches' Tags drawer
+     * (Ketura, 2026-11-07); shaped as /deck/tags, with the counts as site
+     */
+    #[Route(path: '/decklists/tags', name: 'decklist_tags', methods: ['GET'])]
+    public function tagsAction(): JsonResponse
+    {
+        $counts = $this->managerRegistry->getRepository(PublishedDeck::class)->countPublicTags();
+        $list = [];
+        foreach ($counts as $tag => $count) {
+            $list[] = ['tag' => (string) $tag, 'count' => 0, 'site' => $count];
+        }
+        usort($list, fn ($a, $b) => [$b['site'], $a['tag']] <=> [$a['site'], $b['tag']]);
+        $response = new JsonResponse($list);
+        $response->setPublic();
+        $response->setMaxAge(300);
+        return $response;
+    }
+
     /** A decklist out of the user's favourites, and its author's reputation down as it went up */
     private function dropFavorite(User $user, PublishedDeck $decklist): void
     {

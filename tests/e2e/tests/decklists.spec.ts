@@ -255,7 +255,8 @@ test('the decklist shows up in search and in the favourites list', async ({ page
   await expect(row.locator('.rb-col-format')).toHaveText('Fellowship Block');
   await expect(row.locator('.rb-size')).toHaveText('30/30');
   // the columns in Ketura's order, and the upload date beside the author as written
-  await expect(page.locator('.rb-decks thead th')).toHaveText(['', 'Score', 'Size', 'Deck', 'Format', 'Cultures', 'Tags']);
+  // (the cultures gave their room to the tags, Ketura 2026-11-07)
+  await expect(page.locator('.rb-decks thead th')).toHaveText(['', 'Score', 'Size', 'Deck', 'Format', 'Tags']);
   await expect(row.locator('.rb-deck-by time')).toHaveText(/^[A-Z][a-z]{2} \d{1,2}, \d{4}$/);
   await expect(row.locator('.rb-row-tags')).toContainText('dwarves');
   await expect(row.locator('.rb-thumb-card img')).toHaveAttribute('alt', 'Gimli, Dwarf of Erebor');
@@ -371,6 +372,19 @@ test('the decklists page filters by card, kind and culture', async ({ page }) =>
   await page.goto(`/decklists?name=${encodeURIComponent(decklistName)}&culture[]=raider`);
   await expect(page.locator('.rb-results-none')).toBeVisible();
   // a tag on a row searches for it, without leaving the page (Ketura, 2026-11-06)
+  // the Tags drawer: the public decklists' tags, filtered as typed; a pick searches
+  await page.goto(`/decklists?name=${encodeURIComponent(decklistName)}`);
+  await page.click('#browse-tag');
+  const drawer = page.locator('#browse-tag-suggest');
+  await expect(drawer).toBeVisible();
+  await page.locator('#browse-tag').fill('dwar');
+  await expect(drawer.locator('button').first()).toContainText('dwarves');
+  await Promise.all([page.waitForURL(/tags/), drawer.locator('button', { hasText: 'dwarves' }).click()]);
+  await expect(page.locator('#browse-tags .rb-tag-pick')).toHaveText(/dwarves/);
+  await expect(page.locator('#browse-tag')).toBeFocused();
+  await expect(drawer.locator('button', { hasText: /^dwarves/ })).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await expect(drawer).toBeHidden();
   await page.goto(`/decklists?name=${encodeURIComponent(decklistName)}`);
   await Promise.all([page.waitForURL(/tags/), page.locator('.rb-tag-link', { hasText: 'dwarves' }).first().click()]);
   await expect(page.locator('#browse-tags .rb-tag-pick')).toHaveText(/dwarves/);

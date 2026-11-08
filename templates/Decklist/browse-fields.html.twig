@@ -39,15 +39,19 @@
                     <input type="text" id="browse-card" autocomplete="off" placeholder="{{ 'decklist.browse.cards_hint' | trans }}">
                 </div>
             </div>
-            {# tags: typed, or clicked on a deck's row (Ketura, 2026-11-06); a deck has them all #}
+            {# tags: typed, picked from the drawer under the field, or clicked on a deck's row
+               (Ketura, 2026-11-06/07); a deck has them all. The drawer offers the public
+               decklists' tags, and on My Decks your decks' first. #}
+            {% set tags_url = my_decks and (f.tab ?? 'decks') == 'decks' ? path('deck_tags') : path('decklist_tags') %}
             <div class="rb-field rb-field-tags">
                 <label for="browse-tag">{{ 'decklist.browse.tags' | trans }}</label>
-                <div class="rb-card-picks form-control input-sm" id="browse-tags">
+                <div class="rb-card-picks form-control input-sm" id="browse-tags" data-tags-url="{{ tags_url }}">
                     {% for tag in f.tags ?? [] %}
                         <span class="rb-card-pick rb-tag-pick"><input type="hidden" name="tags[]" value="{{ tag }}">{{ tag }}<button type="button" aria-label="{{ 'decklist.browse.remove' | trans }}">&times;</button></span>
                     {% endfor %}
-                    <input type="text" id="browse-tag" autocomplete="off" placeholder="{{ 'decklist.browse.tags_hint' | trans }}">
+                    <input type="text" id="browse-tag" autocomplete="off" placeholder="{{ 'decklist.browse.tags_hint' | trans }}" role="combobox" aria-expanded="false" aria-controls="browse-tag-suggest">
                 </div>
+                <div class="rb-tag-suggest" id="browse-tag-suggest" role="listbox" hidden></div>
             </div>
         </div>
 

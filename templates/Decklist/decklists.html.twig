@@ -36,6 +36,9 @@
         <div class="rb-browse-fields" id="browse-fields">{{ block('browse_fields') }}</div>
     </form>
 
+    {# the filters resize against the results (Ketura, 2026-11-07) #}
+    <div class="rb-browse-splitter" id="browse-splitter" data-key="rb-decklists-filters-width" role="separator" aria-orientation="vertical" title="{{ 'decklist.form.resize' | trans }}"></div>
+
     <div class="rb-browse-results" id="browse-results">{{ block('browse_results') }}</div>
 </div>
 {% endblock %}
@@ -80,7 +83,6 @@
                     <th class="rb-col-size" title="{{ 'decklist.browse.col.size_title' | trans }}">{{ 'decklist.browse.col.size' | trans }}</th>
                     <th class="rb-col-deck"><a href="{{ list_path('decklists_list', query | merge({sort: 'name', page: null})) }}"{% if sorted == 'name' %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.deck' | trans }}</a></th>
                     <th class="rb-col-format">{{ 'decklist.browse.col.format' | trans }}</th>
-                    <th class="rb-col-cultures">{{ 'decklist.browse.cultures' | trans }}</th>
                     <th class="rb-col-tags">{{ 'decklist.browse.col.tags' | trans }}</th>
                 </tr>
             </thead>
@@ -110,12 +112,6 @@
                     </td>
                     <td class="rb-col-format">
                         <span class="rb-fmt">{{ format_names[decklist.targetFormat] ?? (decklist.targetFormat ?: '—') }}</span>
-                    </td>
-                    <td class="rb-col-cultures">
-                        {% set rows = decklist.cultures | filter(r => r.culture.side) | sort((a, b) => b.count <=> a.count) %}
-                        {% for side in ['free_peoples', 'shadow'] %}
-                            <span class="rb-row-cultures rb-row-cultures-{{ side }}">{% for row in rows | filter(r => r.culture.side == side) %}{{ m.culture_icon(row.culture, row.count) }}{% endfor %}</span>
-                        {% endfor %}
                     </td>
                     <td class="rb-col-tags">
                         {% if tags %}<span class="rb-row-tags">{% for tag in tags %}<button type="button" class="rb-tag-chip rb-tag-link{% if tag in (f.tags ?? []) %} is-on{% endif %}" data-tag="{{ tag }}" title="{{ 'decklist.browse.tag_search' | trans }}">{{ tag }}</button>{% endfor %}</span>{% endif %}

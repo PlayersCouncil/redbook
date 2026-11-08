@@ -43,6 +43,24 @@ class PublishedDeckRepository extends EntityRepository
             ->getResult();
     }
 
+    /**
+     * The tags on public decklists, with how many carry each: [tag => count] (Ketura,
+     * 2026-11-07). Archive decks' included; private decks' tags stay private.
+     */
+    public function countPublicTags(): array
+    {
+        $counts = [];
+        $rows = $this->getEntityManager()->getConnection()->fetchFirstColumn(
+            "SELECT p.tags FROM published_deck p WHERE p.tags IS NOT NULL AND p.tags <> '' AND p.withdrawn = 0"
+        );
+        foreach ($rows as $tags) {
+            foreach (array_unique(preg_split('/\s+/', trim((string) $tags), -1, PREG_SPLIT_NO_EMPTY)) as $tag) {
+                $counts[$tag] = ($counts[$tag] ?? 0) + 1;
+            }
+        }
+        return $counts;
+    }
+
     /** The number the next version in the line gets; withdrawn versions keep theirs */
     public function nextVersion(DecklistLine $line): int
     {

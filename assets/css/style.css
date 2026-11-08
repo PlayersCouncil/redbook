@@ -1595,6 +1595,8 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 .rb-field > span, .rb-field > label, .rb-browse-label { font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; margin: 0; }
 .rb-browse-search { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .rb-field-cards, .rb-field-tags { grid-column: 1 / -1; }
+/* the Tags drawer hangs under the field (Ketura, 2026-11-07) */
+.rb-field-tags { position: relative; }
 .rb-card-picks { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; height: auto; min-height: 30px; padding: 2px 4px; cursor: text; }
 .rb-card-picks .twitter-typeahead { flex: 1 1 120px; }
 .rb-card-picks #browse-tag { flex: 1 1 120px; min-width: 0; }
@@ -1651,14 +1653,19 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 @media (min-width: 992px) {
     #wrapper.rb-fill > .container.main.rb-browse {
         flex: 1 1 auto; min-height: 0; width: 100%; max-width: none; padding: 10px 12px 10px 8px;
-        /* the pane a tenth of the window wider than it was, for the Show buttons on one line (Ketura, 2026-11-06) */
-        display: grid; grid-template-columns: clamp(400px, 34vw, 660px) minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); gap: 0 18px;
+        /* the pane about as wide as the Show buttons, wider by dragging the bar beside it
+           (app.splitter.js; Ketura, 2026-11-07) */
+        display: grid; grid-template-columns: var(--rb-pane-width, 392px) 17px minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); gap: 0;
     }
     .rb-browse > :not(.rb-browse-pane):not(.rb-browse-results):not(.rb-browse-title):not(.rb-browse-side):not(.rb-browse-splitter) { grid-column: 1 / -1; grid-row: 1; }
     /* the title over the pane; the results start level with it */
     .rb-browse > .rb-browse-title { grid-column: 1; grid-row: 2; }
     .rb-browse > .rb-browse-pane { grid-column: 1; grid-row: 3; margin: 0; overflow-y: auto; scrollbar-gutter: stable; }
-    .rb-browse > .rb-browse-results { grid-column: 2; grid-row: 2 / 4; display: flex; flex-direction: column; min-height: 0; }
+    .rb-browse > .rb-browse-results { grid-column: 3; grid-row: 2 / 4; display: flex; flex-direction: column; min-height: 0; }
+    .rb-browse > .rb-browse-splitter { grid-column: 2; grid-row: 2 / 4; position: relative; cursor: col-resize; touch-action: none; }
+    .rb-browse > .rb-browse-splitter::before { content: ""; position: absolute; top: 0; bottom: 0; left: 8px; width: 1px; background: var(--rb-line); }
+    .rb-browse > .rb-browse-splitter:hover::before, body.rb-resizing .rb-browse > .rb-browse-splitter::before { left: 7px; width: 3px; background: #D4A017; }
+    .rb-browse .rb-browse-pane .rb-toggles { flex-wrap: wrap; }
     .rb-results-head, .rb-results-foot { flex: 0 0 auto; }
     .rb-results-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-gutter: stable; border-top: 2px solid var(--rb-line-strong); }
     .rb-results-scroll .rb-decks thead th { position: sticky; top: 0; z-index: 1; background: #fff; }
@@ -1684,6 +1691,9 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-page-step { color: var(--rb-ink); font-size: calc(11px * var(--rb-text-scale)); }
 .rb-page.is-disabled { color: var(--rb-grey); border-color: var(--rb-line); }
 .rb-page-jump { display: inline-flex; gap: 4px; margin: 0 0 0 8px; }
+/* a page number typed, no spinner (Ketura, 2026-11-07) */
+.rb-page-jump input { -moz-appearance: textfield; appearance: textfield; }
+.rb-page-jump input::-webkit-inner-spin-button, .rb-page-jump input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .rb-page-jump input { width: 84px; height: 30px; padding: 0 6px; border: 1px solid var(--rb-line-strong); border-radius: 5px; font-size: calc(13px * var(--rb-text-scale)); }
 .rb-page-jump button { height: 30px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 5px; background: var(--rb-soft); font-size: calc(13px * var(--rb-text-scale)); font-weight: 600; }
 /* while the next results load: the old ones dim under a spinner */
@@ -1717,7 +1727,6 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-size-sh { color: var(--rb-side-sh); min-width: 2ch; text-align: left; }
 .rb-size-slash { margin: 0 2px; color: var(--rb-grey); font-weight: 400; }
 .rb-size .is-none { color: var(--rb-grey); font-weight: 400; }
-.rb-col-cultures { white-space: nowrap; }
 /* a line per side: Free Peoples above, Shadow below */
 .rb-row-cultures { display: flex; align-items: center; gap: 2px; min-width: 0; height: 20px; }
 .rb-row-cultures .culture-icon { width: 22px; height: 18px; }
@@ -1726,6 +1735,9 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-deck-by { display: block; margin-top: 3px; font-size: calc(13px * var(--rb-text-scale)); color: var(--rb-muted); }
 .rb-deck-dot { margin: 0 3px; }
 .rb-col-tags { max-width: 220px; }
+/* the decklists' tags take the room the cultures had (Ketura, 2026-11-07) */
+.rb-decks:not(.rb-my-decks-table) .rb-col-tags { max-width: none; width: 30%; min-width: 120px; }
+.rb-decks:not(.rb-my-decks-table) .rb-row-tags { flex-wrap: wrap; row-gap: 3px; }
 .rb-row-tags { display: flex; flex-wrap: wrap; gap: 3px; }
 .rb-row-tags .rb-tag-chip { padding: 1px 8px; font-size: calc(12px * var(--rb-text-scale)); white-space: nowrap; }
 .rb-archive-mark { margin-left: 4px; padding: 0 5px; border-radius: 3px; background: var(--rb-tan); font-size: calc(11px * var(--rb-text-scale)); font-weight: 600; }
@@ -1749,14 +1761,14 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
     .rb-decks thead { display: none; }
     .rb-decks, .rb-decks tbody { display: block; }
     .rb-decks { width: 100%; }
-    .rb-decks tr { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); grid-template-areas: "thumb score size fmt" "thumb deck deck deck" "thumb cult cult cult" "thumb tags tags tags"; gap: 2px 8px; padding: 8px 2px; border-bottom: 1px solid var(--rb-line); }
+    .rb-decks tr { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); grid-template-areas: "thumb score size fmt" "thumb deck deck deck" "thumb tags tags tags"; gap: 2px 8px; padding: 8px 2px; border-bottom: 1px solid var(--rb-line); }
     .rb-deck-name { font-size: calc(16px * var(--rb-text-scale)); }
     .rb-decks td.rb-col-thumb { grid-area: thumb; padding: 0; }
     .rb-decks .rb-thumb { width: 80px; }
     .rb-decks td { padding: 0; border: 0; width: auto; max-width: none; min-width: 0; }
     .rb-decks td.rb-col-format { grid-area: fmt; white-space: normal; } .rb-decks td.rb-col-size { grid-area: size; }
     .rb-decks td.rb-col-score { grid-area: score; } .rb-decks td.rb-col-deck { grid-area: deck; }
-    .rb-decks td.rb-col-cultures { grid-area: cult; } .rb-decks td.rb-col-tags { grid-area: tags; }
+    .rb-decks td.rb-col-tags { grid-area: tags; }
     .rb-col-score .rb-comments { display: inline; margin-left: 6px; }
     .rb-fmt { min-width: 0; }
     .rb-decks td.rb-col-tags:empty { display: none; }
@@ -1828,10 +1840,7 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
     /* the filters pane about as wide as the Show buttons; the actions a narrow column */
     /* the filters' width set by dragging the bar beside them (app.splitter.js) */
     #wrapper.rb-fill > .container.main.rb-browse.rb-my-decks { grid-template-columns: var(--rb-pane-width, 392px) 17px minmax(0, 1fr) 220px; column-gap: 0; }
-    .rb-my-decks > .rb-browse-splitter { grid-column: 2; grid-row: 3; position: relative; cursor: col-resize; touch-action: none; }
-    .rb-my-decks > .rb-browse-splitter::before { content: ""; position: absolute; top: 0; bottom: 0; left: 8px; width: 1px; background: var(--rb-line); }
-    .rb-my-decks > .rb-browse-splitter:hover::before, body.rb-resizing .rb-my-decks > .rb-browse-splitter::before { left: 7px; width: 3px; background: #D4A017; }
-    .rb-my-decks .rb-browse-pane .rb-toggles { flex-wrap: wrap; }
+    .rb-my-decks > .rb-browse-splitter { grid-row: 3; }
     .rb-my-decks .rb-browse-pane .rb-culture-pick > span { width: 32px; }
     .rb-my-decks > .rb-browse-title { grid-column: 1 / -1; grid-row: 2; }
     .rb-my-decks > .rb-browse-pane { grid-row: 3; }

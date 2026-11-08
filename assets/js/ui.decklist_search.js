@@ -136,6 +136,47 @@
         return true;
     }
 
+    /*
+     * The Tags drawer (Ketura, 2026-11-07), as the deckbuilder's Notes tab has: clicking the
+     * field pulls out the tags there are, filtered as you type, without the ones picked. Each
+     * page says where its list comes from (#browse-tags data-tags-url).
+     */
+    var tag_lists = {};
+
+    function show_tag_drawer()
+    {
+        var input = $('#browse-tag'), box = $('#browse-tag-suggest'), url = $('#browse-tags').data('tags-url');
+        if(!url || !box.length || !input.is(':focus')) {
+            return;
+        }
+        if(tag_lists[url] === undefined) {
+            tag_lists[url] = null;
+            $.getJSON(url).done(function (rows) { tag_lists[url] = rows || []; show_tag_drawer(); })
+                .fail(function () { tag_lists[url] = []; });
+            return;
+        }
+        if(tag_lists[url] === null) {
+            return;
+        }
+        var typed = $.trim(input.val() || '').toLowerCase(),
+            have = form.find('input[name="tags[]"]').map(function () { return this.value; }).get(),
+            rows = _.filter(tag_lists[url], function (row) {
+                return have.indexOf(row.tag) === -1 && (!typed || row.tag.toLowerCase().indexOf(typed) !== -1);
+            }).slice(0, 12);
+        box.html(_.map(rows, function (row) {
+            var note = row.count ? Translator.transChoice('deckbuilder.notes.tag_count', row.count, {count: row.count})
+                : (row.site ? Translator.transChoice('deckbuilder.notes.tag_site', row.site, {count: row.site}) : '');
+            return '<button type="button" role="option" data-pick-tag="' + _.escape(row.tag) + '">' + _.escape(row.tag) + ' <small>' + note + '</small></button>';
+        }).join('')).prop('hidden', !rows.length);
+        input.attr('aria-expanded', rows.length ? 'true' : 'false');
+    }
+
+    function hide_tag_drawer()
+    {
+        $('#browse-tag-suggest').prop('hidden', true);
+        $('#browse-tag').attr('aria-expanded', 'false');
+    }
+
     function setup_card_picker()
     {
         var input = $('#browse-card');
@@ -173,6 +214,27 @@
             return;
         }
         window.history.replaceState({browse: true}, '', window.location.href);
+
+        // the filters pane resizes against the results, each page keeping its width
+        // (Ketura, 2026-11-07); a side pane beside them (My Decks' actions) keeps its own
+        var page = $('.rb-browse'), splitter = $('#browse-splitter');
+        ui.splitter(splitter, {
+            key: splitter.data('key'),
+            min: 340,
+            max: function () {
+                var side = $('#browse-side');
+                return page.width() - 520 - (side.length && side.css('grid-column-start') === '4' ? side.outerWidth() + 18 : 0);
+            },
+            current: function () { return form.outerWidth(); },
+            direction: 1,
+            set: function (w) {
+                if(w === null) {
+                    page[0].style.removeProperty('--rb-pane-width');
+                } else {
+                    page[0].style.setProperty('--rb-pane-width', w + 'px');
+                }
+            }
+        });
 
         // the sort sits by the results, outside the form, so the handlers are on the document
         $(document).on('change', '[data-autosubmit]', function ()
@@ -215,7 +277,32 @@
                 if(added) {
                     apply();
                 }
+                show_tag_drawer();
+            } else if(event.key === 'Escape') {
+                hide_tag_drawer();
             }
+        });
+        // the drawer: open while the field has the focus; picking a tag keeps the focus there
+        $('#browse-fields').on('focus click input', '#browse-tag', show_tag_drawer);
+        $('#browse-fields').on('blur', '#browse-tag', function ()
+        {
+            setTimeout(function () {
+                if(!$('#browse-tag').is(':focus')) {
+                    hide_tag_drawer();
+                }
+            }, 120);
+        });
+        $('#browse-fields').on('mousedown', '#browse-tag-suggest button', function (event)
+        {
+            event.preventDefault();
+        });
+        $('#browse-fields').on('click', '#browse-tag-suggest button', function ()
+        {
+            $('#browse-tag').val('');
+            if(add_tag($(this).data('pick-tag'))) {
+                apply();
+            }
+            show_tag_drawer();
         });
         $('#browse-results').on('click', '.rb-tag-link', function (event)
         {

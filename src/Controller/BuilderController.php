@@ -319,15 +319,7 @@ class BuilderController extends AbstractController
         // the most used tags on the site, counted only over decks that are already public
         // (Ketura, 2026-11-03): decklists' own tags, archive decks' included, since they
         // have their own (2026-11-07). Private decks' tags stay private.
-        $public = [];
-        $rows = $this->managerRegistry->getManager()->getConnection()->fetchFirstColumn(
-            "SELECT p.tags FROM published_deck p WHERE p.tags IS NOT NULL AND p.tags <> '' AND p.withdrawn = 0"
-        );
-        foreach ($rows as $tags) {
-            foreach (array_unique(preg_split('/\s+/', trim((string) $tags), -1, PREG_SPLIT_NO_EMPTY)) as $tag) {
-                $public[$tag] = ($public[$tag] ?? 0) + 1;
-            }
-        }
+        $public = $this->managerRegistry->getRepository(PublishedDeck::class)->countPublicTags();
         $all = array_unique(array_merge(array_keys($mine), array_keys($public)));
         $list = array_map(fn ($tag) => ['tag' => (string) $tag, 'count' => $mine[$tag] ?? 0, 'site' => $public[$tag] ?? 0], $all);
         // yours first, by use; then the site's
