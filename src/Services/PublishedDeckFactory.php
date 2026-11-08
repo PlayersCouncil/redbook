@@ -45,7 +45,8 @@ class PublishedDeckFactory
      */
     public function refreshFromDeck(PublishedDeck $decklist, Deck $deck): void
     {
-        $name = mb_substr(trim((string) $deck->getName()) ?: 'Untitled', 0, 60);
+        // an archive name can be long (a forum thread's title): kept whole, as the import did
+        $name = mb_substr(trim((string) $deck->getName()) ?: 'Untitled', 0, 255);
         $descriptionMd = (string) $deck->getDescriptionMd();
         $decklist->setName($name);
         $decklist->setNameCanonical($this->texts->slugify($name) . '-' . $decklist->getVersion());

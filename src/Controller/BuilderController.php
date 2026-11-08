@@ -254,18 +254,26 @@ class BuilderController extends AbstractController
                 $data[$key] = (string) $request->get($key);
             }
         }
-        $deckManager->save($user, $deck, $data, $sourceDeck);
+        // a historian's edit of someone else's deck (Ketura, 2026-11-08): recorded in its
+        // history, and the archive decklist takes it at once; Save & verify also verifies it
+        $historianEdit = $sourceDeck !== null && $this->isHistorianDeck($deck) && !$this->isOwner($deck);
+        $revision = $deckManager->save($user, $deck, $data, $sourceDeck, $historianEdit ? $user : null);
 
-        // Save & verify: a historian's correction goes straight onto the archive decklist
         $verified = null;
         if ($request->get('verify') && $id && $this->isHistorianDeck($deck)) {
             $verified = $this->archiveDecklist($deck);
             if ($verified === null) {
                 throw new BadRequestHttpException('This deck has no archive decklist to verify');
             }
-            $publishedDeckFactory->refreshFromDeck($verified, $deck);
-            $verified->markVerified($user);
         }
+        $archive = $verified ?? ($historianEdit ? $this->archiveDecklist($deck) : null);
+        if ($archive !== null) {
+            $publishedDeckFactory->refreshFromDeck($archive, $deck);
+            if ($revision !== null) {
+                $revision->setEditSummary(['synced' => true] + $revision->getEditSummary());
+            }
+        }
+        $verified?->markVerified($user);
         $em->flush();
 
         if ($request->get('format') === 'json') {
@@ -513,6 +521,7 @@ class BuilderController extends AbstractController
         $imported = $archive?->getSource() !== null
             || ($this->archiveDecklist($deck)?->getSource() !== null);
         return $this->render('Builder/deckedit.html.twig', [
+            'published_gate' => $this->isOwner($deck) ? $this->unchangedPublication($deck) : null,
             'published_versions' => $published,
             'imported_from_archive' => $imported,
             'show_archive' => $showArchive,
@@ -528,15 +537,22 @@ class BuilderController extends AbstractController
     }
 
     #[Route(path: '/deck/view/{deck_uuid}', name: 'deck_view', methods: ['GET'], requirements: ['deck_uuid' => self::UUID])]
-    public function viewAction(string $deck_uuid): Response
+    /**
+     * A saved deck in the decklist reader (Ketura, 2026-11-08): what it was copied from, and
+     * what it was published as, in place of a decklist's lineage; no comments
+     */
+    public function viewAction(string $deck_uuid, \App\Services\ReaderNotes $readerNotes): Response
     {
         $deck = $this->findViewableDeck($deck_uuid);
+        $parent = $deck->getParent();
         return $this->render('Builder/deckview.html.twig', [
             'pagetitle' => $deck->getName(),
             'deck' => $deck,
             'is_owner' => $this->isOwner($deck),
             'format' => $this->formats->findOneByCode($deck->getTargetFormat()),
-            'tournaments' => $this->managerRegistry->getRepository(Tournament::class)->findAll(),
+            'reader' => $readerNotes->build($deck),
+            'precedent' => $parent instanceof PublishedDeck && !$parent->isWithdrawn() ? $parent : null,
+            'successors' => array_values(array_filter($deck->getChildren()->toArray(), fn ($d) => $d instanceof PublishedDeck && !$d->isWithdrawn())),
         ]);
     }
 
@@ -697,6 +713,27 @@ class BuilderController extends AbstractController
     {
         return $this->managerRegistry->getRepository(Deck::class)->findOneBy(['uuid' => $uuid])
             ?? throw new NotFoundHttpException("This deck doesn't exist.");
+    }
+
+    /**
+     * The deck's latest public decklist, if the deck hasn't changed since it was published
+     * (Ketura, 2026-11-08): editing it then starts the next version, which the deckbuilder
+     * makes plain before letting the owner in
+     */
+    private function unchangedPublication(Deck $deck): ?PublishedDeck
+    {
+        $latest = null;
+        foreach ($deck->getChildren() as $child) {
+            if ($child instanceof PublishedDeck && !$child->isWithdrawn()
+                && ($latest === null || ($child->getDatePublished() ?? $child->getDateCreation()) > ($latest->getDatePublished() ?? $latest->getDateCreation()))) {
+                $latest = $child;
+            }
+        }
+        if ($latest === null) {
+            return null;
+        }
+        $changed = $deck->getDateUpdate() ?? $deck->getDateCreation();
+        return $changed <= ($latest->getDatePublished() ?? $latest->getDateCreation()) ? $latest : null;
     }
 
     /** The owner, or a historian on a historic author's deck */

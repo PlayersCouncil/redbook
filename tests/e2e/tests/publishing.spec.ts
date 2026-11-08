@@ -43,6 +43,34 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   v1 = await publish(page, `${lineName} one`);
   await expect(page.locator('.rb-reader-version')).toHaveText('v1');
 
+  // the deck's own page reads as the decklist's, less likes and comments, with what it was
+  // published as under the commentary (Ketura, 2026-11-08)
+  await page.goto(`/deck/view/${deckUuid}`);
+  await expect(page.locator('.rb-reader-saved')).toBeVisible();
+  await expect(page.locator('.rb-social')).toHaveCount(0);
+  await expect(page.locator('#comment-form')).toHaveCount(0);
+  await expect(page.locator('.rb-reader-desc .rb-reader-comments #table-successor')).toContainText(`${lineName} one`);
+  await expect(page.locator('.rb-reader-posted')).toHaveText(/^Posted by /);
+  await expect(page.locator('.rb-reader-meta .rb-vis')).toHaveText('Published');
+  // the commentary widens from the bar beside it
+  const desc = page.locator('.rb-reader-desc');
+  const before = (await desc.boundingBox())!.width;
+  const bar = (await page.locator('#reader-splitter-desc').boundingBox())!;
+  await page.mouse.move(bar.x + bar.width / 2, bar.y + 200);
+  await page.mouse.down();
+  await page.mouse.move(bar.x + bar.width / 2 - 60, bar.y + 200, { steps: 4 });
+  await page.mouse.up();
+  expect((await desc.boundingBox())!.width).toBeCloseTo(before + 60, -1);
+  await page.locator('#reader-splitter-desc').dblclick();
+  await snap(page, 'saved deck in the reader');
+
+  // unchanged since publishing, the deckbuilder asks first: a new version, or the decklist
+  await page.goto(`/deck/edit/${deckUuid}`);
+  await expect(page.locator('#published-gate')).toBeVisible();
+  await expect(page.locator('#published-gate')).toContainText(`${lineName} one v1`);
+  await page.click('#published-gate-go');
+  await expect(page.locator('#published-gate')).toHaveCount(0);
+
   // published before: version 2 of it, which can be cleared to stand alone
   await page.goto(`/deck/publish/${deckUuid}`);
   await expect(page.locator('#previous_version')).toHaveValue(v1.id);

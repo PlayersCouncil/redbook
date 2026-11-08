@@ -1,0 +1,31 @@
+{# A saved deck's buttons in the reader (Ketura, 2026-11-08): its owner's Edit, Publish and
+   Delete; Clone for anyone signed in; then Copy List and Download Text File, folding into an
+   Actions menu on a phone as a decklist's do. Variables: deck, is_owner #}
+{% if is_owner %}
+    <a href="{{ path('deck_edit', {deck_uuid: deck.uuid}) }}" class="rb-btn rb-btn-small deck-edit">
+        <span class="fas fa-pencil-alt text-primary" aria-hidden="true"></span> {{ 'forms.edit' | trans }}</a>
+    <a href="{{ path('deck_publish_form', {deck_uuid: deck.uuid}) }}" class="rb-btn rb-btn-small deck-publish">
+        <span class="fas fa-share" aria-hidden="true"></span> {{ 'forms.publish' | trans }}</a>
+    <button type="button" class="rb-btn rb-btn-small deck-delete" data-id="{{ deck.id }}" data-name="{{ deck.name }}">
+        <span class="fas fa-trash-alt text-danger" aria-hidden="true"></span> {{ 'forms.delete' | trans }}</button>
+{% endif %}
+<span class="rb-reader-buttons-wide">
+    {% if app.user %}
+        <a href="{{ path('deck_clone', {deck_uuid: deck.uuid}) }}" class="rb-btn rb-btn-small">
+            <span class="fas fa-clone" aria-hidden="true"></span> {{ 'forms.clone' | trans }}</a>
+    {% endif %}
+    <button type="button" class="rb-btn rb-btn-small" data-copy-list title="{{ 'decklist.reader.copy_list_hint' | trans }}">
+        <span class="far fa-copy" aria-hidden="true"></span> {{ 'decklist.reader.copy_list' | trans }}</button>
+    <a href="{{ path('deck_download', {deck_uuid: deck.uuid}) }}?format=text" class="rb-btn rb-btn-small">
+        <span class="fas fa-file-download" aria-hidden="true"></span> {{ 'decklist.reader.download' | trans }}</a>
+</span>
+<span class="dropdown rb-reader-buttons-narrow">
+    <button type="button" class="rb-btn rb-btn-small dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        {{ 'forms.actions' | trans }} <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+        {% if app.user %}<li><a href="{{ path('deck_clone', {deck_uuid: deck.uuid}) }}"><span class="fas fa-clone" aria-hidden="true"></span> {{ 'forms.clone' | trans }}</a></li>{% endif %}
+        <li><a href="#" data-copy-list><span class="far fa-copy" aria-hidden="true"></span> {{ 'decklist.reader.copy_list' | trans }}</a></li>
+        <li><a href="{{ path('deck_download', {deck_uuid: deck.uuid}) }}?format=text"><span class="fas fa-file-download" aria-hidden="true"></span> {{ 'decklist.reader.download' | trans }}</a></li>
+    </ul>
+</span>

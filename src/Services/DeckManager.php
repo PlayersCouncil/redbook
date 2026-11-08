@@ -11,6 +11,7 @@ use App\Entity\PublishedDeck;
 use App\Entity\DeckSlot;
 use App\Entity\Faction;
 use App\Entity\Format;
+use App\Entity\User;
 use App\Entity\UserInterface;
 use DateTime;
 use DateTimeInterface;
@@ -107,8 +108,15 @@ class DeckManager
      *     shared?: bool} $data
      * @param DeckInterface|null $sourceDeck the deck as it was saved before, to record the change in its history
      */
-    public function save(UserInterface $user, DeckInterface $deck, array $data, ?DeckInterface $sourceDeck = null): void
+    /**
+     * Saves the deck from the deckbuilder's fields. With an editor (Ketura, 2026-11-08), a
+     * historian saving someone else's deck: the history records the edit, who made it and
+     * what it changed, even with no card changes; that record is returned.
+     */
+    public function save(UserInterface $user, DeckInterface $deck, array $data, ?DeckInterface $sourceDeck = null, ?User $editor = null): ?DeckRevision
     {
+        $before = $editor && $sourceDeck && $deck instanceof Deck ? self::editSnapshot($deck) : null;
+        $change = null;
         if (!empty($data['decklist_id'])) {
             $decklist = $this->em->getRepository(PublishedDeck::class)->find($data['decklist_id']);
             if ($decklist) {
@@ -176,7 +184,7 @@ class DeckManager
             foreach ($this->getUnsavedChanges($deck) as $change) {
                 $this->em->remove($change);
             }
-            if (count($listings[0]) || count($listings[1])) {
+            if (count($listings[0]) || count($listings[1]) || $before !== null) {
                 $change = new DeckRevision();
                 $change->setDeck($deck);
                 $change->setVariation(json_encode($listings));
@@ -196,6 +204,39 @@ class DeckManager
                 && $cards[$code]->getType()->getCode() === 'companion'));
         }
         $this->validator->validateDeck($deck);
+
+        if ($before !== null && $change !== null) {
+            $after = self::editSnapshot($deck);
+            $changed = array_keys(array_filter($after, fn ($value, $key) => $value !== $before[$key], ARRAY_FILTER_USE_BOTH));
+            if (count($listings[0]) || count($listings[1])) {
+                array_unshift($changed, 'cards');
+            }
+            if (!$changed) {
+                // saved as it was: nothing to record
+                $deck->removeChange($change);
+                $this->em->remove($change);
+                return null;
+            }
+            $change->setEditor($editor);
+            $change->setEditSummary(['changed' => array_values(array_unique($changed)), 'synced' => false]);
+        }
+        return $before !== null ? $change : null;
+    }
+
+    /** What a historian's edit can change, besides the cards, to tell what it did */
+    private static function editSnapshot(Deck $deck): array
+    {
+        return [
+            'name' => (string) $deck->getName(),
+            'description' => (string) $deck->getDescriptionMd(),
+            'tags' => (string) $deck->getTags(),
+            'format' => (string) $deck->getTargetFormat(),
+            'starting' => json_encode(array_values($deck->getStarting())),
+            'bid' => (string) $deck->getStartingBid(),
+            'starting_notes' => (string) $deck->getStartingNotes(),
+            'annotations' => json_encode($deck->getAnnotations()),
+            'historic' => json_encode($deck->getHistoric()),
+        ];
     }
 
     /** Replaces a deck's slots with the content map */

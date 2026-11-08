@@ -37,8 +37,22 @@
         } else {
             list.push(t(page.imported_from_archive ? 'deckbuilder.history.imported' : 'decks.history.firstversion'));
         }
-        return '<tr class="rb-history-saved"><td>' + snapshot.when.calendar() + '</td><td>' + _.escape(snapshot.version || '') + '</td><td>'
-            + (list.length ? list.join('<br>') : '<span class="text-muted">' + t('deckbuilder.history.no_card_changes') + '</span>')
+        // a historian's edit (Ketura, 2026-11-08): who, what it changed, and whether the
+        // archive decklist took it
+        var edit = '';
+        if(snapshot.edit) {
+            var parts = _.map(_.without(snapshot.edit.changed || [], 'cards'), function (part) { return t('deckbuilder.history.part.' + part); });
+            edit = '<div class="rb-history-edit"><span class="fas fa-user-edit" aria-hidden="true"></span> '
+                + t('deckbuilder.history.edited_by', {name: _.escape(snapshot.editor || t('deckbuilder.history.a_historian'))})
+                + (parts.length ? ': ' + _.escape(parts.join(', ')) : '')
+                + (snapshot.edit.synced ? ' <span class="label label-success">' + t('deckbuilder.history.synced') + '</span>' : '')
+                + '</div>';
+            if(!_.contains(snapshot.edit.changed || [], 'cards')) {
+                list = [];
+            }
+        }
+        return '<tr class="rb-history-saved' + (snapshot.edit ? ' is-edit' : '') + '"><td>' + snapshot.when.calendar() + '</td><td>' + _.escape(snapshot.version || '') + '</td><td>' + edit
+            + (list.length ? list.join('<br>') : (edit ? '' : '<span class="text-muted">' + t('deckbuilder.history.no_card_changes') + '</span>'))
             + '</td><td><a role="button" href="#" data-index="' + index + '">' + t('decks.history.revert') + '</a></td></tr>';
     }
 

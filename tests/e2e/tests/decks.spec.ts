@@ -70,11 +70,13 @@ test('build a deck: target format, Gemp checklist, convert to PC, save, delete',
   await page.click('#btn-save');
   await expect(page.locator('#save-status')).toContainText('Saved as version');
   await page.goto(await page.evaluate(() => (window as any).app.deckbuilder_page.view_url));
+  // the deck's page is the decklist reader (Ketura, 2026-11-08): its problems on Details
   await expect(page.locator('h1')).toContainText(deckName);
+  await page.locator('a[href="#tab-pane-details"]').click();
   await expect(page.locator('.deck-validation')).toContainText('below minimum number of cards');
   await snap(page, 'saved deck');
 
-  await page.click('#btn-delete');
+  await page.click('.rb-reader-buttons .deck-delete');
   await page.locator('#delete-deck-form [type=submit]').click();
   await expect(page).toHaveURL(/\/decks/);
   await expect(page.getByRole('link', { name: deckName })).toHaveCount(0);
@@ -92,8 +94,8 @@ test('import a Gemp deck string and export it back unchanged', async ({ page }) 
   await waitForCardData(page);
   await expect(page.locator('#deck-validation')).toContainText('Deck is valid for Fellowship Block');
   await page.goto(await page.evaluate(() => (window as any).app.deckbuilder_page.view_url));
-  await expect(page.locator('body')).toContainText('Draw deck: 60');
-  await expect(page.locator('#btn-publish')).toBeVisible();
+  await expect(page.locator('#deck')).toContainText('Draw Deck (60)');
+  await expect(page.locator('.rb-reader-buttons .deck-publish')).toBeVisible();
   await snap(page, 'imported deck');
 
   await waitForCardData(page);

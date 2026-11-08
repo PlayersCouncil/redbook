@@ -547,6 +547,11 @@ class Deck extends CommonDeck implements DeckInterface
                 'content' => $preversion,
                 'date_creation' => $change->getDateCreation()->format('c'),
             ];
+            // a historian's edit says who, and what (Ketura, 2026-11-08)
+            if ($change instanceof DeckRevision && $change->getEditSummary() !== null) {
+                $row['editor'] = $change->getEditor()?->getDisplayName();
+                $row['edit'] = $change->getEditSummary();
+            }
             array_unshift($snapshots, $row);
 
             // applying variation to create 'next' (older) preversion

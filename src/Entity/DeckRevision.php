@@ -54,6 +54,38 @@ class DeckRevision implements DeckRevisionInterface
     protected $deck;
 
     /**
+     * A historian's edit of someone else's deck (Ketura, 2026-11-08): who made it, and its
+     * summary, {changed: [cards, name, description, ...], synced: bool}, synced when the
+     * archive decklist took the edit too. The History tab shows them.
+     */
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'editor_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    protected ?User $editor = null;
+
+    #[ORM\Column(name: 'edit_summary', type: 'json', nullable: true)]
+    protected ?array $editSummary = null;
+
+    public function getEditor(): ?User
+    {
+        return $this->editor;
+    }
+
+    public function setEditor(?User $editor): void
+    {
+        $this->editor = $editor;
+    }
+
+    public function getEditSummary(): ?array
+    {
+        return $this->editSummary;
+    }
+
+    public function setEditSummary(?array $summary): void
+    {
+        $this->editSummary = $summary;
+    }
+
+    /**
      * @inheritdoc
      */
     public function setId($id)

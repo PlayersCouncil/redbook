@@ -98,7 +98,6 @@ export function copyPageSpecificJs() {
   return src(
     [
       "assets/js/ui.card.js",
-      "assets/js/ui.deckview.js",
       "assets/js/ui.deckedit.js",
       "assets/js/app.card_terms.js",
       "assets/js/app.deck_editor.js",

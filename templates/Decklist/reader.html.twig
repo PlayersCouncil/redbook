@@ -1,0 +1,202 @@
+{% import "macros.html.twig" as macros %}
+{#
+   The reader (Ketura, 2026-11-04): a deck laid out to be taken in at a glance, for a published
+   decklist and, since 2026-11-08, a saved deck alike (/deck/view leaves out what only a
+   decklist has: likes, versions, comments). Three columns, each scrolling on its own, with a
+   bar between each to resize them: tools (Stats, and Details for the metadata), the deck, and
+   the author's commentary, with the starting setup and card notes, and under it where the deck
+   came from and what it led to, then the comments. Narrower, the tools go under the deck; on
+   a phone the order is deck, commentary, tools. The deck is the deckbuilder's renderer in its
+   read-only mode.
+   It loads in order (Ketura, 2026-11-04): the columns and the commentary come with the page;
+   the deck, then Stats, then the comment form follow the card data, a frame apart.
+
+   Variables: subject (the PublishedDeck or Deck), is_deck, reader (App\Services\ReaderNotes),
+   format, precedent, successors; a decklist's versions, newer, duplicate; a deck's is_owner
+#}
+<div class="rb-reader{% if is_deck %} rb-reader-saved{% endif %}">
+    <header class="rb-reader-head">
+        {% include 'alerts.html.twig' %}
+        {% if not is_deck %}
+            {# withdrawn: only its author gets this far (Ketura, 2026-11-07) #}
+            {% if subject.withdrawn %}
+                <div class="alert alert-info rb-withdrawn-note">
+                    {{ 'decklist.state.withdrawn_note' | trans }}
+                    <a class="btn btn-xs btn-default" href="{{ path('decklist_edit', {decklist_id: subject.id}) }}">{{ 'forms.edit' | trans }}</a>
+                    <form class="rb-inline-form" method="post" action="{{ path('decklist_republish', {decklist_id: subject.id}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('decklist_state') }}">
+                        <button type="submit" class="btn btn-xs btn-success">{{ 'decklist.state.republish' | trans }}</button>
+                    </form>
+                </div>
+            {% endif %}
+            {% if newer %}
+                <div class="alert alert-info rb-newer-note">
+                    {% set newerlink %}<a href="{{ path('decklist_detail', {decklist_id: newer.id, decklist_name: newer.nameCanonical|e('url')}) }}">v{{ newer.version }}</a>{% endset %}
+                    {{ 'decklist.view.newer' | trans({'%link%': newerlink}) | raw }}
+                </div>
+            {% endif %}
+        {% endif %}
+        <div class="rb-reader-title">
+            <div class="rb-reader-name">
+                <h1 class="decklist-name">{{ subject.name }}</h1>
+                {% if is_deck %}
+                    <span class="rb-reader-version" title="{{ 'decks.version' | trans({'%version%': subject.version}) }}">v{{ subject.version }}</span>
+                {# a decklist's line of versions (Ketura, 2026-11-07); a menu once there's more than one #}
+                {% elseif versions | length > 1 %}
+                    <span class="dropdown rb-reader-versions">
+                        <button class="rb-btn rb-btn-small dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="dropdownVersions"
+                                title="{{ 'decklist.view.versions' | trans }}">v{{ subject.version }} <span class="caret"></span></button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownVersions">
+                            <li class="dropdown-header">{{ 'decklist.view.versions' | trans }}</li>
+                            {% for other_decklist in versions %}
+                                <li class="{% if other_decklist.id == subject.id %}disabled{% endif %}">
+                                    <a href="{{ path('decklist_detail', { 'decklist_id': other_decklist.id, 'decklist_name': other_decklist.nameCanonical|e('url') }) }}">v{{ other_decklist.version }} &middot; {{ other_decklist.name }}</a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </span>
+                {% else %}
+                    <span class="rb-reader-version" title="{{ 'decklist.view.versions' | trans }}">v{{ subject.version }}</span>
+                {% endif %}
+                {# the tags (Ketura, 2026-11-04); a decklist's its own since 2026-11-07 #}
+                {% set tags = subject.tags ? subject.tags | split(' ') | filter(t => t) : [] %}
+                {% if tags %}
+                    <ul class="rb-reader-tags" aria-label="{{ 'decklist.reader.tags' | trans }}">
+                        {% for tag in tags %}<li class="rb-tag-chip">{{ tag }}</li>{% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+            <div class="rb-reader-actions">
+                {% if not is_deck %}{% include 'Decklist/social.html.twig' with {decklist: subject} %}{% endif %}
+                <div class="rb-reader-buttons" id="btn-group-decklist">
+                    {% if is_deck %}{% include 'Builder/deck-toolbar.html.twig' with {deck: subject} %}{% else %}{% include 'Decklist/toolbar.html.twig' with {decklist: subject} %}{% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="rb-reader-meta">
+            <span class="rb-reader-author">{{ macros.username(subject.user) }}</span>
+            {# an archive deck's author claims it from right beside the name #}
+            {% if app.user and subject.user.historic and not app.user.historic %}
+                <a href="{{ path('historic_claim_form', {user_id: subject.user.id}) }}" class="rb-btn rb-btn-small">{{ 'claim.button' | trans }}</a>
+            {% endif %}
+            {% if format %}<a href="{{ path('format', {code: format.code}) }}">{{ format.name }}</a>{% endif %}
+            <span>{{ 'decklist.reader.played' | trans({'%date%': subject.effectiveDate | date('Y-m-d')}) }}</span>
+            {% if is_deck %}
+                <span class="text-muted">{{ 'decks.browse.changed_on' | trans }} <time datetime="{{ (subject.dateUpdate ?? subject.dateCreation)|date('c') }}">{{ (subject.dateUpdate ?? subject.dateCreation)|date('Y-m-d') }}</time></span>
+                {% set visibility = successors | length ? 'published' : (subject.shared ? 'hidden' : 'private') %}
+                <span class="rb-vis rb-vis-{{ visibility }}" title="{{ ('decks.browse.status.' ~ visibility) | trans }}">{{ ('decks.browse.show.' ~ visibility) | trans }}</span>
+            {% else %}
+                {# an archive deck wasn't published here: it was brought in from the archives #}
+                <span class="text-muted">{{ (subject.source ? 'decklist.reader.archived' : 'decklist.reader.published') | trans }} <time datetime="{{ subject.dateCreation|date('c') }}">{{ subject.dateCreation|date('Y-m-d') }}</time></span>
+            {% endif %}
+            {% include 'Deck/completeness-label.html.twig' with {deck: subject} %}
+            {% if not is_deck and subject.verified and subject.reviewedBy %}
+                <span class="small text-muted rb-review-note">{{ 'decklist.review.verified_by' | trans({'%name%': subject.reviewedBy.displayName, '%date%': subject.reviewedAt | date('Y-m-d')}) }}</span>
+            {% endif %}
+            {% if not is_deck and duplicate %}
+                {% set duplink %}<a href="{{ path('decklist_detail', { 'decklist_id': duplicate.id, 'decklist_name': duplicate.nameCanonical|e('url') }) }}">{{ duplicate.name }} v{{ duplicate.version }}</a>{% endset %}
+                <small class="text-muted">{{ 'decklist.view.duplicate' | trans({'%duplicate%': duplink}) | raw }}</small>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="rb-reader-grid" id="reader-grid">
+        {# tools: the deckbuilder's Stats, and the metadata nobody needs every time #}
+        <section class="rb-reader-col rb-reader-tools is-pending" aria-label="{{ 'decklist.reader.tools' | trans }}">
+            <ul class="nav nav-tabs rb-tabs" role="tablist">
+                <li role="presentation" class="active"><a href="#tab-pane-stats" aria-controls="tab-pane-stats" role="tab" data-toggle="tab">{{ 'deckbuilder.tabs.stats' | trans }}</a></li>
+                <li role="presentation"><a href="#tab-pane-details" aria-controls="tab-pane-details" role="tab" data-toggle="tab">{{ 'decklist.reader.details' | trans }}</a></li>
+            </ul>
+            <div class="tab-content rb-reader-scroll">
+                <div role="tabpanel" class="tab-pane active" id="tab-pane-stats">
+                    <div class="rb-reader-loading">{{ 'decklist.reader.loading' | trans }}</div>
+                    {% include 'Builder/tab-pane-stats.html.twig' %}
+                </div>
+                <div role="tabpanel" class="tab-pane rb-reader-details" id="tab-pane-details">
+                    {# brought in from the archives and not yet checked: first thing here (Ketura, 2026-11-08) #}
+                    {% if not is_deck and subject.unverified %}
+                        <div class="alert alert-warning rb-review-note">
+                            {{ 'decklist.review.unverified_note' | trans }}
+                            {% if is_granted('ROLE_HISTORIAN') and subject.parent and subject.user.historic %}
+                                <a class="btn btn-xs btn-default" target="_blank" href="{{ path('deck_edit', {deck_uuid: subject.parent.uuid}) }}">{{ 'historian.review.open' | trans }}</a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    {% include 'Deck/validation.html.twig' with {deck: subject, title: 'decklist.view.problems' | trans} %}
+                    {% if not is_deck %}
+                        {% include 'Decklist/plays.html.twig' with {decklist: subject} %}
+                        {% if subject.source %}{% include 'Decklist/source.html.twig' with {source: subject.source, decklist: subject} %}{% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <div class="rb-reader-splitter rb-reader-splitter-tools" id="reader-splitter-tools" role="separator" aria-orientation="vertical" title="{{ 'decklist.form.resize' | trans }}"></div>
+
+        <section class="rb-reader-col rb-reader-deck" aria-label="{{ 'decklist.reader.deck' | trans }}">
+            <div class="rb-reader-deck-opts rb-deck-toolbar" id="deck-toolbar"></div>
+            <div class="rb-reader-scroll rb-deck rb-readonly deck-loading" id="deck"><div class="rb-reader-loading">{{ 'decklist.reader.loading' | trans }}</div></div>
+        </section>
+
+        <div class="rb-reader-splitter rb-reader-splitter-desc" id="reader-splitter-desc" role="separator" aria-orientation="vertical" title="{{ 'decklist.form.resize' | trans }}"></div>
+
+        <section class="rb-reader-col rb-reader-desc" aria-label="{{ 'decklist.reader.description' | trans }}">
+            {# the column's name, and who posted the deck, stay put above its scrolling (Ketura, 2026-11-04/08) #}
+            <div class="rb-reader-col-top">
+                <h2 class="rb-reader-col-head">{{ 'decklist.reader.commentary' | trans }}</h2>
+                {% if reader.posted_by %}<p class="rb-reader-posted">{{ 'decklist.reader.posted_by' | trans({'%name%': reader.posted_by}) }}</p>{% endif %}
+            </div>
+            {# rendered here rather than in the browser, so the column is whole on the first paint #}
+            <div class="rb-reader-scroll">
+                {% if reader.starting or reader.bid or reader.starting_html %}
+                    <div class="rb-reader-starting" id="reader-starting">
+                        <h3>{{ 'deckbuilder.notes.starting' | trans }}</h3>
+                        {% if reader.starting or reader.bid %}
+                            <p class="rb-starting-list">
+                                {% if reader.starting %}
+                                    <span class="rb-starting-label">{{ 'deckbuilder.notes.starting_fellowship' | trans }}</span>
+                                    {% for card in reader.starting %}<a href="{{ card.href }}" class="rb-starting-card card-tip" data-code="{{ card.code }}">{{ card.label }}</a>{% endfor %}
+                                    <span class="rb-starting-cost">{{ 'deckbuilder.notes.starting_twilight' | trans({'%cost%': reader.twilight}) }}</span>
+                                {% endif %}
+                                {% if reader.bid %}<span class="rb-reader-bid"><span class="rb-starting-label">{{ 'deckbuilder.notes.bid' | trans }}:</span> {{ reader.bid }}</span>{% endif %}
+                            </p>
+                        {% endif %}
+                        {% if reader.starting_html %}<div class="rb-reader-text">{{ reader.starting_html | raw }}</div>{% endif %}
+                    </div>
+                {% endif %}
+                <div id="deck-description" class="rb-reader-text">{{ reader.description_html | raw }}</div>
+                {% if reader.notes %}
+                    <div class="rb-reader-notes" id="reader-notes">
+                        <h3>{{ 'decklist.reader.card_notes' | trans }}</h3>
+                        {% for note in reader.notes %}
+                            <div class="rb-reader-note" data-note="{{ note.code }}">
+                                <div class="rb-reader-note-card"><a href="{{ note.href }}" class="card-tip" data-code="{{ note.code }}">{{ note.label }}</a>
+                                    {%- if not note.in_deck %}<span class="rb-annot-out" title="{{ 'deckbuilder.notes.not_in_deck' | trans }}">*</span>{% endif %}</div>
+                                <div class="rb-reader-text">{{ note.html | raw }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {# under the commentary (Ketura, 2026-11-08): where the deck came from and what it led
+                   to, then the talk about it; a saved deck has no comments #}
+                <div class="rb-reader-comments">
+                    <div class="rb-reader-tree">
+                        {% include 'Decklist/table-predecessor.html.twig' %}
+                        {% if is_deck %}
+                            {% include 'Decklist/table-successor.html.twig' with {successors_title: 'decks.published.title', successors_none: 'decks.published.none', successors_icon: 'fa-share'} %}
+                        {% else %}
+                            {% include 'Decklist/table-successor.html.twig' %}
+                        {% endif %}
+                    </div>
+                    {% if not is_deck %}
+                        {% if subject.source and subject.source.comments | length %}{% include 'Decklist/archive-comments.html.twig' with {source: subject.source} %}{% endif %}
+                        {% include 'Decklist/comments.html.twig' with {decklist: subject} %}
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+    </div>
+    {# the line from a card note to its card in the deck #}
+    <svg class="rb-annot-link" id="annot-link" aria-hidden="true"><path d=""></path></svg>
+</div>

@@ -133,6 +133,36 @@
         </div>
     </div>
 
+    {#
+       A published deck, unchanged since (Ketura, 2026-11-08): editing it doesn't change the
+       decklist, it makes the deck's next version. The page waits behind this until that's
+       chosen; once a change is saved it no longer asks.
+    #}
+    {% if published_gate %}
+        {% set gate = published_gate %}
+        <div class="rb-gate" id="published-gate" role="dialog" aria-modal="true" aria-labelledby="published-gate-title">
+            <div class="rb-gate-card">
+                <h2 id="published-gate-title">{{ 'deckbuilder.gate.title' | trans }}</h2>
+                {% set link %}<a href="{{ path('decklist_detail', {decklist_id: gate.id, decklist_name: gate.nameCanonical | e('url')}) }}">{{ gate.name }} v{{ gate.version }}</a>{% endset %}
+                <p>{{ 'deckbuilder.gate.text' | trans({'%decklist%': link}) | raw }}</p>
+                <p class="rb-gate-next">{{ 'deckbuilder.gate.next' | trans({'%version%': gate.version + 1}) }}</p>
+                <div class="rb-gate-actions">
+                    <button type="button" class="btn btn-primary btn-lg" id="published-gate-go"><span class="fas fa-code-branch"></span> {{ 'deckbuilder.gate.new_version' | trans }}</button>
+                    {% if gate.contentEditable %}
+                        <a href="{{ path('decklist_edit', {decklist_id: gate.id}) }}" class="btn btn-default">{{ 'deckbuilder.gate.fix' | trans }}</a>
+                    {% endif %}
+                    <a href="{{ path('decks_list') }}" class="btn btn-link">{{ 'deckbuilder.gate.back' | trans }}</a>
+                </div>
+                {% if gate.contentEditable %}<p class="small text-muted">{{ 'deckbuilder.gate.fix_hint' | trans({'%date%': gate.graceEnds | date('Y-m-d H:i')}) }}</p>{% endif %}
+            </div>
+        </div>
+        <script>
+            document.getElementById('published-gate-go').addEventListener('click', function () {
+                document.getElementById('published-gate').remove();
+            });
+        </script>
+    {% endif %}
+
     {% include 'Modale/export.html.twig' %}
     {% include 'Modale/delete.html.twig' %}
     {% include 'Modale/odds.html.twig' %}

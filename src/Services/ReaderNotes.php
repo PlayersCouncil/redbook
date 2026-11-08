@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Entity\Card;
+use App\Entity\Deck;
 use App\Entity\PublishedDeck;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -11,7 +12,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
  * The reader's description column, rendered on the server (Ketura, 2026-11-04): the starting
  * fellowship, bid and starting notes above the description, the card notes below it. Being
  * in the page itself, the column is whole on the first paint instead of waiting for the
- * browser's card data.
+ * browser's card data. A saved deck's page reads the same way (Ketura, 2026-11-08).
  */
 class ReaderNotes
 {
@@ -24,9 +25,10 @@ class ReaderNotes
 
     /**
      * @return array{starting: array<array{code: string, label: string, href: string}>, twilight: int,
-     *     bid: ?string, starting_html: ?string, notes: array<array{code: string, label: string, href: string, in_deck: bool, html: string}>}
+     *     bid: ?string, starting_html: ?string, notes: array<array{code: string, label: string, href: string, in_deck: bool, html: string}>,
+     *     description_html: string, posted_by: string}
      */
-    public function build(PublishedDeck $decklist): array
+    public function build(PublishedDeck|Deck $decklist): array
     {
         $starting = $decklist->getStarting();
         $annotations = $decklist->getAnnotations();
@@ -36,7 +38,11 @@ class ReaderNotes
             $inDeck[$slot->getCard()->getCode()] = true;
         }
 
-        $view = ['starting' => [], 'twilight' => 0, 'bid' => $decklist->getStartingBid(), 'starting_html' => null, 'notes' => []];
+        $view = [
+            'starting' => [], 'twilight' => 0, 'bid' => $decklist->getStartingBid(), 'starting_html' => null, 'notes' => [],
+            'description_html' => $decklist instanceof PublishedDeck ? (string) $decklist->getDescriptionHtml() : $this->texts->markdown((string) $decklist->getDescriptionMd()),
+            'posted_by' => $this->postedBy($decklist),
+        ];
         foreach ($starting as $code) {
             if (isset($cards[$code])) {
                 $view['starting'][] = $this->card($cards[$code]);
@@ -52,6 +58,29 @@ class ReaderNotes
             $view['notes'][] = $card + ['in_deck' => isset($inDeck[$code]), 'html' => $this->texts->markdown($row['text'] ?? '')];
         }
         return $view;
+    }
+
+    /**
+     * Who posted the deck (Ketura, 2026-11-08), which isn't always whose account it's under:
+     * an archive deck's poster, else its author as the archive or the deck's Historical Deck
+     * Information gives it, else the account's name
+     */
+    private function postedBy(PublishedDeck|Deck $decklist): string
+    {
+        $source = $decklist instanceof PublishedDeck ? $decklist->getSource() : null;
+        $deck = $decklist instanceof PublishedDeck ? $decklist->getParent() : $decklist;
+        $names = [
+            $source?->getReporterName(),
+            $source?->getLegacyAuthor(),
+            $deck?->getHistoric()['author'] ?? null,
+            $decklist->getUser()->getDisplayName(),
+        ];
+        foreach ($names as $name) {
+            if (trim((string) $name) !== '') {
+                return trim((string) $name);
+            }
+        }
+        return '';
     }
 
     /** @return array<string, Card> */

@@ -11,6 +11,13 @@
     {
 
         $('.decklist-delete').on('click', ui.delete_form);
+        // a saved deck's Delete (Ketura, 2026-11-08): the deck list's confirmation
+        $('.deck-delete').on('click', function ()
+        {
+            $('#delete-deck-name').text($(this).data('name'));
+            $('#delete-deck-id').val($(this).data('id'));
+            $('#deleteModal').modal('show');
+        });
         $('#social-like').on('click', ui.send_like);
         $('#social-favorite').on('click', ui.send_favorite);
         $('#social-fire').on('click', ui.send_fire);
@@ -154,7 +161,7 @@
     ui.setup_social_icons = function setup_social_icons()
     {
         var user = app.user.data;
-        if(!user) {
+        if(!user || !$('.rb-social').length) {
             return;
         }
         // a button clicked before this arrived already shows what the server said
@@ -357,7 +364,50 @@
         // the line follows its ends as the columns scroll
         document.addEventListener('scroll', _.throttle(draw_link, 16), {passive: true, capture: true});
         $(window).on('resize', _.throttle(draw_link, 50));
+        setup_splitters();
     };
+
+    /**
+     * The bars between the columns (Ketura, 2026-11-08): one sizes the tools, the other the
+     * commentary; the deck takes what's left, never under 340px. Each width is remembered.
+     * Narrower than 1400px the tools sit under the deck, and only the commentary's bar shows.
+     */
+    function setup_splitters()
+    {
+        var grid = $('#reader-grid'), tools = $('.rb-reader-tools'), desc = $('.rb-reader-desc');
+        function width_var(name)
+        {
+            return function (w) {
+                if(w === null) {
+                    grid[0].style.removeProperty(name);
+                } else {
+                    grid[0].style.setProperty(name, w + 'px');
+                }
+                draw_link();
+            };
+        }
+        function beside(el)
+        {
+            var deck = grid.find('.rb-reader-deck')[0];
+            return el.is(':visible') && Math.abs(el[0].getBoundingClientRect().top - deck.getBoundingClientRect().top) < 8 ? el.outerWidth() : 0;
+        }
+        ui.splitter('#reader-splitter-tools', {
+            key: 'rb-reader-tools-width',
+            min: 240,
+            max: function () { return grid.width() - beside(desc) - 340 - 24; },
+            current: function () { return tools.outerWidth(); },
+            direction: 1,
+            set: width_var('--rb-tools-width')
+        });
+        ui.splitter('#reader-splitter-desc', {
+            key: 'rb-reader-desc-width',
+            min: 300,
+            max: function () { return grid.width() - beside(tools) - 340 - 24; },
+            current: function () { return desc.outerWidth(); },
+            direction: -1,
+            set: width_var('--rb-desc-width')
+        });
+    }
 
     /**
      * called when the DOM is loaded
@@ -417,6 +467,10 @@
                 app.deck_stats && app.deck_stats.refresh();
             },
             function () {
+                // a saved deck has no comments (Ketura, 2026-11-08)
+                if(!$('#comment-form').length) {
+                    return;
+                }
                 app.user.loaded.done(function ()
                 {
                     ui.setup_comment_form();

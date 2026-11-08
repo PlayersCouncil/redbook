@@ -1,5 +1,9 @@
 {% extends 'base.html.twig' %}
-{% import "macros.html.twig" as macros %}
+{#
+   A saved deck (Ketura, 2026-11-08): the published decklist's reader (Decklist/reader.html.twig)
+   without what only a decklist has, likes, versions and comments; where it came from and
+   what it was published as stay.
+#}
 {% block meta %}
     {{ parent() }}
     <meta name="deck-name" content="{{ deck.name }}">
@@ -9,78 +13,18 @@
 
 {% block javascripts %}
     {{ parent() }}
-    <script src="{{ asset('js/ui.deckview.js') }}"></script>
+    <script src="{{ asset('js/app.deck_editor.js') }}"></script>
+    <script src="{{ asset('js/app.deck_stats.js') }}"></script>
+    <script src="{{ asset('js/ui.decklist.js') }}"></script>
     <script type="text/javascript">
-      app.deck && app.deck.init({{ deck|json_encode|raw }});
+      var Commenters = [];
+      app.deck.init({{ deck|json_encode|raw }});
     </script>
 {% endblock %}
 
+{% block wrapper_class %}rb-fill{% endblock %}
+
 {% block body %}
-    <div class="main white container">
-        {% include 'alerts.html.twig' %}
-        <div class="row">
-            <div class="col-md-12">
-                <h1 style="border-bottom:1px solid lightgray">{{ deck.name }}
-                    {% if deck.shared %}<small><span class="label label-default">{{ 'deck.shared_label' | trans }}</span></small>{% endif %}
-                </h1>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="col-md-6">
-                {% include 'Deck/validation.html.twig' %}
-                {% include 'Deck/deck-content.html.twig' %}
-            </div>
-
-            <div class="col-md-6 hidden-print">
-                <div style="margin-bottom:20px" id="btn-group-deck">
-                    {% if is_owner %}
-                        <a href="{{ path('deck_edit', {deck_uuid: deck.uuid}) }}" class="btn btn-primary"><span class="fas fa-pencil-alt"></span> {{ 'forms.edit' | trans }}</a>
-                        <a href="{{ path('deck_publish_form', {deck_uuid: deck.uuid}) }}" id="btn-publish" class="btn btn-success"><span class="fas fa-share"></span> {{ 'forms.publish' | trans }}</a>
-                        <button type="button" id="btn-delete" class="btn btn-danger"><span class="fas fa-trash-alt"></span> {{ 'forms.delete' | trans }}</button>
-                    {% endif %}
-                    {% if app.user %}
-                        <a href="{{ path('deck_clone', {deck_uuid: deck.uuid}) }}" id="btn-clone" class="btn btn-info"><span class="fas fa-clone"></span> {{ 'forms.clone' | trans }}</a>
-                    {% endif %}
-                    <button type="button" id="btn-print" class="btn btn-default"><span class="fas fa-print"></span> {{ 'forms.print' | trans }}</button>
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">{{ 'forms.actions' | trans }} <span class="caret"></span></button>
-                        <ul class="dropdown-menu" role="menu">
-                            <li class="dropdown-header"><span class="fas fa-file-export"></span> {{ 'forms.export' | trans }}</li>
-                            <li><a id="btn-export-plaintext" href="#">{{ 'decks.form.export.plaintext' | trans }}</a></li>
-                            <li><a id="btn-export-gemp" href="#">{{ 'decks.form.export.gemp' | trans }}</a></li>
-                            <li class="dropdown-header"><span class="fas fa-file-download"></span> {{ 'forms.download' | trans }}</li>
-                            <li><a href="{{ path('deck_download', {deck_uuid: deck.uuid}) }}?format=text">{{ 'decks.form.download.text' | trans }}</a></li>
-                            <li><a href="{{ path('deck_download', {deck_uuid: deck.uuid}) }}?format=gemp">{{ 'decks.form.download.gemp' | trans }}</a></li>
-                        </ul>
-                    </div>
-                </div>
-
-                <p>{{ 'decks.version' | trans({'%version%': deck.version}) }}
-                    {% if deck.tags %}&middot; {% for tag in deck.tags | split(' ') %}<span class="label label-default">{{ tag }}</span> {% endfor %}{% endif %}</p>
-
-                <div class="panel panel-default">
-                    <div class="panel-heading"><h3 class="panel-title">{{ 'decks.description' | trans }}</h3></div>
-                    <div class="panel-body" id="description"></div>
-                </div>
-                {% include 'Builder/deck-charts.html.twig' %}
-                {% include 'Builder/draw-simulator.html.twig' %}
-
-                <table class="table table-condensed" id="table-predecessor">
-                    <thead><tr><th colspan="4"><span class="fas fa-share"></span> {{ 'decks.published.title' | trans }}</th></tr></thead>
-                    <tbody>
-                    {% for decklist in deck.children %}
-                        {{ macros.decklist_table_row(decklist) }}
-                    {% else %}
-                        <tr><td>{{ 'decks.published.none' | trans }}.</td></tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    {% include 'Modale/odds.html.twig' %}
-    {% include 'Modale/delete.html.twig' %}
-    {% include 'Modale/export.html.twig' %}
+{% include 'Decklist/reader.html.twig' with {subject: deck, is_deck: true} %}
+{% if is_owner %}{% include 'Modale/delete.html.twig' %}{% endif %}
 {% endblock %}

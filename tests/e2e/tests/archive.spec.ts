@@ -49,7 +49,9 @@ test('a seed batch imports as archived decklists', async ({ page }) => {
   // owned by the author's historic account, waiting for a historian
   await expect(page.locator('.rb-reader-author')).toContainText(author);
   await expect(page.locator('.rb-reader-author .rb-user-historic')).toBeVisible();
-  await expect(page.locator('.rb-review-note')).toContainText("hasn't been checked");
+  // the note sits atop the Details tab (Ketura, 2026-11-08), and the commentary says who posted it
+  await expect(page.locator('#tab-pane-details > .rb-review-note')).toContainText("hasn't been checked");
+  await expect(page.locator('.rb-reader-posted')).toHaveText(`Posted by ${author}`);
   await snap(page, 'archived decklist');
 
   // listed by default, whole or not (Ketura, 2026-11-05), but not among the decks Gemp accepts
@@ -86,6 +88,27 @@ test('a historian verifies it from the review queue', async ({ pageAs }) => {
   ]);
   await builder.waitForLoadState();
   await waitForCardData(builder);
+  // not the author's deck: no gate in the way (Ketura, 2026-11-08)
+  await expect(builder.locator('#published-gate')).toHaveCount(0);
+
+  // a plain Save carries over to the archive decklist, and the history says who and what
+  // (Ketura, 2026-11-08)
+  await builder.locator('a[href="#tab-pane-infos"]').click();
+  await builder.fill('#starting-bid', '3');
+  await builder.click('#btn-save');
+  await expect(builder.locator('#btn-save')).toBeDisabled();
+  await builder.reload();
+  await waitForCardData(builder);
+  await builder.click('#tab-header-history');
+  const edit = builder.locator('.rb-history-edit').first();
+  await expect(edit).toContainText('Edited by');
+  await expect(edit).toContainText('bid');
+  await expect(edit).toContainText('Archive decklist updated');
+  const reader = await admin.context().newPage();
+  await reader.goto(decklistUrl);
+  await expect(reader.locator('.rb-reader-bid')).toContainText('3');
+  await reader.close();
+
   // the review and the historical fields are on the Archive info tab
   await builder.click('#tab-header-archive');
   await expect(builder.locator('#review-status')).toContainText('Not yet checked');

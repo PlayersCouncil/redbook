@@ -1485,11 +1485,23 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 .rb-toast.is-leaving { opacity: 0; }
 .rb-reader-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 4px; font-size: calc(13px * var(--rb-text-scale)); }
 .rb-reader-author { font-weight: 700; }
-.rb-reader-grid { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "deck" "desc" "comments" "tools"; }
+.rb-reader-grid { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "deck" "desc" "tools"; }
 .rb-reader-tools { grid-area: tools; }
 .rb-reader-deck { grid-area: deck; }
 .rb-reader-desc { grid-area: desc; }
-.rb-reader-comments { grid-area: comments; }
+/* the bars between the columns, on a desktop (app.splitter.js; Ketura, 2026-11-08) */
+.rb-reader-splitter { display: none; position: relative; cursor: col-resize; touch-action: none; }
+.rb-reader-splitter::before { content: ""; position: absolute; top: 0; bottom: 0; left: 5px; width: 2px; background: var(--rb-divide); }
+.rb-reader-splitter:hover::before, body.rb-resizing .rb-reader-splitter::before { left: 4px; width: 4px; background: #D4A017; }
+.rb-reader-splitter-tools { grid-area: st; }
+.rb-reader-splitter-desc { grid-area: sd; }
+/* the commentary: room either side (Ketura, 2026-11-08); its heading and who posted it stay put */
+.rb-reader-col-top { flex: 0 0 auto; border-bottom: 1px solid var(--rb-line); }
+.rb-reader-col-top .rb-reader-col-head { border-bottom: 0; padding-left: 28px; padding-right: 28px; }
+.rb-reader-posted { margin: -4px 0 0; padding: 0 28px 8px; color: var(--rb-muted); font-size: calc(14px * var(--rb-text-scale)); }
+.rb-reader-desc .rb-reader-scroll { padding-left: 28px; padding-right: 28px; }
+/* where the deck came from and the comments, under the commentary */
+.rb-reader-comments { margin-top: 26px; padding-top: 14px; border-top: 2px solid var(--rb-divide); }
 .rb-reader-col { min-width: 0; padding: 0; }
 /* the deck on white, the other columns on the page's tint, so the eye goes to the deck (Ketura, 2026-11-04) */
 .rb-reader-deck { background: #fff; }
@@ -1507,22 +1519,23 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 .rb-reader-details .panel { margin-bottom: 12px; }
 @media (min-width: 992px) {
     #wrapper.rb-fill > .rb-reader { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-    .rb-reader-grid { flex: 1 1 auto; min-height: 0; grid-template-columns: minmax(320px, 1fr) minmax(340px, 1.2fr) minmax(280px, 0.9fr);
-        grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); grid-template-areas: "deck desc comments" "tools desc comments"; }
-    /* the columns: a firm line between each (Ketura, 2026-11-04) */
-    .rb-reader-col { display: flex; flex-direction: column; min-height: 0; border-left: 2px solid var(--rb-divide); }
-    .rb-reader-deck { border-left: 0; }
-    .rb-reader-tools { border-left: 0; border-top: 2px solid var(--rb-divide); }
+    /* the deck and the commentary side by side, the tools under the deck; the commentary's
+       width set by dragging the bar (Ketura, 2026-11-08) */
+    .rb-reader-grid { flex: 1 1 auto; min-height: 0; grid-template-columns: minmax(340px, 1fr) 12px var(--rb-desc-width, 46%);
+        grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); grid-template-areas: "deck sd desc" "tools sd desc"; }
+    .rb-reader-splitter-desc { display: block; }
+    .rb-reader-col { display: flex; flex-direction: column; min-height: 0; }
+    .rb-reader-tools { border-top: 2px solid var(--rb-divide); }
     .rb-reader-scroll, .rb-reader-tools .tab-content { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
     .rb-reader-deck .rb-deck { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 }
-/* wide: the four columns side by side, tools first */
+/* wide: the three columns side by side, tools first */
 @media (min-width: 1400px) {
     /* tools a tenth narrower than they were (Ketura, 2026-11-04) */
-    .rb-reader-grid { grid-template-columns: minmax(270px, 0.745fr) minmax(340px, 1.15fr) minmax(320px, 1.1fr) minmax(280px, 0.85fr);
-        grid-template-rows: minmax(0, 1fr); grid-template-areas: "tools deck desc comments"; }
+    .rb-reader-grid { grid-template-columns: var(--rb-tools-width, 20%) 12px minmax(340px, 1fr) 12px var(--rb-desc-width, 40%);
+        grid-template-rows: minmax(0, 1fr); grid-template-areas: "tools st deck sd desc"; }
+    .rb-reader-splitter-tools { display: block; }
     .rb-reader-tools { border-top: 0; }
-    .rb-reader-deck { border-left: 2px solid var(--rb-divide); }
 }
 /* the read-only deck: "4x Card" lines, a passive S on the starting fellowship */
 .rb-readonly .rb-qty-text { flex: 0 0 auto; min-width: 2.2em; text-align: right; font-variant-numeric: tabular-nums; color: var(--rb-ink); }
@@ -2181,3 +2194,14 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 .rb-sym-menu .rb-sym { font-size: 18px; vertical-align: middle; }
 .rb-my-decks .rb-results-sort select { width: auto; }
 .rb-my-decks .rb-browse-pane .rb-dates input { padding-left: 6px; padding-right: 4px; }
+.rb-history-edit { margin-bottom: 2px; font-weight: 600; color: #5B4A2A; }
+.rb-history-edit .label { margin-left: 6px; font-size: 75%; }
+
+/* the deckbuilder on a published deck, unchanged since (Ketura, 2026-11-08): it waits behind
+   this until a new version is chosen */
+.rb-gate { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(28, 24, 16, .55); backdrop-filter: blur(2px); }
+.rb-gate-card { max-width: 560px; padding: 24px 28px; border-radius: 12px; background: #fff; box-shadow: 0 12px 40px rgba(0, 0, 0, .4); text-align: center; }
+.rb-gate-card h2 { margin: 0 0 12px; font-size: calc(24px * var(--rb-text-scale)); font-weight: 800; }
+.rb-gate-card p { font-size: calc(15px * var(--rb-text-scale)); }
+.rb-gate-next { color: var(--rb-muted); }
+.rb-gate-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin: 18px 0 8px; }
