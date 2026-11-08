@@ -717,9 +717,11 @@ class BuilderController extends AbstractController
     }
 
     /**
-     * The deck's latest public decklist, if the deck hasn't changed since it was published
-     * (Ketura, 2026-11-08): editing it then starts the next version, which the deckbuilder
-     * makes plain before letting the owner in
+     * The deck's latest public decklist, if the deck is still what was published (Ketura,
+     * 2026-11-08): editing it then starts the next version, which the deckbuilder makes plain
+     * before letting the owner in. Told by what they hold (the cards, the description, the
+     * starting setup, the notes), not by dates: a save that changed nothing still counts as
+     * unchanged.
      */
     private function unchangedPublication(Deck $deck): ?PublishedDeck
     {
@@ -733,8 +735,14 @@ class BuilderController extends AbstractController
         if ($latest === null) {
             return null;
         }
-        $changed = $deck->getDateUpdate() ?? $deck->getDateCreation();
-        return $changed <= ($latest->getDatePublished() ?? $latest->getDateCreation()) ? $latest : null;
+        $holds = function ($d): array {
+            $cards = $d->getSlots()->getContent();
+            ksort($cards);
+            $starting = array_values($d->getStarting());
+            sort($starting);
+            return [$cards, trim((string) $d->getDescriptionMd()), $starting, (string) $d->getStartingBid(), (string) $d->getStartingNotes(), $d->getAnnotations()];
+        };
+        return $holds($deck) == $holds($latest) ? $latest : null;
     }
 
     /** The owner, or a historian on a historic author's deck */

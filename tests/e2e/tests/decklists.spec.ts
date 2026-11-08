@@ -167,7 +167,7 @@ test('the author edits the decklist from its page; nobody else gets Edit', async
   await expect(page.locator('#name')).toHaveValue(decklistName);
   // the same form, editing, and Cancel goes back to the decklist; within the grace period
   // (Ketura, 2026-11-07) the cards and release date change only by undoing publishing
-  await expect(page.locator('.rb-publish-title')).toHaveText('Edit Decklist');
+  await expect(page.locator('.rb-publish-title')).toHaveText('Edit Decklist Details');
   await expect(page.locator('#annot-list textarea[data-annotation="1_12"]')).toHaveValue('The only companion.');
   await expect(page.locator('#decklist-state')).toHaveAttribute('data-state', 'grace');
   await expect(page.locator('#effective_date')).toBeDisabled();

@@ -405,7 +405,8 @@
             box = $('#stats-chart-cultures'),
             width = Math.max(200, box.width()),
             band = 28,
-            size = width - 10,
+            // as wide as the column, but no taller than a quarter of the window (Ketura, 2026-11-08)
+            size = Math.min(width - 10, Math.round(window.innerHeight / 4)),
             THIN = 0.22,
             // a half runs clockwise: Shadow from the top down, Free Peoples from the bottom up
             slices = function (side) {
@@ -455,7 +456,7 @@
                         }}};
             };
         box.highcharts({
-            chart: {type: 'pie', width: width, height: size + band * 2, backgroundColor: 'transparent', style: {fontFamily: 'inherit'}, spacing: [band, 0, band, 0],
+            chart: {type: 'pie', width: width, height: size + band * 2 + 4, backgroundColor: 'transparent', style: {fontFamily: 'inherit'}, spacing: [band, 0, band, 0],
                 events: {load: function () { $(this.container).on('mouseleave', hide_name); }}},
             title: {text: null},
             credits: {enabled: false},

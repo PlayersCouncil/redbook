@@ -575,7 +575,7 @@ tournamentLegality:
   joust: Justa
   melee: Contienda
 decklist.form.title.create: Publicar Mazo
-decklist.form.title.edit: Editar Lista
+decklist.form.title.edit: Editar Detalles de la Lista
 decklist.form.format_from_deck: "El formato del propio mazo, fijo una vez publicado. Para cambiarlo, cambia antes el mazo en el constructor."
 decklist.form.version_new: "Un mazo propio: la versión 1 de una línea nueva."
 decklist.form.version_of: "Publicando la <b>versión %version%</b> de:"
@@ -714,3 +714,6 @@ decklist.reader.download_short: "Descargar"
 decklist.reader.download_hint: "Descarga la lista como archivo de texto"
 decklist.reader.released: "Fecha de juego"
 deckbuilder.top_heading: "Portador del Anillo y Sitios"
+deckbuilder.info.preview: "Vista Previa"
+deckbuilder.info.preview_hint: "El mazo tal como lo ven los demás"
+deckbuilder.visibility.locked: "Un mazo publicado sigue siendo público."

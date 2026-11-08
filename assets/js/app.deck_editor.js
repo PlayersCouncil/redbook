@@ -184,12 +184,9 @@
     function line(slot, problems, options)
     {
         options = options || {};
-        // the S sits between the culture icon and the name; other Free Peoples lines keep its
-        // space, so the names line up (Ketura, 2026-11-03)
+        // the S sits between the culture icon and a companion's name; the other lines keep no
+        // space for it (Ketura, 2026-11-08; it was a column)
         var start = options.numbers ? start_button(slot) : '';
-        if(options.numbers && !start && slot.card.side !== 'shadow' && !readonly) {
-            start = '<span class="rb-start-space" aria-hidden="true"></span>';
-        }
         return '<div class="rb-line' + classes(slot, problems) + '" data-key="' + slot.key + '" data-code="' + slot.card.code + '"' + row_hover(slot.card) + '>'
             + qty_control(slot, options.numbers)
             + (options.culture ? app.data.cardIconHtml(slot.card) : '')
@@ -447,7 +444,10 @@
         html += '<div class="rb-sides view-' + v + '">' + side_html('free_peoples', fp, problems) + side_html('shadow', shadow, problems) + '</div>';
         $(container).removeClass('deck-loading').html(html);
         if(toolbar) {
-            toolbar.html(display_options() + (readonly ? '' : '<span class="rb-draw-total">' + _.escape(t('deckbuilder.draw_deck', {count: count(draw)})) + '</span>'));
+            // the view and grouping buttons centred, the draw deck's size beside them at the right
+            // (Ketura, 2026-11-08)
+            toolbar.html('<span class="rb-toolbar-side"></span><div class="rb-toolbar-mid">' + display_options() + '</div><span class="rb-toolbar-side">'
+                + (readonly ? '' : '<span class="rb-draw-total">' + _.escape(t('deckbuilder.draw_deck', {count: count(draw)})) + '</span>') + '</span>');
             pin_option_widths();
         }
         fit_sites();

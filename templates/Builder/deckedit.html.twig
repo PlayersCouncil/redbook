@@ -64,8 +64,6 @@
                     </div>
                     <div class="rb-popover" id="format-suggestions" role="dialog" aria-label="{{ 'deckbuilder.info.suggestions' | trans }}" hidden></div>
 
-                    <div class="rb-validation" id="deck-validation" role="status" aria-live="polite"></div>
-
                     <div class="rb-actions">
                         <button type="button" class="rb-btn rb-btn-primary" id="btn-save">{{ 'deckbuilder.info.save' | trans }}</button>
                         <button type="button" class="rb-btn" id="btn-revert">{{ 'deckbuilder.info.revert' | trans }}</button>
@@ -77,6 +75,8 @@
                                 <button type="button" role="menuitemradio" data-visibility="published"><strong>{{ 'deckbuilder.visibility.published' | trans }}</strong><span>{{ 'deckbuilder.visibility.published_hint' | trans }}</span></button>
                             </div>
                         </div>
+                        {# the deck as others see it (Ketura, 2026-11-08) #}
+                        <a href="{{ path('deck_view', {deck_uuid: deck.uuid}) }}" class="rb-btn" id="btn-preview" title="{{ 'deckbuilder.info.preview_hint' | trans }}"><span class="fas fa-eye" aria-hidden="true"></span> {{ 'deckbuilder.info.preview' | trans }}</a>
                         <div class="rb-menu-wrap">
                             <button type="button" class="rb-btn" id="btn-more" aria-haspopup="menu" aria-expanded="false">{{ 'deckbuilder.info.more' | trans }} <span aria-hidden="true">&#9662;</span></button>
                             <div class="rb-menu" id="menu-more" role="menu" hidden>
@@ -92,6 +92,8 @@
                         </div>
                         <span class="rb-save-status" id="save-status" aria-live="polite"></span>
                     </div>
+                    {# under the buttons, so problems appearing don't move them (Ketura, 2026-11-08) #}
+                    <div class="rb-validation" id="deck-validation" role="status" aria-live="polite"></div>
 
                 </section>
 
@@ -100,6 +102,9 @@
                     <div class="deck-loading"><i class="fas fa-spinner fa-spin fa-3x"></i></div>
                 </section>
             </div>
+
+            {# the panes resize from the bar between them (Ketura, 2026-11-08) #}
+            <div class="rb-builder-splitter" id="builder-splitter" role="separator" aria-orientation="vertical" title="{{ 'decklist.form.resize' | trans }}"></div>
 
             <!-- Right: filters and card pool, with the other tools as tabs -->
             <div class="col-md-6 rb-col-right">

@@ -1202,7 +1202,7 @@ decklist.reader.own_deck: "Your own deck"
 decklist.reader.download: Download Text File
 decklist.reader.archive_comments: "{1} 1 Imported Archive Comment|]1,Inf] %count% Imported Archive Comments"
 decklist.form.title.create: Publish Deck
-decklist.form.title.edit: Edit Decklist
+decklist.form.title.edit: Edit Decklist Details
 decklist.form.format_from_deck: "The deck's own format, fixed once published. To change it, change the deck in the deckbuilder first."
 decklist.form.version_new: "A deck of its own: version 1 of a new line."
 decklist.form.version_of: "Publishing <b>version %version%</b> of:"
@@ -1330,3 +1330,6 @@ decklist.reader.download_short: "Download"
 decklist.reader.download_hint: "Download the list as a text file"
 decklist.reader.released: "Released"
 deckbuilder.top_heading: "Ring-bearer and Sites"
+deckbuilder.info.preview: "Preview"
+deckbuilder.info.preview_hint: "The deck as others see it"
+deckbuilder.visibility.locked: "A published deck stays public."

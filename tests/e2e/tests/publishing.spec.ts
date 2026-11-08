@@ -81,6 +81,22 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   await expect(page.locator('#published-gate')).toContainText(`${lineName} one v1`);
   await page.click('#published-gate-go');
   await expect(page.locator('#published-gate')).toHaveCount(0);
+  // published, it can't go back to private or hidden; Preview shows the deck (Ketura, 2026-11-08)
+  await page.click('#btn-visibility');
+  await expect(page.locator('#menu-visibility [data-visibility=private]')).toBeDisabled();
+  await expect(page.locator('#menu-visibility [data-visibility=hidden]')).toBeDisabled();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#btn-preview')).toHaveAttribute('href', new RegExp(`/deck/view/${deckUuid}$`));
+  // the deck pane widens from the bar between the panes
+  const left = page.locator('.rb-col-left');
+  const leftBefore = (await left.boundingBox())!.width;
+  const panes = (await page.locator('#builder-splitter').boundingBox())!;
+  await page.mouse.move(panes.x + panes.width / 2, panes.y + 300);
+  await page.mouse.down();
+  await page.mouse.move(panes.x + panes.width / 2 - 50, panes.y + 300, { steps: 4 });
+  await page.mouse.up();
+  expect((await left.boundingBox())!.width).toBeCloseTo(leftBefore - 50, -1);
+  await page.locator('#builder-splitter').dblclick();
 
   // published before: version 2 of it, which can be cleared to stand alone
   await page.goto(`/deck/publish/${deckUuid}`);

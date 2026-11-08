@@ -309,8 +309,11 @@
         $('#btn-visibility').html(icons[shown] + ' <span>' + t('deckbuilder.visibility.' + shown) + '</span> <span aria-hidden="true">&#9662;</span>')
             .attr('title', t('deckbuilder.visibility.label'));
         $('#menu-visibility [data-visibility]').each(function () {
-            var on = $(this).data('visibility') === shown;
-            $(this).attr('aria-checked', on).toggleClass('active', on);
+            var on = $(this).data('visibility') === shown,
+                // published, it can't go back to private or hidden (Ketura, 2026-11-08)
+                locked = page.published && $(this).data('visibility') !== 'published';
+            $(this).attr('aria-checked', on).toggleClass('active', on).prop('disabled', locked)
+                .attr('title', locked ? t('deckbuilder.visibility.locked') : null);
         });
     }
 
@@ -523,7 +526,7 @@
             event.stopPropagation();
             toggle_menu(this, '#menu-visibility');
         });
-        $('#menu-visibility').on('click', '[data-visibility]', function () {
+        $('#menu-visibility').on('click', '[data-visibility]:not([disabled])', function () {
             close_menus();
             set_visibility($(this).data('visibility'));
         });
@@ -613,6 +616,22 @@
         visibility = app.deck.is_shared() ? 'hidden' : 'private';
         ui.setup_event_handlers();
         app.deck_editor.setup('#deck', '#deck-toolbar');
+        // the deck pane resizes against the cards pane (Ketura, 2026-11-08)
+        var row = $('.rb-builder-row'), left = $('.rb-col-left');
+        ui.splitter('#builder-splitter', {
+            key: 'rb-builder-left-width',
+            min: 480,
+            max: function () { return row.width() - 560; },
+            current: function () { return left.outerWidth(); },
+            direction: 1,
+            set: function (w) {
+                if(w === null) {
+                    row[0].style.removeProperty('--rb-builder-left');
+                } else {
+                    row[0].style.setProperty('--rb-builder-left', w + 'px');
+                }
+            }
+        });
         app.pool.setup('#pool-filters', '#pool');
         app.deck_stats && app.deck_stats.setup();
         app.deck_history && app.deck_history.setup('#history');
