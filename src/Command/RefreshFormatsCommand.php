@@ -27,7 +27,7 @@ class RefreshFormatsCommand extends Command
             $io->error('Gemp unavailable, formats left as they were: ' . $e->getMessage());
             return Command::FAILURE;
         }
-        $io->success(sprintf('Formats: %d new, %d updated, %d retired', $counts['created'], $counts['updated'], $counts['retired']));
+        $io->success(sprintf('Formats: %d new, %d updated, %d unchanged, %d retired', $counts['created'], $counts['updated'], $counts['unchanged'], $counts['retired']));
         return Command::SUCCESS;
     }
 }

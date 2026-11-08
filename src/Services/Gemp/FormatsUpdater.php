@@ -27,7 +27,7 @@ class FormatsUpdater
     }
 
     /**
-     * @return array{created: int, updated: int, retired: int}
+     * @return array{created: int, updated: int, unchanged: int, retired: int}
      * @throws GempUnavailableException leaving the stored formats untouched
      */
     public function refresh(): array
@@ -42,7 +42,7 @@ class FormatsUpdater
         }
 
         $existing = $this->formats->findAllByCode();
-        $counts = ['created' => 0, 'updated' => 0, 'retired' => 0];
+        $counts = ['created' => 0, 'updated' => 0, 'unchanged' => 0, 'retired' => 0];
         $now = new DateTime();
         foreach ($all as $code => $row) {
             $code = (string) ($row['code'] ?? $code);
@@ -50,17 +50,31 @@ class FormatsUpdater
                 continue;
             }
             $format = $existing[$code] ?? null;
+            $before = null;
             if ($format === null) {
                 $format = new Format();
                 $format->setCode($code);
                 $this->em->persist($format);
-                $counts['created']++;
             } else {
-                $counts['updated']++;
+                $before = self::published($format);
             }
             $this->apply($format, $row, $hall[$code] ?? null);
             $format->setRetired(false);
-            $format->setDateUpdate($now);
+            /*
+             * Only a format that changed gets a new date (Ketura, 2026-11-08). Browsers keep their
+             * own copy of the formats and say "a new version of the data is available" when a
+             * date differs, so stamping every format on each refresh (every deploy, and hourly)
+             * showed that notice for nothing.
+             */
+            if ($before === null) {
+                $format->setDateUpdate($now);
+                $counts['created']++;
+            } elseif ($before !== self::published($format)) {
+                $format->setDateUpdate($now);
+                $counts['updated']++;
+            } else {
+                $counts['unchanged']++;
+            }
             unset($existing[$code]);
         }
         foreach ($existing as $format) {
@@ -72,6 +86,17 @@ class FormatsUpdater
         }
         $this->em->flush();
         return $counts;
+    }
+
+    /**
+     * What browsers get of a format (the formats API), without its date. Gemp's raw copy is
+     * left out: browsers never see it, so a change there alone doesn't count.
+     */
+    private static function published(Format $format): string
+    {
+        $data = $format->serialize();
+        unset($data['date_update']);
+        return json_encode($data);
     }
 
     private function apply(Format $format, array $row, ?array $hall): void
