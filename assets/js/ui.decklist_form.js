@@ -211,7 +211,8 @@
      * The crop editor (Ketura, 2026-11-07): the whole card, and a box the tile's shape for the
      * part the thumbnail shows. Dragging the box moves it; dragging an edge or corner resizes
      * it, keeping its shape, from the opposite corner (or edge, staying centred along it). It
-     * stays on the card, no larger than the card allows and no smaller than a quarter of that.
+     * stays on the card, no larger than the card allows and no smaller than an eighth of that (Ketura: small
+     * enough for close-ups, large enough to handle).
      * Reset goes back to the template's framing. One framing is kept, for the last card
      * confirmed, so adjusting another card drops the old one.
      *
@@ -239,6 +240,10 @@
         {
             return Math.min(1, state.ratio * state.A);
         }
+        function smallest()
+        {
+            return largest() / 8;
+        }
         function from_css(css)
         {
             var w = 100 / css.w;
@@ -259,7 +264,7 @@
         /** Kept on the card and within the sizes allowed */
         function fit(box)
         {
-            var w = clamp(box.w, largest() / 4, largest());
+            var w = clamp(box.w, smallest(), largest());
             return {w: w, x: clamp(box.x, 0, 1 - w), y: clamp(box.y, 0, state.ratio - w / state.A)};
         }
         function render()
@@ -336,7 +341,7 @@
                 ax = sx > 0 ? b.x : b.x + b.w, ay = sy > 0 ? b.y : b.y + b.w / A,
                 want = Math.max(sx ? (px - ax) * sx : -Infinity, sy ? (py - ay) * sy * A : -Infinity),
                 limit = Math.min(max, sx > 0 ? 1 - ax : (sx < 0 ? ax : Infinity), sy > 0 ? (ratio - ay) * A : (sy < 0 ? ay * A : Infinity)),
-                w = clamp(want, max / 4, limit);
+                w = clamp(want, smallest(), limit);
             return {
                 w: w,
                 // the side opposite the handle stays put; along an edge handle, the box stays centred
@@ -380,7 +385,7 @@
                 edited({w: b.w, x: b.x + moves[event.key][0], y: b.y + moves[event.key][1]});
             } else if(event.key === '+' || event.key === '=' || event.key === '-') {
                 event.preventDefault();
-                var w = clamp(b.w * (event.key === '-' ? 0.95 : 1.05), largest() / 4, largest());
+                var w = clamp(b.w * (event.key === '-' ? 0.95 : 1.05), smallest(), largest());
                 edited({w: w, x: b.x + (b.w - w) / 2, y: b.y + (b.w - w) / state.A / 2});
             }
         });

@@ -269,6 +269,45 @@ test('the decklist shows up in search and in the favourites list', async ({ page
   await snap(voter, "voter's favourites");
 });
 
+test("My Decks: the decklists page's filters, who can see each deck, and favourites", async ({ page, pageAs }) => {
+  // My Decks (Ketura, 2026-11-07): the decklists page's search beside the user's decks
+  const deckName = `E2E to publish ${runId}`;
+  await page.goto(`/decks?name=${encodeURIComponent(deckName)}`);
+  const row = page.locator('#decks tr').filter({ hasText: deckName });
+  await expect(row).toHaveCount(1);
+  await expect(page.locator('.rb-my-decks-table thead th')).toHaveText(['', '', '', 'Size', 'Deck', 'Format', 'Cultures', 'Tags', '']);
+  // published, with a link to the decklist; its tags, which search when clicked
+  await expect(row.locator('.rb-status')).toHaveClass(/rb-status-published/);
+  await expect(row.locator('.rb-deck-published')).toContainText('v1');
+  await expect(row.locator('.rb-row-tags')).toContainText('dwarves');
+  await expect(row.locator('.rb-thumb-card img')).toHaveAttribute('alt', 'Gimli, Dwarf of Erebor');
+
+  // which decks to include: leaving out the published ones leaves it out
+  await page.click('label.rb-toggle-published');
+  await expect(row).toHaveCount(0);
+  await expect(page).toHaveURL(/show/);
+  await page.click('label.rb-toggle-published');
+  await expect(row).toHaveCount(1);
+  await expect(page).not.toHaveURL(/show/);
+
+  // ticking decks counts them on the selection's button
+  await row.locator('.rb-col-pick input').check();
+  await expect(page.locator('#btn-group-selection .rb-selected-count')).toHaveText('(1)');
+  await snap(page, 'my decks');
+
+  // favourites are left out until asked for; they can be copied, not ticked
+  const voter = await pageAs('voter');
+  await voter.goto('/decks');
+  await expect(voter.locator('#decks tr').filter({ hasText: decklistName })).toHaveCount(0);
+  await voter.click('label.rb-toggle-favorites');
+  const favorite = voter.locator('#decks tr').filter({ hasText: decklistName });
+  await expect(favorite).toHaveCount(1);
+  await expect(favorite.locator('.rb-status')).toHaveClass(/rb-status-favorite/);
+  await expect(favorite.locator('.rb-col-pick input')).toHaveCount(0);
+  await expect(favorite.locator('a[href*="/deck/copy/"]')).toBeVisible();
+  await snap(voter, 'my decks with favourites');
+});
+
 test('the decklists page filters by card, kind and culture', async ({ page }) => {
   await page.goto(`/decklists?name=${encodeURIComponent(decklistName)}`);
   await page.waitForFunction(() => (window as any).app?.data?.cards?.find().length > 100);

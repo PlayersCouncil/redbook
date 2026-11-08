@@ -1,0 +1,6 @@
+{# Macros the deck lists share (Ketura, 2026-11-07): the decklists page and My Decks #}
+{% macro culture_icon(culture, count, colour = null) %}
+    {%- set file = culture.code == 'uruk_hai' ? 'uruk' : culture.code -%}
+    <span class="culture-icon" role="img" aria-label="{{ culture.name }}" title="{{ culture.name }}{% if count is not null %} · {{ count }}{% endif %}"
+          style="--icon:url({{ asset('images/cultures/' ~ file ~ '.svg') }}); color: {{ colour ?? 'var(--rb-culture-' ~ (culture.code | replace({'_': '-'})) ~ ', currentColor)' }}"></span>
+{%- endmacro %}

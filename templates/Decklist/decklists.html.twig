@@ -15,12 +15,6 @@
 #}
 {% extends 'base.html.twig' %}
 
-{% macro culture_icon(culture, count, colour = null) %}
-    {%- set file = culture.code == 'uruk_hai' ? 'uruk' : culture.code -%}
-    <span class="culture-icon" role="img" aria-label="{{ culture.name }}" title="{{ culture.name }}{% if count is not null %} · {{ count }}{% endif %}"
-          style="--icon:url({{ asset('images/cultures/' ~ file ~ '.svg') }}); color: {{ colour ?? 'var(--rb-culture-' ~ (culture.code | replace({'_': '-'})) ~ ', currentColor)' }}"></span>
-{%- endmacro %}
-
 {% block javascripts %}
     {{ parent() }}
     <script src="{{ asset('js/ui.decklist_search.js') }}"></script>
@@ -56,118 +50,11 @@
 {% endblock %}
 
 {% block browse_fields %}
-{% import _self as m %}
-{% set f = filters %}
-{% set active = f | filter((v, k) => k not in ['sort', 'limit']) | length %}
-        {# the format first: it's what anyone sets first (Ketura, 2026-11-06) #}
-        <label class="rb-field rb-field-format">
-            <span>{{ 'decklist.browse.format' | trans }}</span>
-            <select name="format" class="form-control input-sm" data-autosubmit>
-                <option value="">{{ 'decklist.browse.any_format' | trans }}</option>
-                {% for format in formats %}
-                    <option value="{{ format.code }}"{% if (f.format ?? '') == format.code %} selected{% endif %}>{{ format.name }} ({{ format.count }})</option>
-                {% endfor %}
-            </select>
-        </label>
-
-        <div class="rb-browse-search">
-            <label class="rb-field">
-                <span>{{ 'decklist.browse.name' | trans }}</span>
-                <input type="search" name="name" class="form-control input-sm" value="{{ f.name ?? '' }}">
-            </label>
-            <label class="rb-field">
-                <span>{{ 'decklist.browse.author' | trans }}</span>
-                <input type="search" name="author" class="form-control input-sm" value="{{ f.author ?? '' }}">
-            </label>
-            <div class="rb-field rb-field-cards">
-                <label for="browse-card">{{ 'decklist.browse.cards' | trans }}</label>
-                <div class="rb-card-picks form-control input-sm" id="browse-cards">
-                    {% for card in cards %}
-                        <span class="rb-card-pick"><input type="hidden" name="cards[]" value="{{ card.code }}">{{ card.fullName }}<button type="button" aria-label="{{ 'decklist.browse.remove' | trans }}">&times;</button></span>
-                    {% endfor %}
-                    <input type="text" id="browse-card" autocomplete="off" placeholder="{{ 'decklist.browse.cards_hint' | trans }}">
-                </div>
-            </div>
-            {# tags: typed, or clicked on a deck's row (Ketura, 2026-11-06); a deck has them all #}
-            <div class="rb-field rb-field-tags">
-                <label for="browse-tag">{{ 'decklist.browse.tags' | trans }}</label>
-                <div class="rb-card-picks form-control input-sm" id="browse-tags">
-                    {% for tag in f.tags ?? [] %}
-                        <span class="rb-card-pick rb-tag-pick"><input type="hidden" name="tags[]" value="{{ tag }}">{{ tag }}<button type="button" aria-label="{{ 'decklist.browse.remove' | trans }}">&times;</button></span>
-                    {% endfor %}
-                    <input type="text" id="browse-tag" autocomplete="off" placeholder="{{ 'decklist.browse.tags_hint' | trans }}">
-                </div>
-            </div>
-        </div>
-
-        <div class="rb-browse-filters">
-            {# when the deck was submitted, picked from a calendar (Ketura, 2026-11-06) #}
-            <div class="rb-field rb-field-dates">
-                <span>{{ 'decklist.browse.submitted' | trans }}</span>
-                <div class="rb-dates">
-                    <input type="date" name="from" class="form-control input-sm" min="2001-01-01" value="{{ f.from ?? '' }}" aria-label="{{ 'decklist.browse.submitted' | trans }}: {{ 'decklist.browse.from' | trans }}" data-autosubmit>
-                    <span>–</span>
-                    <input type="date" name="to" class="form-control input-sm" min="2001-01-01" value="{{ f.to ?? '' }}" aria-label="{{ 'decklist.browse.submitted' | trans }}: {{ 'decklist.browse.to' | trans }}" data-autosubmit>
-                </div>
-            </div>
-            <div class="rb-field">
-                <span>{{ 'decklist.browse.show' | trans }}</span>
-                <div class="rb-toggles" data-kinds>
-                    {% for kind in ['whole', 'free_peoples', 'shadow'] %}
-                        <label class="rb-toggle rb-toggle-{{ kind }}" title="{{ ('decklist.browse.kind_title.' ~ kind) | trans }}">
-                            <input type="checkbox" name="kind[]" value="{{ kind }}" data-autosubmit{% if f.kind is not defined or kind in f.kind %} checked{% endif %}>
-                            <span>{{ ('decklist.browse.kind.' ~ kind) | trans }}</span>
-                        </label>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-
-        <div class="rb-browse-cultures">
-            <span class="rb-browse-label">{{ 'decklist.browse.cultures' | trans }}</span>
-            {# Gollum ends the Free Peoples, and Men, Orc and Uruk-hai the Shadow, in black for
-               now (Ketura, 2026-11-06) #}
-            {% set late = ['gollum', 'men', 'orc', 'uruk_hai'] %}
-            {% for side in ['free_peoples', 'shadow'] %}
-                {% if not loop.first %}<span class="rb-culture-sep"></span>{% endif %}
-                {% set sided = cultures | filter(c => c.side == side) %}
-                {% for culture in (sided | filter(c => c.code not in late)) | merge(sided | filter(c => c.code in late)) %}
-                    <label class="rb-culture-pick" title="{{ culture.name }}">
-                        <input type="checkbox" name="culture[]" value="{{ culture.code }}" data-autosubmit{% if culture.code in (f.culture ?? []) %} checked{% endif %}>
-                        <span>{{ m.culture_icon(culture, null, culture.code in late ? '#000' : null) }}</span>
-                    </label>
-                {% endfor %}
-            {% endfor %}
-        </div>
-
-        {# filters the pane has no field for, set by a link (the old tabs, Back after deleting a
-           deck): shown so they can be seen and dropped (Ketura, 2026-11-06) #}
-        {% set also = [] %}
-        {% if f.event is defined %}{% set also = also | merge([{name: 'event', value: f.event, label: 'decklist.browse.also_event' | trans({'%name%': f.event})}]) %}{% endif %}
-        {% for key in ['played', 'legal', 'mine', 'favorites'] | filter(k => f[k] is defined) %}
-            {% set also = also | merge([{name: key, value: 1, label: ('decklist.browse.also_' ~ key) | trans}]) %}
-        {% endfor %}
-        {% if also %}
-            <div class="rb-field rb-browse-also" title="{{ 'decklist.browse.also_title' | trans }}">
-                <span>{{ 'decklist.browse.also' | trans }}</span>
-                <div class="rb-card-picks-row">
-                    {% for item in also %}
-                        <span class="rb-card-pick"><input type="hidden" name="{{ item.name }}" value="{{ item.value }}">{{ item.label }}<button type="button" aria-label="{{ 'decklist.browse.remove' | trans }}">&times;</button></span>
-                    {% endfor %}
-                </div>
-            </div>
-        {% endif %}
-
-        <div class="rb-browse-submit">
-            <span class="rb-browse-actions">
-                {% if active %}<a href="{{ list_path('decklists_list', f | filter((v, k) => k in ['sort', 'limit'])) }}" class="rb-browse-clear">{{ 'decklist.browse.clear' | trans }}</a>{% endif %}
-                <button type="submit" class="btn btn-primary btn-sm"><span class="fas fa-search"></span> {{ 'decklist.browse.search' | trans }}</button>
-            </span>
-        </div>
+{% include 'Decklist/browse-fields.html.twig' with {list_route: 'decklists_list'} %}
 {% endblock %}
 
 {% block browse_results %}
-{% import _self as m %}
+{% import 'Decklist/macros.html.twig' as m %}
 {% set f = filters %}
 {% set query = app.request.query.all %}
         <div class="rb-results-head">

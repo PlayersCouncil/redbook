@@ -1,5 +1,6 @@
 {# The decklists page's pager (Ketura, 2026-11-05): start, previous, nine pages, next, end, and
-   a box to jump to a page. Variables: pager (PublishedDeckManager::getPager) #}
+   a box to jump to a page. Variables: pager (PublishedDeckManager::getPager); pager_action, the
+   list it pages (the decklists page by default) #}
 {% if pager.count > 1 %}
 <nav class="rb-pager" aria-label="{{ 'decklist.browse.pages' | trans }}">
     {% for step in [
@@ -20,7 +21,7 @@
         {% if step.url %}<a href="{{ step.url }}" class="rb-page rb-page-step" title="{{ step.label | trans }}" aria-label="{{ step.label | trans }}"><span class="fas {{ step.icon }}"></span></a>
         {% else %}<span class="rb-page rb-page-step is-disabled" aria-hidden="true"><span class="fas {{ step.icon }}"></span></span>{% endif %}
     {% endfor %}
-    <form method="get" action="{{ path('decklists_list') }}" class="rb-page-jump">
+    <form method="get" action="{{ pager_action ?? path('decklists_list') }}" class="rb-page-jump">
         {% for key, value in app.request.query.all | filter((v, k) => k != 'page') %}
             {% if value is iterable %}{% for v in value %}<input type="hidden" name="{{ key }}[]" value="{{ v }}">{% endfor %}{% else %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}
         {% endfor %}

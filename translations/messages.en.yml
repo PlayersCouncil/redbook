@@ -1254,3 +1254,27 @@ deckbuilder.notes.card_button: "Insert a card name (#)"
 deckbuilder.notes.fullscreen: Fullscreen
 decklist.publish.thumbnail_sites: Sites
 decklist.form.resize: Drag to resize
+decks.browse.changed: Changed
+decks.browse.changed_on: Changed
+decks.browse.include: Include
+decks.browse.include_title.private: Your decks only you can see
+decks.browse.include_title.hidden: Your decks anyone with the link can see
+decks.browse.include_title.published: Your decks published as decklists
+decks.browse.include_title.favorites: Decklists you added to your favorites
+decks.browse.show.private: Private
+decks.browse.show.hidden: Hidden
+decks.browse.show.published: Published
+decks.browse.show.favorites: Favorites
+decks.browse.status.private: "Private: only you can see it"
+decks.browse.status.hidden: "Hidden: anyone with the link can see it"
+decks.browse.status.published: "Published as a decklist"
+decks.browse.status.favorite: "A decklist in your favorites"
+decks.browse.count: "{0} No decks match|{1} 1 deck|]1,Inf[ %n% decks"
+decks.browse.none: Nothing matches. Try removing a filter.
+decks.browse.sorts.new: Recently Changed
+decks.browse.sorts.old: Least Recently Changed
+decks.browse.sorts.name: Name
+decks.browse.pick: "Select %name%"
+decks.browse.published_as: "published as v%version%"
+decks.browse.copy: Copy to My Decks
+decks.browse.slots_title: "Your decks, of the most you can keep"

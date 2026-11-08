@@ -1764,6 +1764,39 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
     .rb-decks .rb-row-cultures, .rb-decks .rb-row-tags { justify-content: flex-start; }
 }
 
+/* ---- My Decks (Ketura, 2026-11-07): the decklists page's layout, with a box to tick each of
+   the user's decks, who can see it, and its actions; the deck buttons between the count and
+   the sort ---- */
+.rb-browse-alerts:empty { display: none; }
+.rb-slot-count { margin-left: 8px; font-size: 45%; font-weight: 600; color: var(--rb-muted); letter-spacing: 0; white-space: nowrap; }
+.rb-slot-count.is-full { color: #B03A2E; }
+.rb-my-decks .rb-results-head { grid-template-columns: auto 1fr auto; }
+.rb-deck-actions { grid-column: 2; justify-self: center; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+.rb-selected-count { font-weight: 700; }
+.rb-my-decks-table td.rb-col-pick, .rb-my-decks-table th.rb-col-pick { width: 28px; padding: 6px 2px 6px 4px; cursor: default; }
+.rb-col-pick input { margin: 0; width: 16px; height: 16px; cursor: pointer; vertical-align: middle; }
+.rb-col-status { width: 30px; padding-left: 2px !important; padding-right: 2px !important; }
+.rb-status { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; font-size: 12px; color: var(--rb-muted); background: #EFEAE0; }
+.rb-status-hidden { color: #5B6B7D; background: #E3E9EF; }
+.rb-status-published { color: #2F6B3A; background: #DDEEDD; }
+.rb-status-favorite { color: #B8860B; background: #FBF0C8; }
+.rb-row-favorite .rb-deck-name { font-style: italic; }
+.rb-fmt-state { display: block; margin-top: 3px; }
+.rb-fmt-state .label { font-size: 70%; }
+.rb-deck-published { font-weight: 600; }
+.rb-col-actions { white-space: nowrap; }
+.rb-icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; padding: 0; border: 1px solid transparent; border-radius: 5px; background: none; color: var(--rb-muted); }
+.rb-icon-btn:hover, .rb-icon-btn:focus-visible { border-color: var(--rb-line-strong); background: #fff; color: var(--rb-ink); text-decoration: none; }
+.rb-icon-btn.btn-delete-deck:hover { color: #B03A2E; }
+@media (max-width: 767px) {
+    .rb-my-decks .rb-results-head { grid-template-columns: 1fr auto; }
+    .rb-deck-actions { grid-column: 1 / -1; grid-row: 2; justify-self: start; justify-content: flex-start; }
+    .rb-my-decks-table tr { grid-template-columns: auto auto auto auto minmax(0, 1fr); grid-template-areas: "pick thumb status size fmt" "pick thumb deck deck deck" "pick thumb cult cult cult" "pick thumb tags tags tags" "pick thumb acts acts acts"; }
+    .rb-my-decks-table td.rb-col-pick { grid-area: pick; width: auto; padding: 0; }
+    .rb-my-decks-table td.rb-col-status { grid-area: status; width: auto; }
+    .rb-my-decks-table td.rb-col-actions { grid-area: acts; }
+}
+
 /* ---- a published deck's thumbnail (Ketura, 2026-11-05) ----
    The size of a half-thumb: a card's top half, or a raised tile of the deck's cultures, drawn
    with the cultures' card art (public/images/cultures/art) enlarged past the edges and cropped.
@@ -2069,3 +2102,4 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 .rb-sym-group-twilight button { justify-content: center; padding: 4px 0; }
 .rb-sym-menu button:hover, .rb-sym-menu button:focus { background: #F1ECE2; }
 .rb-sym-menu .rb-sym { font-size: 18px; vertical-align: middle; }
+.rb-my-decks .rb-results-sort select { width: auto; }

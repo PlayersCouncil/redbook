@@ -1050,8 +1050,8 @@ class SocialController extends AbstractController
             return null;
         }
         [$w, $l, $t] = [round((float) $w, 2), round((float) $l, 2), round((float) $t, 2)];
-        // the editor's smallest box is a quarter of the picture, and the box stays on it
-        if ($w < 100 || $w > 1000 || $l > 0 || $l < 100 - $w || $t > 0 || $t < -2 * $w) {
+        // the editor's smallest box is an eighth of the picture, and the box stays on it
+        if ($w < 100 || $w > 2000 || $l > 0 || $l < 100 - $w || $t > 0 || $t < -2 * $w) {
             return null;
         }
         return ['code' => $crop['code'], 'w' => $w, 'l' => $l, 't' => $t];

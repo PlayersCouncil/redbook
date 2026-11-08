@@ -10,11 +10,22 @@
 {
     var form, dataReady = false, request = null;
 
-    /** The form's query, without the empty fields and the defaults, so addresses stay short */
+    /**
+     * The form's query, without the empty fields and the defaults, so addresses stay short: a
+     * group of toggles left as its data-default leaves its values out (Ketura, 2026-11-07)
+     */
     function form_query()
     {
-        var params = [], kinds = form.find('input[name="kind[]"]');
-        var allKinds = kinds.filter(':checked').length === kinds.length;
+        var params = [], defaults = {};
+        form.find('.rb-toggles[data-default]').each(function ()
+        {
+            var group = $(this), boxes = group.find('input[type=checkbox]'),
+                on = boxes.filter(':checked').map(function () { return this.value; }).get().sort().join(','),
+                wanted = String(group.data('default')).split(',').sort().join(',');
+            if(on === wanted && boxes.length) {
+                defaults[boxes.attr('name')] = true;
+            }
+        });
         $.each(form[0].elements, function (i, field)
         {
             if(!field.name || field.disabled || field.value === '' || field.type === 'button' || field.type === 'submit') {
@@ -23,7 +34,7 @@
             if((field.type === 'checkbox' || field.type === 'radio') && !field.checked) {
                 return;
             }
-            if((field.name === 'sort' && field.value === 'new') || (field.name === 'limit' && field.value === '50') || (field.name === 'kind[]' && allKinds)) {
+            if((field.name === 'sort' && field.value === 'new') || (field.name === 'limit' && field.value === '50') || defaults[field.name]) {
                 return;
             }
             params.push(encodeURIComponent(field.name) + '=' + encodeURIComponent(field.value));
@@ -62,6 +73,7 @@
                 setup_card_picker();
             }
             results.html(parts.results);
+            $(document).trigger('browse:loaded');
             if(options.push) {
                 window.history.pushState({browse: true}, '', url);
             }
@@ -147,7 +159,8 @@
         return !(event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button > 0);
     }
 
-    ui.on_dom_loaded = function on_dom_loaded()
+    /** Sets the page up: the decklists page, and My Decks (ui.decks.js), which adds its own */
+    ui.browse_setup = function browse_setup()
     {
         form = $('#browse-form');
         if(!form.length) {
@@ -158,10 +171,10 @@
         // the sort sits by the results, outside the form, so the handlers are on the document
         $(document).on('change', '[data-autosubmit]', function ()
         {
-            // at least one kind stays on: unticking the last would match nothing
-            var kinds = form.find('input[name="kind[]"]');
-            if(this.name === 'kind[]' && !kinds.filter(':checked').length) {
-                kinds.not(this).prop('checked', true);
+            // a group of toggles keeps one on: unticking the last would match nothing
+            var group = $(this).closest('.rb-toggles').find('input[type=checkbox]');
+            if(group.length && !group.filter(':checked').length) {
+                group.not(this).prop('checked', true);
             }
             apply();
         });
@@ -243,7 +256,7 @@
         // a row opens its deck; the name stays a real link for new tabs and keyboards
         $('#browse-results').on('click', 'tr[data-href]', function (event)
         {
-            if($(event.target).closest('a, button').length || window.getSelection().toString()) {
+            if($(event.target).closest('a, button, input, label, .rb-col-pick').length || window.getSelection().toString()) {
                 return;
             }
             if(event.ctrlKey || event.metaKey || event.button === 1) {
@@ -254,10 +267,20 @@
         });
     };
 
-    ui.on_data_loaded = function on_data_loaded()
+    ui.browse_data_loaded = function browse_data_loaded()
     {
         dataReady = true;
         setup_card_picker();
+    };
+
+    ui.on_dom_loaded = function on_dom_loaded()
+    {
+        ui.browse_setup();
+    };
+
+    ui.on_data_loaded = function on_data_loaded()
+    {
+        ui.browse_data_loaded();
     };
 
     ui.on_all_loaded = function on_all_loaded()

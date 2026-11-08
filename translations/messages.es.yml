@@ -638,3 +638,27 @@ decklist.publish.crop.reset: Restablecer
 decklist.publish.crop.cancel: Cancelar
 decklist.publish.crop.confirm: Confirmar
 decklist.form.resize: Arrastra para cambiar el tamaño
+decks.browse.changed: Modificado
+decks.browse.changed_on: Modificado
+decks.browse.include: Incluir
+decks.browse.include_title.private: Tus mazos que solo tú puedes ver
+decks.browse.include_title.hidden: Tus mazos que puede ver cualquiera con el enlace
+decks.browse.include_title.published: Tus mazos publicados como listas
+decks.browse.include_title.favorites: Listas que añadiste a tus favoritos
+decks.browse.show.private: Privados
+decks.browse.show.hidden: Ocultos
+decks.browse.show.published: Publicados
+decks.browse.show.favorites: Favoritos
+decks.browse.status.private: "Privado: solo tú puedes verlo"
+decks.browse.status.hidden: "Oculto: cualquiera con el enlace puede verlo"
+decks.browse.status.published: "Publicado como lista"
+decks.browse.status.favorite: "Una lista de tus favoritos"
+decks.browse.count: "{0} Ningún mazo coincide|{1} 1 mazo|]1,Inf[ %n% mazos"
+decks.browse.none: Nada coincide. Prueba a quitar un filtro.
+decks.browse.sorts.new: Modificados Recientemente
+decks.browse.sorts.old: Modificados Hace Más Tiempo
+decks.browse.sorts.name: Nombre
+decks.browse.pick: "Seleccionar %name%"
+decks.browse.published_as: "publicado como v%version%"
+decks.browse.copy: Copiar a Mis Mazos
+decks.browse.slots_title: "Tus mazos, del máximo que puedes guardar"

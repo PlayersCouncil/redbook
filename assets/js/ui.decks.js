@@ -1,9 +1,13 @@
-/* global moment, _, app */
+/* global moment, _, app, Routing, Translator */
 
+/**
+ * My Decks (Ketura, 2026-11-07): the decklists page's search (ui.decklist_search.js, loaded
+ * first), plus the deck actions and what can be done to the decks ticked. The results are
+ * swapped as the filters change, so the handlers sit on #browse-results.
+ */
 (function ui_decks(ui, $)
 {
-    var tag_row_tpl = _.template('<span class="tag" data-tag="<%- tag %>"><%- tag %></span>');
-    var tag_button_tpl = _.template('<button type="button" class="btn btn-default btn-xs" data-toggle="button" data-tag="<%- tag %>"><%- tag %></button>');
+    var tag_row_tpl = _.template('<button type="button" class="rb-tag-chip rb-tag-link" data-tag="<%- tag %>" title="<%- title %>"><%- tag %></button>');
 
     ui.decks = [];
 
@@ -26,13 +30,11 @@
     ui.set_tags = function set_tags(id, tags)
     {
         var elt = $('tr[data-id=' + id + ']');
-        var div = elt.find('div.tags').empty();
+        var div = elt.find('.rb-row-tags').empty();
         tags.forEach(function (tag)
         {
-            div.append($(tag_row_tpl({tag: tag})));
+            div.append($(tag_row_tpl({tag: tag, title: Translator.trans('decklist.browse.tag_search')})));
         });
-
-        ui.update_tag_toggles();
     };
 
     ui.tag_add = function tag_add(ids)
@@ -124,46 +126,6 @@
         });
     };
 
-    ui.update_tag_toggles = function update_tag_toggles()
-    {
-        var tags = [];
-        $('#decks span[data-tag]').each(function (index, elt)
-        {
-          // don't add empty tags
-          if ($(elt).data('tag')) {
-            tags.push($(elt).data('tag'));
-          }
-        });
-        tags.sort();
-        $('#tag_toggles').empty();
-        _.uniq(tags).forEach(function (tag)
-        {
-            $(tag_button_tpl({tag: tag})).appendTo('#tag_toggles');
-        });
-    };
-
-    ui.filter_decks = function filter_decks()
-    {
-        var buttons = $('#tag_toggles button.active');
-        var tags = [];
-        buttons.each(function (index, button)
-        {
-            tags.push($(button).data('tag'));
-        });
-        if(tags.length) {
-            $('#decks tr').hide();
-            tags.forEach(function (tag) {
-                $('#decks span.tag').each(function (index, elt) {
-                    if ($(elt).data('tag') === tag) {
-                        $(elt).closest('tr').show();
-                    }
-                });
-            });
-        } else {
-            $('#decks tr').show();
-        }
-    };
-
     ui.do_diff = function do_diff(ids)
     {
         location.href = Routing.generate('decks_diff', {deck1_uuid: ids[0], deck2_uuid: ids[1]});
@@ -171,23 +133,21 @@
 
     ui.handle_deck_selection_change = function handle_deck_selection_change()
     {
-        var $checked = $('#decks').find('input[type=checkbox]:checked');
+        var $boxes = $('#decks').find('input[type=checkbox]'), $checked = $boxes.filter(':checked');
         var $button = $('#btn-group-selection button');
-        if ($checked.length) {
-            $button.removeClass('btn-default').addClass('btn-primary')
-        } else {
-            $button.addClass('btn-default').removeClass('btn-primary')
-        }
-    }
+        $button.toggleClass('btn-primary', $checked.length > 0).toggleClass('btn-default', !$checked.length);
+        $button.find('.rb-selected-count').text($checked.length ? '(' + $checked.length + ')' : '');
+        $('.rb-my-decks-table .toggle_all').prop('checked', $boxes.length > 0 && $checked.length === $boxes.length);
+    };
 
     ui.do_action_selection = function do_action_selection(event)
     {
         event.stopPropagation();
         var action_id = $(this).attr('id');
-        var ids = $('.list-decks input:checked').map(function (index, elt) {
+        var ids = $('#decks input:checked').map(function (index, elt) {
             return $(elt).closest('tr').data('id');
         }).get();
-        var uuids = $('.list-decks input:checked').map(function(index, elt) {
+        var uuids = $('#decks input:checked').map(function(index, elt) {
            return $(elt).closest('tr').data('uuid');
         });
         if(!action_id || !ids.length || !uuids.length) {
@@ -216,66 +176,35 @@
         return false;
     };
 
-    /**
-     * called when the DOM is loaded
-     * @memberOf ui
-     */
     ui.on_dom_loaded = function on_dom_loaded()
     {
-        $('.list-decks .toggle_all').on('click', function ()
+        ui.browse_setup();
+        var results = $('#browse-results');
+        results.on('click', '.toggle_all', function ()
         {
-            $('.list-decks-deck input[type="checkbox"]').prop('checked', this.checked);
+            $('#decks input[type=checkbox]').prop('checked', this.checked);
             ui.handle_deck_selection_change();
         });
-
-        $('#decks').on('click', 'button.btn-delete-deck', ui.confirm_delete);
-        $('#decks').on('click', 'input[type=checkbox]', function ()
+        results.on('click', '#decks input[type=checkbox]', ui.handle_deck_selection_change);
+        // a click anywhere in the box's cell ticks it
+        results.on('click', 'td.rb-col-pick', function (event)
         {
-            var $checked = $('#decks').find('input[type=checkbox]:checked');
-            var $all = $('#decks').find('input[type=checkbox]');
-            var $toggle = $('.list-decks .toggle_all');
-            if ($checked.length < $all.length) {
-                $toggle.prop('checked', false);
-            } else {
-                $toggle.prop('checked', true);
+            if(event.target === this) {
+                $(this).find('input').trigger('click');
             }
-            ui.handle_deck_selection_change();
         });
-
-        $('#btn-group-selection').on('click', 'button[id],a[id]', ui.do_action_selection);
-
-        $('#tag_toggles').on('click', 'button', function (event)
-        {
-            var button = $(this);
-            if(!event.shiftKey) {
-                $('#tag_toggles button').each(function (index, elt)
-                {
-                    if($(elt).text() != button.text())
-                        $(elt).removeClass('active');
-                });
-            }
-            setTimeout(ui.filter_decks, 0);
-        });
-        ui.update_tag_toggles();
-
+        results.on('click', 'button.btn-delete-deck', ui.confirm_delete);
+        results.on('click', '#btn-group-selection a[id]', ui.do_action_selection);
+        $(document).on('browse:loaded', ui.handle_deck_selection_change);
     };
 
-    /**
-     * called when the app data is loaded
-     * @memberOf ui
-     */
     ui.on_data_loaded = function on_data_loaded()
     {
-
+        ui.browse_data_loaded();
     };
 
-    /**
-     * called when both the DOM and the data app have finished loading
-     * @memberOf ui
-     */
     ui.on_all_loaded = function on_all_loaded()
     {
     };
-
 
 })(app.ui, jQuery);

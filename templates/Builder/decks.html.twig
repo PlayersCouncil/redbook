@@ -1,210 +1,211 @@
 {#
 @file
-    Page template for rendering a user's private list of decks.
+    My Decks (Ketura, 2026-11-07): the decklists page's search and filters in a pane on the left,
+    plus which of the user's decks to include (private, hidden, published) and the decklists
+    they favourited; the decks found on the right, with the deck actions and the selection's.
 
     Available variables:
-    - pagetitle
-    - pagedescription
-    - decks
-    - tags
-    - nbmax
-    - nbdecks
-    - cannotcreate
+    - rows: this page of the decks found (App\Classes\DeckRow), total: how many
+    - filters: the active filters (MyDecks::getFilters)
+    - formats: [{code, name, count}] the formats the decks target; format_names by code
+    - cultures, cards: every culture; the cards being searched for
+    - pager: PublishedDeckManager::getPager
+    - nbmax, nbdecks, cannotcreate: the deck slots
     - tournaments
-    - formats: Format by code
+    Its blocks browse_top, browse_fields and browse_results are also sent alone, for the page
+    to swap in as the filters change (ui.decklist_search.js).
 #}
 {% extends 'base.html.twig' %}
 
 {% block javascripts %}
     {{ parent() }}
+    <script src="{{ asset('js/ui.decklist_search.js') }}"></script>
     <script src="{{ asset('js/ui.decks.js') }}"></script>
 {% endblock %}
 
+{% block wrapper_class %}rb-fill{% endblock %}
+
 {% block body %}
+<div class="main white container rb-browse rb-my-decks">
 
-    <div class="main white container">
-
+    <div class="rb-browse-alerts">
         {% include 'alerts.html.twig' %}
         {% include 'banner-alerts.html.twig' %}
-        <div class="row">
+    </div>
 
-            <!-- Right-side column -->
-            <div class="col-md-4 col-md-push-8">
+    <h1 class="rb-browse-title">
+        {{ 'nav.mydecks' | trans }}
+        <small class="rb-slot-count{% if cannotcreate %} is-full{% endif %}" title="{{ 'decks.browse.slots_title' | trans }}">{{ 'decks.slotcount' | trans({'%max%': nbmax, '%current%': nbdecks}) }}</small>
+    </h1>
 
-                <div class="row" style="margin-bottom:10px">
-                    <div class="col-md-12">
-                        <a href="{{ path('deck_buildform') }}"
-                           class="btn btn-default btn-sm"{% if cannotcreate %} disabled="disabled"{% endif %}>
-                            <span class="fas fa-plus"></span>
-                            {{ 'decks.form.new' | trans }}
-                        </a>
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-default dropdown-toggle btn-sm"
-                                    data-toggle="dropdown"{% if cannotcreate %} disabled="disabled"{% endif %}>
-                                <span class="fas fa-file-import"></span>
-                                {{ 'decks.form.import.label' | trans }}
-                                <span class="caret"></span>
-                            </button>
-                            <ul class="dropdown-menu" role="menu">
-                                <li>
-                                    <a href="{{ path('deck_import') }}" id="btn-import-paste">
-                                        {{ 'decks.form.import.copypaste' | trans }}
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="#" onclick="$('#fileModal').modal('show')" id="btn-import-file">
-                                        {{ 'decks.form.import.file' | trans }}
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
+    <form method="get" action="{{ path('decks_list') }}" class="rb-browse-pane" id="browse-form">
+        <div class="rb-browse-top" id="browse-top">{{ block('browse_top') }}</div>
+        <div class="rb-browse-fields" id="browse-fields">{{ block('browse_fields') }}</div>
+    </form>
+
+    <div class="rb-browse-results" id="browse-results">{{ block('browse_results') }}</div>
+</div>
+
+{% include 'Modale/file.html.twig' %}
+{% include 'Modale/delete.html.twig' %}
+{% include 'Modale/delete_list.html.twig' %}
+{% include 'Modale/export.html.twig' %}
+{% include 'Modale/odds.html.twig' %}
+{% include 'Modale/tag_add.html.twig' %}
+{% include 'Modale/tag_remove.html.twig' %}
+{% include 'Modale/tag_clear.html.twig' %}
+{% include 'Modale/diff.html.twig' %}
+{% include 'Builder/download_list.html.twig' %}
+{% endblock %}
+
+{% block browse_top %}
+{% set active = filters | filter((v, k) => k not in ['sort', 'limit']) | length %}
+            <button type="button" class="rb-filters-toggle" aria-expanded="false" aria-controls="browse-form">
+                <span class="fas fa-sliders-h"></span> {{ 'decklist.browse.filters' | trans }}{% if active %} <span class="rb-more-count">{{ active }}</span>{% endif %}
+            </button>
+{% endblock %}
+
+{% block browse_fields %}
+{% include 'Decklist/browse-fields.html.twig' with {list_route: 'decks_list', my_decks: true} %}
+{% endblock %}
+
+{% block browse_results %}
+{% import 'Decklist/macros.html.twig' as m %}
+{% set f = filters %}
+{% set query = app.request.query.all %}
+        <div class="rb-results-head">
+            <span class="rb-results-count">{{ 'decks.browse.count' | trans({'%count%': total, '%n%': total | number_format}) }}</span>
+            {# making decks, and what can be done to the decks ticked #}
+            <div class="rb-deck-actions">
+                <a href="{{ path('deck_buildform') }}" class="btn btn-default btn-sm"{% if cannotcreate %} disabled="disabled"{% endif %}>
+                    <span class="fas fa-plus"></span> {{ 'decks.form.new' | trans }}
+                </a>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-default dropdown-toggle btn-sm" data-toggle="dropdown"{% if cannotcreate %} disabled="disabled"{% endif %}>
+                        <span class="fas fa-file-import"></span> {{ 'decks.form.import.label' | trans }} <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="{{ path('deck_import') }}" id="btn-import-paste">{{ 'decks.form.import.copypaste' | trans }}</a></li>
+                        <li><a href="#" onclick="$('#fileModal').modal('show'); return false;" id="btn-import-file">{{ 'decks.form.import.file' | trans }}</a></li>
+                    </ul>
                 </div>
-
-                <div class="row" style="margin-bottom:10px">
-                    <div class="col-md-12">
-                        <div class="btn-group" id="btn-group-selection">
-                            <button
-                                type="button"
-                                class="btn btn-default dropdown-toggle btn-sm selected-decks-dropdown-toggle"
-                                data-toggle="dropdown"
-                            >
-                                <span class="fas fa-check"></span>
-                                {{ 'decks.form.selection.label' | trans }}
-                                <span class="caret"></span>
-                            </button>
-                            <ul class="dropdown-menu" role="menu">
-                                <li class="dropdown-header">
-                                    <span class="fas fa-file-download"></span>
-                                    {{ 'decks.form.selection.download.label' | trans }}
-                                </li>
-                                <li>
-                                    <a href="#" id="btn-download-selected">
-                                        {{ 'decks.form.selection.download.selected' | trans }}
-                                    </a>
-                                </li>
-                                <li class="dropdown-header">
-                                    <span class="fas fa-exchange-alt"></span>
-                                    {{ 'decks.form.selection.compare.label' | trans }}
-                                </li>
-                                <li>
-                                    <a href="#" id="btn-compare">
-                                        {{ 'decks.form.selection.compare.twodecks' | trans }}
-                                    </a>
-                                </li>
-                                <li class="dropdown-header">
-                                    <span class="fas fa-tag"></span>
-                                    {{ 'decks.form.selection.tags.label' | trans }}
-                                </li>
-                                <li>
-                                    <a href="#" id="btn-tag-add">{{ 'decks.form.selection.tags.add' | trans }}</a>
-                                </li>
-                                <li><a href="#" id="btn-tag-remove-one">
-                                        {{ 'decks.form.selection.tags.remove' | trans }}
-                                    </a>
-                                </li>
-                                <li><a href="#" id="btn-tag-remove-all">
-                                        {{ 'decks.form.selection.tags.clear' | trans }}
-                                    </a>
-                                </li>
-                                <li class="dropdown-header">
-                                    <span class="fas fa-trash-alt"></span>
-                                    {{ 'decks.form.selection.delete.label' | trans }}
-                                </li>
-                                <li>
-                                    <a href="#" id="btn-delete-selected">
-                                        <span style="color:red" class="fas fa-exclamation-triangle"></span>
-                                        {{ 'decks.form.selection.delete.selected' | trans }}
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
+                <div class="btn-group" id="btn-group-selection">
+                    <button type="button" class="btn btn-default dropdown-toggle btn-sm selected-decks-dropdown-toggle" data-toggle="dropdown">
+                        <span class="fas fa-check"></span> {{ 'decks.form.selection.label' | trans }} <span class="rb-selected-count"></span> <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li class="dropdown-header"><span class="fas fa-file-download"></span> {{ 'decks.form.selection.download.label' | trans }}</li>
+                        <li><a href="#" id="btn-download-selected">{{ 'decks.form.selection.download.selected' | trans }}</a></li>
+                        <li class="dropdown-header"><span class="fas fa-exchange-alt"></span> {{ 'decks.form.selection.compare.label' | trans }}</li>
+                        <li><a href="#" id="btn-compare">{{ 'decks.form.selection.compare.twodecks' | trans }}</a></li>
+                        <li class="dropdown-header"><span class="fas fa-tag"></span> {{ 'decks.form.selection.tags.label' | trans }}</li>
+                        <li><a href="#" id="btn-tag-add">{{ 'decks.form.selection.tags.add' | trans }}</a></li>
+                        <li><a href="#" id="btn-tag-remove-one">{{ 'decks.form.selection.tags.remove' | trans }}</a></li>
+                        <li><a href="#" id="btn-tag-remove-all">{{ 'decks.form.selection.tags.clear' | trans }}</a></li>
+                        <li class="dropdown-header"><span class="fas fa-trash-alt"></span> {{ 'decks.form.selection.delete.label' | trans }}</li>
+                        <li><a href="#" id="btn-delete-selected"><span style="color:red" class="fas fa-exclamation-triangle"></span> {{ 'decks.form.selection.delete.selected' | trans }}</a></li>
+                    </ul>
                 </div>
-                <div class="row" style="margin-bottom:10px">
-                    <div class="col-md-12" id="tag_toggles" title="{{ 'decks.form.labelswitch' | trans }}"></div>
-                </div>
-
             </div>
-            <!-- / Right-side column -->
-
-            <!-- Left-side column -->
-            <div class="col-md-8 col-md-pull-4">
-                <table class="table table-expanded list-decks">
-                    <thead>
-                        <tr>
-                            <td><input type="checkbox" class="toggle_all" title="{{ 'decks.selectAll' | trans }}" ></td>
-                            <td colspan="3" role="heading" aria-level="1">
-                                {{ 'decks.privatedecks' | trans }}
-                                <small style="font-size:16px" class="hidden-xs {% if cannotcreate %}text-danger{% endif %}">
-                                    {{ 'decks.slotcount' | trans({'%max%': nbmax, '%current%': nbdecks}) }}
-                                </small>
-                            </td>
-                        </tr>
-                    </thead>
-                    <tbody id="decks">
-                    {% for deck in decks %}
-                        <tr data-id="{{ deck.id }}" data-uuid="{{ deck.uuid }}" class="list-decks-deck">
-                            <td><input type="checkbox"></td>
-                            <td class="hidden-xs deck-cultures">
-                                {% for row in deck.slots.cultures | slice(0, 4) %}
-                                    <span class="label label-default culture-label culture-{{ row.culture.code }}">{{ row.culture.name }} {{ row.count }}</span>
-                                {% endfor %}
-                            </td>
-                            <td>
-                                <a href="{{ path('deck_view',{deck_uuid:deck.uuid}) }}"
-                                   class="deck-name">{{ deck.name }}</a> {{ deck.version }}
-                                <div class="small">
-                                    {{ formats[deck.targetFormat].name ?? deck.targetFormat }}
-                                    {% include 'Deck/completeness-label.html.twig' with {deck: deck} %}
-                                </div>
-                                <div class="tags">
-                                    {% for tag in deck.tags|trim|split(' ')|sort %}
-                                        <span class="tag" data-tag="{{ tag }}">{{ tag }}</span>
-                                    {% endfor %}
-                                </div>
-                            </td>
-                            <td class="decks-actions text-right">
-                                <a href="{{ path('deck_edit',{deck_uuid:deck.uuid}) }}" class="btn btn-xs btn-default"
-                                   data-toggle="tooltip" title="{{ 'forms.edit' | trans }}">
-                                    <span class="fas fa-pencil-alt fa-fw"></span>
-                                </a>
-                                <a href="{{ path('deck_publish_form',{deck_uuid:deck.uuid}) }}"
-                                   class="btn btn-xs btn-default" data-toggle="tooltip"
-                                   title="{{ 'forms.publish' | trans }}">
-                                    <span class="fas fa-share fa-fw"></span>
-                                </a>
-                                <button class="btn btn-xs btn-default btn-delete-deck" data-toggle="tooltip"
-                                        title="{{ 'forms.delete' | trans }}">
-                                    <span class="fas fa-trash-alt fa-fw"></span>
-                                </button>
-                                <a href="{{ path('deck_clone', {deck_uuid:deck.uuid}) }}"
-                                   class="btn btn-xs btn-default" data-toggle="tooltip"
-                                   title="{{ 'forms.clone' | trans }}">
-                                    <span class="fas fa-clone fa-fw"></span></a>
-                            </td>
-                        </tr>
+            <label class="rb-results-sort">
+                <span>{{ 'decklist.browse.sort' | trans }}</span>
+                <select name="sort" form="browse-form" class="form-control input-sm" data-autosubmit>
+                    {% for sort in ['new', 'old', 'name'] %}
+                        <option value="{{ sort }}"{% if (f.sort ?? 'new') == sort %} selected{% endif %}>{{ ('decks.browse.sorts.' ~ sort) | trans }}</option>
                     {% endfor %}
-                    </tbody>
-                </table>
-
-                <div id="deck"></div>
-
-            </div>
-            <!-- / Left-side column -->
-
+                </select>
+            </label>
         </div>
-    </div><!-- /.container -->
 
-    {% include 'Modale/file.html.twig' %}
-    {% include 'Modale/delete.html.twig' %}
-    {% include 'Modale/delete_list.html.twig' %}
-    {% include 'Modale/export.html.twig' %}
-    {% include 'Modale/odds.html.twig' %}
-    {% include 'Modale/tag_add.html.twig' %}
-    {% include 'Modale/tag_remove.html.twig' %}
-    {% include 'Modale/tag_clear.html.twig' %}
-    {% include 'Modale/diff.html.twig' %}
-    {% include 'Builder/download_list.html.twig' %}
-
+        <div class="rb-results-scroll">
+        {% if total %}
+        {% set sorted = f.sort ?? 'new' %}
+        <table class="rb-decks rb-my-decks-table">
+            <thead>
+                <tr>
+                    <th class="rb-col-pick"><input type="checkbox" class="toggle_all" title="{{ 'decks.selectAll' | trans }}" aria-label="{{ 'decks.selectAll' | trans }}"></th>
+                    <th class="rb-col-thumb"></th>
+                    <th class="rb-col-status"></th>
+                    <th class="rb-col-size" title="{{ 'decklist.browse.col.size_title' | trans }}">{{ 'decklist.browse.col.size' | trans }}</th>
+                    <th class="rb-col-deck"><a href="{{ list_path('decks_list', query | merge({sort: 'name', page: null})) }}"{% if sorted == 'name' %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.deck' | trans }}</a></th>
+                    <th class="rb-col-format">{{ 'decklist.browse.col.format' | trans }}</th>
+                    <th class="rb-col-cultures">{{ 'decklist.browse.cultures' | trans }}</th>
+                    <th class="rb-col-tags">{{ 'decklist.browse.col.tags' | trans }}</th>
+                    <th class="rb-col-actions"></th>
+                </tr>
+            </thead>
+            <tbody id="decks">
+            {% for row in rows %}
+                {% set deck = row.deck %}
+                {% set kind = row.kind %}
+                {% if deck %}
+                    {% set url = path('deck_view', {deck_uuid: deck.uuid}) %}
+                {% else %}
+                    {% set url = path('decklist_detail', {decklist_id: row.decklist.id, decklist_name: row.decklist.nameCanonical | e('url')}) %}
+                {% endif %}
+                <tr data-href="{{ url }}" class="rb-kind-{{ kind }} rb-row-{{ row.visibility }}{% if deck %} list-decks-deck{% endif %}"{% if deck %} data-id="{{ deck.id }}" data-uuid="{{ deck.uuid }}"{% endif %}>
+                    <td class="rb-col-pick">{% if deck %}<input type="checkbox" aria-label="{{ 'decks.browse.pick' | trans({'%name%': row.name}) }}">{% endif %}</td>
+                    <td class="rb-col-thumb">{% include 'Decklist/thumbnail.html.twig' with {decklist: row.thumbnail} %}</td>
+                    <td class="rb-col-status">
+                        {% set icons = {private: 'fa-lock', hidden: 'fa-link', published: 'fa-globe-americas', favorite: 'fa-star'} %}
+                        <span class="rb-status rb-status-{{ row.visibility }}" title="{{ ('decks.browse.status.' ~ row.visibility) | trans }}"><span class="fas {{ icons[row.visibility] }}" aria-hidden="true"></span><span class="sr-only">{{ ('decks.browse.status.' ~ row.visibility) | trans }}</span></span>
+                    </td>
+                    <td class="rb-col-size">
+                        <span class="rb-size" title="{{ ('decklist.browse.kind_title.' ~ kind) | trans }}"><span class="rb-size-fp{% if not row.nbFreePeoples %} is-none{% endif %}">{{ row.nbFreePeoples ?: '–' }}</span><span class="rb-size-slash">/</span><span class="rb-size-sh{% if not row.nbShadow %} is-none{% endif %}">{{ row.nbShadow ?: '–' }}</span></span>
+                    </td>
+                    <td class="rb-col-deck">
+                        <a href="{{ url }}" class="rb-deck-name deck-name">{{ row.name }}</a>
+                        <span class="rb-deck-by">
+                            {% if deck %}
+                                {{ 'decks.browse.changed_on' | trans }} <time datetime="{{ row.date | date('Y-m-d') }}" data-absolute>{{ row.date | date('M j, Y') }}</time>
+                                <span class="rb-deck-dot" aria-hidden="true">•</span> v{{ deck.version }}
+                                {% if row.published %}<span class="rb-deck-dot" aria-hidden="true">•</span> <a href="{{ path('decklist_detail', {decklist_id: row.published.id, decklist_name: row.published.nameCanonical | e('url')}) }}" class="rb-deck-published">{{ 'decks.browse.published_as' | trans({'%version%': row.published.version}) }}</a>{% endif %}
+                            {% else %}
+                                {{ row.decklist.user.displayName }}
+                                <span class="rb-deck-dot" aria-hidden="true">•</span> <time datetime="{{ row.date | date('Y-m-d') }}" data-absolute>{{ row.date | date('M j, Y') }}</time>
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td class="rb-col-format">
+                        <span class="rb-fmt">{{ format_names[row.format] ?? (row.format ?: '—') }}</span>
+                        {% if deck %}<span class="rb-fmt-state">{% include 'Deck/completeness-label.html.twig' with {deck: deck} %}</span>{% endif %}
+                    </td>
+                    <td class="rb-col-cultures">
+                        {% set sided = row.cultures | filter(r => r.culture.side) %}
+                        {% for side in ['free_peoples', 'shadow'] %}
+                            <span class="rb-row-cultures rb-row-cultures-{{ side }}">{% for c in sided | filter(r => r.culture.side == side) %}{{ m.culture_icon(c.culture, c.count) }}{% endfor %}</span>
+                        {% endfor %}
+                    </td>
+                    <td class="rb-col-tags">
+                        <span class="rb-row-tags tags">{% for tag in row.tags %}<button type="button" class="rb-tag-chip rb-tag-link{% if tag in (f.tags ?? []) %} is-on{% endif %}" data-tag="{{ tag }}" title="{{ 'decklist.browse.tag_search' | trans }}">{{ tag }}</button>{% endfor %}</span>
+                    </td>
+                    <td class="rb-col-actions">
+                        {% if deck %}
+                            <a href="{{ path('deck_edit', {deck_uuid: deck.uuid}) }}" class="rb-icon-btn" title="{{ 'forms.edit' | trans }}" aria-label="{{ 'forms.edit' | trans }}"><span class="fas fa-pencil-alt fa-fw"></span></a>
+                            <a href="{{ path('deck_publish_form', {deck_uuid: deck.uuid}) }}" class="rb-icon-btn" title="{{ 'forms.publish' | trans }}" aria-label="{{ 'forms.publish' | trans }}"><span class="fas fa-share fa-fw"></span></a>
+                            <a href="{{ path('deck_clone', {deck_uuid: deck.uuid}) }}" class="rb-icon-btn" title="{{ 'forms.clone' | trans }}" aria-label="{{ 'forms.clone' | trans }}"><span class="fas fa-clone fa-fw"></span></a>
+                            <button type="button" class="rb-icon-btn btn-delete-deck" title="{{ 'forms.delete' | trans }}" aria-label="{{ 'forms.delete' | trans }}"><span class="fas fa-trash-alt fa-fw"></span></button>
+                        {% else %}
+                            <a href="{{ path('deck_copy', {decklist_id: row.decklist.id}) }}" class="rb-icon-btn" title="{{ 'decks.browse.copy' | trans }}" aria-label="{{ 'decks.browse.copy' | trans }}"><span class="fas fa-copy fa-fw"></span></a>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p class="rb-results-none">{{ 'decks.browse.none' | trans }}</p>
+        {% endif %}
+        </div>
+        <div class="rb-results-foot">
+            {% include 'Decklist/pager.html.twig' with {pager_action: path('decks_list')} %}
+            <label class="rb-results-limit">
+                <span>{{ 'decklist.browse.per_page' | trans }}</span>
+                <select name="limit" form="browse-form" class="form-control input-sm" data-autosubmit>
+                    {% for n in [10, 30, 50, 80, 100] %}
+                        <option value="{{ n }}"{% if (f.limit ?? 50) == n %} selected{% endif %}>{{ n }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </div>
 {% endblock %}

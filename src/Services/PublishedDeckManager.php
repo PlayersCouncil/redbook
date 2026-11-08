@@ -274,6 +274,12 @@ class PublishedDeckManager
         return $this->maxcount;
     }
 
+    /** The total of a list counted elsewhere, for its pager (My Decks, Ketura, 2026-11-07) */
+    public function setMaxCount(int $count): void
+    {
+        $this->maxcount = $count;
+    }
+
     /**
      * creates the basic query builder and initializes it
      */

@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Classes\DeckContent;
 use App\Entity\BannerAlert;
+use App\Entity\Card;
+use App\Entity\Culture;
 use App\Entity\Deck;
 use App\Entity\DeckRevision;
 use App\Entity\DeckInterface;
@@ -17,6 +19,8 @@ use App\Services\DeckImportService;
 use App\Services\DeckManager;
 use App\Services\DeckValidator;
 use App\Services\Diff;
+use App\Services\MyDecks;
+use App\Services\PublishedDeckManager;
 use App\Services\FormatGuesser;
 use App\Services\PublishedDeckFactory;
 use App\Services\Gemp\GempClient;
@@ -560,14 +564,23 @@ class BuilderController extends AbstractController
         ]);
     }
 
+    /**
+     * My Decks (Ketura, 2026-11-07): the decklists page's search and filters beside the user's
+     * decks, which can also be narrowed to who can see them, and the decklists they favourited.
+     * As on the decklists page, its own requests as the filters change get the parts it swaps in.
+     */
     #[Route(path: '/decks', name: 'decks_list', methods: ['GET'])]
-    public function listAction(DeckManager $deckManager, TranslatorInterface $translator): Response
+    public function listAction(Request $request, MyDecks $myDecks, PublishedDeckManager $pager, TranslatorInterface $translator): Response
     {
         $user = $this->requireUser();
-        $decks = $deckManager->getByUser($user);
+        $decks = $myDecks->deckRows($user);
         $tournaments = $this->managerRegistry->getRepository(Tournament::class)->findBy([], ['description' => 'DESC']);
+        $filters = $myDecks->getFilters($request);
 
-        if (!count($decks)) {
+        // always loaded, though left out by default: someone with favourites but no decks yet
+        // gets the page, to ask for them
+        $favorites = $myDecks->favoriteRows($user);
+        if (!$decks && !$favorites && !$request->isXmlHttpRequest()) {
             return $this->render('Builder/no-decks.html.twig', [
                 'pagetitle' => $translator->trans('nav.mydecks'),
                 'nbmax' => $user->getMaxNbDecks(),
@@ -575,26 +588,50 @@ class BuilderController extends AbstractController
             ]);
         }
 
-        $tags = [];
-        foreach ($decks as $deck) {
-            foreach (preg_split('/\s+/', (string) $deck->getTags(), -1, PREG_SPLIT_NO_EMPTY) as $tag) {
-                $tags[$tag] = true;
-            }
-        }
-        ksort($tags);
+        $all = array_merge($decks, $favorites);
+        $rows = $myDecks->filter($all, $filters);
+        $limit = $filters['limit'] ?? 50;
+        $page = max(1, (int) $request->query->get('page', 1));
+        $pager->setLimit($limit);
+        $pager->setPage($page);
+        $pager->setMaxCount(count($rows));
 
-        return $this->render('Builder/decks.html.twig', [
+        $allFormats = $this->formats->findAllByCode();
+        $usedFormats = [];
+        foreach ($myDecks->countFormats($all) as $code => $count) {
+            $usedFormats[] = ['code' => $code, 'name' => isset($allFormats[$code]) ? $allFormats[$code]->getName() : $code, 'count' => $count];
+        }
+
+        $params = [
             'pagetitle' => $translator->trans('nav.mydecks'),
             'pagedescription' => 'Create custom decks with the help of a powerful deckbuilder.',
-            'decks' => $decks,
-            'tags' => array_keys($tags),
+            'rows' => array_slice($rows, ($page - 1) * $limit, $limit),
+            'total' => count($rows),
+            'filters' => $filters,
+            'formats' => $usedFormats,
+            'format_names' => array_map(fn ($f) => $f->getName(), $allFormats),
+            'cultures' => $this->managerRegistry->getRepository(Culture::class)->findBy([], ['name' => 'ASC']),
+            'cards' => empty($filters['cards']) ? [] : $this->managerRegistry->getRepository(Card::class)->findBy(['code' => $filters['cards']]),
+            'pager' => $pager->getPager(9),
             'nbmax' => $user->getMaxNbDecks(),
             'nbdecks' => count($decks),
             'cannotcreate' => $user->getMaxNbDecks() <= count($decks),
             'tournaments' => $tournaments,
-            'formats' => $this->formats->findAllByCode(),
             'banner_alerts' => $this->managerRegistry->getRepository(BannerAlert::class)->findBy(['active' => true], ['id' => 'DESC']),
-        ]);
+        ];
+
+        if ($request->isXmlHttpRequest()) {
+            $response = new JsonResponse([
+                'top' => $this->renderBlockView('Builder/decks.html.twig', 'browse_top', $params),
+                'fields' => $this->renderBlockView('Builder/decks.html.twig', 'browse_fields', $params),
+                'results' => $this->renderBlockView('Builder/decks.html.twig', 'browse_results', $params),
+            ]);
+        } else {
+            $response = $this->render('Builder/decks.html.twig', $params);
+        }
+        $response->setPrivate();
+        $response->setVary(['X-Requested-With']);
+        return $response;
     }
 
     /** A new deck from a published decklist */

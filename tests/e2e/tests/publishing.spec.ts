@@ -166,25 +166,25 @@ test('the thumbnail card can be framed by hand, one card at a time', async ({ pa
   box = (await frame.boundingBox())!;
   expect(Math.abs(box.x - image.x)).toBeLessThan(1.5);
 
-  // resized from a corner, keeping the tile's shape, down to a quarter of the card's width at most
+  // resized from a corner, keeping the tile's shape, down to an eighth of the card's width at most
   await page.mouse.move(box.x + box.width, box.y + box.height);
   await page.mouse.down();
   await page.mouse.move(box.x - 2000, box.y - 2000, { steps: 4 });
   await page.mouse.up();
   box = (await frame.boundingBox())!;
-  expect(Math.abs(box.width - image.width / 4)).toBeLessThan(1.5);
+  expect(Math.abs(box.width - image.width / 8)).toBeLessThan(1.5);
   expect(Math.abs(box.width / box.height - 260 / 231)).toBeLessThan(0.02);
   await snap(page, 'thumbnail crop editor');
   await page.click('.rb-crop-confirm');
   await expect(frame).toBeHidden();
   const crop = JSON.parse(await page.inputValue('#thumbnail_crop'));
-  expect(crop).toMatchObject({ code, w: 400, l: 0 });
+  expect(crop).toMatchObject({ code, w: 800, l: 0 });
   await page.click('.rb-form-actions button[form=decklist-form]:has-text("Save")');
 
   // the lists show it framed so
   await page.goto(`/decklists?name=${encodeURIComponent(`${lineName} one`)}`);
   const thumb = page.locator('.rb-col-thumb .rb-thumb-card img').first();
-  await expect(thumb).toHaveAttribute('style', /width: 400%; left: 0%/);
+  await expect(thumb).toHaveAttribute('style', /width: 800%; left: 0%/);
 
   // Cancel keeps it; Reset and Confirm drop it
   await page.goto(`/decklist/edit/${v1.id}`);
@@ -192,7 +192,7 @@ test('the thumbnail card can be framed by hand, one card at a time', async ({ pa
   await page.click('#thumb-edit');
   await page.mouse.move(image.x + 5, image.y + 5);
   await page.click('.rb-crop-cancel');
-  expect(JSON.parse(await page.inputValue('#thumbnail_crop'))).toMatchObject({ code, w: 400 });
+  expect(JSON.parse(await page.inputValue('#thumbnail_crop'))).toMatchObject({ code, w: 800 });
   await page.hover('.rb-thumb-preview');
   await page.click('#thumb-edit');
   await page.click('.rb-crop-reset');
