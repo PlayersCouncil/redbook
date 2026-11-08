@@ -15,6 +15,13 @@ use Gedmo\Mapping\Annotation as Gedmo;
 class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticatedUserInterface
 {
     /**
+     * The most decks someone can keep (Ketura, 2026-11-07): the same for everyone, and more than
+     * anyone should need; it was 300 and more with reputation. Kept because My Decks loads all
+     * of someone's decks to filter them (App\Services\MyDecks).
+     */
+    public const MAX_DECKS = 1000;
+
+    /**
      * @var int
      */
     #[ORM\Column(name: 'id', type: 'integer')]
@@ -719,8 +726,9 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
         $this->mergedInto = $user;
     }
 
+    /** The same for everyone (Ketura, 2026-11-07) */
     public function getMaxNbDecks()
     {
-        return 2 * (100 + floor($this->reputation / 10)) + 100;
+        return self::MAX_DECKS;
     }
 }

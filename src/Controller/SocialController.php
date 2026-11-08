@@ -473,7 +473,7 @@ class SocialController extends AbstractController
         }
         $response->setVary(['X-Requested-With']);
 
-        $decklistManager->setLimit($filters['limit'] ?? 50);
+        $decklistManager->setLimit($filters['limit'] ?? PublishedDeckManager::DEFAULT_LIMIT);
         $decklistManager->setPage(max(1, (int) $request->query->get('page', 1)));
         $decklists = $decklistManager->browse($filters, $user);
 

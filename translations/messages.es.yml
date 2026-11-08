@@ -667,15 +667,11 @@ decks.browse.none_favorites: Nada coincide. Añade listas a tus favoritos desde 
 decks.browse.col.visibility: Visibilidad
 decks.browse.col.actions: Acciones
 decks.browse.do.preview: Vista Previa
-decks.browse.do.view: Ver Lista
 decks.browse.do.publish: Publicar
 decks.browse.do.clone: Clonar
 decks.browse.do.delete: Borrar
 decks.browse.do.copy: Copiar a Mis Mazos
 decks.browse.do.unfavorite: Quitar de Favoritos
-decks.browse.side.new: Mazos Nuevos
-decks.browse.side.import_text: Importar desde Texto
-decks.browse.side.import_file: Importar desde Archivo
 decks.browse.side.selection: Con la Selección
 decks.browse.side.selection_none: Marca mazos en la lista para actuar sobre ellos.
 decks.browse.side.download: Descargar
@@ -687,3 +683,4 @@ decks.browse.side.delete: Borrar
 decks.browse.side.unfavorite: Quitar de Favoritos
 decks.browse.unfavorite_failed: "No se pudieron quitar de tus favoritos. Recarga la página e inténtalo de nuevo."
 decklist.browse.reset: Restablecer
+decks.browse.side.import: Importar Mazo

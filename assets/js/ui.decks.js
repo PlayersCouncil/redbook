@@ -193,6 +193,26 @@
     ui.on_dom_loaded = function on_dom_loaded()
     {
         ui.browse_setup();
+        // the filters pane resizes against the results; the actions pane stays as it is
+        var page = $('.rb-my-decks'), pane = $('#browse-form');
+        ui.splitter('#browse-splitter', {
+            key: 'rb-my-decks-filters-width',
+            min: 340,
+            // the decks keep 520px, and the actions pane its own when it's a column
+            max: function () {
+                var side = $('#browse-side');
+                return page.width() - 520 - (side.css('grid-column-start') === '4' ? side.outerWidth() + 18 : 0);
+            },
+            current: function () { return pane.outerWidth(); },
+            direction: 1,
+            set: function (w) {
+                if(w === null) {
+                    page[0].style.removeProperty('--rb-pane-width');
+                } else {
+                    page[0].style.setProperty('--rb-pane-width', w + 'px');
+                }
+            }
+        });
         var results = $('#browse-results');
         results.on('click', '.toggle_all', function ()
         {

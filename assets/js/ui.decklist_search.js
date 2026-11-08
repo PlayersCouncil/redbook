@@ -34,8 +34,8 @@
             if((field.type === 'checkbox' || field.type === 'radio') && !field.checked) {
                 return;
             }
-            if((field.name === 'sort' && field.value === 'new') || (field.name === 'limit' && field.value === '50') || defaults[field.name]
-                || (field.dataset.default !== undefined && field.value === field.dataset.default)) {
+            // a field left at its data-default: the sort, the page size, My Decks' tab
+            if(defaults[field.name] || (field.dataset.default !== undefined && field.value === field.dataset.default)) {
                 return;
             }
             params.push(encodeURIComponent(field.name) + '=' + encodeURIComponent(field.value));
@@ -225,9 +225,17 @@
             }
         });
 
-        // Reset sets every filter, and a tab shows its list with the same filters (My Decks);
-        // the column sorts and the pager set one thing
-        $(document).on('click', '.rb-browse-clear, #browse-tabs .rb-tab', function (event)
+        // a tab (My Decks): its list, with the filters as they are in the form, even mid-change
+        $(document).on('click', '#browse-tabs .rb-tab', function (event)
+        {
+            if(plain_click(event)) {
+                event.preventDefault();
+                form.find('input[name="tab"]').val($(this).data('tab'));
+                load(list_url(form_query()), {fields: true});
+            }
+        });
+        // Reset sets every filter; the column sorts and the pager set one thing
+        $(document).on('click', '.rb-browse-clear', function (event)
         {
             if(plain_click(event)) {
                 event.preventDefault();

@@ -414,34 +414,14 @@
      */
     ui.setup_splitter = function setup_splitter()
     {
-        var bar = $('#publish-splitter'), side = $('.rb-publish-side'), row = side.parent();
-        if(!bar.length) {
-            return;
-        }
-        function apply(width)
-        {
-            var total = row.width(), w = Math.max(420, Math.min(total - 360, width));
-            side.css('flex-basis', w + 'px');
-            return w;
-        }
-        try {
-            var saved = parseInt(localStorage.getItem('rb-publish-width'), 10);
-            if(saved) {
-                apply(saved);
-            }
-        } catch (e) {}
-        bar.on('mousedown', function (event) {
-            event.preventDefault();
-            var right = row[0].getBoundingClientRect().right;
-            $('body').addClass('rb-resizing');
-            $(document).on('mousemove.rbsplit', function (move) {
-                var w = apply(right - move.clientX);
-                try { localStorage.setItem('rb-publish-width', w); } catch (e) {}
-            }).on('mouseup.rbsplit', function () {
-                $(document).off('.rbsplit');
-                $('body').removeClass('rb-resizing');
-                $(window).trigger('resize');
-            });
+        var side = $('.rb-publish-side'), row = side.parent();
+        ui.splitter('#publish-splitter', {
+            key: 'rb-publish-width',
+            min: 420,
+            max: function () { return row.width() - 360; },
+            current: function () { return side.outerWidth(); },
+            direction: -1,
+            set: function (w) { side.css('flex-basis', w === null ? '' : w + 'px'); }
         });
     };
 

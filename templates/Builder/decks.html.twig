@@ -41,12 +41,13 @@
         <div class="rb-browse-fields" id="browse-fields">{{ block('browse_fields') }}</div>
     </form>
 
+    <div class="rb-browse-splitter" id="browse-splitter" role="separator" aria-orientation="vertical" title="{{ 'decklist.form.resize' | trans }}"></div>
+
     <aside class="rb-browse-side" id="browse-side">{{ block('browse_side') }}</aside>
 
     <div class="rb-browse-results" id="browse-results">{{ block('browse_results') }}</div>
 </div>
 
-{% include 'Modale/file.html.twig' %}
 {% include 'Modale/delete.html.twig' %}
 {% include 'Modale/delete_list.html.twig' %}
 {% include 'Modale/export.html.twig' %}
@@ -69,7 +70,8 @@
         <a href="{{ list_path('decks_list', query | filter((v, k) => k != 'tab')) }}" class="rb-tab{{ tab == 'decks' ? ' is-active' }}"{% if tab == 'decks' %} aria-current="page"{% endif %} data-tab="decks">{{ 'decks.browse.tabs.decks' | trans }}</a>
         <a href="{{ list_path('decks_list', query | merge({tab: 'favorites'})) }}" class="rb-tab{{ tab == 'favorites' ? ' is-active' }}"{% if tab == 'favorites' %} aria-current="page"{% endif %} data-tab="favorites">{{ 'decks.browse.tabs.favorites' | trans }}</a>
     </nav>
-    {% if tab == 'decks' %}
+    {# the most decks someone can keep, shown only as they near it (Ketura, 2026-11-07) #}
+    {% if tab == 'decks' and nbdecks >= nbmax * 0.9 %}
         <span class="rb-slot-count{% if cannotcreate %} is-full{% endif %}" title="{{ 'decks.browse.slots_title' | trans }}">{{ 'decks.slotcount' | trans({'%max%': nbmax, '%current%': nbdecks}) }}</span>
     {% endif %}
 {% endblock %}
@@ -94,7 +96,7 @@
             <span class="rb-results-count">{{ (tab == 'favorites' ? 'decks.browse.count_favorites' : 'decks.browse.count') | trans({'%count%': total, '%n%': total | number_format}) }}</span>
             <label class="rb-results-sort">
                 <span>{{ 'decklist.browse.sort' | trans }}</span>
-                <select name="sort" form="browse-form" class="form-control input-sm" data-autosubmit>
+                <select name="sort" form="browse-form" class="form-control input-sm" data-autosubmit data-default="new">
                     {% for sort in ['new', 'old', 'name'] %}
                         <option value="{{ sort }}"{% if (f.sort ?? 'new') == sort %} selected{% endif %}>{{ ((tab == 'favorites' ? 'decklist.browse.sorts.' : 'decks.browse.sorts.') ~ sort) | trans }}</option>
                     {% endfor %}
@@ -167,7 +169,6 @@
                             <a href="{{ path('deck_clone', {deck_uuid: deck.uuid}) }}" class="rb-icon-btn" data-tip="{{ 'decks.browse.do.clone' | trans }}" aria-label="{{ 'decks.browse.do.clone' | trans }}"><span class="fas fa-clone fa-fw"></span></a>
                             <button type="button" class="rb-icon-btn rb-icon-danger btn-delete-deck" data-tip="{{ 'decks.browse.do.delete' | trans }}" aria-label="{{ 'decks.browse.do.delete' | trans }}"><span class="fas fa-trash-alt fa-fw"></span></button>
                         {% else %}
-                            <a href="{{ url }}" class="rb-icon-btn" data-tip="{{ 'decks.browse.do.view' | trans }}" aria-label="{{ 'decks.browse.do.view' | trans }}"><span class="fas fa-eye fa-fw"></span></a>
                             <a href="{{ path('deck_copy', {decklist_id: row.decklist.id}) }}" class="rb-icon-btn" data-tip="{{ 'decks.browse.do.copy' | trans }}" aria-label="{{ 'decks.browse.do.copy' | trans }}"><span class="fas fa-copy fa-fw"></span></a>
                             <button type="button" class="rb-icon-btn rb-icon-danger btn-unfavorite" data-tip="{{ 'decks.browse.do.unfavorite' | trans }}" aria-label="{{ 'decks.browse.do.unfavorite' | trans }}"><span class="fas fa-heart-broken fa-fw"></span></button>
                         {% endif %}
@@ -184,9 +185,9 @@
             {% include 'Decklist/pager.html.twig' with {pager_action: path('decks_list'), pager_always: true} %}
             <label class="rb-results-limit">
                 <span>{{ 'decklist.browse.per_page' | trans }}</span>
-                <select name="limit" form="browse-form" class="form-control input-sm" data-autosubmit>
+                <select name="limit" form="browse-form" class="form-control input-sm" data-autosubmit data-default="{{ constant('App\\Services\\PublishedDeckManager::DEFAULT_LIMIT') }}">
                     {% for n in [10, 30, 50, 80, 100] %}
-                        <option value="{{ n }}"{% if (f.limit ?? 50) == n %} selected{% endif %}>{{ n }}</option>
+                        <option value="{{ n }}"{% if (f.limit ?? constant('App\\Services\\PublishedDeckManager::DEFAULT_LIMIT')) == n %} selected{% endif %}>{{ n }}</option>
                     {% endfor %}
                 </select>
             </label>
@@ -201,10 +202,9 @@
 {% set tab = filters.tab ?? 'decks' %}
     {% if tab == 'decks' %}
         <section class="rb-side-section">
-            <h2 class="rb-side-title">{{ 'decks.browse.side.new' | trans }}</h2>
             <a href="{{ path('deck_buildform') }}" class="btn btn-default rb-side-btn{% if cannotcreate %} disabled{% endif %}"><span class="fas fa-plus fa-fw"></span> {{ 'decks.form.new' | trans }}</a>
-            <a href="{{ path('deck_import') }}" class="btn btn-default rb-side-btn{% if cannotcreate %} disabled{% endif %}" id="btn-import-paste"><span class="fas fa-paste fa-fw"></span> {{ 'decks.browse.side.import_text' | trans }}</a>
-            <button type="button" class="btn btn-default rb-side-btn" id="btn-import-file" onclick="$('#fileModal').modal('show');"{% if cannotcreate %} disabled{% endif %}><span class="fas fa-file-import fa-fw"></span> {{ 'decks.browse.side.import_file' | trans }}</button>
+            {# pasted text for now; a file too, on the same page, later (Ketura, 2026-11-07) #}
+            <a href="{{ path('deck_import') }}" class="btn btn-default rb-side-btn{% if cannotcreate %} disabled{% endif %}" id="btn-import"><span class="fas fa-file-import fa-fw"></span> {{ 'decks.browse.side.import' | trans }}</a>
         </section>
     {% endif %}
     <section class="rb-side-section rb-selection is-off" id="btn-group-selection" data-token="{{ csrf_token('my_favorites') }}" data-unfavorite="{{ path('decklists_unfavorite') }}">

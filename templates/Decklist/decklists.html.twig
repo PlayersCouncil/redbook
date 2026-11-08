@@ -61,7 +61,7 @@
             <span class="rb-results-count">{{ 'decklist.browse.count' | trans({'%count%': total, '%n%': total | number_format}) }}</span>
             <label class="rb-results-sort">
                 <span>{{ 'decklist.browse.sort' | trans }}</span>
-                <select name="sort" form="browse-form" class="form-control input-sm" data-autosubmit>
+                <select name="sort" form="browse-form" class="form-control input-sm" data-autosubmit data-default="new">
                     {% for sort in ['new', 'old', 'rated', 'name', 'comments'] %}
                         <option value="{{ sort }}"{% if (f.sort ?? 'new') == sort %} selected{% endif %}>{{ ('decklist.browse.sorts.' ~ sort) | trans }}</option>
                     {% endfor %}
@@ -133,9 +133,9 @@
             {% include 'Decklist/pager.html.twig' %}
             <label class="rb-results-limit">
                 <span>{{ 'decklist.browse.per_page' | trans }}</span>
-                <select name="limit" form="browse-form" class="form-control input-sm" data-autosubmit>
+                <select name="limit" form="browse-form" class="form-control input-sm" data-autosubmit data-default="{{ constant('App\\Services\\PublishedDeckManager::DEFAULT_LIMIT') }}">
                     {% for n in [10, 30, 50, 80, 100] %}
-                        <option value="{{ n }}"{% if (f.limit ?? 50) == n %} selected{% endif %}>{{ n }}</option>
+                        <option value="{{ n }}"{% if (f.limit ?? constant('App\\Services\\PublishedDeckManager::DEFAULT_LIMIT')) == n %} selected{% endif %}>{{ n }}</option>
                     {% endfor %}
                 </select>
             </label>

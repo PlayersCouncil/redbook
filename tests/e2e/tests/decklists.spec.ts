@@ -293,6 +293,20 @@ test("My Decks: the decklists page's filters, who can see each deck, and favouri
   await expect(row).toHaveCount(1);
   await expect(page).not.toHaveURL(/show/);
 
+  // the filters pane resizes from the bar beside it, and keeps its width
+  const pane = page.locator('#browse-form');
+  const before = (await pane.boundingBox())!.width;
+  const bar = (await page.locator('#browse-splitter').boundingBox())!;
+  await page.mouse.move(bar.x + bar.width / 2, bar.y + 100);
+  await page.mouse.down();
+  await page.mouse.move(bar.x + bar.width / 2 + 80, bar.y + 100, { steps: 4 });
+  await page.mouse.up();
+  expect((await pane.boundingBox())!.width).toBeCloseTo(before + 80, -1);
+  await page.reload();
+  expect((await pane.boundingBox())!.width).toBeCloseTo(before + 80, -1);
+  await page.locator('#browse-splitter').dblclick();
+  expect((await pane.boundingBox())!.width).toBeCloseTo(before, -1);
+
   // the selection's actions wait for ticked decks; Compare for two
   const selection = page.locator('#btn-group-selection');
   await expect(selection).toHaveClass(/is-off/);
@@ -319,6 +333,8 @@ test("My Decks: the decklists page's filters, who can see each deck, and favouri
   await expect(favorite).toHaveCount(1);
   await expect(voter.locator('.rb-my-decks-table thead th')).toHaveText(['', '', 'Size', 'Deck', 'Format', 'Tags', 'Actions']);
   await expect(favorite.locator('a[href*="/deck/copy/"]')).toBeVisible();
+  // a favourite can't be edited, so its row opens it: no Preview
+  await expect(favorite.locator('.fa-eye')).toHaveCount(0);
   await expect(voter.locator('#btn-unfavorite-selected')).toBeDisabled();
   await snap(voter, 'my favorites');
   await favorite.locator('button.btn-unfavorite').click();

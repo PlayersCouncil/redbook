@@ -589,7 +589,7 @@ class BuilderController extends AbstractController
 
         $all = array_merge($decks, $favorites);
         $rows = $myDecks->filter($all, $filters);
-        $limit = $filters['limit'] ?? 50;
+        $limit = $filters['limit'] ?? PublishedDeckManager::DEFAULT_LIMIT;
         $page = max(1, (int) $request->query->get('page', 1));
         $pager->setLimit($limit);
         $pager->setPage($page);

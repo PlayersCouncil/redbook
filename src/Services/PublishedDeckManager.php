@@ -28,7 +28,7 @@ class PublishedDeckManager
 {
     protected $page = 1;
     protected $start = 0;
-    protected $limit = 30;
+    protected $limit = self::DEFAULT_LIMIT;
     protected $maxcount = 0;
 
     protected EntityManagerInterface $doctrine;
@@ -62,6 +62,8 @@ class PublishedDeckManager
 
     /** The page sizes the decklists page offers (Ketura, 2026-11-06); the default is 50 */
     public const LIMITS = [10, 30, 50, 80, 100];
+    /** The deck searches' page size unless one is picked (Ketura, 2026-11-07) */
+    public const DEFAULT_LIMIT = 10;
 
     /** Which decks a list shows by what they hold: whole decks, and fragments of either side */
     public const KINDS = ['whole', CardEntity::SIDE_FREE_PEOPLES, CardEntity::SIDE_SHADOW];
@@ -127,7 +129,7 @@ class PublishedDeckManager
                 (array) ($all['tags'] ?? [])
             )))),
             'sort' => in_array($sort, self::SORTS, true) && $sort !== self::SORTS[0] ? $sort : null,
-            'limit' => in_array((int) $query->get('limit'), self::LIMITS, true) && (int) $query->get('limit') !== 50 ? (int) $query->get('limit') : null,
+            'limit' => in_array((int) $query->get('limit'), self::LIMITS, true) && (int) $query->get('limit') !== self::DEFAULT_LIMIT ? (int) $query->get('limit') : null,
         ]);
     }
 
