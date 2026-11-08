@@ -1843,8 +1843,59 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decorat
 .rb-thumb-option[data-value=""] { padding-left: 12px; }
 .rb-thumb-option.is-active { background: #F1ECE2; }
 .rb-thumb-option[aria-selected=true] { font-weight: 700; }
-.rb-thumb-preview { flex: 0 0 auto; }
+.rb-thumb-preview { flex: 0 0 auto; position: relative; }
 .rb-thumb-preview [hidden] { display: none; }
+
+/* the pencil over a card thumbnail (Ketura, 2026-11-07): shown on hover, the whole tile clickable */
+.rb-thumb-edit {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    padding: 0; border: 0; border-radius: 7px; background: rgba(28, 24, 16, .35); color: #fff; cursor: pointer;
+    opacity: 0; transition: opacity .12s;
+}
+.rb-thumb-edit .fas { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(28, 24, 16, .75); font-size: 15px; }
+.rb-thumb-preview:hover .rb-thumb-edit, .rb-thumb-edit:focus-visible { opacity: 1; }
+@media (hover: none) { .rb-thumb-edit { opacity: 1; background: none; align-items: flex-end; justify-content: flex-end; padding: 4px; } }
+
+/* the crop editor (Ketura, 2026-11-07): the card with the thumbnail's box over it, the rest
+   of the card dimmed, and the thumbnail as it will look beside it */
+body.rb-crop-open { overflow: hidden; }
+.rb-crop { position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(28, 24, 16, .6); }
+.rb-crop[hidden] { display: none; }
+.rb-crop-dialog { display: flex; flex-direction: column; max-width: 100%; max-height: 100%; padding: 16px 24px 18px; border-radius: 10px; background: #fff; box-shadow: 0 10px 40px rgba(0, 0, 0, .45); }
+.rb-crop-title { margin: 0; text-align: center; font-size: calc(20px * var(--rb-text-scale)); font-weight: 700; }
+.rb-crop-hint { margin: 4px 0 12px; text-align: center; color: var(--rb-muted); font-size: calc(13px * var(--rb-text-scale)); }
+.rb-crop-body { display: flex; align-items: flex-start; gap: 20px; min-height: 0; }
+.rb-crop-stage { position: relative; flex: 0 0 auto; overflow: hidden; border-radius: 8px; touch-action: none; user-select: none; }
+/* sized by ui.decklist_form.js to fit the window */
+.rb-crop-image { display: block; max-width: none; }
+.rb-crop-frame {
+    position: absolute; cursor: move; outline: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .5), 0 0 0 100vmax rgba(28, 24, 16, .62);
+}
+.rb-crop-frame:focus-visible { outline-color: #D4A017; }
+/* each edge can be caught all along it, a knob at its middle; the corners over them */
+.rb-crop-handle { position: absolute; }
+.rb-crop-handle::after {
+    content: ''; position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px;
+    border: 2px solid #fff; border-radius: 3px; background: #6B5A3A; box-shadow: 0 0 0 1px rgba(0, 0, 0, .4);
+}
+.rb-crop-n, .rb-crop-s { left: 0; width: 100%; height: 14px; margin-top: -7px; cursor: ns-resize; }
+.rb-crop-e, .rb-crop-w { top: 0; height: 100%; width: 14px; margin-left: -7px; cursor: ew-resize; }
+.rb-crop-ne, .rb-crop-nw, .rb-crop-se, .rb-crop-sw { z-index: 1; width: 20px; height: 20px; margin: -10px 0 0 -10px; }
+.rb-crop-n, .rb-crop-ne, .rb-crop-nw { top: 0; }
+.rb-crop-s, .rb-crop-se, .rb-crop-sw { top: 100%; }
+.rb-crop-w, .rb-crop-nw, .rb-crop-sw { left: 0; }
+.rb-crop-e, .rb-crop-ne, .rb-crop-se { left: 100%; }
+.rb-crop-ne, .rb-crop-sw { cursor: nesw-resize; }
+.rb-crop-nw, .rb-crop-se { cursor: nwse-resize; }
+.rb-crop-side { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.rb-crop-label { font-size: 12px; font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; }
+.rb-crop-preview { width: 180px; }
+.rb-crop-actions { display: flex; gap: 10px; margin-top: 16px; }
+.rb-crop-gap { flex: 1 1 auto; }
+@media (max-width: 600px) {
+    .rb-crop-body { flex-direction: column; align-items: center; }
+    .rb-crop-preview { width: 120px; }
+}
 
 /* a form's buttons: the action, then Cancel (Ketura, 2026-11-06) */
 .rb-form-actions { display: flex; gap: 10px; margin: 20px 0; }

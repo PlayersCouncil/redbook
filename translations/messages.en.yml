@@ -736,6 +736,14 @@ decklist.publish.half: Deck half
 decklist.publish.half_hint: "Publish only one side, for others to pair with their own."
 decklist.publish.thumbnail: Thumbnail
 decklist.publish.thumbnail_cultures: Culture Banner
+decklist.publish.crop.edit: Adjust the thumbnail's framing
+decklist.publish.crop.title: Adjust Thumbnail
+decklist.publish.crop.hint: "Drag the box to move it, or its edges and corners to resize it."
+decklist.publish.crop.frame: Thumbnail area
+decklist.publish.crop.preview: Thumbnail
+decklist.publish.crop.reset: Reset
+decklist.publish.crop.cancel: Cancel
+decklist.publish.crop.confirm: Confirm
 decklist.publish.thumbnail_rb: Ring-bearer and Ring
 decklist.publish.thumbnail_hint: "What the deck lists show for this deck: a card from it, or its two main cultures."
 decklist.list.title: Decklists

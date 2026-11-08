@@ -408,6 +408,9 @@ class SocialController extends AbstractController
         $decklist->setPrecedent($precedent && !$precedent->isWithdrawn() ? $precedent : null);
 
         $decklist->setThumbnailCard($this->thumbnailFrom($request, $decklist));
+        if ($request->request->has('thumbnail_crop')) {
+            $decklist->setThumbnailCrop($this->thumbnailCropFrom($request, $decklist));
+        }
 
         if ($mode === FormMode::Create || $decklist->isContentEditable()) {
             $releaseDate = $this->dateFrom($form->get('effective_date'));
@@ -1024,6 +1027,34 @@ class SocialController extends AbstractController
             }
         }
         return null;
+    }
+
+    /**
+     * The thumbnail framing the crop editor set (Ketura, 2026-11-07): for one of the deck's
+     * cards, the picture at least as wide as the tile and covering it; anything else clears it
+     */
+    private function thumbnailCropFrom(Request $request, PublishedDeck $decklist): ?array
+    {
+        $crop = json_decode((string) $request->request->get('thumbnail_crop'), true);
+        if (!is_array($crop) || !is_string($crop['code'] ?? null)) {
+            return null;
+        }
+        $found = false;
+        foreach ($decklist->getSlots() as $slot) {
+            $found = $found || $slot->getCard()->getCode() === $crop['code'];
+        }
+        $w = $crop['w'] ?? null;
+        $l = $crop['l'] ?? null;
+        $t = $crop['t'] ?? null;
+        if (!$found || !is_numeric($w) || !is_numeric($l) || !is_numeric($t)) {
+            return null;
+        }
+        [$w, $l, $t] = [round((float) $w, 2), round((float) $l, 2), round((float) $t, 2)];
+        // the editor's smallest box is a quarter of the picture, and the box stays on it
+        if ($w < 100 || $w > 1000 || $l > 0 || $l < 100 - $w || $t > 0 || $t < -2 * $w) {
+            return null;
+        }
+        return ['code' => $crop['code'], 'w' => $w, 'l' => $l, 't' => $t];
     }
 
     private function dateFrom(mixed $value): ?DateTime

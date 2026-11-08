@@ -175,6 +175,16 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     protected ?array $thumbnailCultures = null;
 
     /**
+     * A framing of its own for a thumbnail card (Ketura, 2026-11-07), set with the crop editor:
+     * {code, w, l, t}, the picture's width and left offset as percentages of the tile's width
+     * and its top offset as a percentage of the tile's height. One is kept, for the last card
+     * adjusted, and it applies whenever that card is the thumbnail; the others use their
+     * template's framing (style.css, .rb-thumb-tpl-*).
+     */
+    #[ORM\Column(name: 'thumbnail_crop', type: 'json', nullable: true)]
+    protected ?array $thumbnailCrop = null;
+
+    /**
      * @var int
      */
     #[ORM\Column(name: 'nb_comments', type: 'integer')]
@@ -353,6 +363,22 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     public function setThumbnailCard(?Card $card): void
     {
         $this->thumbnailCard = $card;
+    }
+
+    public function getThumbnailCrop(): ?array
+    {
+        return $this->thumbnailCrop;
+    }
+
+    public function setThumbnailCrop(?array $crop): void
+    {
+        $this->thumbnailCrop = $crop;
+    }
+
+    /** The custom framing for this card, if it's the one that has it */
+    public function getThumbnailCropFor(?Card $card): ?array
+    {
+        return $card && $this->thumbnailCrop && ($this->thumbnailCrop['code'] ?? null) === $card->getCode() ? $this->thumbnailCrop : null;
     }
 
     /** @return array<array{code: string, name: string, corner: string, side: string}> see pickThumbnailCultures */

@@ -629,4 +629,12 @@ deckbuilder.notes.card_button: "Insertar el nombre de una carta (#)"
 deckbuilder.notes.fullscreen: Pantalla completa
 decklist.publish.thumbnail_sites: Sitios
 decklist.publish.thumbnail_cultures: Estandarte de Culturas
+decklist.publish.crop.edit: Ajustar el encuadre de la miniatura
+decklist.publish.crop.title: Ajustar Miniatura
+decklist.publish.crop.hint: "Arrastra el recuadro para moverlo, o sus bordes y esquinas para cambiar su tamaño."
+decklist.publish.crop.frame: Área de la miniatura
+decklist.publish.crop.preview: Miniatura
+decklist.publish.crop.reset: Restablecer
+decklist.publish.crop.cancel: Cancelar
+decklist.publish.crop.confirm: Confirmar
 decklist.form.resize: Arrastra para cambiar el tamaño

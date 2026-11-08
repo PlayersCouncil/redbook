@@ -141,3 +141,64 @@ test('derived from: search by author and name, or paste an address', async ({ pa
   await expect(page.locator('#derived-chosen')).toBeVisible();
   await expect(page.locator('#precedent')).toHaveValue(v2.id);
 });
+
+test('the thumbnail card can be framed by hand, one card at a time', async ({ page }) => {
+  await page.goto(`/decklist/edit/${v1.id}`);
+  await page.click('#thumb-select');
+  const card = page.locator('#thumb-options .rb-thumb-option[data-group="fp"]').first();
+  const code = await card.getAttribute('data-value');
+  await card.click();
+
+  // the pencil over the thumbnail opens the editor: the card, with the template's box on it
+  await page.hover('.rb-thumb-preview');
+  await expect(page.locator('#thumb-edit')).toBeVisible();
+  await page.click('#thumb-edit');
+  const frame = page.locator('.rb-crop-frame');
+  await expect(frame).toBeVisible();
+  const image = (await page.locator('.rb-crop-image').boundingBox())!;
+  let box = (await frame.boundingBox())!;
+
+  // moved by dragging, and never off the card
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x - 2000, box.y + box.height / 2, { steps: 4 });
+  await page.mouse.up();
+  box = (await frame.boundingBox())!;
+  expect(Math.abs(box.x - image.x)).toBeLessThan(1.5);
+
+  // resized from a corner, keeping the tile's shape, down to a quarter of the card's width at most
+  await page.mouse.move(box.x + box.width, box.y + box.height);
+  await page.mouse.down();
+  await page.mouse.move(box.x - 2000, box.y - 2000, { steps: 4 });
+  await page.mouse.up();
+  box = (await frame.boundingBox())!;
+  expect(Math.abs(box.width - image.width / 4)).toBeLessThan(1.5);
+  expect(Math.abs(box.width / box.height - 260 / 231)).toBeLessThan(0.02);
+  await snap(page, 'thumbnail crop editor');
+  await page.click('.rb-crop-confirm');
+  await expect(frame).toBeHidden();
+  const crop = JSON.parse(await page.inputValue('#thumbnail_crop'));
+  expect(crop).toMatchObject({ code, w: 400, l: 0 });
+  await page.click('.rb-form-actions button[form=decklist-form]:has-text("Save")');
+
+  // the lists show it framed so
+  await page.goto(`/decklists?name=${encodeURIComponent(`${lineName} one`)}`);
+  const thumb = page.locator('.rb-col-thumb .rb-thumb-card img').first();
+  await expect(thumb).toHaveAttribute('style', /width: 400%; left: 0%/);
+
+  // Cancel keeps it; Reset and Confirm drop it
+  await page.goto(`/decklist/edit/${v1.id}`);
+  await page.hover('.rb-thumb-preview');
+  await page.click('#thumb-edit');
+  await page.mouse.move(image.x + 5, image.y + 5);
+  await page.click('.rb-crop-cancel');
+  expect(JSON.parse(await page.inputValue('#thumbnail_crop'))).toMatchObject({ code, w: 400 });
+  await page.hover('.rb-thumb-preview');
+  await page.click('#thumb-edit');
+  await page.click('.rb-crop-reset');
+  await page.click('.rb-crop-confirm');
+  await expect(page.locator('#thumbnail_crop')).toHaveValue('');
+  await page.click('.rb-form-actions button[form=decklist-form]:has-text("Save")');
+  await page.goto(`/decklists?name=${encodeURIComponent(`${lineName} one`)}`);
+  await expect(page.locator('.rb-col-thumb .rb-thumb-card img').first()).not.toHaveAttribute('style', /.+/);
+});
