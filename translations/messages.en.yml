@@ -1260,15 +1260,12 @@ decks.browse.include: Include
 decks.browse.include_title.private: Your decks only you can see
 decks.browse.include_title.hidden: Your decks anyone with the link can see
 decks.browse.include_title.published: Your decks published as decklists
-decks.browse.include_title.favorites: Decklists you added to your favorites
 decks.browse.show.private: Private
 decks.browse.show.hidden: Hidden
 decks.browse.show.published: Published
-decks.browse.show.favorites: Favorites
 decks.browse.status.private: "Private: only you can see it"
 decks.browse.status.hidden: "Hidden: anyone with the link can see it"
 decks.browse.status.published: "Published as a decklist"
-decks.browse.status.favorite: "A decklist in your favorites"
 decks.browse.count: "{0} No decks match|{1} 1 deck|]1,Inf[ %n% decks"
 decks.browse.none: Nothing matches. Try removing a filter.
 decks.browse.sorts.new: Recently Changed
@@ -1276,5 +1273,33 @@ decks.browse.sorts.old: Least Recently Changed
 decks.browse.sorts.name: Name
 decks.browse.pick: "Select %name%"
 decks.browse.published_as: "published as v%version%"
-decks.browse.copy: Copy to My Decks
 decks.browse.slots_title: "Your decks, of the most you can keep"
+decks.browse.tabs.label: Your decks and favorites
+decks.browse.tabs.decks: My Decks
+decks.browse.tabs.favorites: My Favorites
+decks.browse.include_off: Applies to My Decks
+decks.browse.count_favorites: "{0} No favorites match|{1} 1 favorite|]1,Inf[ %n% favorites"
+decks.browse.none_favorites: Nothing matches. Add decklists to your favorites from their pages, or try removing a filter.
+decks.browse.col.visibility: Visibility
+decks.browse.col.actions: Actions
+decks.browse.do.preview: Preview
+decks.browse.do.view: View Decklist
+decks.browse.do.publish: Publish
+decks.browse.do.clone: Clone
+decks.browse.do.delete: Delete
+decks.browse.do.copy: Copy to My Decks
+decks.browse.do.unfavorite: Remove from Favorites
+decks.browse.side.new: New Decks
+decks.browse.side.import_text: Import from Text
+decks.browse.side.import_file: Import from File
+decks.browse.side.selection: With Selection
+decks.browse.side.selection_none: Tick decks in the list to act on them.
+decks.browse.side.download: Download
+decks.browse.side.compare: Compare Two
+decks.browse.side.tag_add: Add Tags
+decks.browse.side.tag_remove: Remove Tags
+decks.browse.side.tag_clear: Clear Tags
+decks.browse.side.delete: Delete
+decks.browse.side.unfavorite: Remove from Favorites
+decks.browse.unfavorite_failed: "Couldn't remove them from your favorites. Reload the page and try again."
+decklist.browse.reset: Reset

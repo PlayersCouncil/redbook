@@ -131,27 +131,38 @@
         location.href = Routing.generate('decks_diff', {deck1_uuid: ids[0], deck2_uuid: ids[1]});
     };
 
+    /** The selection's section: greyed out until a deck is ticked; Compare wants two */
     ui.handle_deck_selection_change = function handle_deck_selection_change()
     {
-        var $boxes = $('#decks').find('input[type=checkbox]'), $checked = $boxes.filter(':checked');
-        var $button = $('#btn-group-selection button');
-        $button.toggleClass('btn-primary', $checked.length > 0).toggleClass('btn-default', !$checked.length);
-        $button.find('.rb-selected-count').text($checked.length ? '(' + $checked.length + ')' : '');
-        $('.rb-my-decks-table .toggle_all').prop('checked', $boxes.length > 0 && $checked.length === $boxes.length);
+        var $boxes = $('#decks').find('input[type=checkbox]'), $checked = $boxes.filter(':checked'), n = $checked.length;
+        var $section = $('#btn-group-selection').toggleClass('is-off', !n);
+        $section.find('.rb-selected-count').text(n ? '(' + n + ')' : '');
+        $section.find('button').each(function ()
+        {
+            var needs = $(this).data('needs');
+            $(this).prop('disabled', needs ? n !== needs : !n);
+        });
+        $('.rb-my-decks-table .toggle_all').prop('checked', $boxes.length > 0 && n === $boxes.length);
+    };
+
+    /** Favourites out of the list (Ketura, 2026-11-07), then the list again */
+    ui.unfavorite = function unfavorite(ids)
+    {
+        var $section = $('#btn-group-selection');
+        $.post($section.data('unfavorite'), {ids: ids, token: $section.data('token')})
+            .done(ui.browse_reload)
+            .fail(function () { app.ui.insert_alert_message('danger', Translator.trans('decks.browse.unfavorite_failed')); });
     };
 
     ui.do_action_selection = function do_action_selection(event)
     {
         event.stopPropagation();
         var action_id = $(this).attr('id');
-        var ids = $('#decks input:checked').map(function (index, elt) {
-            return $(elt).closest('tr').data('id');
-        }).get();
-        var uuids = $('#decks input:checked').map(function(index, elt) {
-           return $(elt).closest('tr').data('uuid');
-        });
-        if(!action_id || !ids.length || !uuids.length) {
-            return;
+        var $checked = $('#decks input:checked');
+        var ids = $checked.map(function (index, elt) { return $(elt).closest('tr').data('id'); }).get();
+        var uuids = $checked.map(function (index, elt) { return $(elt).closest('tr').data('uuid'); }).get();
+        if(!action_id || !ids.length) {
+            return false;
         }
         switch(action_id) {
             case 'btn-compare':
@@ -171,7 +182,10 @@
                 break;
             case 'btn-download-selected':
                 ui.download_selected(ids);
-                $(".selected-decks-dropdown-toggle").dropdown("toggle");
+                break;
+            case 'btn-unfavorite-selected':
+                ui.unfavorite(ids);
+                break;
         }
         return false;
     };
@@ -194,7 +208,11 @@
             }
         });
         results.on('click', 'button.btn-delete-deck', ui.confirm_delete);
-        results.on('click', '#btn-group-selection a[id]', ui.do_action_selection);
+        results.on('click', 'button.btn-unfavorite', function ()
+        {
+            ui.unfavorite([$(this).closest('tr').data('id')]);
+        });
+        $('#browse-side').on('click', '#btn-group-selection button[id]', ui.do_action_selection);
         $(document).on('browse:loaded', ui.handle_deck_selection_change);
     };
 

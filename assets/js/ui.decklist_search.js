@@ -34,7 +34,8 @@
             if((field.type === 'checkbox' || field.type === 'radio') && !field.checked) {
                 return;
             }
-            if((field.name === 'sort' && field.value === 'new') || (field.name === 'limit' && field.value === '50') || defaults[field.name]) {
+            if((field.name === 'sort' && field.value === 'new') || (field.name === 'limit' && field.value === '50') || defaults[field.name]
+                || (field.dataset.default !== undefined && field.value === field.dataset.default)) {
                 return;
             }
             params.push(encodeURIComponent(field.name) + '=' + encodeURIComponent(field.value));
@@ -73,6 +74,11 @@
                 setup_card_picker();
             }
             results.html(parts.results);
+            // and whatever else the page has: My Decks' tabs and actions (Ketura, 2026-11-07)
+            _.each(_.omit(parts, 'top', 'fields', 'results'), function (html, part)
+            {
+                $('#browse-' + part).html(html);
+            });
             $(document).trigger('browse:loaded');
             if(options.push) {
                 window.history.pushState({browse: true}, '', url);
@@ -219,8 +225,9 @@
             }
         });
 
-        // Clear All sets every filter; the column sorts and the pager set one thing
-        $(document).on('click', '.rb-browse-clear', function (event)
+        // Reset sets every filter, and a tab shows its list with the same filters (My Decks);
+        // the column sorts and the pager set one thing
+        $(document).on('click', '.rb-browse-clear, #browse-tabs .rb-tab', function (event)
         {
             if(plain_click(event)) {
                 event.preventDefault();
@@ -265,6 +272,12 @@
                 window.location = $(this).data('href');
             }
         });
+    };
+
+    /** The list again, as it is: after something on it changed (My Decks) */
+    ui.browse_reload = function browse_reload()
+    {
+        load(window.location.href, {push: false});
     };
 
     ui.browse_data_loaded = function browse_data_loaded()

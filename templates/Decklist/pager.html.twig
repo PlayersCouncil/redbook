@@ -1,7 +1,7 @@
 {# The decklists page's pager (Ketura, 2026-11-05): start, previous, nine pages, next, end, and
    a box to jump to a page. Variables: pager (PublishedDeckManager::getPager); pager_action, the
-   list it pages (the decklists page by default) #}
-{% if pager.count > 1 %}
+   list it pages (the decklists page by default); pager_always, shown for a single page too #}
+{% if pager.count > 1 or ((pager_always ?? false) and pager.count > 0) %}
 <nav class="rb-pager" aria-label="{{ 'decklist.browse.pages' | trans }}">
     {% for step in [
         {url: pager.first, icon: 'fa-step-backward', label: 'decklist.browse.page_first'},

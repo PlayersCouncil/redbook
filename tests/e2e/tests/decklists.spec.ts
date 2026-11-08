@@ -275,12 +275,15 @@ test("My Decks: the decklists page's filters, who can see each deck, and favouri
   await page.goto(`/decks?name=${encodeURIComponent(deckName)}`);
   const row = page.locator('#decks tr').filter({ hasText: deckName });
   await expect(row).toHaveCount(1);
-  await expect(page.locator('.rb-my-decks-table thead th')).toHaveText(['', '', '', 'Size', 'Deck', 'Format', 'Cultures', 'Tags', '']);
-  // published, with a link to the decklist; its tags, which search when clicked
-  await expect(row.locator('.rb-status')).toHaveClass(/rb-status-published/);
+  await expect(page.locator('.rb-my-decks-table thead th')).toHaveText(['', '', 'Size', 'Deck', 'Format', 'Visibility', 'Tags', 'Actions']);
+  // who can see it, with a link to what it was published as; its tags, which search when clicked
+  await expect(row.locator('.rb-col-visibility')).toContainText('Published');
   await expect(row.locator('.rb-deck-published')).toContainText('v1');
   await expect(row.locator('.rb-row-tags')).toContainText('dwarves');
   await expect(row.locator('.rb-thumb-card img')).toHaveAttribute('alt', 'Gimli, Dwarf of Erebor');
+  // a row opens the deckbuilder; Preview shows the deck
+  await expect(row).toHaveAttribute('data-href', /\/deck\/edit\//);
+  await expect(row.locator('a[data-tip="Preview"]')).toHaveAttribute('href', /\/deck\/view\//);
 
   // which decks to include: leaving out the published ones leaves it out
   await page.click('label.rb-toggle-published');
@@ -290,22 +293,37 @@ test("My Decks: the decklists page's filters, who can see each deck, and favouri
   await expect(row).toHaveCount(1);
   await expect(page).not.toHaveURL(/show/);
 
-  // ticking decks counts them on the selection's button
+  // the selection's actions wait for ticked decks; Compare for two
+  const selection = page.locator('#btn-group-selection');
+  await expect(selection).toHaveClass(/is-off/);
+  await expect(page.locator('#btn-tag-add')).toBeDisabled();
   await row.locator('.rb-col-pick input').check();
-  await expect(page.locator('#btn-group-selection .rb-selected-count')).toHaveText('(1)');
+  await expect(selection).not.toHaveClass(/is-off/);
+  await expect(selection.locator('.rb-selected-count')).toHaveText('(1)');
+  await expect(page.locator('#btn-tag-add')).toBeEnabled();
+  await expect(page.locator('#btn-compare')).toBeDisabled();
   await snap(page, 'my decks');
 
-  // favourites are left out until asked for; they can be copied, not ticked
+  // the favourites tab: the same filters, the favourites; removing one takes it off
   const voter = await pageAs('voter');
   await voter.goto('/decks');
   await expect(voter.locator('#decks tr').filter({ hasText: decklistName })).toHaveCount(0);
-  await voter.click('label.rb-toggle-favorites');
+  await voter.fill('#browse-fields input[name=name]', decklistName);
+  await voter.press('#browse-fields input[name=name]', 'Enter');
+  await voter.click('#browse-tabs .rb-tab[data-tab=favorites]');
+  await expect(voter).toHaveURL(/tab=favorites/);
+  await expect(voter.locator('#browse-tabs .rb-tab[data-tab=favorites]')).toHaveClass(/is-active/);
+  await expect(voter.locator('#browse-fields input[name=name]')).toHaveValue(decklistName);
+  await expect(voter.locator('.rb-field-include')).toHaveClass(/is-off/);
   const favorite = voter.locator('#decks tr').filter({ hasText: decklistName });
   await expect(favorite).toHaveCount(1);
-  await expect(favorite.locator('.rb-status')).toHaveClass(/rb-status-favorite/);
-  await expect(favorite.locator('.rb-col-pick input')).toHaveCount(0);
+  await expect(voter.locator('.rb-my-decks-table thead th')).toHaveText(['', '', 'Size', 'Deck', 'Format', 'Tags', 'Actions']);
   await expect(favorite.locator('a[href*="/deck/copy/"]')).toBeVisible();
-  await snap(voter, 'my decks with favourites');
+  await expect(voter.locator('#btn-unfavorite-selected')).toBeDisabled();
+  await snap(voter, 'my favorites');
+  await favorite.locator('button.btn-unfavorite').click();
+  await expect(favorite).toHaveCount(0);
+  await expect(voter.locator('.rb-results-none')).toBeVisible();
 });
 
 test('the decklists page filters by card, kind and culture', async ({ page }) => {
@@ -344,19 +362,20 @@ test('the decklists page filters by card, kind and culture', async ({ page }) =>
   await page.locator('#browse-tag').fill('no-such-tag');
   await Promise.all([page.waitForURL(/no-such-tag/), page.locator('#browse-tag').press('Enter')]);
   await expect(page.locator('.rb-results-none')).toBeVisible();
-  // the page size: not a filter, so nothing for Clear All
+  // the page size: not a filter, so nothing for Reset
   await page.goto('/decklists?limit=10');
   expect(await page.locator('.rb-decks tbody tr').count()).toBeLessThanOrEqual(10);
   await expect(page.locator('select[name=limit]')).toHaveValue('10');
-  await expect(page.locator('.rb-browse-clear')).toHaveCount(0);
+  await expect(page.locator('.rb-browse-clear')).toHaveClass(/is-idle/);
   // submitted dates from the calendar, applied as they're picked (Ketura, 2026-11-06)
   await page.goto(`/decklists?name=${encodeURIComponent(decklistName)}`);
   await Promise.all([page.waitForURL(/to=2003-12-31/), page.locator('input[name=to]').fill('2003-12-31')]);
   await expect(page.locator('.rb-results-none')).toBeVisible();
-  // Clear All keeps nothing but the sort
+  // Reset, beside Search, keeps nothing but the sort (Ketura, 2026-11-07)
   await page.goto(`/decklists?name=x&sort=rated`);
-  await page.getByRole('link', { name: 'Clear All' }).click();
+  await page.getByRole('link', { name: 'Reset' }).click();
   await expect(page).toHaveURL(/\/decklists\?sort=rated$/);
+  await expect(page.locator('#browse-fields input[name=name]')).toHaveValue('');
 });
 
 test('the public API serves the decklist', async ({ request }) => {

@@ -1,13 +1,15 @@
 {#
    The search and filters of a list of decks (Ketura, 2026-11-07): the decklists page, and My
-   Decks, which adds which of the user's decks to include and dates them by their last change.
+   Decks, which adds which of the user's decks to include (on its My Decks tab; greyed out, but
+   kept, on My Favorites) and dates them by their last change.
    Variables: filters, formats [{code, name, count}], cultures, cards, list_route; my_decks
 #}
 {% set my_decks = my_decks ?? false %}
 {% import 'Decklist/macros.html.twig' as m %}
 {% set f = filters %}
-{% set active = f | filter((v, k) => k not in ['sort', 'limit']) | length %}
-{% set date_label = my_decks ? 'decks.browse.changed' : 'decklist.browse.submitted' %}
+{% set active = f | filter((v, k) => k not in ['sort', 'limit', 'tab']) | length %}
+{# My Decks dates a deck by its last change; a favourite, like any decklist, by its publication #}
+{% set date_label = my_decks and (f.tab ?? 'decks') == 'decks' ? 'decks.browse.changed' : 'decklist.browse.submitted' %}
         {# the format first: it's what anyone sets first (Ketura, 2026-11-06) #}
         <label class="rb-field rb-field-format">
             <span>{{ 'decklist.browse.format' | trans }}</span>
@@ -70,15 +72,16 @@
                     {% endfor %}
                 </div>
             </div>
-            {# My Decks: the user's decks by who can see them, and the decklists they favourited
-               (Ketura, 2026-11-07); favourites are left out unless asked for #}
+            {# My Decks: the user's decks by who can see them (Ketura, 2026-11-07); the tab it's on #}
             {% if my_decks %}
-                <div class="rb-field">
+                {% set favorites_tab = (f.tab ?? 'decks') == 'favorites' %}
+                <input type="hidden" name="tab" value="{{ f.tab ?? 'decks' }}" data-default="decks">
+                <div class="rb-field rb-field-include{% if favorites_tab %} is-off{% endif %}"{% if favorites_tab %} title="{{ 'decks.browse.include_off' | trans }}"{% endif %}>
                     <span>{{ 'decks.browse.include' | trans }}</span>
                     <div class="rb-toggles" data-default="private,hidden,published">
-                        {% for show in ['private', 'hidden', 'published', 'favorites'] %}
+                        {% for show in ['private', 'hidden', 'published'] %}
                             <label class="rb-toggle rb-toggle-{{ show }}" title="{{ ('decks.browse.include_title.' ~ show) | trans }}">
-                                <input type="checkbox" name="show[]" value="{{ show }}" data-autosubmit{% if show in (f.show ?? ['private', 'hidden', 'published']) %} checked{% endif %}>
+                                <input type="checkbox" name="show[]" value="{{ show }}" data-autosubmit{% if show in (f.show ?? ['private', 'hidden', 'published']) %} checked{% endif %}{% if favorites_tab %} tabindex="-1"{% endif %}>
                                 <span>{{ ('decks.browse.show.' ~ show) | trans }}</span>
                             </label>
                         {% endfor %}
@@ -98,7 +101,7 @@
                 {% for culture in (sided | filter(c => c.code not in late)) | merge(sided | filter(c => c.code in late)) %}
                     <label class="rb-culture-pick" title="{{ culture.name }}">
                         <input type="checkbox" name="culture[]" value="{{ culture.code }}" data-autosubmit{% if culture.code in (f.culture ?? []) %} checked{% endif %}>
-                        <span>{{ m.culture_icon(culture, null, culture.code in late ? '#000' : null) }}</span>
+                        <span>{{ m.culture_icon(culture, null, '#111') }}</span>
                     </label>
                 {% endfor %}
             {% endfor %}
@@ -124,7 +127,8 @@
 
         <div class="rb-browse-submit">
             <span class="rb-browse-actions">
-                {% if active %}<a href="{{ list_path(list_route, f | filter((v, k) => k in ['sort', 'limit'])) }}" class="rb-browse-clear">{{ 'decklist.browse.clear' | trans }}</a>{% endif %}
+                {# every filter back to its default; the sort, page size and tab stay (Ketura, 2026-11-07) #}
                 <button type="submit" class="btn btn-primary btn-sm"><span class="fas fa-search"></span> {{ 'decklist.browse.search' | trans }}</button>
+                <a href="{{ list_path(list_route, f | filter((v, k) => k in ['sort', 'limit', 'tab'])) }}" class="btn btn-default btn-sm rb-browse-clear{% if not active %} is-idle{% endif %}"><span class="fas fa-undo"></span> {{ 'decklist.browse.reset' | trans }}</a>
             </span>
         </div>

@@ -583,6 +583,40 @@ class SocialController extends AbstractController
         );
     }
 
+    /** A decklist out of the user's favourites, and its author's reputation down as it went up */
+    private function dropFavorite(User $user, PublishedDeck $decklist): void
+    {
+        $author = $decklist->getUser();
+        $decklist->setNbfavorites($decklist->getNbFavorites() - 1);
+        $user->removeFavorite($decklist);
+        if ($author->getId() != $user->getId()) {
+            $author->setReputation($author->getReputation() - 5);
+        }
+    }
+
+    /** Decklists out of the user's favourites, from My Decks' favourites tab (Ketura, 2026-11-07) */
+    #[Route(path: '/user/favorites/remove', name: 'decklists_unfavorite', methods: ['POST'])]
+    public function unfavoriteAction(Request $request): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            throw new UnauthorizedHttpException('You must be logged in.');
+        }
+        if (!$this->isCsrfTokenValid('my_favorites', (string) $request->request->get('token'))) {
+            throw new BadRequestHttpException('The page is out of date; reload it.');
+        }
+        $ids = array_map('intval', (array) ($request->request->all()['ids'] ?? []));
+        $removed = 0;
+        foreach ($this->managerRegistry->getRepository(PublishedDeck::class)->findBy(['id' => $ids]) as $decklist) {
+            if ($user->getFavorites()->contains($decklist)) {
+                $this->dropFavorite($user, $decklist);
+                $removed++;
+            }
+        }
+        $this->managerRegistry->getManager()->flush();
+        return new JsonResponse(['removed' => $removed]);
+    }
+
     /**
      * Adds a decklist to a user's list of favorites.
      *
@@ -629,11 +663,7 @@ class SocialController extends AbstractController
             ->fetchOne();
 
         if ($is_favorite) {
-            $decklist->setNbfavorites($decklist->getNbFavorites() - 1);
-            $user->removeFavorite($decklist);
-            if ($author->getId() != $user->getId()) {
-                $author->setReputation($author->getReputation() - 5);
-            }
+            $this->dropFavorite($user, $decklist);
         } else {
             $decklist->setNbfavorites($decklist->getNbFavorites() + 1);
             $user->addFavorite($decklist);

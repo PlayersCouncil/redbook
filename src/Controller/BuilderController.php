@@ -577,8 +577,7 @@ class BuilderController extends AbstractController
         $tournaments = $this->managerRegistry->getRepository(Tournament::class)->findBy([], ['description' => 'DESC']);
         $filters = $myDecks->getFilters($request);
 
-        // always loaded, though left out by default: someone with favourites but no decks yet
-        // gets the page, to ask for them
+        // someone with favourites but no decks yet gets the page, for its favourites tab
         $favorites = $myDecks->favoriteRows($user);
         if (!$decks && !$favorites && !$request->isXmlHttpRequest()) {
             return $this->render('Builder/no-decks.html.twig', [
@@ -625,6 +624,8 @@ class BuilderController extends AbstractController
                 'top' => $this->renderBlockView('Builder/decks.html.twig', 'browse_top', $params),
                 'fields' => $this->renderBlockView('Builder/decks.html.twig', 'browse_fields', $params),
                 'results' => $this->renderBlockView('Builder/decks.html.twig', 'browse_results', $params),
+                'tabs' => $this->renderBlockView('Builder/decks.html.twig', 'browse_tabs', $params),
+                'side' => $this->renderBlockView('Builder/decks.html.twig', 'browse_side', $params),
             ]);
         } else {
             $response = $this->render('Builder/decks.html.twig', $params);

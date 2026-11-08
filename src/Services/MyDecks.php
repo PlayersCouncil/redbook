@@ -17,7 +17,7 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class MyDecks
 {
-    public const SHOWS = ['private', 'hidden', 'published', 'favorites'];
+    public const SHOWS = ['private', 'hidden', 'published'];
     public const DEFAULT_SHOWS = ['private', 'hidden', 'published'];
     public const SORTS = ['new', 'old', 'name'];
 
@@ -29,7 +29,8 @@ class MyDecks
 
     /**
      * The decklists page's filters (PublishedDeckManager::getFilters), less those that
-     * don't apply here, and show: which decks to include, left out when it's the default
+     * don't apply here; show, which decks to include, left out when it's the default; and
+     * tab, favorites for the favourites tab (Ketura, 2026-11-07)
      */
     public function getFilters(Request $request): array
     {
@@ -44,6 +45,9 @@ class MyDecks
         sort($default);
         if ($show && $show !== $default) {
             $filters['show'] = $show;
+        }
+        if ($request->query->get('tab') === 'favorites') {
+            $filters['tab'] = 'favorites';
         }
         return $filters;
     }
@@ -86,6 +90,8 @@ class MyDecks
      */
     public function filter(array $rows, array $filters): array
     {
+        // the favourites tab shows only favourites; the decks tab, the decks included
+        $favorites = ($filters['tab'] ?? 'decks') === 'favorites';
         $show = $filters['show'] ?? self::DEFAULT_SHOWS;
         $like = fn (string $needle, array $haystacks) => (bool) array_filter($haystacks, fn ($h) => mb_stripos((string) $h, $needle) !== false);
         $cardKeys = [];
@@ -97,9 +103,9 @@ class MyDecks
         $from = !empty($filters['from']) ? new \DateTimeImmutable($filters['from']) : null;
         $to = !empty($filters['to']) ? (new \DateTimeImmutable($filters['to']))->modify('+1 day') : null;
 
-        $rows = array_values(array_filter($rows, function (DeckRow $row) use ($filters, $show, $like, $cardKeys, $from, $to) {
+        $rows = array_values(array_filter($rows, function (DeckRow $row) use ($filters, $favorites, $show, $like, $cardKeys, $from, $to) {
             $cultures = array_map(fn ($c) => $c['culture']->getCode(), $row->cultures);
-            return in_array($row->visibility === 'favorite' ? 'favorites' : $row->visibility, $show, true)
+            return ($favorites ? $row->visibility === 'favorite' : in_array($row->visibility, $show, true))
                 && (empty($filters['name']) || $like($filters['name'], [$row->name]))
                 && (empty($filters['author']) || $like($filters['author'], $row->authors))
                 && (empty($filters['format']) || $row->format === $filters['format'])
