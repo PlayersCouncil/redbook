@@ -36,22 +36,39 @@ class SyncArchiveDecklistsCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $dry = (bool) $input->getOption('dry-run');
-        $decklists = $this->em->createQuery('SELECT d, p FROM ' . PublishedDeck::class . ' d JOIN d.parent p WHERE d.reviewStatus IS NOT NULL')->getResult();
+        // a hundred at a time, the memory cleared between (Ketura's archive is thousands)
+        $ids = $this->em->createQuery('SELECT d.id FROM ' . PublishedDeck::class . ' d WHERE d.reviewStatus IS NOT NULL AND d.parent IS NOT NULL ORDER BY d.id')
+            ->getSingleColumnResult();
         $count = 0;
-        foreach ($decklists as $decklist) {
-            $deck = $decklist->getParent();
-            $differs = $this->differences($decklist, $deck);
-            if (!$differs) {
-                continue;
+        foreach (array_chunk($ids, 100) as $chunk) {
+            $decklists = $this->em->createQuery('SELECT d, p FROM ' . PublishedDeck::class . ' d JOIN d.parent p WHERE d.id IN (:ids)')
+                ->setParameter('ids', $chunk)
+                ->getResult();
+            // both sides' cards in two queries rather than two per deck
+            $this->em->createQuery('SELECT d, s, c FROM ' . PublishedDeck::class . ' d LEFT JOIN d.slots s LEFT JOIN s.card c WHERE d.id IN (:ids)')
+                ->setParameter('ids', $chunk)->getResult();
+            $this->em->createQuery('SELECT p, s, c FROM ' . Deck::class . ' p LEFT JOIN p.slots s LEFT JOIN s.card c WHERE p IN (:decks)')
+                ->setParameter('decks', array_map(fn (PublishedDeck $d) => $d->getParent(), $decklists))->getResult();
+            foreach ($decklists as $decklist) {
+                $deck = $decklist->getParent();
+                $differs = $this->differences($decklist, $deck);
+                if (!$differs) {
+                    continue;
+                }
+                $count++;
+                $output->writeln(sprintf('#%d %s: %s', $decklist->getId(), trim((string) $decklist->getName()), implode(', ', $differs)));
+                if (!$dry) {
+                    $this->factory->refreshFromDeck($decklist, $deck);
+                }
             }
-            $count++;
-            $output->writeln(sprintf('#%d %s: %s', $decklist->getId(), $decklist->getName(), implode(', ', $differs)));
             if (!$dry) {
-                $this->factory->refreshFromDeck($decklist, $deck);
+                $this->em->flush();
             }
-        }
-        if (!$dry) {
-            $this->em->flush();
+            $this->em->clear();
+            gc_collect_cycles();
+            if ($output->isVerbose()) {
+                $output->writeln(sprintf('... %d checked, %.0f MB', count($chunk), memory_get_usage(true) / 1048576));
+            }
         }
         $output->writeln(sprintf('%d archive decklist(s) %s.', $count, $dry ? 'would be updated' : 'updated'));
         return Command::SUCCESS;
