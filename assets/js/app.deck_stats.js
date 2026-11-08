@@ -10,9 +10,11 @@
  *
  * Charts, one per row, with Free Peoples left of zero and Shadow right of it on the same
  * line (never side by side), the axis reaching just past the longest bar both ways:
- * twilight cost, card types and cultures. Free Peoples are light tan, Shadow a mid
- * purple. The type chart folds companions, allies and minions into Characters and
- * marks half the Shadow side: at least half of it should be minions.
+ * twilight cost and card types. Free Peoples are light tan, Shadow a mid purple. The
+ * type chart folds companions, allies and minions into Characters and marks half the
+ * Shadow side: at least half of it should be minions. Pointing at a row lights the whole
+ * row and shows each of its bars' counts (Ketura, 2026-11-08). The cultures are a pie:
+ * Free Peoples the left half, Shadow the right, each culture in its card colour.
  *
  * The run-out chart estimates how many cards each player has left in their draw deck
  * site by site, from movement patterns (S single move, D double move) and how many
@@ -249,53 +251,92 @@
             // no tooltip on the bar charts: the hovered bar shows its count, centred on it (Ketura, 2026-11-03)
             tooltip: {enabled: false},
             plotOptions: {series: {stacking: 'normal', borderWidth: 0, groupPadding: 0.1, pointPadding: 0.04, animation: false,
-                states: {hover: {brightness: 0.08}},
-                point: {events: {mouseOver: show_count, mouseOut: hide_count}}}}
+                states: {hover: {enabled: false}, inactive: {enabled: false}}, enableMouseTracking: false}}
         };
     }
 
-    /** The hovered bar's count, drawn on the middle of the bar; it ignores the pointer */
-    function show_count()
+    /**
+     * A bar chart's rows light up under the pointer, the whole row, with each bar in it showing
+     * its count on its middle (Ketura, 2026-11-08). The row is read off the pointer's height.
+     */
+    function row_hover(chart)
     {
-        var point = this,
-            chart = point.series.chart;
-        hide_count.call(point);
-        if(!point.y || !point.graphic) {
-            return;
+        var axis = chart.xAxis[0],
+            current = null,
+            labels = [];
+        function clear()
+        {
+            _.each(labels, function (label) { label.destroy(); });
+            labels = [];
+            axis.removePlotBand('rb-row');
+            current = null;
         }
-        var bar = point.graphic.element.getBoundingClientRect(),
-            box = chart.container.getBoundingClientRect();
-        chart.rb_count = chart.renderer.text(String(Math.abs(point.y)), bar.left - box.left + bar.width / 2, bar.top - box.top + bar.height / 2 + 4)
-            .attr({align: 'center', zIndex: 9, 'class': 'rb-bar-count'})
-            .css({fontWeight: '700', fontSize: '12px', color: '#1E1B16', pointerEvents: 'none'})
-            .add();
+        $(chart.container).on('mousemove', function (event) {
+            var e = {chartY: event.pageY - $(chart.container).offset().top};
+            if(e.chartY < chart.plotTop || e.chartY > chart.plotTop + chart.plotHeight) {
+                clear();
+                return;
+            }
+            var row = Math.round(axis.toValue(e.chartY));
+            if(row === current || row < axis.min || row > axis.max) {
+                return;
+            }
+            clear();
+            current = row;
+            axis.addPlotBand({id: 'rb-row', from: row - 0.5, to: row + 0.5, color: 'rgba(246, 222, 150, .55)', zIndex: 0});
+            var box = chart.container.getBoundingClientRect();
+            _.each(chart.series, function (series) {
+                var point = series.points && series.points[row];
+                if(!point || !point.y || !point.graphic) {
+                    return;
+                }
+                var bar = point.graphic.element.getBoundingClientRect();
+                labels.push(chart.renderer.text(String(Math.abs(point.y)), bar.left - box.left + bar.width / 2, bar.top - box.top + bar.height / 2 + 4)
+                    .attr({align: 'center', zIndex: 9, 'class': 'rb-bar-count'})
+                    .css({fontWeight: '700', fontSize: '12px', color: '#1E1B16', pointerEvents: 'none'})
+                    .add());
+            });
+        }).on('mouseleave', clear);
     }
 
-    function hide_count()
+    /** a bar chart, with its row hover */
+    function bar_chart(selector, options)
     {
-        var chart = this.series.chart;
-        if(chart.rb_count) {
-            chart.rb_count.destroy();
-            chart.rb_count = null;
-        }
+        $(selector).highcharts(options, row_hover);
     }
 
+    /**
+     * Twilight cost. A run of two or more costs no card has, below a Balrog's or Sauron's, is
+     * one row of "…" (Ketura, 2026-11-08)
+     */
     function chart_twilight(draw)
     {
         var max = _.max([0].concat(_.map(draw, function (c) { return c.twilight || 0; }))),
-            costs = _.range(0, max + 1),
-            count = function (side) {
-                return _.map(costs, function (cost) {
-                    var n = _.reduce(draw, function (sum, c) { return sum + ((c.side === 'shadow') === (side === 'shadow') && (c.twilight || 0) === cost ? c.indeck : 0); }, 0);
-                    return side === 'shadow' ? n : -n;
-                });
+            at = function (side, cost) {
+                return _.reduce(draw, function (sum, c) { return sum + ((c.side === 'shadow') === (side === 'shadow') && (c.twilight || 0) === cost ? c.indeck : 0); }, 0);
             },
-            series = [
-                {name: t('side.free_peoples'), color: FP, data: count('free_peoples')},
-                {name: t('side.shadow'), color: SHADOW, data: count('shadow')}
+            rows = [];
+        for(var cost = 0; cost <= max; cost++) {
+            var fp = at('free_peoples', cost), sh = at('shadow', cost);
+            if(!fp && !sh) {
+                var end = cost;
+                while(end + 1 <= max && !at('free_peoples', end + 1) && !at('shadow', end + 1)) {
+                    end++;
+                }
+                if(end > cost) {
+                    rows.push({label: '…', fp: 0, shadow: 0});
+                    cost = end;
+                    continue;
+                }
+            }
+            rows.push({label: String(cost), fp: fp, shadow: sh});
+        }
+        var series = [
+                {name: t('side.free_peoples'), color: FP, data: _.map(rows, function (r) { return -r.fp; })},
+                {name: t('side.shadow'), color: SHADOW, data: _.map(rows, function (r) { return r.shadow; })}
             ];
-        $('#stats-chart-twilight').highcharts(_.extend(base('bar', 70 + costs.length * 26), {
-            xAxis: {categories: costs, title: {text: t('deckbuilder.statstab.twilight_axis')}, reversed: true},
+        bar_chart('#stats-chart-twilight', _.extend(base('bar', 70 + rows.length * 26), {
+            xAxis: {categories: _.pluck(rows, 'label'), title: {text: t('deckbuilder.statstab.twilight_axis')}, reversed: true},
             yAxis: split_axis(stack_totals(series)),
             series: series
         }));
@@ -333,7 +374,7 @@
                 {name: t('deckbuilder.statstab.minions'), color: SHADOW, data: values('minion', false)},
                 {name: t('deckbuilder.statstab.other_shadow'), color: '#A88DC0', data: values('shadow', false), showInLegend: false}
             ];
-        $('#stats-chart-types').highcharts(_.extend(base('bar', 60 + keys.length * 40), {
+        bar_chart('#stats-chart-types', _.extend(base('bar', 60 + keys.length * 40), {
             xAxis: {categories: _.map(keys, label), title: {text: null}},
             // the dotted line: at least half of the Shadow side should be minions (Ketura, 2026-11-03)
             yAxis: split_axis(stack_totals(series).concat([half]), half ? {plotLines: [
@@ -345,9 +386,10 @@
     }
 
     /**
-     * Cultures (Ketura, 2026-11-03): Free Peoples cultures named on the left axis, Shadow
-     * cultures on a right axis, each side biggest first, so Gondor and Isengard can share
-     * a line. A culture on both sides (Gollum) gets one line for both, after the rest.
+     * Cultures (Ketura, 2026-11-08): a pie in two halves, Free Peoples always the left and
+     * Shadow the right, each half shared among its side's cultures, the biggest at the top on
+     * both sides, in each culture's card colour (base 1). A culture on both sides (Gollum) is
+     * in both.
      */
     function chart_cultures(draw)
     {
@@ -358,35 +400,31 @@
             cultures[code][c.side === 'shadow' ? 'shadow' : 'fp'] += c.indeck;
         });
         var all = _.values(cultures),
-            biggest = function (side) { return function (c) { return -c[side]; }; },
-            fp_only = _.sortBy(_.filter(all, function (c) { return c.fp && !c.shadow; }), biggest('fp')),
-            shadow_only = _.sortBy(_.filter(all, function (c) { return c.shadow && !c.fp; }), biggest('shadow')),
-            both = _.sortBy(_.filter(all, function (c) { return c.fp && c.shadow; }), function (c) { return -(c.fp + c.shadow); }),
-            top = Math.max(fp_only.length, shadow_only.length),
-            rows = Math.max(1, top + both.length),
-            left = [], right = [], fp = [], shadow = [];
-        for(var i = 0; i < rows; i++) {
-            var l = i < top ? fp_only[i] : both[i - top],
-                r = i < top ? shadow_only[i] : both[i - top];
-            left.push(l ? l.name : '');
-            right.push(r ? r.name : '');
-            // each culture in its own colour, from the card templates (app.cultures)
-            fp.push(l ? {y: -l.fp, color: app.cultures.color(l.code)} : 0);
-            shadow.push(r ? {y: r.shadow, color: app.cultures.color(r.code)} : 0);
-        }
-        var series = [
-            {name: t('side.free_peoples'), color: FP, data: fp},
-            {name: t('side.shadow'), color: SHADOW, data: shadow}
-        ];
-        $('#stats-chart-cultures').highcharts(_.extend(base('bar', 70 + rows * 30), {
-            xAxis: [
-                {categories: left, title: {text: null}},
-                {categories: right, title: {text: null}, opposite: true, linkedTo: 0}
-            ],
-            yAxis: split_axis(stack_totals(series)),
-            legend: {enabled: false},
-            series: series
-        }));
+            // a half runs clockwise: Shadow from the top down, Free Peoples from the bottom up
+            slices = function (side) {
+                return _.map(_.sortBy(_.filter(all, function (c) { return c[side]; }), function (c) { return side === 'shadow' ? -c[side] : c[side]; }), function (c) {
+                    return {name: c.name, y: c[side], color: app.cultures.color(c.code, 'base1')};
+                });
+            },
+            half = function (name, data, start) {
+                return {name: name, data: data, startAngle: start, endAngle: start + 180, center: ['50%', '50%'], size: '78%',
+                    // the counts on the slices; the names in the legend, as the column can be narrow
+                    dataLabels: {enabled: true, distance: -22, format: '{point.y}', style: {fontWeight: '700', fontSize: '12px', color: '#fff', textOutline: '1px #333'}},
+                    showInLegend: true};
+            };
+        $('#stats-chart-cultures').highcharts({
+            chart: {type: 'pie', height: 320, backgroundColor: 'transparent', style: {fontFamily: 'inherit'}, spacing: [6, 0, 6, 0]},
+            title: {text: null},
+            credits: {enabled: false},
+            legend: {enabled: true, labelFormat: '{name} ({y})', itemStyle: {fontWeight: 'normal'}},
+            tooltip: {headerFormat: '', pointFormat: '<b>{point.name}</b>: {point.y}'},
+            plotOptions: {pie: {animation: false, borderColor: '#fff', borderWidth: 1, states: {inactive: {enabled: false}}}},
+            series: [
+                // the Shadow half from the top round to the bottom on the right; Free Peoples from the bottom round to the top on the left
+                half(t('side.shadow'), slices('shadow'), 0),
+                half(t('side.free_peoples'), slices('fp'), 180)
+            ]
+        });
     }
 
     /* ---- running out: the deck-size simulator ---- */
@@ -540,15 +578,6 @@
             plotOptions: {series: {animation: false, marker: {radius: 3}, step: false}},
             series: series
         });
-        var say = function (who, p) {
-            var end = p.points[p.points.length - 1];
-            // where it ran dry (Ketura, 2026-11-04): a deck can empty on the other player's turn,
-            // at a site its own line never stops at
-            return p.deck <= 0
-                ? t('deckbuilder.statstab.runs_out', {who: who, site: p.out || 1})
-                : t('deckbuilder.statstab.cards_at', {who: who, count: end[1], site: end[0]});
-        };
-        $('#runout-summary').text(say(t('deckbuilder.statstab.you'), result.you) + ' ' + say(t('deckbuilder.statstab.them'), result.them));
     }
 
     /** The run-out settings are kept in this browser, so a setup someone likes stays (Ketura, 2026-11-03) */

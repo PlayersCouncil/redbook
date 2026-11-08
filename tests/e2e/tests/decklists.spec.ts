@@ -212,11 +212,14 @@ test('another user likes, favourites and comments on it', async ({ pageAs }) => 
   await expect(favorite.locator('.num')).toHaveText('1');
   await expect(favorite).toHaveClass(/is-on/);
 
+  // the comment box is the deckbuilder's editor (Ketura, 2026-11-08): toolbar, Preview, its hint
   const comment = `Nice list from run ${runId}`;
-  // Type it (not fill) so the Markdown preview renders as it would for a
-  // person; the preview re-renders and moves the button, so let it settle.
+  const box = page.locator('.rb-comment-form .md-editor');
+  await expect(box.locator('.md-footer')).toContainText('@ to mention');
   await page.locator('#comment-form-text').pressSequentially(comment);
-  await expect(page.locator('#comment-form-preview')).toContainText(comment);
+  await box.locator('button[data-handler="bootstrap-markdown-cmdPreview"]').click();
+  await expect(box.locator('.md-preview')).toContainText(comment);
+  await box.locator('button[data-handler="bootstrap-markdown-cmdPreview"]').click();
   await Promise.all([
     page.waitForResponse((r) => r.url().includes('/user/comment') && r.request().method() === 'POST'),
     page.locator('form:has(#comment-form-text) button[type=submit]').click(),

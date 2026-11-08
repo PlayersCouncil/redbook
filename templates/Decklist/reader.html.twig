@@ -80,14 +80,10 @@
                 <a href="{{ path('historic_claim_form', {user_id: subject.user.id}) }}" class="rb-btn rb-btn-small">{{ 'claim.button' | trans }}</a>
             {% endif %}
             {% if format %}<a href="{{ path('format', {code: format.code}) }}">{{ format.name }}</a>{% endif %}
-            <span>{{ 'decklist.reader.played' | trans({'%date%': subject.effectiveDate | date('Y-m-d')}) }}</span>
+            {# the dates are on the Details tab (Ketura, 2026-11-08) #}
             {% if is_deck %}
-                <span class="text-muted">{{ 'decks.browse.changed_on' | trans }} <time datetime="{{ (subject.dateUpdate ?? subject.dateCreation)|date('c') }}">{{ (subject.dateUpdate ?? subject.dateCreation)|date('Y-m-d') }}</time></span>
                 {% set visibility = successors | length ? 'published' : (subject.shared ? 'hidden' : 'private') %}
                 <span class="rb-vis rb-vis-{{ visibility }}" title="{{ ('decks.browse.status.' ~ visibility) | trans }}">{{ ('decks.browse.show.' ~ visibility) | trans }}</span>
-            {% else %}
-                {# an archive deck wasn't published here: it was brought in from the archives #}
-                <span class="text-muted">{{ (subject.source ? 'decklist.reader.archived' : 'decklist.reader.published') | trans }} <time datetime="{{ subject.dateCreation|date('c') }}">{{ subject.dateCreation|date('Y-m-d') }}</time></span>
             {% endif %}
             {% include 'Deck/completeness-label.html.twig' with {deck: subject} %}
             {% if not is_deck and subject.verified and subject.reviewedBy %}
@@ -122,6 +118,23 @@
                             {% endif %}
                         </div>
                     {% endif %}
+                    {#
+                       The dates (Ketura, 2026-11-08): Released, the date the deck counts as from, which
+                       decides its cards' versions and errata (an archive deck's, when it was played or
+                       posted); then when it came to Red Book: published, or brought in from the
+                       archives; a saved deck's last change instead.
+                    #}
+                    <dl class="rb-reader-dates">
+                        <dt>{{ 'decklist.reader.released' | trans }}</dt>
+                        <dd><time datetime="{{ subject.effectiveDate | date('Y-m-d') }}" data-absolute>{{ subject.effectiveDate | date('Y-m-d') }}</time></dd>
+                        {% if is_deck %}
+                            <dt>{{ 'decks.browse.changed_on' | trans }}</dt>
+                            <dd><time datetime="{{ (subject.dateUpdate ?? subject.dateCreation) | date('c') }}">{{ (subject.dateUpdate ?? subject.dateCreation) | date('Y-m-d') }}</time></dd>
+                        {% else %}
+                            <dt>{{ (subject.source ? 'decklist.reader.archived' : 'decklist.reader.published') | trans }}</dt>
+                            <dd><time datetime="{{ subject.dateCreation | date('c') }}">{{ subject.dateCreation | date('Y-m-d') }}</time></dd>
+                        {% endif %}
+                    </dl>
                     {% include 'Deck/validation.html.twig' with {deck: subject, title: 'decklist.view.problems' | trans} %}
                     {% if not is_deck %}
                         {% include 'Decklist/plays.html.twig' with {decklist: subject} %}
@@ -181,13 +194,26 @@
                 {# under the commentary (Ketura, 2026-11-08): where the deck came from and what it led
                    to, then the talk about it; a saved deck has no comments #}
                 <div class="rb-reader-comments">
-                    <div class="rb-reader-tree">
-                        {% include 'Decklist/table-predecessor.html.twig' %}
-                        {% if is_deck %}
-                            {% include 'Decklist/table-successor.html.twig' with {successors_title: 'decks.published.title', successors_none: 'decks.published.none', successors_icon: 'fa-share'} %}
-                        {% else %}
-                            {% include 'Decklist/table-successor.html.twig' %}
-                        {% endif %}
+                    {# where it came from and what it led to (Ketura, 2026-11-08): one line with the counts,
+                       opening to the tables; a click on either table's heading closes them again #}
+                    {% set after_title = is_deck ? 'decks.published.title' : 'decklist.view.inspire.title' %}
+                    {% set before_count = precedent ? 1 : 0 %}
+                    <div class="rb-reader-tree is-collapsed" id="reader-tree">
+                        <button type="button" class="rb-tree-summary" aria-expanded="false" aria-controls="reader-tree-tables">
+                            <span class="rb-tree-part"><span class="fas fa-backward" aria-hidden="true"></span> {{ 'decklist.view.derived.title' | trans }}:
+                                <span class="rb-tree-count{{ before_count ? ' is-some' : '' }}">{{ before_count }}</span></span>
+                            <span class="rb-tree-sep" aria-hidden="true">|</span>
+                            <span class="rb-tree-part"><span class="fas {{ is_deck ? 'fa-share' : 'fa-forward' }}" aria-hidden="true"></span> {{ after_title | trans }}:
+                                <span class="rb-tree-count{{ successors | length ? ' is-some' : '' }}">{{ successors | length }}</span></span>
+                        </button>
+                        <div class="rb-tree-tables" id="reader-tree-tables">
+                            {% include 'Decklist/table-predecessor.html.twig' %}
+                            {% if is_deck %}
+                                {% include 'Decklist/table-successor.html.twig' with {successors_title: 'decks.published.title', successors_none: 'decks.published.none', successors_icon: 'fa-share'} %}
+                            {% else %}
+                                {% include 'Decklist/table-successor.html.twig' %}
+                            {% endif %}
+                        </div>
                     </div>
                     {% if not is_deck %}
                         {% if subject.source and subject.source.comments | length %}{% include 'Decklist/archive-comments.html.twig' with {source: subject.source} %}{% endif %}

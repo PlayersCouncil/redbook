@@ -1,0 +1,22 @@
+{# The reader's Clone, Copy Text and Download (Ketura, 2026-11-08), alike for a decklist and a
+   saved deck: Clone makes a deck of your own from it, Copy Text puts the list on the clipboard,
+   Download saves it as a text file. On a phone they fold into an Actions menu.
+   Variables: clone_url, download_url #}
+<span class="rb-reader-buttons-wide">
+    <a href="{{ clone_url }}" class="rb-btn rb-btn-small rb-reader-clone" title="{{ 'decklist.reader.clone_hint' | trans }}">
+        <span class="fas fa-code-branch" aria-hidden="true"></span> {{ 'decklist.reader.clone' | trans }}</a>
+    <button type="button" class="rb-btn rb-btn-small" data-copy-list title="{{ 'decklist.reader.copy_list_hint' | trans }}">
+        <span class="far fa-copy" aria-hidden="true"></span> {{ 'decklist.reader.copy_text' | trans }}</button>
+    <a href="{{ download_url }}" class="rb-btn rb-btn-small" title="{{ 'decklist.reader.download_hint' | trans }}">
+        <span class="fas fa-file-download" aria-hidden="true"></span> {{ 'decklist.reader.download_short' | trans }}</a>
+</span>
+<span class="dropdown rb-reader-buttons-narrow">
+    <button type="button" class="rb-btn rb-btn-small dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        {{ 'forms.actions' | trans }} <span class="caret"></span>
+    </button>
+    <ul class="dropdown-menu dropdown-menu-right" role="menu">
+        <li><a href="{{ clone_url }}"><span class="fas fa-code-branch" aria-hidden="true"></span> {{ 'decklist.reader.clone' | trans }}</a></li>
+        <li><a href="#" data-copy-list><span class="far fa-copy" aria-hidden="true"></span> {{ 'decklist.reader.copy_text' | trans }}</a></li>
+        <li><a href="{{ download_url }}"><span class="fas fa-file-download" aria-hidden="true"></span> {{ 'decklist.reader.download_short' | trans }}</a></li>
+    </ul>
+</span>

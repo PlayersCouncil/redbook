@@ -176,9 +176,10 @@ class BuilderController extends AbstractController
             $this->addFlash('error', $translator->trans('decks.save.outOfSlots'));
             return $this->redirectToRoute('decks_list');
         }
-        $deckManager->copy($user, $deck, $deck->getName() . ' (clone)');
+        $clone = $deckManager->copy($user, $deck, $deck->getName() . ' (clone)');
         $this->managerRegistry->getManager()->flush();
-        return $this->redirectToRoute('decks_list');
+        // straight into the deckbuilder, as cloning a decklist does (Ketura, 2026-11-08)
+        return $this->redirectToRoute('deck_edit', ['deck_uuid' => $clone->getUuid()]);
     }
 
     #[Route(path: '/deck/save', name: 'deck_save', methods: ['POST'])]

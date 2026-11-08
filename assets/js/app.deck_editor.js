@@ -4,9 +4,9 @@
  *
  * - Display options in a toolbar above the deck's scrolling area: list / thumbnails /
  *   half-thumbnails, and grouping by culture, type or none.
- * - A heading with the deck's totals collapses its top part: the Ring-bearer, Ring
- *   and map to one line each, the sites to list lines in three columns. Free
- *   Peoples and Shadow collapse away entirely from their own headings.
+ * - The deck's heading, "Draw Deck (60)", collapses its top part, the Ring-bearer, Ring,
+ *   map and sites, away entirely, as Free Peoples and Shadow collapse from theirs
+ *   (Ketura, 2026-11-08; it used to shrink them to lines).
  * - Every draw-deck card has X 1 2 3 4: X takes it out of the deck but keeps the
  *   line (the X becomes Trash, which deletes the line), and numbers above the
  *   format's limit are disabled.
@@ -263,9 +263,10 @@
         return app.config.get(prefix + 'deck-collapsed-' + section) === '1';
     }
 
+    /** The top part no longer shrinks to lines: collapsed, it's gone (Ketura, 2026-11-08) */
     function sites_collapsed()
     {
-        return collapsed('top');
+        return false;
     }
 
     /** A section header that is one big toggle, chevron and all (Ketura, 2026-11-03) */
@@ -427,24 +428,22 @@
             v = view(),
             fp = _.filter(draw, function (s) { return s.card.side !== 'shadow'; }),
             shadow = _.filter(draw, function (s) { return s.card.side === 'shadow'; }),
-            rb = app.deck.get_cards('ring_bearer'),
-            ring = app.deck.get_cards('ring'),
             map = app.deck.get_cards('map'),
-            totals = [t('deckbuilder.draw_deck', {count: count(draw)}),
-                t('deckbuilder.adventure_deck', {count: _.reject(app.deck.get_cards('site'), 'pending').length})]
-                .concat(_.reject(rb, 'pending').length ? [t('deck.ring_bearer')] : [])
-                .concat(_.reject(ring, 'pending').length ? [t('deck.ring_short')] : [])
-                .concat(_.reject(map, 'pending').length ? [t('deck.map')] : []),
-            // the totals head the deck and collapse its top part (Ketura, 2026-11-03)
-            html = '<h2 class="rb-deck-head">' + section_toggle('top', _.map(totals, _.escape).join(', ')) + '</h2>'
-                + '<div class="rb-deck-top view-' + v + (sites_collapsed() ? ' is-collapsed' : '') + '"><div class="rb-deck-top-left">'
+            top_shut = collapsed('top'),
+            // "Draw Deck (60)" heads the deck, underlined as the sides are, and collapses its top
+            // part away (Ketura, 2026-11-08)
+            html = '<h2 class="rb-deck-head' + (top_shut ? ' is-collapsed' : '') + '">' + section_toggle('top', _.escape(t('deckbuilder.draw_deck', {count: count(draw)}))) + '</h2>';
+        if(!top_shut) {
+            html += '<div class="rb-deck-top view-' + v + '"><div class="rb-deck-top-left">'
                 + single_slot('ring_bearer', t('deck.ring_bearer'), 'ring_bearer', t('deckbuilder.find_ring_bearer'), problems)
                 + single_slot('ring', t('deck.ring_short'), 'ring', t('deckbuilder.find_ring'), problems);
-        if(app.deck.get_cards('map').length || (format && format.uses_maps)) {
-            html += single_slot('map', t('deck.map'), 'map', t('deckbuilder.find_map'), problems);
+            if(map.length || (format && format.uses_maps)) {
+                html += single_slot('map', t('deck.map'), 'map', t('deckbuilder.find_map'), problems);
+            }
+            html += '</div><div class="rb-deck-top-right">' + adventure_deck(problems) + '</div></div>';
         }
-        html += '</div><div class="rb-deck-top-right">' + adventure_deck(problems) + '</div></div>'
-            + '<div class="rb-sides">' + side_html('free_peoples', fp, problems) + side_html('shadow', shadow, problems) + '</div>';
+        // the view's own threshold for the sides side by side (style.css, @container deck)
+        html += '<div class="rb-sides view-' + v + '">' + side_html('free_peoples', fp, problems) + side_html('shadow', shadow, problems) + '</div>';
         $(container).removeClass('deck-loading').html(html);
         if(toolbar) {
             toolbar.html(display_options());

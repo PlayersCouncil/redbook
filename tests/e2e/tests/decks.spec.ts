@@ -95,7 +95,7 @@ test('import a Gemp deck string and export it back unchanged', async ({ page }) 
   await expect(page.locator('#deck-validation')).toContainText('Deck is valid for Fellowship Block');
   await page.goto(await page.evaluate(() => (window as any).app.deckbuilder_page.view_url));
   await expect(page.locator('#deck')).toContainText('Draw Deck (60)');
-  await expect(page.locator('.rb-reader-buttons .deck-publish')).toBeVisible();
+  await expect(page.locator('.rb-reader-buttons .deck-edit')).toBeVisible();
   await snap(page, 'imported deck');
 
   await waitForCardData(page);
@@ -137,15 +137,16 @@ test('deckbuilder clicks: pool cards add, counts fill, sites collapse, menus flo
   await expect(page.locator('#deck')).toContainText('Gimli');
   await expect(page.locator('#cardModal')).not.toBeVisible();
 
-  // the view buttons sit above the deck's scrolling area; the totals heading collapses the top part
+  // the view buttons sit above the deck's scrolling area; "Draw Deck (3)" heads the deck and
+  // collapses its top part away entirely (Ketura, 2026-11-08)
   await page.locator('#deck-toolbar [data-view=thumb]').click();
-  await expect(page.locator('#deck .rb-deck-head')).toContainText('Draw Deck (3), Adventure Deck (0)');
+  await expect(page.locator('#deck .rb-deck-head')).toHaveText('Draw Deck (3)');
   await page.locator('#deck .rb-deck-head .rb-section-toggle').click();
-  await expect(page.locator('#deck .rb-deck-top.is-collapsed')).toBeVisible();
-  await expect(page.locator('#deck .rb-site-list.is-columns')).toBeVisible();
+  await expect(page.locator('#deck .rb-deck-top')).toHaveCount(0);
+  await expect(page.locator('#deck .rb-deck-head')).toHaveClass(/is-collapsed/);
   await snap(page, 'collapsed deck top');
   await page.locator('#deck .rb-deck-head .rb-section-toggle').click();
-  await expect(page.locator('#deck .rb-deck-top.is-collapsed')).toHaveCount(0);
+  await expect(page.locator('#deck .rb-deck-top')).toBeVisible();
   // Free Peoples collapses away entirely, and back
   await page.locator('#deck .rb-side-free_peoples .rb-section-toggle').click();
   await expect(page.locator('#deck .rb-side-free_peoples .rb-tile')).toHaveCount(0);
@@ -298,6 +299,19 @@ test('deck notes, stats and history: starting fellowship, tags, annotations, tes
   await expect(page.locator('#draw-hand .rb-draw-group.is-fp .rb-draw-card')).toHaveCount(1);
   await expect(page.locator('#draw-hand .rb-draw-group.is-shadow .rb-draw-card')).toHaveCount(1);
   await expect(page.locator('#stats-chart-runout svg')).toBeVisible();
+  // the cultures as a pie, halves for the sides (Ketura, 2026-11-08)
+  await expect(page.locator('#stats-chart-cultures .highcharts-series-group > .highcharts-series')).toHaveCount(2);
+  // a twilight row lights up under the pointer, with its bars' counts
+  const twilight = () => page.evaluate(() => {
+    const chart = (window as any).jQuery('#stats-chart-twilight').highcharts();
+    const box = chart.container.getBoundingClientRect();
+    return {x: box.left + chart.plotLeft + chart.plotWidth / 2, y: box.top + chart.plotTop + 8, bands: chart.xAxis[0].plotLinesAndBands.length};
+  });
+  const at = await twilight();
+  await page.mouse.move(at.x, at.y);
+  await expect.poll(async () => (await twilight()).bands).toBe(1);
+  await page.mouse.move(2, 2);
+  await expect.poll(async () => (await twilight()).bands).toBe(0);
 
   await page.click('#tab-header-history');
   await expect(page.locator('#tab-pane-history .rb-history-saved')).toHaveCount(2);

@@ -984,16 +984,21 @@ abbr.legality.banned {
 .rb-site-empty .rb-plus { width: 24px; height: 24px; }
 .rb-choose { color: var(--rb-muted); font-style: italic; }
 .rb-draw-head { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--rb-line); font-size: calc(20px * (1 + (var(--rb-text-scale) - 1) * 0.87)); font-weight: 700; }
-/* Free Peoples and Shadow: side by side once the deck area passes a set width, in every
-   view alike, so switching views never moves them (Ketura, 2026-11-03) */
+/* Free Peoples and Shadow side by side once the deck area has room, each view by its own
+   measure (Ketura, 2026-11-08; they used to wait for the thumbnails' width in every view) */
 .rb-deck { container: deck / inline-size; }
 .rb-sides { display: flex; flex-direction: column; gap: 0 28px; }
 .rb-side { min-width: 0; margin-top: 12px; }
-/* the threshold (Ketura, 2026-11-03): room for ten cards across, five a side, plus the gaps
-   (5 x 118 + 4 x 8 per side, 28 between); below it the sides stack and their groups pair up */
-@container deck (min-width: 1272px) {
-    .rb-sides { flex-direction: row; }
-    .rb-side { flex: 1 1 0; }
+/* the list: once a column of lines fits each side */
+@container deck (min-width: 640px) {
+    .rb-sides.view-list { flex-direction: row; }
+    .rb-sides.view-list .rb-side { flex: 1 1 0; }
+}
+/* thumbnails: room for three cards a side (3 x 118 + 2 x 8 per side, 28 between); below it
+   the sides stack and their groups pair up */
+@container deck (min-width: 768px) {
+    .rb-sides.view-thumb, .rb-sides.view-half { flex-direction: row; }
+    .rb-sides.view-thumb .rb-side, .rb-sides.view-half .rb-side { flex: 1 1 0; }
 }
 /* culture or type groups sit next to each other when they fit */
 .rb-groups { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 28px; }
@@ -1196,15 +1201,12 @@ abbr.legality.banned {
 .rb-section-label { flex: 1 1 auto; min-width: 0; }
 .rb-collapse { flex: 0 0 auto; width: 24px; height: 24px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; color: var(--rb-ink); display: inline-flex; align-items: center; justify-content: center; }
 .rb-section-toggle:hover .rb-collapse { border-color: var(--rb-ink); }
-.rb-deck-head { margin: 0 0 8px; font-size: calc(18px * (1 + (var(--rb-text-scale) - 1) * 0.93)); font-weight: 700; }
-/* collapsed: Ring-bearer and Ring share one line above the sites, so the sites get the width */
-.rb-deck-top.is-collapsed { flex-direction: column; gap: 6px; }
-.rb-deck-top.is-collapsed .rb-deck-top-left { flex: 0 0 auto; width: 100%; flex-direction: row; flex-wrap: wrap; gap: 2px 24px; }
-.rb-deck-top.is-collapsed .rb-deck-top-right { width: 100%; }
-.rb-deck-top.is-collapsed .rb-slot:not(.rb-sites) { flex: 1 1 260px; min-width: 0; display: flex; align-items: center; gap: 8px; }
-.rb-deck-top.is-collapsed .rb-slot:not(.rb-sites) .rb-slot-head { flex: 0 0 auto; margin: 0; }
-.rb-deck-top.is-collapsed .rb-slot:not(.rb-sites) .rb-line, .rb-deck-top.is-collapsed .rb-slot:not(.rb-sites) .rb-empty { flex: 1 1 auto; min-width: 0; }
-.rb-deck-top.is-collapsed .rb-slot:not(.rb-sites) .rb-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-deck-head { margin: 0 0 8px; padding-bottom: 3px; font-size: calc(18px * (1 + (var(--rb-text-scale) - 1) * 0.93)); font-weight: 700; border-bottom: 2px solid var(--rb-ink); }
+.rb-deck-head.is-collapsed { border-bottom-style: dashed; }
+/* the three headings light up under the pointer, to say they fold (Ketura, 2026-11-08) */
+.rb-deck-head .rb-section-toggle, .rb-side-head .rb-section-toggle { padding: 2px 4px; margin: -2px -4px; width: calc(100% + 8px); border-radius: 5px 5px 0 0; transition: background-color .12s; }
+.rb-deck-head .rb-section-toggle:hover, .rb-side-head .rb-section-toggle:hover,
+.rb-deck-head .rb-section-toggle:focus-visible, .rb-side-head .rb-section-toggle:focus-visible { background: #F6E7B8; }
 .rb-side.is-collapsed .rb-side-head { border-bottom-style: dashed; }
 /* collapsed sites: list lines in three columns */
 .rb-site-list.is-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 16px; }
@@ -1556,6 +1558,9 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 .rb-annot-mark { flex: 0 0 auto; display: inline-flex; align-items: center; color: #2F6DB5; cursor: help; user-select: none; }
 .rb-tile .rb-annot-mark { position: absolute; right: 4px; top: 4px; padding: 3px; border-radius: 50%; background: #fff; }
 #deck .is-linked, .rb-reader-note.is-linked { background: #FDF3C8; border-radius: 4px; }
+/* a card shown as a picture lights up in gold instead (Ketura, 2026-11-08) */
+#deck .rb-tile.is-linked { background: none; }
+#deck .rb-tile.is-linked .rb-tile-img { outline: 3px solid #D4A017; outline-offset: 1px; box-shadow: 0 0 0 6px rgba(212, 160, 23, .35); border-radius: 4px; }
 /* the description: headings kept to the text's scale, whatever the source sent */
 .rb-reader-text { font-size: calc(14px * var(--rb-text-scale)); line-height: 1.55; overflow-wrap: anywhere; }
 .rb-reader-text h1, .rb-reader-text h2, .rb-reader-text h3 { font-size: 1.2em; font-weight: 700; margin: 1em 0 .4em; }
@@ -2205,3 +2210,25 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 .rb-gate-card p { font-size: calc(15px * var(--rb-text-scale)); }
 .rb-gate-next { color: var(--rb-muted); }
 .rb-gate-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin: 18px 0 8px; }
+
+/* the reputation after a name: a black pill (Ketura, 2026-11-08) */
+.rb-rep { display: inline-block; margin-left: 3px; padding: 0 6px; border-radius: 9px; background: #111; color: #fff; font-size: 75%; font-weight: 700; line-height: 1.5; vertical-align: 1px; }
+
+/* the reader's dates, atop its Details tab (Ketura, 2026-11-08) */
+.rb-reader-dates { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0 0 12px; font-size: calc(14px * var(--rb-text-scale)); }
+.rb-reader-dates dt { font-weight: 700; }
+.rb-reader-dates dd { margin: 0; }
+
+/* where the deck came from and what it led to: one line until opened (Ketura, 2026-11-08) */
+.rb-tree-summary { display: flex; align-items: center; flex-wrap: nowrap; gap: 10px; width: 100%; padding: 6px 4px; border: 0; border-radius: 5px; background: none; text-align: left; white-space: nowrap; font-size: calc(13px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-ink); cursor: pointer; }
+.rb-tree-summary:hover, .rb-tree-summary:focus-visible { background: #F6E7B8; }
+.rb-tree-sep { color: var(--rb-muted); font-weight: 400; }
+.rb-tree-count { font-weight: 400; color: var(--rb-muted); }
+.rb-tree-count.is-some { color: #2A6BB0; text-decoration: underline; font-weight: 700; }
+.rb-reader-tree.is-collapsed .rb-tree-tables, .rb-reader-tree:not(.is-collapsed) .rb-tree-summary { display: none; }
+.rb-reader-tree .rb-tree-tables thead th { cursor: pointer; }
+.rb-reader-tree .rb-tree-tables thead th:hover { background: #F6E7B8; }
+
+/* the comment box: the deckbuilder's editor, a fixed height (Ketura, 2026-11-08) */
+.rb-comment-form .rb-md-editor .md-editor > textarea, .rb-comment-form .rb-md-editor .md-editor > .md-preview { flex: none; height: 160px !important; }
+.rb-comment-form .btn { margin-top: 8px; }

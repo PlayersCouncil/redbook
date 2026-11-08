@@ -24,7 +24,7 @@
     {% if user.role('ROLE_ADMIN') %}
         <span class="fas fa-user-tie admin" title="Administrator"></span>
     {% endif %}
-    {% if not user.historic %}<small title="User Reputation">{{ user.reputation }}</small>{% endif %}
+    {% if not user.historic %}<small class="rb-rep" title="User Reputation">{{ user.reputation }}</small>{% endif %}
 {% endmacro %}
 
 {% macro username_colorless(user) %}
@@ -33,7 +33,7 @@
     {% if user.role('ROLE_ADMIN') %}
         <span class="fas fa-user-tie admin" title="Administrator"></span>
     {% endif %}
-    {% if not user.historic %}<small title="User Reputation">{{ user.reputation }}</small>{% endif %}
+    {% if not user.historic %}<small class="rb-rep" title="User Reputation">{{ user.reputation }}</small>{% endif %}
 {% endmacro %}
 
 {% macro decklist_social_icons(decklist) %}

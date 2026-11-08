@@ -50,6 +50,17 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   await expect(page.locator('.rb-social')).toHaveCount(0);
   await expect(page.locator('#comment-form')).toHaveCount(0);
   await expect(page.locator('.rb-reader-desc .rb-reader-comments #table-successor')).toContainText(`${lineName} one`);
+  // the lineage is one line with its counts, opening to the tables and closing from a heading
+  const tree = page.locator('#reader-tree');
+  await expect(tree.locator('.rb-tree-summary')).toContainText('Derived From: 0');
+  await expect(tree.locator('.rb-tree-count.is-some')).toHaveText('1');
+  await tree.locator('.rb-tree-summary').click();
+  await expect(tree.locator('#table-successor')).toBeVisible();
+  await tree.locator('#table-successor thead th').click();
+  await expect(tree.locator('#table-successor')).toBeHidden();
+  // the same three buttons as a decklist's, and no Publish
+  await expect(page.locator('.rb-reader-buttons-wide > *')).toHaveText(['Clone', 'Copy Text', 'Download']);
+  await expect(page.locator('.rb-reader-buttons .deck-publish')).toHaveCount(0);
   await expect(page.locator('.rb-reader-posted')).toHaveText(/^Posted by /);
   await expect(page.locator('.rb-reader-meta .rb-vis')).toHaveText('Published');
   // the commentary widens from the bar beside it

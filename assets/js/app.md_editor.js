@@ -170,10 +170,13 @@
 
     /**
      * Makes the textarea a markdown editor. Its value and input events stay the textarea's,
-     * so whatever listens to it keeps working.
+     * so whatever listens to it keeps working. options (Ketura, 2026-11-08, for the reader's
+     * comment box): users, names @ offers; footer, the hint under it; deck, the deck's name
+     * for the fullscreen heading when the page has no name field.
      */
-    editor.attach = function attach(selector)
+    editor.attach = function attach(selector, options)
     {
+        options = options || {};
         var textarea = $(selector);
         if(!textarea.length || textarea.closest('.md-editor').length) {
             return;
@@ -181,7 +184,7 @@
         var box;
         textarea.markdown({
             onFullscreen: function (e) {
-                var deck = $.trim($('#deck-name').val() || $('#name').val() || '');
+                var deck = $.trim($('#deck-name').val() || $('#name').val() || options.deck || '');
                 box.find('.rb-md-title').text(t('deckbuilder.notes.editing', {field: textarea.data('md-title') || '', deck: deck}));
                 e.$textarea.focus();
             },
@@ -189,7 +192,7 @@
             savable: false,
             iconlibrary: 'fa',
             hiddenButtons: ['cmdHeading', 'cmdImage', 'cmdCode'],
-            footer: t('deckbuilder.notes.editor_hint'),
+            footer: options.footer || t('deckbuilder.notes.editor_hint'),
             language: Translator.locale,
             onPreview: function (e) {
                 return app.markdown ? app.markdown.render(e.getContent()) : _.escape(e.getContent());
@@ -236,8 +239,8 @@
                 instance.setFullscreen(false);
             }
         });
-        // # then a card's name
-        app.textcomplete && app.textcomplete.setup(textarea, {icons: false, card_syntax: 'wiki', prefer: in_deck});
+        // # then a card's name; @ then a name, where there are names to offer
+        app.textcomplete && app.textcomplete.setup(textarea, {icons: false, card_syntax: 'wiki', prefer: in_deck, users: options.users || false});
     };
 
 })(app.md_editor = {}, jQuery);

@@ -22,6 +22,12 @@
         $('#social-favorite').on('click', ui.send_favorite);
         $('#social-fire').on('click', ui.send_fire);
         $('[data-copy-list]').on('click', ui.copy_list);
+        // the lineage line opens to its tables; either table's heading closes them (Ketura, 2026-11-08)
+        $('#reader-tree').on('click', '.rb-tree-summary', function () {
+            $('#reader-tree').removeClass('is-collapsed').find('.rb-tree-summary').attr('aria-expanded', 'true');
+        }).on('click', 'thead th', function () {
+            $('#reader-tree').addClass('is-collapsed').find('.rb-tree-summary').attr('aria-expanded', 'false').focus();
+        });
         $('#btn-compare').on('click', ui.compare_form);
         $('#btn-compare-submit').on('click', ui.compare_submit);
     };
@@ -114,10 +120,17 @@
     ui.setup_comment_form = function setup_comment_form()
     {
 
-        var form = $('<form method="POST" action="' + Routing.generate('decklist_comment') + '"><input type="hidden" name="id" value="' + app.deck.get_id() + '"><div class="form-group">'
-                + '<textarea id="comment-form-text" class="form-control" rows="4" name="comment" placeholder="' + Translator.trans('decklist.view.comments.hint') + '"></textarea>'
-                + '</div><div class="well text-muted" id="comment-form-preview"><small>Preview. Look <a href="http://daringfireball.net/projects/markdown/dingus">here</a> for a Markdown syntax reference.</small></div>'
+        // the deckbuilder's markdown editor (Ketura, 2026-11-08): its toolbar, Preview,
+        // fullscreen, symbols and # for cards, with @ for the people in the conversation
+        var form = $('<form method="POST" class="rb-comment-form" action="' + Routing.generate('decklist_comment') + '"><input type="hidden" name="id" value="' + app.deck.get_id() + '">'
+                + '<div class="rb-md-editor"><textarea id="comment-form-text" rows="6" name="comment" data-md-title="' + _.escape(Translator.trans('decklist.reader.comment')) + '" placeholder="'
+                + _.escape(Translator.trans('decklist.reader.comment_placeholder')) + '"></textarea></div>'
                 + '<button type="submit" class="btn btn-success">' + Translator.trans('decklist.view.comments.submit') + '</button></form>').insertAfter('#comment-form');
+        app.md_editor.attach('#comment-form-text', {
+            users: Commenters,
+            footer: Translator.trans('decklist.reader.comment_hint'),
+            deck: $.trim($('.decklist-name').text())
+        });
 
         var already_submitted = false;
         form.on('submit', function (event)
@@ -148,12 +161,6 @@
             $('#comment-form-text').trigger('focus')[0].scrollIntoView({block: 'nearest', behavior: 'smooth'});
         });
 
-        app.markdown.setup('#comment-form-text', '#comment-form-preview');
-        app.textcomplete.setup('#comment-form-text', {
-            cards: true,
-            icons: true,
-            users: Commenters
-        });
 
     };
 
