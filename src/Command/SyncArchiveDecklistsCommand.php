@@ -2,7 +2,7 @@
 
 namespace App\Command;
 
-use App\Entity\Deck;
+use App\Classes\DeckContent;
 use App\Entity\PublishedDeck;
 use App\Services\PublishedDeckFactory;
 use Doctrine\ORM\EntityManagerInterface;
@@ -36,36 +36,42 @@ class SyncArchiveDecklistsCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $dry = (bool) $input->getOption('dry-run');
-        // a hundred at a time, the memory cleared between (Ketura's archive is thousands)
-        $ids = $this->em->createQuery('SELECT d.id FROM ' . PublishedDeck::class . ' d WHERE d.reviewStatus IS NOT NULL AND d.parent IS NOT NULL ORDER BY d.id')
-            ->getSingleColumnResult();
+        $db = $this->em->getConnection();
+        // compared as plain rows, the columns that matter and nothing else: loading the
+        // decklists themselves brings their archive sources along, too much for thousands
+        // (Ketura, 2026-11-08). Only a decklist that needs it is loaded, to be updated.
+        $ids = $db->fetchFirstColumn('SELECT id FROM published_deck WHERE review_status IS NOT NULL AND parent_deck_id IS NOT NULL ORDER BY id');
+        $columns = 'name, description_md, starting_fellowship, starting_bid, starting_notes, annotations';
         $count = 0;
-        foreach (array_chunk($ids, 100) as $chunk) {
-            $decklists = $this->em->createQuery('SELECT d, p FROM ' . PublishedDeck::class . ' d JOIN d.parent p WHERE d.id IN (:ids)')
-                ->setParameter('ids', $chunk)
-                ->getResult();
-            // both sides' cards in two queries rather than two per deck
-            $this->em->createQuery('SELECT d, s, c FROM ' . PublishedDeck::class . ' d LEFT JOIN d.slots s LEFT JOIN s.card c WHERE d.id IN (:ids)')
-                ->setParameter('ids', $chunk)->getResult();
-            $this->em->createQuery('SELECT p, s, c FROM ' . Deck::class . ' p LEFT JOIN p.slots s LEFT JOIN s.card c WHERE p IN (:decks)')
-                ->setParameter('decks', array_map(fn (PublishedDeck $d) => $d->getParent(), $decklists))->getResult();
-            foreach ($decklists as $decklist) {
-                $deck = $decklist->getParent();
-                $differs = $this->differences($decklist, $deck);
-                if (!$differs) {
+        foreach (array_chunk($ids, 200) as $chunk) {
+            $list = implode(',', array_map('intval', $chunk));
+            $decklists = $db->fetchAllAssociativeIndexed("SELECT id, parent_deck_id, $columns FROM published_deck WHERE id IN ($list)");
+            $deckIds = implode(',', array_map('intval', array_column($decklists, 'parent_deck_id')));
+            $decks = $db->fetchAllAssociativeIndexed("SELECT id, $columns FROM deck WHERE id IN ($deckIds)");
+            $listCards = $this->contents('published_deck_slot', 'published_deck_id', $list);
+            $deckCards = $this->contents('deck_slot', 'deck_id', $deckIds);
+
+            $update = [];
+            foreach ($decklists as $id => $row) {
+                $deck = $decks[$row['parent_deck_id']] ?? null;
+                if ($deck === null) {
                     continue;
                 }
-                $count++;
-                $output->writeln(sprintf('#%d %s: %s', $decklist->getId(), trim((string) $decklist->getName()), implode(', ', $differs)));
-                if (!$dry) {
-                    $this->factory->refreshFromDeck($decklist, $deck);
+                $differs = $this->differences($row, $deck, $listCards[$id] ?? [], $deckCards[$row['parent_deck_id']] ?? []);
+                if ($differs) {
+                    $count++;
+                    $update[] = $id;
+                    $output->writeln(sprintf('#%d %s: %s', $id, trim((string) $row['name']), implode(', ', $differs)));
                 }
             }
             if (!$dry) {
-                $this->em->flush();
+                foreach ($update as $id) {
+                    $decklist = $this->em->find(PublishedDeck::class, $id);
+                    $this->factory->refreshFromDeck($decklist, $decklist->getParent());
+                    $this->em->flush();
+                    $this->em->clear();
+                }
             }
-            $this->em->clear();
-            gc_collect_cycles();
             if ($output->isVerbose()) {
                 $output->writeln(sprintf('... %d checked, %.0f MB', count($chunk), memory_get_usage(true) / 1048576));
             }
@@ -74,24 +80,38 @@ class SyncArchiveDecklistsCommand extends Command
         return Command::SUCCESS;
     }
 
-    /** @return string[] what the decklist has differently from its deck */
-    private function differences(PublishedDeck $decklist, Deck $deck): array
+    /** @return array<int, array<string, int>> each deck's cards, by content key (rb: for the Ring-bearer) */
+    private function contents(string $table, string $column, string $ids): array
     {
-        $pairs = [
-            'cards' => [self::sorted($decklist->getSlots()->getContent()), self::sorted($deck->getSlots()->getContent())],
-            'name' => [trim((string) $decklist->getName()), trim((string) $deck->getName()) ?: 'Untitled'],
-            'description' => [(string) $decklist->getDescriptionMd(), (string) $deck->getDescriptionMd()],
-            'starting' => [array_values($decklist->getStarting()), array_values($deck->getStarting())],
-            'bid' => [(string) $decklist->getStartingBid(), (string) $deck->getStartingBid()],
-            'starting notes' => [(string) $decklist->getStartingNotes(), (string) $deck->getStartingNotes()],
-            'annotations' => [$decklist->getAnnotations(), $deck->getAnnotations()],
-        ];
-        return array_keys(array_filter($pairs, fn ($pair) => $pair[0] != $pair[1]));
+        $contents = [];
+        if ($ids === '') {
+            return $contents;
+        }
+        $rows = $this->em->getConnection()->fetchAllAssociative(
+            "SELECT s.$column AS owner, c.code, s.role, s.quantity FROM $table s JOIN card c ON c.id = s.card_id WHERE s.$column IN ($ids)"
+        );
+        foreach ($rows as $row) {
+            $contents[(int) $row['owner']][DeckContent::key((string) $row['code'], (string) $row['role'])] = (int) $row['quantity'];
+        }
+        foreach ($contents as &$content) {
+            ksort($content);
+        }
+        return $contents;
     }
 
-    private static function sorted(array $content): array
+    /** @return string[] what the decklist has differently from its deck */
+    private function differences(array $decklist, array $deck, array $listCards, array $deckCards): array
     {
-        ksort($content);
-        return $content;
+        $json = fn ($value) => $value === null || $value === '' ? [] : (json_decode((string) $value, true) ?? []);
+        $pairs = [
+            'cards' => [$listCards, $deckCards],
+            'name' => [trim((string) $decklist['name']), trim((string) $deck['name']) ?: 'Untitled'],
+            'description' => [(string) $decklist['description_md'], (string) $deck['description_md']],
+            'starting' => [array_values($json($decklist['starting_fellowship'])), array_values($json($deck['starting_fellowship']))],
+            'bid' => [(string) $decklist['starting_bid'], (string) $deck['starting_bid']],
+            'starting notes' => [(string) $decklist['starting_notes'], (string) $deck['starting_notes']],
+            'annotations' => [$json($decklist['annotations']), $json($deck['annotations'])],
+        ];
+        return array_keys(array_filter($pairs, fn ($pair) => $pair[0] != $pair[1]));
     }
 }
