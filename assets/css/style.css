@@ -980,6 +980,8 @@ abbr.legality.banned {
 /* Gemp's problem cards: red, and dashed for colour-blind readers */
 .is-problem .rb-name { color: var(--rb-red); text-decoration: underline dashed var(--rb-red); text-underline-offset: 3px; }
 .is-problem .rb-tile-img { outline: 3px dashed var(--rb-red); outline-offset: 1px; }
+/* and a red wash over the picture (Ketura, 2026-11-08) */
+.is-problem .rb-tile-img::after { content: ""; position: absolute; inset: 0; background: rgba(200, 40, 40, .32); pointer-events: none; }
 .rb-site-n { flex: 0 0 16px; text-align: right; font-weight: 600; color: var(--rb-muted); }
 .rb-site-empty .rb-plus { width: 24px; height: 24px; }
 .rb-choose { color: var(--rb-muted); font-style: italic; }
@@ -1574,15 +1576,20 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 .rb-reader-starting h3, .rb-reader-notes h3 { margin: 0 0 6px; font-size: calc(15px * var(--rb-text-scale)); font-weight: 700; }
 .rb-reader-bid { margin-left: 8px; }
 .rb-reader-notes { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--rb-line); }
-.rb-reader-note { padding: 6px 8px; margin: 0 -8px; }
+.rb-reader-note { display: flow-root; padding: 6px 8px; margin: 0 -8px; }
+/* the card's top half beside its note (Ketura, 2026-11-08): floated, so a long note wraps
+   under it; a short one is centred against it (ui.decklist.js, fit_notes) */
+.rb-note-thumb { float: left; width: 112px; margin: 2px 12px 4px 0; aspect-ratio: 260 / 231; overflow: hidden; border-radius: 5px; background: #E8E1D2; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); }
+.rb-note-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.rb-reader-note.is-short { display: flex; align-items: center; gap: 12px; }
+.rb-reader-note.is-short .rb-note-thumb { float: none; flex: 0 0 112px; margin: 0; }
+.rb-reader-note.is-short .rb-note-body { flex: 1 1 auto; min-width: 0; }
 .rb-reader-note-card { font-weight: 600; font-size: calc(13px * var(--rb-text-scale)); }
 .rb-reader-note .rb-reader-text p:last-child { margin-bottom: 0; }
 .rb-reader-comments .table { margin-bottom: 10px; }
 .rb-reader-tree .table { margin-bottom: 8px; font-size: calc(13px * var(--rb-text-scale)); }
 .rb-reader-tree { margin-bottom: 6px; }
 /* the note-to-card line: over everything, catching nothing */
-.rb-annot-link { position: fixed; inset: 0; width: 100vw; height: 100vh; pointer-events: none; z-index: 40; overflow: visible; }
-.rb-annot-link path { fill: none; stroke: #2F6DB5; stroke-width: 2; stroke-dasharray: 5 4; }
 
 /* ---- scrollbars on the fixed-height pages (Ketura, 2026-11-04) ----
    Always drawn, never the thin overlay kind that fades away: a pane's scrollbar is what
@@ -2220,7 +2227,7 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 .rb-reader-dates dd { margin: 0; }
 
 /* where the deck came from and what it led to: one line until opened (Ketura, 2026-11-08) */
-.rb-tree-summary { display: flex; align-items: center; flex-wrap: nowrap; gap: 10px; width: 100%; padding: 6px 4px; border: 0; border-radius: 5px; background: none; text-align: left; white-space: nowrap; font-size: calc(13px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-ink); cursor: pointer; }
+.rb-tree-summary { display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 10px; width: 100%; padding: 6px 4px; border: 0; border-radius: 5px; background: none; text-align: left; white-space: nowrap; font-size: calc(13px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-ink); cursor: pointer; }
 .rb-tree-summary:hover, .rb-tree-summary:focus-visible { background: #F6E7B8; }
 .rb-tree-sep { color: var(--rb-muted); font-weight: 400; }
 .rb-tree-count { font-weight: 400; color: var(--rb-muted); }
@@ -2232,3 +2239,17 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 /* the comment box: the deckbuilder's editor, a fixed height (Ketura, 2026-11-08) */
 .rb-comment-form .rb-md-editor .md-editor > textarea, .rb-comment-form .rb-md-editor .md-editor > .md-preview { flex: none; height: 160px !important; }
 .rb-comment-form .btn { margin-top: 8px; }
+
+/* the draw deck's size, after the Legal badge in the reader and on the deckbuilder's
+   toolbar (Ketura, 2026-11-08) */
+.rb-draw-total { display: inline-block; padding: 1px 8px; border-radius: 4px; background: #EFEAE0; font-size: 85%; font-weight: 700; color: var(--rb-ink); white-space: nowrap; }
+.rb-deck-toolbar .rb-draw-total { margin-left: auto; align-self: center; }
+
+/* the comment box stands out from the column while it's idle (Ketura, 2026-11-08) */
+.rb-comment-form .md-editor:not(.active) > textarea { background: #F4F4F4; }
+.rb-comment-form .md-editor:not(.active) { border-color: #C9C9C9; }
+
+/* the culture pie: each slice's symbol over its count; a slice's name outside on hover */
+.rb-pie-label { display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none; }
+.rb-pie-icon { width: 30px; height: 30px; background-color: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+.rb-pie-count { font-weight: 700; font-size: 12px; color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000; }

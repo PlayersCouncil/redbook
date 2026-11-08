@@ -388,8 +388,10 @@
     /**
      * Cultures (Ketura, 2026-11-08): a pie in two halves, Free Peoples always the left and
      * Shadow the right, each half shared among its side's cultures, the biggest at the top on
-     * both sides, in each culture's card colour (base 1). A culture on both sides (Gollum) is
-     * in both.
+     * both sides, in each culture's card colour (base 1). As wide as the column allows. Each
+     * slice carries its culture's symbol, in the symbol's colour, over its count (a slice too
+     * thin for them goes without); pointing at a slice writes its culture's name above or
+     * below the pie, with a line to a thin slice. A culture on both sides (Gollum) is in both.
      */
     function chart_cultures(draw)
     {
@@ -400,25 +402,66 @@
             cultures[code][c.side === 'shadow' ? 'shadow' : 'fp'] += c.indeck;
         });
         var all = _.values(cultures),
+            box = $('#stats-chart-cultures'),
+            width = Math.max(200, box.width()),
+            band = 28,
+            size = width - 10,
+            THIN = 0.22,
             // a half runs clockwise: Shadow from the top down, Free Peoples from the bottom up
             slices = function (side) {
                 return _.map(_.sortBy(_.filter(all, function (c) { return c[side]; }), function (c) { return side === 'shadow' ? -c[side] : c[side]; }), function (c) {
-                    return {name: c.name, y: c[side], color: app.cultures.color(c.code, 'base1')};
+                    return {name: c.name, y: c[side], code: c.code, color: app.cultures.color(c.code, 'base1')};
                 });
             },
+            thin = function (point) {
+                return !point.shapeArgs || point.shapeArgs.end - point.shapeArgs.start < THIN;
+            },
+            hover = null,
+            show_name = function () {
+                var point = this, chart = point.series.chart, center = point.series.center,
+                    r = center[2] / 2, a = point.angle,
+                    cx = chart.plotLeft + center[0], cy = chart.plotTop + center[1],
+                    up = Math.sin(a) < 0,
+                    x = cx + Math.cos(a) * r,
+                    y = up ? cy - r - 10 : cy + r + 20,
+                    align = x < 70 ? 'left' : (x > chart.chartWidth - 70 ? 'right' : 'center'),
+                    tx = align === 'left' ? 4 : (align === 'right' ? chart.chartWidth - 4 : x);
+                hide_name();
+                hover = chart.renderer.g().attr({zIndex: 10}).add();
+                if(thin(point)) {
+                    chart.renderer.path(['M', cx + Math.cos(a) * (r + 2), cy + Math.sin(a) * (r + 2), 'L', x, up ? y + 4 : y - 14])
+                        .attr({stroke: '#5A544A', 'stroke-width': 1}).add(hover);
+                }
+                chart.renderer.text(_.escape(point.name) + (thin(point) ? ' · ' + point.y : ''), tx, y)
+                    .attr({align: align}).css({fontSize: '13px', fontWeight: '700', color: '#2A261F'}).add(hover);
+            },
+            hide_name = function () {
+                if(hover) {
+                    hover.destroy();
+                    hover = null;
+                }
+            },
             half = function (name, data, start) {
-                return {name: name, data: data, startAngle: start, endAngle: start + 180, center: ['50%', '50%'], size: '78%',
-                    // the counts on the slices; the names in the legend, as the column can be narrow
-                    dataLabels: {enabled: true, distance: -22, format: '{point.y}', style: {fontWeight: '700', fontSize: '12px', color: '#fff', textOutline: '1px #333'}},
-                    showInLegend: true};
+                return {name: name, data: data, startAngle: start, endAngle: start + 180, center: ['50%', '50%'], size: size,
+                    point: {events: {mouseOver: show_name, mouseOut: hide_name}},
+                    dataLabels: {enabled: true, useHTML: true, distance: -Math.round(size * 0.2), crop: false, overflow: 'none',
+                        formatter: function () {
+                            if(thin(this.point)) {
+                                return null;
+                            }
+                            var code = this.point.code, file = code === 'uruk_hai' ? 'uruk' : code,
+                                icon = code === 'none' ? '' : '<span class="rb-pie-icon" style="--icon:url(/images/cultures/' + file + '.svg)"></span>';
+                            return '<span class="rb-pie-label" style="color:' + app.cultures.color(code, 'symbol') + '">' + icon + '<span class="rb-pie-count">' + this.y + '</span></span>';
+                        }}};
             };
-        $('#stats-chart-cultures').highcharts({
-            chart: {type: 'pie', height: 320, backgroundColor: 'transparent', style: {fontFamily: 'inherit'}, spacing: [6, 0, 6, 0]},
+        box.highcharts({
+            chart: {type: 'pie', width: width, height: size + band * 2, backgroundColor: 'transparent', style: {fontFamily: 'inherit'}, spacing: [band, 0, band, 0],
+                events: {load: function () { $(this.container).on('mouseleave', hide_name); }}},
             title: {text: null},
             credits: {enabled: false},
-            legend: {enabled: true, labelFormat: '{name} ({y})', itemStyle: {fontWeight: 'normal'}},
-            tooltip: {headerFormat: '', pointFormat: '<b>{point.name}</b>: {point.y}'},
-            plotOptions: {pie: {animation: false, borderColor: '#fff', borderWidth: 1, states: {inactive: {enabled: false}}}},
+            legend: {enabled: false},
+            tooltip: {enabled: false},
+            plotOptions: {pie: {animation: false, borderColor: '#fff', borderWidth: 1, states: {hover: {brightness: 0.06, halo: false}}}},
             series: [
                 // the Shadow half from the top round to the bottom on the right; Free Peoples from the bottom round to the top on the left
                 half(t('side.shadow'), slices('shadow'), 0),
@@ -671,6 +714,12 @@
         $('a[href="#tab-pane-stats"]').on('shown.bs.tab', function () {
             stats.refresh();
         });
+        // the pie is sized to its column: drawn again when that changes
+        $(window).on('resize', _.debounce(function () {
+            if(visible() && typeof $.fn.highcharts === 'function') {
+                chart_cultures(app.deck.get_draw_deck());
+            }
+        }, 200));
         $(document).on('deck.changed', _.debounce(function () {
             // a different deck: earlier test draws no longer apply
             hand = [];

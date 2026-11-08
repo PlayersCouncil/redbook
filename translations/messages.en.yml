@@ -949,7 +949,7 @@ deckbuilder.statstab.type.artifact: Artifacts
 deckbuilder.statstab.type.condition: Conditions
 deckbuilder.statstab.type.event: Events
 deckbuilder.statstab.runout: Running Out
-deckbuilder.statstab.runout_intro: "Cards left in each draw deck, site by site, if both players play this many cards and move like this."
+deckbuilder.statstab.runout_intro: "Cards left in this draw deck, site by site."
 deckbuilder.statstab.fp_play: "Free Peoples cards played per turn"
 deckbuilder.statstab.shadow_play: "Shadow cards played per move"
 deckbuilder.statstab.their_deck: "Opponent's draw deck"
@@ -1329,3 +1329,4 @@ decklist.reader.copy_text: "Copy Text"
 decklist.reader.download_short: "Download"
 decklist.reader.download_hint: "Download the list as a text file"
 decklist.reader.released: "Released"
+deckbuilder.top_heading: "Ring-bearer and Sites"

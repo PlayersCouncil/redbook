@@ -54,7 +54,7 @@ class ReaderNotes
         }
         foreach ($annotations as $row) {
             $code = $row['code'];
-            $card = isset($cards[$code]) ? $this->card($cards[$code]) : ['code' => $code, 'label' => $code, 'href' => '#'];
+            $card = isset($cards[$code]) ? $this->card($cards[$code]) : ['code' => $code, 'label' => $code, 'href' => '#', 'image' => null];
             $view['notes'][] = $card + ['in_deck' => isset($inDeck[$code]), 'html' => $this->texts->markdown($row['text'] ?? '')];
         }
         return $view;
@@ -103,6 +103,8 @@ class ReaderNotes
             'code' => $card->getCode(),
             'label' => $card->getFullName(),
             'href' => $this->router->generate('cards_zoom', ['card_code' => $card->getCode()]),
+            // a card note shows the card beside it (Ketura, 2026-11-08)
+            'image' => $card->getImageUrl(),
         ];
     }
 }

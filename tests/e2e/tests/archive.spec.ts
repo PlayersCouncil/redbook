@@ -107,6 +107,8 @@ test('a historian verifies it from the review queue', async ({ pageAs }) => {
   await expect(edit).toContainText('Archive decklist updated');
   const reader = await admin.context().newPage();
   await reader.goto(decklistUrl);
+  // the bid on its own line, before the starting fellowship
+  await expect(reader.locator('.rb-reader-starting > p').first()).toHaveClass(/rb-reader-bid/);
   await expect(reader.locator('.rb-reader-bid')).toContainText('3');
   await reader.close();
 

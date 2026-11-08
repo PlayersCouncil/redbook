@@ -299,65 +299,41 @@
     /* ---- the reader (Ketura, 2026-11-04) ---- */
 
     /**
-     * A note and its card, tied by a line (Ketura, 2026-11-04): pointing at either lights
-     * both and draws the line between them; one out of view is scrolled to first.
+     * A note and its card light up together under the pointer (Ketura, 2026-11-04); the line
+     * between them and the scrolling to them went (Ketura, 2026-11-08): the note shows its card.
      */
-    var linked = null;
-
     function deck_item(code)
     {
         return $('#deck').find('.rb-line[data-code="' + code + '"], .rb-tile[data-code="' + code + '"]').first();
     }
 
-    function visible_in(el, pane)
-    {
-        var r = el.getBoundingClientRect(), p = pane.getBoundingClientRect();
-        return r.bottom > p.top + 4 && r.top < p.bottom - 4;
-    }
-
-    function draw_link()
-    {
-        var path = $('#annot-link path');
-        if(!linked) {
-            path.attr('d', '');
-            return;
-        }
-        var note = $('.rb-reader-note[data-note="' + linked + '"]')[0],
-            item = deck_item(linked)[0];
-        if(!note || !item || !visible_in(note, $('.rb-reader-desc .rb-reader-scroll')[0]) || !visible_in(item, $('#deck')[0])) {
-            path.attr('d', '');
-            return;
-        }
-        var n = note.getBoundingClientRect(), c = item.getBoundingClientRect(),
-            x1 = n.left - 6, y1 = n.top + 12,
-            x2 = c.right + 6, y2 = c.top + c.height / 2,
-            bend = Math.max(30, (x1 - x2) / 2);
-        path.attr('d', 'M' + x1 + ' ' + y1 + ' C' + (x1 - bend) + ' ' + y1 + ' ' + (x2 + bend) + ' ' + y2 + ' ' + x2 + ' ' + y2);
-    }
-
     function link(code)
     {
         unlink();
-        // the columns sit side by side only on a desktop; a phone stacks them and has no hover
-        if(!window.matchMedia('(min-width: 992px)').matches) {
-            return;
-        }
-        linked = code;
-        var note = $('.rb-reader-note[data-note="' + code + '"]').addClass('is-linked'),
-            item = deck_item(code).addClass('is-linked');
-        _.each([[note, $('.rb-reader-desc .rb-reader-scroll')], [item, $('#deck')]], function (pair) {
-            if(pair[0][0] && pair[1][0] && !visible_in(pair[0][0], pair[1][0])) {
-                pair[0][0].scrollIntoView({block: 'nearest', behavior: 'smooth'});
-            }
-        });
-        draw_link();
+        $('.rb-reader-note[data-note="' + code + '"]').addClass('is-linked');
+        deck_item(code).addClass('is-linked');
     }
 
     function unlink()
     {
-        linked = null;
         $('.is-linked').removeClass('is-linked');
-        draw_link();
+    }
+
+    /**
+     * A note beside its card (Ketura, 2026-11-08): the card floats left of the note, so a long
+     * note wraps under it; a note no taller than the card is centred against it instead. Fitted
+     * again as the column's width changes.
+     */
+    function fit_notes()
+    {
+        $('.rb-reader-note').each(function () {
+            var note = $(this), thumb = note.find('.rb-note-thumb'), body = note.find('.rb-note-body');
+            if(!thumb.length) {
+                return;
+            }
+            note.removeClass('is-short');
+            note.toggleClass('is-short', body.outerHeight() <= thumb.outerHeight() + 2);
+        });
     }
 
     ui.setup_reader = function setup_reader()
@@ -368,9 +344,21 @@
             .on('mouseleave', '.rb-reader-note', unlink)
             .on('mouseenter', '#deck .rb-annot-mark', function () { link($(this).data('annot') + ''); })
             .on('mouseleave', '#deck .rb-annot-mark', unlink);
-        // the line follows its ends as the columns scroll
-        document.addEventListener('scroll', _.throttle(draw_link, 16), {passive: true, capture: true});
-        $(window).on('resize', _.throttle(draw_link, 50));
+        var notes = $('#reader-notes');
+        if(notes.length) {
+            fit_notes();
+            notes.find('img').on('load', fit_notes);
+            // on the column's width only: fitting changes the height, which mustn't refit
+            var width = notes.width();
+            if(window.ResizeObserver) {
+                new ResizeObserver(_.throttle(function () {
+                    if(notes.width() !== width) {
+                        width = notes.width();
+                        fit_notes();
+                    }
+                }, 60)).observe(notes[0]);
+            }
+        }
         setup_splitters();
     };
 
@@ -390,7 +378,6 @@
                 } else {
                     grid[0].style.setProperty(name, w + 'px');
                 }
-                draw_link();
             };
         }
         function beside(el)

@@ -4,9 +4,10 @@
  *
  * - Display options in a toolbar above the deck's scrolling area: list / thumbnails /
  *   half-thumbnails, and grouping by culture, type or none.
- * - The deck's heading, "Draw Deck (60)", collapses its top part, the Ring-bearer, Ring,
- *   map and sites, away entirely, as Free Peoples and Shadow collapse from theirs
- *   (Ketura, 2026-11-08; it used to shrink them to lines).
+ * - The deck's heading, "Ring-bearer and Sites", collapses its top part, the Ring-bearer,
+ *   Ring, map and sites, away entirely, as Free Peoples and Shadow collapse from theirs
+ *   (Ketura, 2026-11-08; it used to shrink them to lines). The draw deck's size is on the
+ *   deckbuilder's toolbar, and in the reader's header.
  * - Every draw-deck card has X 1 2 3 4: X takes it out of the deck but keeps the
  *   line (the X becomes Trash, which deletes the line), and numbers above the
  *   format's limit are disabled.
@@ -430,9 +431,9 @@
             shadow = _.filter(draw, function (s) { return s.card.side === 'shadow'; }),
             map = app.deck.get_cards('map'),
             top_shut = collapsed('top'),
-            // "Draw Deck (60)" heads the deck, underlined as the sides are, and collapses its top
-            // part away (Ketura, 2026-11-08)
-            html = '<h2 class="rb-deck-head' + (top_shut ? ' is-collapsed' : '') + '">' + section_toggle('top', _.escape(t('deckbuilder.draw_deck', {count: count(draw)}))) + '</h2>';
+            // "Ring-bearer and Sites" heads the deck, underlined as the sides are, and collapses its
+            // top part away (Ketura, 2026-11-08)
+            html = '<h2 class="rb-deck-head' + (top_shut ? ' is-collapsed' : '') + '">' + section_toggle('top', _.escape(t('deckbuilder.top_heading'))) + '</h2>';
         if(!top_shut) {
             html += '<div class="rb-deck-top view-' + v + '"><div class="rb-deck-top-left">'
                 + single_slot('ring_bearer', t('deck.ring_bearer'), 'ring_bearer', t('deckbuilder.find_ring_bearer'), problems)
@@ -446,7 +447,7 @@
         html += '<div class="rb-sides view-' + v + '">' + side_html('free_peoples', fp, problems) + side_html('shadow', shadow, problems) + '</div>';
         $(container).removeClass('deck-loading').html(html);
         if(toolbar) {
-            toolbar.html(display_options());
+            toolbar.html(display_options() + (readonly ? '' : '<span class="rb-draw-total">' + _.escape(t('deckbuilder.draw_deck', {count: count(draw)})) + '</span>'));
             pin_option_widths();
         }
         fit_sites();

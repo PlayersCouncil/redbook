@@ -130,6 +130,12 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   expect(copied).toMatch(/^2x Axe Strike$|^1x Axe Strike$/m);
   // the deck's tags beside its version
   await expect(page.locator('.rb-reader-tags')).toContainText('dwarves');
+  // a card note shows the card's top half beside it, centred against a short note; no line to
+  // the deck any more (Ketura, 2026-11-08)
+  const note = page.locator('.rb-reader-note[data-note="1_12"]');
+  await expect(note.locator('.rb-note-thumb img')).toBeVisible();
+  await expect(note).toHaveClass(/is-short/);
+  await expect(page.locator('#annot-link')).toHaveCount(0);
   // Copy List: the list on the clipboard, format by name, no codes, no Gemp string
   await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
   await page.locator('.rb-reader-buttons-wide [data-copy-list]').click();

@@ -94,7 +94,7 @@ test('import a Gemp deck string and export it back unchanged', async ({ page }) 
   await waitForCardData(page);
   await expect(page.locator('#deck-validation')).toContainText('Deck is valid for Fellowship Block');
   await page.goto(await page.evaluate(() => (window as any).app.deckbuilder_page.view_url));
-  await expect(page.locator('#deck')).toContainText('Draw Deck (60)');
+  await expect(page.locator('.rb-reader-meta .rb-draw-total')).toHaveText('Draw Deck (60)');
   await expect(page.locator('.rb-reader-buttons .deck-edit')).toBeVisible();
   await snap(page, 'imported deck');
 
@@ -137,10 +137,11 @@ test('deckbuilder clicks: pool cards add, counts fill, sites collapse, menus flo
   await expect(page.locator('#deck')).toContainText('Gimli');
   await expect(page.locator('#cardModal')).not.toBeVisible();
 
-  // the view buttons sit above the deck's scrolling area; "Draw Deck (3)" heads the deck and
-  // collapses its top part away entirely (Ketura, 2026-11-08)
+  // the view buttons sit above the deck's scrolling area, with the draw deck's size; "Ring-bearer
+  // and Sites" heads the deck and collapses its top part away entirely (Ketura, 2026-11-08)
   await page.locator('#deck-toolbar [data-view=thumb]').click();
-  await expect(page.locator('#deck .rb-deck-head')).toHaveText('Draw Deck (3)');
+  await expect(page.locator('#deck-toolbar .rb-draw-total')).toHaveText('Draw Deck (3)');
+  await expect(page.locator('#deck .rb-deck-head')).toHaveText('Ring-bearer and Sites');
   await page.locator('#deck .rb-deck-head .rb-section-toggle').click();
   await expect(page.locator('#deck .rb-deck-top')).toHaveCount(0);
   await expect(page.locator('#deck .rb-deck-head')).toHaveClass(/is-collapsed/);

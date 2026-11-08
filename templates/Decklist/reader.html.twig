@@ -86,6 +86,8 @@
                 <span class="rb-vis rb-vis-{{ visibility }}" title="{{ ('decks.browse.status.' ~ visibility) | trans }}">{{ ('decks.browse.show.' ~ visibility) | trans }}</span>
             {% endif %}
             {% include 'Deck/completeness-label.html.twig' with {deck: subject} %}
+            {# the draw deck's size, which the deck's own heading no longer gives (Ketura, 2026-11-08) #}
+            <span class="rb-draw-total">{{ 'deckbuilder.draw_deck' | trans({'%count%': subject.slots.drawDeck.countCards}) }}</span>
             {% if not is_deck and subject.verified and subject.reviewedBy %}
                 <span class="small text-muted rb-review-note">{{ 'decklist.review.verified_by' | trans({'%name%': subject.reviewedBy.displayName, '%date%': subject.reviewedAt | date('Y-m-d')}) }}</span>
             {% endif %}
@@ -164,14 +166,13 @@
                 {% if reader.starting or reader.bid or reader.starting_html %}
                     <div class="rb-reader-starting" id="reader-starting">
                         <h3>{{ 'deckbuilder.notes.starting' | trans }}</h3>
-                        {% if reader.starting or reader.bid %}
+                        {# the bid first, on its own line (Ketura, 2026-11-08) #}
+                        {% if reader.bid %}<p class="rb-reader-bid"><span class="rb-starting-label">{{ 'deckbuilder.notes.bid' | trans }}:</span> {{ reader.bid }}</p>{% endif %}
+                        {% if reader.starting %}
                             <p class="rb-starting-list">
-                                {% if reader.starting %}
-                                    <span class="rb-starting-label">{{ 'deckbuilder.notes.starting_fellowship' | trans }}</span>
-                                    {% for card in reader.starting %}<a href="{{ card.href }}" class="rb-starting-card card-tip" data-code="{{ card.code }}">{{ card.label }}</a>{% endfor %}
-                                    <span class="rb-starting-cost">{{ 'deckbuilder.notes.starting_twilight' | trans({'%cost%': reader.twilight}) }}</span>
-                                {% endif %}
-                                {% if reader.bid %}<span class="rb-reader-bid"><span class="rb-starting-label">{{ 'deckbuilder.notes.bid' | trans }}:</span> {{ reader.bid }}</span>{% endif %}
+                                <span class="rb-starting-label">{{ 'deckbuilder.notes.starting_fellowship' | trans }}</span>
+                                {% for card in reader.starting %}<a href="{{ card.href }}" class="rb-starting-card card-tip" data-code="{{ card.code }}">{{ card.label }}</a>{% endfor %}
+                                <span class="rb-starting-cost">{{ 'deckbuilder.notes.starting_twilight' | trans({'%cost%': reader.twilight}) }}</span>
                             </p>
                         {% endif %}
                         {% if reader.starting_html %}<div class="rb-reader-text">{{ reader.starting_html | raw }}</div>{% endif %}
@@ -182,10 +183,15 @@
                     <div class="rb-reader-notes" id="reader-notes">
                         <h3>{{ 'decklist.reader.card_notes' | trans }}</h3>
                         {% for note in reader.notes %}
+                            {# the card's top half beside its note (Ketura, 2026-11-08): beside a short note,
+                               centred against it; a long one wraps under it (ui.decklist.js fits them) #}
                             <div class="rb-reader-note" data-note="{{ note.code }}">
-                                <div class="rb-reader-note-card"><a href="{{ note.href }}" class="card-tip" data-code="{{ note.code }}">{{ note.label }}</a>
-                                    {%- if not note.in_deck %}<span class="rb-annot-out" title="{{ 'deckbuilder.notes.not_in_deck' | trans }}">*</span>{% endif %}</div>
-                                <div class="rb-reader-text">{{ note.html | raw }}</div>
+                                {% if note.image %}<a href="{{ note.href }}" class="rb-note-thumb card-tip" data-code="{{ note.code }}" tabindex="-1" aria-hidden="true"><img src="{{ note.image }}" alt="" loading="lazy"></a>{% endif %}
+                                <div class="rb-note-body">
+                                    <div class="rb-reader-note-card"><a href="{{ note.href }}" class="card-tip" data-code="{{ note.code }}">{{ note.label }}</a>
+                                        {%- if not note.in_deck %}<span class="rb-annot-out" title="{{ 'deckbuilder.notes.not_in_deck' | trans }}">*</span>{% endif %}</div>
+                                    <div class="rb-reader-text">{{ note.html | raw }}</div>
+                                </div>
                             </div>
                         {% endfor %}
                     </div>
@@ -223,6 +229,4 @@
             </div>
         </section>
     </div>
-    {# the line from a card note to its card in the deck #}
-    <svg class="rb-annot-link" id="annot-link" aria-hidden="true"><path d=""></path></svg>
 </div>
