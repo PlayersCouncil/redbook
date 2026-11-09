@@ -124,7 +124,7 @@
     function in_deck(card)
     {
         var content = app.deck && app.deck.get_content ? app.deck.get_content() : {};
-        return content[card.code] || content['rb:' + card.code] ? 0 : 1;
+        return content[card.code] || content['rb:' + card.code] || content['any:' + card.code] || content['rb:any:' + card.code] ? 0 : 1;
     }
 
     /**

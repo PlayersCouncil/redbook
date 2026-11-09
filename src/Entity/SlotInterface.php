@@ -35,4 +35,12 @@ interface SlotInterface
 
     /** The slot's key in a deck's content map */
     public function getContentKey(): string;
+
+    /** Any version of the card will do (Ketura, 2026-11-08) */
+    public function isGeneric(): bool;
+
+    public function setGeneric(bool $generic): void;
+
+    /** The card as a list reads it: "Legolas (any)" for a generic slot */
+    public function getLabel(): string;
 }

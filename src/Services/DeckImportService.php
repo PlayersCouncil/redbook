@@ -39,7 +39,7 @@ class DeckImportService
     /** @var array<string, Card> */
     private array $byCollInfo = [];
 
-    public function __construct(protected EntityManagerInterface $em)
+    public function __construct(protected EntityManagerInterface $em, protected ?CardVersions $versions = null)
     {
     }
 
@@ -120,10 +120,9 @@ class DeckImportService
                 }
                 continue;
             }
-            [$found, $quantity] = $card;
-            $key = $role === DeckContent::ROLE_RING_BEARER && !$this->hasRingBearer($deck['content'])
-                ? DeckContent::RING_BEARER_PREFIX . $found->getCode()
-                : $found->getCode();
+            [$found, $quantity, $generic] = $card + [2 => false];
+            $key = DeckContent::key($found->getCode(), $role === DeckContent::ROLE_RING_BEARER && !$this->hasRingBearer($deck['content'])
+                ? DeckContent::ROLE_RING_BEARER : DeckContent::ROLE_DRAW, $generic);
             $deck['content'][$key] = str_starts_with($key, DeckContent::RING_BEARER_PREFIX) ? 1 : ($deck['content'][$key] ?? 0) + $quantity;
         }
         if (!$deck['content']) {
@@ -156,7 +155,7 @@ class DeckImportService
         return [$role, trim($m[2] ?? '')];
     }
 
-    /** @return array{0: Card, 1: int}|null */
+    /** @return array{0: Card, 1: int, 2?: bool}|null the card, its copies, and whether any version will do */
     private function parseCardLine(string $line): ?array
     {
         $line = trim(preg_replace('/^[-*•·\s]+/u', '', $line));
@@ -166,6 +165,14 @@ class DeckImportService
         $quantity = (int) ($m[1] ?: ($m[3] ?? 0) ?: 1);
         $name = trim($m[2]);
         $info = trim($m[4] ?? '');
+
+        // "Legolas (any)", as Red Book's own export writes it (Ketura, 2026-11-08)
+        if (preg_match('/^(.+?)\s*\(any\)$/i', $name . ($info !== '' ? " ($info)" : ''), $any)) {
+            $code = $this->versions?->byTitle(trim($any[1], " \t•·*"));
+            if ($code !== null && isset($this->byCode[$code])) {
+                return [$this->byCode[$code], $quantity, true];
+            }
+        }
 
         if ($info !== '') {
             if (preg_match('/^\d+_\d+$/', $info) && isset($this->byCode[$info])) {

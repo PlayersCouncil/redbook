@@ -48,6 +48,8 @@ class SeedDeckImporter
     private const REQUIRED = [
         1 => ['sourceId', 'sourceUrl', 'title', 'legacyAuthor', 'postedDate', 'drawDeck', 'rawDecklist'],
         2 => ['sourceId', 'sourceUrl', 'title', 'reporter', 'postedDate', 'drawDeck', 'rawDecklist'],
+        // v3 adds ratings and reception, and "any:" cards (Ketura, 2026-11-08); a v2 reader reads it
+        3 => ['sourceId', 'sourceUrl', 'title', 'reporter', 'postedDate', 'drawDeck', 'rawDecklist'],
     ];
 
     /** @var array<string, Card|null> */
@@ -67,7 +69,20 @@ class SeedDeckImporter
         private readonly DeckValidator $validator,
         private readonly Texts $texts,
         private readonly FormatGuesser $guesser,
+        private readonly CardVersions $versions,
     ) {
+    }
+
+    /**
+     * A card field as a blueprint ID: an "any:" title (v3: any:Frodo, any:The One Ring) as
+     * its first printing, the version a generic slot keeps (Ketura, 2026-11-08)
+     */
+    private function ref(string $field): ?string
+    {
+        if (!str_starts_with($field, DeckContent::ANY_PREFIX)) {
+            return $field;
+        }
+        return $this->versions->byTitle(substr($field, strlen(DeckContent::ANY_PREFIX)));
     }
 
     /**
@@ -164,11 +179,14 @@ class SeedDeckImporter
             if ($code === null || $code === '') {
                 return;
             }
-            if (!$this->card($code)) {
-                $unresolved[] = ['line' => $code, 'count' => $count, 'section' => $section, 'reason' => 'blueprint not in Red Book'];
+            // any version (v3): the first printing of the title, kept generic
+            $generic = str_starts_with($code, DeckContent::ANY_PREFIX);
+            $resolved = $this->ref($code);
+            if ($resolved === null || !$this->card($resolved)) {
+                $unresolved[] = ['line' => $code, 'count' => $count, 'section' => $section, 'reason' => $generic ? 'no card with this title' : 'blueprint not in Red Book'];
                 return;
             }
-            $key = $ringBearer ? DeckContent::RING_BEARER_PREFIX . $code : $code;
+            $key = DeckContent::key($resolved, $ringBearer ? DeckContent::ROLE_RING_BEARER : DeckContent::ROLE_DRAW, $generic);
             $content[$key] = ($content[$key] ?? 0) + $count;
         };
         $add($deck['ringBearer'] ?? null, 'ringBearer', 1, true);
@@ -241,11 +259,12 @@ class SeedDeckImporter
         }
         $latestPack = null;
         foreach ($content as $key => $quantity) {
-            [$code, $isRingBearer] = DeckContent::parseKey($key);
+            [$code, $isRingBearer, $generic] = DeckContent::parseKey($key);
             $card = $this->card($code);
             $slot = new PublishedDeckSlot();
             $slot->setCard($card);
             $slot->setQuantity($quantity);
+            $slot->setGeneric($generic);
             $slot->setRole($isRingBearer ? DeckContent::ROLE_RING_BEARER : DeckContent::roleForType($card->getType()->getCode()));
             $slot->setDecklist($decklist);
             $decklist->getSlots()->add($slot);
@@ -320,7 +339,8 @@ class SeedDeckImporter
     private function fillNotes(PublishedDeck|Deck $deck, array $source, array $content): void
     {
         $starting = $source['starting'] ?? [];
-        $deck->setStarting(array_values(array_filter((array) ($starting['fellowship'] ?? []), fn ($code) => is_string($code) && isset($content[$code]))));
+        $fellowship = array_map(fn ($code) => is_string($code) ? $this->ref($code) : null, (array) ($starting['fellowship'] ?? []));
+        $deck->setStarting(array_values(array_filter($fellowship, fn ($code) => $code !== null && (isset($content[$code]) || isset($content[DeckContent::ANY_PREFIX . $code])))));
         $bid = trim((string) ($starting['bid'] ?? ''));
         $deck->setStartingBid($bid === '' ? null : mb_substr($bid, 0, 30));
         $notes = self::toMarkdown((string) ($starting['notes'] ?? ''), $starting['notesFormat'] ?? 'text');
@@ -328,7 +348,7 @@ class SeedDeckImporter
 
         $notes = [];
         foreach ($source['annotations'] ?? [] as $row) {
-            $code = is_array($row) ? (string) ($row['card'] ?? '') : '';
+            $code = is_array($row) ? (string) $this->ref((string) ($row['card'] ?? '')) : '';
             $text = self::toMarkdown((string) ($row['text'] ?? ''), $row['format'] ?? 'text');
             if ($code === '' || $text === '') {
                 continue;
@@ -436,8 +456,7 @@ class SeedDeckImporter
         $content = [];
         $cards = [];
         foreach ($decklist->getSlots() as $slot) {
-            $key = $slot->getRole() === DeckContent::ROLE_RING_BEARER ? DeckContent::RING_BEARER_PREFIX . $slot->getCard()->getCode() : $slot->getCard()->getCode();
-            $content[$key] = $slot->getQuantity();
+            $content[$slot->getContentKey()] = $slot->getQuantity();
             $cards[$slot->getCard()->getCode()] = $slot->getCard();
         }
         $this->deckManager->setSlots($private, $content, $cards);

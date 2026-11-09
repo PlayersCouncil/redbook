@@ -1096,7 +1096,7 @@ class SocialController extends AbstractController
      * @return Response
      */
     #[Route(path: '/decklist/export/text/{decklist_id}', name: 'decklist_download', methods: ['GET'], requirements: ['decklist_id' => '\d+'])]
-    public function downloadAction(Request $request, int $cacheExpiration, Texts $texts, $decklist_id)
+    public function downloadAction(Request $request, int $cacheExpiration, Texts $texts, \App\Services\DeckValidator $validator, $decklist_id)
     {
         /* @var EntityManager $em */
         $em = $this->managerRegistry->getManager();
@@ -1108,7 +1108,8 @@ class SocialController extends AbstractController
         }
 
         if ($request->query->get('format') === 'gemp') {
-            $content = $decklist->getSlots()->toGempString() . "\r\n";
+            // a generic card as its stand-in (Ketura, 2026-11-08)
+            $content = $validator->gempString($decklist->getSlots(), $decklist->getTargetFormat()) . "\r\n";
         } else {
             $content = str_replace("\n", "\r\n", $this->renderView('Export/default.txt.twig', ['deck' => $decklist->getTextExport()]));
         }

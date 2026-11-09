@@ -49,7 +49,8 @@ class PublishedDeckManager
         EntityManagerInterface $doctrine,
         RequestStack $request_stack,
         RouterInterface $router,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        private readonly ?CardVersions $versions = null,
     ) {
         $this->doctrine = $doctrine;
         $this->request_stack = $request_stack;
@@ -162,12 +163,16 @@ class PublishedDeckManager
         if (!empty($filters['played'])) {
             $qb->andWhere('EXISTS (SELECT pp FROM ' . PublishedDeckPlay::class . ' pp WHERE pp.decklist = d)');
         }
-        // a card in any printing: one with the same name and subtitle
+        // a card in any printing: one with the same name and subtitle; or a deck that holds any
+        // version of it (Ketura, 2026-11-08)
         foreach ($filters['cards'] ?? [] as $i => $code) {
+            $members = $this->versions?->members($code) ?: [$code];
             $qb->andWhere("EXISTS (SELECT s$i FROM " . PublishedDeckSlot::class . " s$i JOIN s$i.card c$i, " . CardEntity::class . " k$i"
-                . " WHERE s$i.decklist = d AND k$i.code = :card$i AND c$i.name = k$i.name"
-                . " AND (c$i.subtitle = k$i.subtitle OR (c$i.subtitle IS NULL AND k$i.subtitle IS NULL)))")
-                ->setParameter("card$i", $code);
+                . " WHERE s$i.decklist = d AND k$i.code = :card$i AND ((c$i.name = k$i.name"
+                . " AND (c$i.subtitle = k$i.subtitle OR (c$i.subtitle IS NULL AND k$i.subtitle IS NULL)))"
+                . " OR (s$i.generic = true AND c$i.code IN (:members$i))))")
+                ->setParameter("card$i", $code)
+                ->setParameter("members$i", $members);
         }
         // the decklist's own tags, separated by spaces (Ketura, 2026-11-07)
         if (!empty($filters['tags'])) {

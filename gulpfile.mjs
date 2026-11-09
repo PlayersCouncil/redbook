@@ -63,6 +63,7 @@ export function buildAppJs() {
     [
       "assets/js/app.config.js",
       "assets/js/app.data.js",
+      "assets/js/app.card_versions.js",
       "assets/js/app.format.js",
       "assets/js/app.tip.js",
       "assets/js/app.card_modal.js",

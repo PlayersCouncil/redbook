@@ -2320,3 +2320,21 @@ p.rb-dh-cards { margin-bottom: 0; }
 .rb-dh-edits .rb-dh-what { flex: 1 1 auto; min-width: 0; }
 .rb-dh-edits .is-correction .rb-dh-what { color: #5B4A2A; }
 .decklist-recreate[hidden], .decklist-recreate-item[hidden] { display: none !important; }
+
+/* Any version of a card (Ketura, 2026-11-08): "(any)" after the title; a tile split down the
+   middle between two versions; picking a card for it */
+.rb-any { color: var(--rb-muted); font-weight: 600; font-style: italic; }
+.rb-name.is-generic { font-style: normal; }
+.rb-tile-split { position: absolute; inset: 0; display: block; overflow: hidden; border-radius: inherit; }
+.rb-tile-half { position: absolute; inset: 0; overflow: hidden; }
+.rb-tile-half img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.rb-tile-half-left { clip-path: inset(0 50% 0 0); }
+.rb-tile-half-right { clip-path: inset(0 0 0 50%); }
+.rb-tile-split::after { content: ''; position: absolute; top: 0; bottom: 0; left: calc(50% - 1px); width: 2px; background: #fff; box-shadow: 0 0 3px rgba(0, 0, 0, .5); }
+.rb-tile-any { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); padding: 1px 8px; border-radius: 10px; background: rgba(31, 27, 22, .82); color: #fff; font-size: calc(11px * var(--rb-text-scale)); font-weight: 700; white-space: nowrap; pointer-events: none; }
+.rb-any-pick { display: inline-flex; align-items: center; gap: 5px; }
+.rb-any-pick.active { border-color: #2F6B3A; background: #2F6B3A; color: #fff; }
+.rb-any-icon { font-size: 1.15em; font-weight: 700; line-height: 1; }
+.is-picking-any .rb-line[data-key], .is-picking-any .rb-tile[data-key] { cursor: crosshair; }
+.is-picking-any .rb-line[data-key]:hover, .is-picking-any .rb-tile[data-key]:hover { outline: 2px solid #2F6B3A; outline-offset: 1px; }
+@container deck (max-width: 520px) { .rb-any-word { display: none; } }

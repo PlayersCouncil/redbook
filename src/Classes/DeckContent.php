@@ -12,6 +12,11 @@ use InvalidArgumentException;
  *
  *   {"rb:1_290": 1, "1_2": 1, "1_319": 1, ..., "1_50": 3}
  *
+ * A card any version will do for (Ketura, 2026-11-08: "any Frodo", "Legolas (any)") is
+ * "any:" + the blueprint ID of the version it was made from, after the Ring-bearer's "rb:"
+ * if it's that: "rb:any:1_290", "any:1_50". Which cards count as its versions is
+ * App\Services\CardVersions.
+ *
  * Gemp's deck string is ringBearer|ring|site,site,...|card,card,...[|map], one
  * entry per copy (decision 0019).
  */
@@ -27,19 +32,25 @@ final class DeckContent
     public const ROLES = [self::ROLE_RING_BEARER, self::ROLE_RING, self::ROLE_SITE, self::ROLE_DRAW, self::ROLE_MAP];
 
     public const RING_BEARER_PREFIX = 'rb:';
+    public const ANY_PREFIX = 'any:';
 
-    public static function key(string $code, string $role): string
+    public static function key(string $code, string $role, bool $generic = false): string
     {
-        return $role === self::ROLE_RING_BEARER ? self::RING_BEARER_PREFIX . $code : $code;
+        return ($role === self::ROLE_RING_BEARER ? self::RING_BEARER_PREFIX : '') . ($generic ? self::ANY_PREFIX : '') . $code;
     }
 
-    /** @return array{0: string, 1: bool} blueprint ID, and whether the key is the Ring-bearer */
+    /** @return array{0: string, 1: bool, 2: bool} blueprint ID, whether the key is the Ring-bearer, and whether any version will do */
     public static function parseKey(string $key): array
     {
-        if (str_starts_with($key, self::RING_BEARER_PREFIX)) {
-            return [substr($key, strlen(self::RING_BEARER_PREFIX)), true];
+        $ringBearer = str_starts_with($key, self::RING_BEARER_PREFIX);
+        if ($ringBearer) {
+            $key = substr($key, strlen(self::RING_BEARER_PREFIX));
         }
-        return [$key, false];
+        $generic = str_starts_with($key, self::ANY_PREFIX);
+        if ($generic) {
+            $key = substr($key, strlen(self::ANY_PREFIX));
+        }
+        return [$key, $ringBearer, $generic];
     }
 
     public static function roleForType(?string $typeCode): string

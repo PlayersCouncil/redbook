@@ -100,6 +100,7 @@ class PublishedDeckFactory
             $decklistslot->setQuantity($slot->getQuantity());
             $decklistslot->setCard($slot->getCard());
             $decklistslot->setRole($slot->getRole());
+            $decklistslot->setGeneric($slot->isGeneric());
             $decklistslot->setDecklist($decklist);
             $decklist->getSlots()->add($decklistslot);
         }

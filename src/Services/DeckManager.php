@@ -353,13 +353,14 @@ class DeckManager
             $this->em->remove($slot);
         }
         foreach ($content as $key => $quantity) {
-            [$code, $isRingBearer] = DeckContent::parseKey((string) $key);
+            [$code, $isRingBearer, $generic] = DeckContent::parseKey((string) $key);
             if (!isset($cards[$code]) || $quantity < 1) {
                 continue;
             }
             $slot = new DeckSlot();
             $slot->setCard($cards[$code]);
             $slot->setQuantity($quantity);
+            $slot->setGeneric($generic);
             $slot->setRole($isRingBearer ? DeckContent::ROLE_RING_BEARER : DeckContent::roleForType($cards[$code]->getType()->getCode()));
             $slot->setDeck($deck);
             $deck->addSlot($slot);
@@ -374,7 +375,8 @@ class DeckManager
         foreach ($content as $key => $quantity) {
             $key = trim((string) $key);
             $quantity = (int) $quantity;
-            if ($quantity < 1 || !preg_match('/^(rb:)?\d+_\d+$/', $key)) {
+            // any version (Ketura, 2026-11-08): "any:" after any "rb:"
+            if ($quantity < 1 || !preg_match('/^(rb:)?(any:)?\d+_\d+$/', $key)) {
                 continue;
             }
             if (str_starts_with($key, DeckContent::RING_BEARER_PREFIX)) {

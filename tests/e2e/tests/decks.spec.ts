@@ -323,3 +323,58 @@ test('deck notes, stats and history: starting fellowship, tags, annotations, tes
   await page.locator('#delete-deck-form [type=submit]').click();
   await expect(page).toHaveURL(/\/decks/);
 });
+
+test('any version of a card: the Ring-bearer, a site; not a card with one version', async ({ page }) => {
+  const [, gemp] = fixture('fellowship-gemp.txt').trim().split('\n');
+  await page.goto('/deck/import');
+  await page.selectOption('#target_format', 'fotr_block');
+  await page.fill('#content', `E2E any ${runId}\n${gemp}`);
+  await page.click('form[action$="/deck/fileimport"] button[type=submit]');
+  await expect(page).toHaveURL(/\/deck\/edit\//);
+  await waitForCardData(page);
+  if (await page.locator('.rb-opt-view[data-view=list][aria-pressed=false]').count()) {
+    await page.click('.rb-opt-view[data-view=list]');
+  }
+
+  // Any Version, then the Ring-bearer: "Frodo (any)", kept as rb:any: (Ketura, 2026-11-08)
+  await page.click('.rb-any-pick');
+  await page.locator('.rb-slot-ring_bearer .rb-line').click();
+  await expect(page.locator('.rb-slot-ring_bearer .rb-name')).toHaveText('•Frodo (any)');
+  expect(await page.evaluate(() => Object.keys((window as any).app.deck.get_content()))).toContain('rb:any:1_290');
+  // a site: "Any site 1"
+  await page.click('.rb-any-pick');
+  await page.locator('.rb-site-list .rb-line', { hasText: 'Bag End' }).click();
+  await expect(page.locator('.rb-site-list')).toContainText('Any site 1');
+  // a card with no other version in the format can't be
+  let message = '';
+  page.once('dialog', (dialog) => { message = dialog.message(); dialog.accept(); });
+  await page.click('.rb-any-pick');
+  await page.locator('#deck .rb-line', { hasText: 'Greed' }).click();
+  await expect.poll(() => message).toContain('No other version of Greed is legal in Fellowship Block');
+  // Gemp gets the stand-ins, and the deck stays valid
+  await expect(page.locator('#deck-validation')).toContainText('Deck is valid for Fellowship Block');
+
+  await page.click('#btn-save');
+  await expect(page.locator('#save-status')).toContainText('Saved as version');
+  await page.reload();
+  await waitForCardData(page);
+  await expect(page.locator('.rb-slot-ring_bearer .rb-name')).toHaveText('•Frodo (any)');
+  // thumbnails: a generic card split between two versions
+  await page.click('.rb-opt-view[data-view=thumb]');
+  await expect(page.locator('.rb-slot-ring_bearer .rb-tile.is-generic .rb-tile-half img')).toHaveCount(2);
+  const halves = await page.locator('.rb-slot-ring_bearer .rb-tile-half img').evaluateAll((imgs) => imgs.map((i) => (i as HTMLImageElement).src));
+  expect(halves[0]).not.toBe(halves[1]);
+  await page.click('.rb-opt-view[data-view=list]');
+
+  // the text export and the Gemp string
+  const list = await page.evaluate(() => (window as any).app.deck.get_list());
+  expect(list).toContain('Ring-bearer: Frodo (any)');
+  expect(list).toContain('1x Any site 1');
+  const exported = await page.evaluate(() => (window as any).app.deck.get_export('gemp'));
+  expect(exported.split('|')[0]).toBe('1_290');
+
+  // picking a generic card makes it that card again
+  await page.click('.rb-any-pick');
+  await page.locator('.rb-slot-ring_bearer .rb-line').click();
+  await expect(page.locator('.rb-slot-ring_bearer .rb-name')).toContainText('Frodo, Son of Drogo');
+});

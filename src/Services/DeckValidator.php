@@ -6,6 +6,7 @@ use App\Classes\DeckContent;
 use App\Classes\SlotCollectionInterface;
 use App\Entity\Card;
 use App\Entity\CommonDeckInterface;
+use App\Entity\Format;
 use App\Services\Gemp\DeckValidation;
 use App\Services\Gemp\GempClient;
 use App\Services\Gemp\GempRejectedException;
@@ -21,7 +22,43 @@ class DeckValidator
     public function __construct(
         private readonly GempClient $gemp,
         private readonly EntityManagerInterface $em,
+        private readonly CardVersions $versions,
     ) {
+    }
+
+    /**
+     * The Gemp deck string, a generic slot as its stand-in in the format (Ketura, 2026-11-08):
+     * Gemp knows only particular cards
+     */
+    public function gempString(SlotCollectionInterface $slots, ?string $formatCode): string
+    {
+        $format = $this->format($formatCode);
+        $triples = [];
+        foreach ($slots as $slot) {
+            $code = $slot->getCard()->getCode();
+            $triples[] = [$slot->isGeneric() ? $this->versions->standIn($code, $format) : $code, $slot->getRole(), (int) $slot->getQuantity()];
+        }
+        return DeckContent::toGempString($triples);
+    }
+
+    private function format(?string $code): ?Format
+    {
+        return $code ? $this->em->getRepository(Format::class)->findOneBy(['code' => $code]) : null;
+    }
+
+    /** "Any" cards no other version of which is legal in the format: they can't be any version there */
+    private function genericProblems(array $content, ?string $formatCode): array
+    {
+        $format = $this->format($formatCode);
+        $problems = [];
+        foreach (array_keys($content) as $key) {
+            [$code, , $generic] = DeckContent::parseKey((string) $key);
+            if ($generic && $format && !$this->versions->canBeGeneric($code, $format)) {
+                $card = $this->em->getRepository(Card::class)->findOneBy(['code' => $code]);
+                $problems[] = sprintf('%s (any): no other version is legal in %s', $card?->getName() ?? $code, $format->getName());
+            }
+        }
+        return $problems;
     }
 
     /** Validates a deck or decklist and stores the result on it (null: Gemp unavailable) */
@@ -34,7 +71,21 @@ class DeckValidator
 
     public function validateSlots(SlotCollectionInterface $slots, string $format): ?DeckValidation
     {
-        return $this->validateGempString($slots->toGempString(), $format);
+        return $this->withProblems($this->validateGempString($this->gempString($slots, $format), $format), $this->genericProblems($slots->getContent(), $format));
+    }
+
+    private function withProblems(?DeckValidation $validation, array $problems): ?DeckValidation
+    {
+        if ($validation === null || !$problems) {
+            return $validation;
+        }
+        return new DeckValidation(
+            $validation->formatCode, $validation->formatName, false,
+            array_merge($problems, $validation->problems),
+            $validation->validWithErrata === null ? null : false,
+            $validation->problemsWithErrata,
+            $validation->freePeoplesCount, $validation->shadowCount,
+        );
     }
 
     /**
@@ -43,18 +94,9 @@ class DeckValidator
      */
     public function validateContent(array $content, string $format): ?DeckValidation
     {
-        [$triples, $unknown] = $this->resolve($content);
+        [$triples, $unknown] = $this->resolve($content, $format);
         $validation = $this->validateGempString(DeckContent::toGempString($triples), $format);
-        if ($validation !== null && $unknown) {
-            $validation = new DeckValidation(
-                $validation->formatCode, $validation->formatName, false,
-                array_merge(array_map(fn ($code) => "Unknown card $code", $unknown), $validation->problems),
-                $validation->validWithErrata === null ? null : false,
-                $validation->problemsWithErrata,
-                $validation->freePeoplesCount, $validation->shadowCount,
-            );
-        }
-        return $validation;
+        return $this->withProblems($validation, array_merge(array_map(fn ($code) => "Unknown card $code", $unknown), $this->genericProblems($content, $format)));
     }
 
     public function validateGempString(string $deck, string $format): ?DeckValidation
@@ -72,8 +114,9 @@ class DeckValidator
     /**
      * @return array{0: array<array{0: string, 1: string, 2: int}>, 1: string[]} [blueprint ID, role, quantity] triples, and unknown IDs
      */
-    public function resolve(array $content): array
+    public function resolve(array $content, ?string $formatCode = null): array
     {
+        $format = $this->format($formatCode);
         $codes = [];
         foreach (array_keys($content) as $key) {
             $codes[] = DeckContent::parseKey((string) $key)[0];
@@ -85,13 +128,14 @@ class DeckValidator
         $triples = [];
         $unknown = [];
         foreach ($content as $key => $quantity) {
-            [$code, $isRingBearer] = DeckContent::parseKey((string) $key);
+            [$code, $isRingBearer, $generic] = DeckContent::parseKey((string) $key);
             if (!isset($cards[$code])) {
                 $unknown[] = $code;
                 continue;
             }
             $role = $isRingBearer ? DeckContent::ROLE_RING_BEARER : DeckContent::roleForType($cards[$code]->getType()->getCode());
-            $triples[] = [$code, $role, max(0, (int) $quantity)];
+            // any version: its stand-in in the format
+            $triples[] = [$generic ? $this->versions->standIn($code, $format) : $code, $role, max(0, (int) $quantity)];
         }
         return [$triples, $unknown];
     }

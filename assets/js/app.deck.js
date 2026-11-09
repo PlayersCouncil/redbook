@@ -5,11 +5,13 @@
  * Content is a map of key => quantity: the key is the card's blueprint ID,
  * except the Ring-bearer's, which is "rb:" + its blueprint ID (the same companion
  * may also be in the draw deck). Every other card's part of the deck follows from
- * its type, as on the server (App\Classes\DeckContent).
+ * its type, as on the server (App\Classes\DeckContent). A card any version will do for
+ * (Ketura, 2026-11-08) is "any:" + the version it was made from, after any "rb:".
  */
 (function app_deck(deck, $)
 {
     var RB = 'rb:',
+        ANY = 'any:',
         data = {},
         content = {},
         // keys X'd in the deckbuilder: still shown (a Trash button deletes them), but not part of the deck
@@ -20,6 +22,29 @@
         validate_request = null;
 
     deck.ROLES = ['ring_bearer', 'ring', 'site', 'draw', 'map'];
+
+    /** @return {{code: String, rb: Boolean, any: Boolean}} */
+    deck.parse_key = function parse_key(key)
+    {
+        key = key + '';
+        var rb = key.indexOf(RB) === 0;
+        if(rb) {
+            key = key.substr(RB.length);
+        }
+        var any = key.indexOf(ANY) === 0;
+        return {code: any ? key.substr(ANY.length) : key, rb: rb, any: any};
+    };
+
+    deck.make_key = function make_key(code, rb, any)
+    {
+        return (rb ? RB : '') + (any ? ANY : '') + code;
+    };
+
+    /** The deck holds the card in some form: as itself, the Ring-bearer, or any version made from it */
+    deck.holds = function holds(code)
+    {
+        return !!(content[code] || content[RB + code] || content[ANY + code] || content[RB + ANY + code]);
+    };
 
     /**
      * @param {Object} json the deck or decklist as its jsonSerialize() gives it
@@ -206,14 +231,17 @@
      */
     deck.set_quantity = function set_quantity(code, qty)
     {
-        var card = app.data.cards.findById(code);
+        // a content key works too: "any:1_50" (Ketura, 2026-11-08)
+        var card = app.data.cards.findById(deck.parse_key(code).code);
         if(!card) {
             return;
         }
         var role = deck.role_for_card(card);
         if((role === 'ring' || role === 'map') && qty > 0) {
             _.each(deck.get_cards(role), function (other) {
-                delete content[other.card.code];
+                if(other.key !== code) {
+                    delete content[other.key];
+                }
             });
             qty = 1;
         }
@@ -253,7 +281,38 @@
     deck.get_ring_bearer_code = function get_ring_bearer_code()
     {
         var key = _.find(_.keys(content), function (k) { return k.indexOf(RB) === 0; });
-        return key ? key.substr(RB.length) : null;
+        return key ? deck.parse_key(key).code : null;
+    };
+
+    /**
+     * Any version of a card, or that card again (Ketura, 2026-11-08): the line keeps its
+     * copies, joining any line already standing for the same
+     */
+    deck.set_generic = function set_generic(key, on)
+    {
+        var parsed = deck.parse_key(key),
+            qty = content[key];
+        if(!qty || parsed.any === !!on) {
+            return;
+        }
+        var card = app.data.cards.findById(parsed.code),
+            next = deck.make_key(parsed.code, parsed.rb, on);
+        if(on && card) {
+            // one line per version group: another "any" line of the same group takes these copies
+            var group = app.card_versions.group(card),
+                same = _.find(_.keys(content), function (k) {
+                    var p = deck.parse_key(k), other = p.any && p.rb === parsed.rb && app.data.cards.findById(p.code);
+                    return other && app.card_versions.group(other) === group;
+                });
+            if(same) {
+                next = same;
+            }
+        }
+        delete content[key];
+        delete pending[key];
+        var single = parsed.rb || (card && deck.role_for_card(card) !== 'draw');
+        content[next] = single ? 1 : Math.min(99, (content[next] || 0) + qty);
+        deck.changed();
     };
 
     /** @param {String|null} code a companion's blueprint ID, or null to clear */
@@ -279,15 +338,17 @@
     {
         var list = [];
         _.each(content, function (qty, key) {
-            var is_rb = key.indexOf(RB) === 0,
-                code = is_rb ? key.substr(RB.length) : key,
-                card = app.data.cards.findById(code);
+            var parsed = deck.parse_key(key),
+                card = app.data.cards.findById(parsed.code);
             if(!card) {
                 return;
             }
-            var card_role = is_rb ? 'ring_bearer' : deck.role_for_card(card);
+            var card_role = parsed.rb ? 'ring_bearer' : deck.role_for_card(card);
             if(card_role === role) {
-                list.push({key: key, card: card, qty: qty, pending: !!pending[key]});
+                // any version: labelled "Legolas (any)", and standing for one card where one is needed
+                list.push({key: key, card: card, qty: qty, pending: !!pending[key], generic: parsed.any,
+                    label: parsed.any ? app.card_versions.label(card) : card.label,
+                    stand_in: parsed.any ? app.card_versions.stand_in(card, deck.get_format()) : card});
             }
         });
         return list.sort(function (a, b) {
@@ -305,7 +366,7 @@
     deck.get_draw_deck = function get_draw_deck()
     {
         return _.map(_.reject(deck.get_cards('draw'), 'pending'), function (slot) {
-            return _.extend({}, slot.card, {indeck: slot.qty});
+            return _.extend({}, slot.stand_in, {indeck: slot.qty});
         });
     };
 
@@ -612,7 +673,7 @@
      */
     deck.get_list = function get_list()
     {
-        var line = function (s) { return s.qty + 'x ' + s.card.label; },
+        var line = function (s) { return s.qty + 'x ' + s.label; },
             live = function (role) { return _.reject(deck.get_cards(role), 'pending'); },
             rb = live('ring_bearer'),
             ring = live('ring'),
@@ -620,8 +681,8 @@
             draw = live('draw'),
             format = deck.get_format(),
             lines = [data.name || '', 'Format: ' + (format ? format.name : (data.target_format || '')), ''];
-        if(rb.length) { lines.push('Ring-bearer: ' + rb[0].card.label); }
-        if(ring.length) { lines.push('Ring: ' + ring[0].card.label); }
+        if(rb.length) { lines.push('Ring-bearer: ' + rb[0].label); }
+        if(ring.length) { lines.push('Ring: ' + ring[0].label); }
         lines.push('', 'Adventure Deck');
         lines = lines.concat(_.map(live('site'), line));
         lines.push('', 'Free Peoples');
@@ -638,7 +699,7 @@
         var codes = function (role) {
             var list = [];
             _.each(_.reject(deck.get_cards(role), 'pending'), function (s) {
-                for(var i = 0; i < s.qty; i++) { list.push(s.card.code); }
+                for(var i = 0; i < s.qty; i++) { list.push(s.stand_in.code); }
             });
             return list;
         };

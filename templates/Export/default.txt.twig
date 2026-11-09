@@ -1,14 +1,15 @@
 {# The deck as a list (Ketura, 2026-11-04): the same text as the reader's Copy List
    (app.deck.get_list), for people and for Gemp's import, which needs no blueprint codes. #}
-{% macro line(slot) %}{{ slot.quantity }}x {{ slot.card.fullName }}
+{# a generic card reads "Legolas (any)", "Any site 3" (Ketura, 2026-11-08) #}
+{% macro line(slot) %}{{ slot.quantity }}x {{ slot.label }}
 {% endmacro %}
 {% import _self as m %}
 {{ deck.name }}
 Format: {{ format_name(deck.target_format) }}
 
-{% if deck.ring_bearer %}Ring-bearer: {{ deck.ring_bearer.card.fullName }}
+{% if deck.ring_bearer %}Ring-bearer: {{ deck.ring_bearer.label }}
 {% endif %}
-{% if deck.ring %}Ring: {{ deck.ring.card.fullName }}
+{% if deck.ring %}Ring: {{ deck.ring.label }}
 {% endif %}
 
 Adventure Deck

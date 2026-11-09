@@ -159,11 +159,12 @@ class BuilderController extends AbstractController
 
     /** Text export: format=text (card list, the default) or format=gemp (Gemp deck string) */
     #[Route(path: '/deck/export/{deck_uuid}', name: 'deck_download', methods: ['GET'], requirements: ['deck_uuid' => self::UUID])]
-    public function downloadAction(Request $request, Texts $texts, string $deck_uuid): Response
+    public function downloadAction(Request $request, Texts $texts, DeckValidator $validator, string $deck_uuid): Response
     {
         $deck = $this->findViewableDeck($deck_uuid);
         $content = $request->query->get('format') === 'gemp'
-            ? $deck->getSlots()->toGempString() . "\r\n"
+            // a generic card as its stand-in (Ketura, 2026-11-08)
+            ? $validator->gempString($deck->getSlots(), $deck->getTargetFormat()) . "\r\n"
             : str_replace("\n", "\r\n", $this->renderView('Export/default.txt.twig', ['deck' => $deck->getTextExport()]));
 
         return $this->textFile($content, $texts->slugify($deck->getUser()->getDisplayName()) . '_' . $texts->slugify($deck->getName()) . '.txt');

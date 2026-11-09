@@ -1384,3 +1384,14 @@ decklist.recreate.failed: "The deck couldn't be recreated. Reload the page and t
 deck.history.intro: "This deck's revisions, newest first; its publications, with the edits to their details; and where it came from."
 deck.history.revision: "Private revision"
 deck.history.changed: "Changed"
+
+# Any version of a card (Ketura, 2026-11-08)
+deckbuilder.any.card: "%name% (any)"
+deckbuilder.any.site_n: "Any site %n%"
+deckbuilder.any.site: "Any site"
+deckbuilder.any.mark: "(any)"
+deckbuilder.any.hint: "Any version of this card will do"
+deckbuilder.any.button: "Any Version"
+deckbuilder.any.button_hint: "Then pick a card in the deck: any version of it will do. Pick a generic card to make it that card again."
+deckbuilder.any.none_in_format: "No other version of %card% is legal in %format%."
+deckbuilder.any.none: "%card% has no other version."

@@ -139,11 +139,12 @@ class DecklistHistory
     {
         $rows = [];
         foreach ($listing as $key => $qty) {
-            [$code, $isRingBearer] = DeckContent::parseKey((string) $key);
+            [$code, $isRingBearer, $generic] = DeckContent::parseKey((string) $key);
             $card = $cards[$code] ?? null;
             $rows[] = [
                 'code' => $code,
-                'label' => $card?->getFullName() ?? $code,
+                // any version: "Legolas (any)" (Ketura, 2026-11-08)
+                'label' => $card ? ($generic ? CardVersions::genericLabel($card) : $card->getFullName()) : $code,
                 'href' => $this->router->generate('cards_zoom', ['card_code' => $code]),
                 'qty' => (int) $qty,
                 'ring_bearer' => $isRingBearer,

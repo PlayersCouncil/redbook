@@ -133,7 +133,7 @@
         }
         $('#annot-list').html(rows.length ? _.map(rows, function (row) {
             var card = app.data.cards.findById(row.code),
-                held = !!(in_deck[row.code] || in_deck['rb:' + row.code]);
+                held = !!(in_deck[row.code] || in_deck['rb:' + row.code] || in_deck['any:' + row.code] || in_deck['rb:any:' + row.code]);
             // a card that isn't in the deck gets an asterisk after its name (Ketura, 2026-11-03)
             return '<div class="rb-annot" data-code="' + row.code + '">'
                 + '<div class="rb-annot-card"><span><a href="' + (card ? card.url : '#') + '" class="card-tip" data-code="' + row.code + '">' + _.escape(card ? card.label : row.code) + '</a>'
@@ -163,7 +163,7 @@
     function in_deck_now(code)
     {
         var content = app.deck.get_content ? app.deck.get_content() : {};
-        return !!(content[code] || content['rb:' + code]);
+        return !!(content[code] || content['rb:' + code] || content['any:' + code] || content['rb:any:' + code]);
     }
 
     function show_annotation_suggestions()
@@ -431,7 +431,7 @@
             $('#annot-list .rb-annot').each(function () {
                 var code = $(this).data('code') + '',
                     content = app.deck.get_content ? app.deck.get_content() : {},
-                    held = !!(content[code] || content['rb:' + code]);
+                    held = !!(content[code] || content['rb:' + code] || content['any:' + code] || content['rb:any:' + code]);
                 $(this).find('.rb-annot-out').prop('hidden', held);
             });
         });

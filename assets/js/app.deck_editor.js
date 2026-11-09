@@ -27,6 +27,8 @@
         sites_fallback = false,
         // the view or grouping just clicked, whose word shows for a moment
         flash = null, flash_timer = null,
+        // choosing a card to take any version of (Ketura, 2026-11-08)
+        picking_any = false,
         TYPE_ORDER = ['companion', 'ally', 'follower', 'minion', 'artifact', 'possession', 'condition', 'event'],
         ICONS = {
             list: '<svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 4.5h12M3 9h12M3 13.5h12"/></svg>',
@@ -161,8 +163,15 @@
             + '" aria-label="' + label + '" title="' + t('deckbuilder.starting_title') + '">S</button>';
     }
 
-    function name_html(card)
+    function name_html(card, slot)
     {
+        // any version (Ketura, 2026-11-08): "Legolas (any)", "Any site 3", the title only
+        if(slot && slot.generic) {
+            var any = card.type_code === 'site'
+                ? _.escape(slot.label)
+                : (card.is_unique ? '&bull;' : '') + _.escape(card.name) + ' <span class="rb-any">' + _.escape(t('deckbuilder.any.mark')) + '</span>';
+            return '<a class="rb-name card card-tip is-generic" href="' + card.url + '" data-code="' + card.code + '" title="' + _.escape(t('deckbuilder.any.hint')) + '">' + any + '</a>';
+        }
         return '<a class="rb-name card card-tip" href="' + card.url + '" data-code="' + card.code + '">'
             + (card.is_unique ? '&bull;' : '') + _.escape(card.name)
             + (card.subtitle ? '<span class="rb-sub">, ' + _.escape(card.subtitle) + '</span>' : '')
@@ -178,7 +187,8 @@
 
     function classes(slot, problems)
     {
-        return (slot.pending ? ' is-pending' : '') + (!slot.pending && problems[slot.card.code] ? ' is-problem' : '');
+        return (slot.pending ? ' is-pending' : '') + (!slot.pending && (problems[slot.card.code] || (slot.stand_in && problems[slot.stand_in.code])) ? ' is-problem' : '')
+            + (slot.generic ? ' is-generic' : '');
     }
 
     function line(slot, problems, options)
@@ -191,7 +201,7 @@
             + qty_control(slot, options.numbers)
             + (options.culture ? app.data.cardIconHtml(slot.card) : '')
             + start
-            + name_html(slot.card)
+            + name_html(slot.card, slot)
             + annotation_mark(slot.card)
             + '</div>';
     }
@@ -206,13 +216,31 @@
         return html + '</div>';
     }
 
+    /**
+     * Any version (Ketura, 2026-11-08): the tile split down the middle, a different version
+     * each side, picked at random when the page loads
+     */
+    function tile_image(slot)
+    {
+        var card = slot.card;
+        if(slot.generic) {
+            var pair = app.card_versions.pair(card, app.deck.get_format()),
+                half = function (c, side) {
+                    return '<span class="rb-tile-half rb-tile-half-' + side + '">' + (c.image_url ? '<img src="' + c.image_url + '" alt="" loading="lazy">' : '') + '</span>';
+                };
+            return '<span class="rb-tile-split" role="img" aria-label="' + _.escape(slot.label) + '">' + half(pair[0], 'left') + half(pair[1], 'right') + '</span>'
+                + '<span class="rb-tile-any">' + _.escape(card.type_code === 'site' ? slot.label : t('deckbuilder.any.mark')) + '</span>';
+        }
+        return card.image_url ? '<img src="' + card.image_url + '" alt="' + _.escape(card.label) + '" loading="lazy">' : '<span class="rb-tile-noimg">' + _.escape(card.label) + '</span>';
+    }
+
     function tile(slot, problems, options)
     {
         options = options || {};
         var card = slot.card;
         return '<div class="rb-tile' + classes(slot, problems) + (options.overlay ? ' rb-tile-overlay' : '') + '" data-key="' + slot.key + '" data-code="' + card.code + '">'
             + '<div class="rb-tile-img" data-hover-code="' + card.code + '" data-hover-grow="1">'
-            + (card.image_url ? '<img src="' + card.image_url + '" alt="' + _.escape(card.label) + '" loading="lazy">' : '<span class="rb-tile-noimg">' + _.escape(card.label) + '</span>')
+            + tile_image(slot)
             + (options.number ? '<span class="rb-site-num">' + options.number + '</span>' : '')
             + (options.numbers && !readonly ? start_button(slot) : '')
             // the reader: the count, the S just right of it (Ketura, 2026-11-04)
@@ -314,7 +342,7 @@
                         + '<span class="rb-choose">' + (readonly ? '&mdash;' : t('deckbuilder.choose_site', {number: row.n})) + '</span></div>';
                 }
                 return '<div class="rb-line' + classes(row.slot, problems) + '" data-key="' + row.slot.key + '" data-code="' + row.slot.card.code + '"' + row_hover(row.slot.card) + '>'
-                    + '<span class="rb-site-n">' + row.n + '</span>' + x_or_trash(row.slot) + name_html(row.slot.card) + '</div>';
+                    + '<span class="rb-site-n">' + row.n + '</span>' + x_or_trash(row.slot) + name_html(row.slot.card, row.slot) + '</div>';
             }).join('') + (!rows.length ? '<div class="rb-empty">&mdash;</div>' : '') + '</div>';
         } else {
             html += '<div class="rb-thumbs rb-thumbs-sites">' + _.map(rows, function (row) {
@@ -415,6 +443,23 @@
 
     /* ---- render ---- */
 
+    /** The toolbar's Any Version button, in the deckbuilder */
+    function any_button()
+    {
+        if(readonly) {
+            return '';
+        }
+        return '<button type="button" class="rb-btn rb-btn-small rb-any-pick' + (picking_any ? ' active' : '') + '" aria-pressed="' + picking_any + '" title="' + _.escape(t('deckbuilder.any.button_hint')) + '">'
+            + '<span class="rb-any-icon" aria-hidden="true">&forall;</span><span class="rb-any-word">' + _.escape(t('deckbuilder.any.button')) + '</span></button>';
+    }
+
+    function set_picking(on)
+    {
+        picking_any = !!on;
+        container.toggleClass('is-picking-any', picking_any);
+        toolbar && toolbar.find('.rb-any-pick').toggleClass('active', picking_any).attr('aria-pressed', picking_any);
+    }
+
     editor.render = function render()
     {
         if(!container) {
@@ -446,7 +491,7 @@
         if(toolbar) {
             // the view and grouping buttons centred, the draw deck's size beside them at the right
             // (Ketura, 2026-11-08)
-            toolbar.html('<span class="rb-toolbar-side"></span><div class="rb-toolbar-mid">' + display_options() + '</div><span class="rb-toolbar-side">'
+            toolbar.html('<span class="rb-toolbar-side">' + any_button() + '</span><div class="rb-toolbar-mid">' + display_options() + '</div><span class="rb-toolbar-side">'
                 + (readonly ? '' : '<span class="rb-draw-total">' + _.escape(t('deckbuilder.draw_deck', {count: count(draw)})) + '</span>') + '</span>');
             pin_option_widths();
         }
@@ -523,15 +568,17 @@
                 return;
             }
             var key = $(this).data('key') + '',
+                parsed = app.deck.parse_key(key),
                 card = app.data.cards.findById($(this).data('code') + ''),
-                role = key.indexOf('rb:') === 0 ? 'ring_bearer' : (card ? app.deck.role_for_card(card) : null);
+                role = parsed.rb ? 'ring_bearer' : (card ? app.deck.role_for_card(card) : null);
             if(!card) {
                 return;
             }
+            var label = parsed.any ? app.card_versions.label(card) : card.label;
             if(role === 'ring_bearer' || role === 'ring' || role === 'map') {
-                lines.push({ring_bearer: 'Ring-bearer: ', ring: 'Ring: ', map: 'Map: '}[role] + card.label);
+                lines.push({ring_bearer: 'Ring-bearer: ', ring: 'Ring: ', map: 'Map: '}[role] + label);
             } else {
-                lines.push((content[key] || 1) + 'x ' + card.label);
+                lines.push((content[key] || 1) + 'x ' + label);
             }
         });
         if(lines.length < 2) {
@@ -579,8 +626,47 @@
             return;
         }
         container.on('click', '.rb-n:not([disabled])', function () {
-            var code = $(this).closest('[data-code]').data('code') + '';
-            app.deck.set_quantity(code, parseInt($(this).data('qty'), 10));
+            // by the line's key: a generic line's copies are its own
+            var key = $(this).closest('[data-key]').data('key') + '';
+            app.deck.set_quantity(key, parseInt($(this).data('qty'), 10));
+        });
+        /*
+         * Any version (Ketura, 2026-11-08): the toolbar's button, then a card in the deck. A card
+         * no other version of which is legal in the format can't be; picking a generic card
+         * makes it that card again.
+         */
+        $(toolbar || container).on('click', '.rb-any-pick', function () {
+            set_picking(!picking_any);
+        });
+        container[0].addEventListener('click', function (event) {
+            if(!picking_any) {
+                return;
+            }
+            var target = $(event.target).closest('.rb-line[data-key], .rb-tile[data-key]');
+            event.preventDefault();
+            event.stopPropagation();
+            if(!target.length) {
+                set_picking(false);
+                return;
+            }
+            var key = target.data('key') + '',
+                parsed = app.deck.parse_key(key),
+                card = app.data.cards.findById(parsed.code),
+                format = app.deck.get_format();
+            set_picking(false);
+            if(!card) {
+                return;
+            }
+            if(!parsed.any && !app.card_versions.can_be_generic(card, format)) {
+                window.alert(t(format ? 'deckbuilder.any.none_in_format' : 'deckbuilder.any.none', {card: card.label, format: format ? format.name : ''}));
+                return;
+            }
+            app.deck.set_generic(key, !parsed.any);
+        }, true);
+        $(document).on('keydown', function (event) {
+            if(picking_any && event.key === 'Escape') {
+                set_picking(false);
+            }
         });
         container.on('click', '.rb-start', function (event) {
             event.stopPropagation();
