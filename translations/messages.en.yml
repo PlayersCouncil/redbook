@@ -1552,3 +1552,15 @@ library.edit.thumbnail_none: "No card yet: find one by name"
 library.edit.thumbnail_cultures_hint: "One or two, any combination; the first goes top left."
 library.edit.thumbnail_swap: Swap them
 library.edit.thumbnail_auto_hint: "The thumbnail of its first deck."
+
+# the front page (Ketura, 2026-11-09)
+home:
+  dotd: "Deck of the Day"
+  read_deck: "Read Deck"
+  decks: "Decks"
+  all_decklists: "All Decklists"
+  new: "New"
+  popular: "Popular"
+  posts: "Posts"
+  events: "Events"
+  years_past: "This Week in Years Past"

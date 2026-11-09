@@ -5,6 +5,7 @@ namespace App\Controller;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Doctrine\Persistence\ManagerRegistry;
 use App\Entity\BannerAlert;
+use App\Repository\FormatRepository;
 use App\Services\PublishedDeckManager;
 use Exception;
 use Symfony\Component\HttpFoundation\Request;
@@ -26,6 +27,7 @@ class DefaultController extends AbstractController
      * @param string $gameName
      * @param string $publisherName
      * @param PublishedDeckManager $decklistManager
+     * @param FormatRepository $formats
      * @return Response
      * @throws Exception
      */
@@ -35,6 +37,7 @@ class DefaultController extends AbstractController
         string $gameName,
         string $publisherName,
         PublishedDeckManager $decklistManager,
+        FormatRepository $formats,
     ) {
         $response = new Response();
         $response->setPublic();
@@ -57,6 +60,7 @@ class DefaultController extends AbstractController
                 'popular_decklists' => $popular,
                 'recent_decklists' => $recent,
                 'banner_alerts' => $alerts,
+                'format_names' => array_map(fn ($f) => $f->getName(), $formats->findAllByCode()),
             ],
             $response
         );

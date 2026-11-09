@@ -121,6 +121,18 @@
         }
     });
 
+    // tabs made of buttons (the design's .rb-tabs, Ketura 2026-11-09): each shows the panel it
+    // controls and hides its siblings' panels
+    $(document).on('click', '.rb-tabs[role=tablist] > button[aria-controls]', function () {
+        var tab = $(this);
+        tab.siblings('[aria-controls]').each(function () {
+            $(this).attr('aria-selected', 'false');
+            $('#' + $(this).attr('aria-controls')).prop('hidden', true);
+        });
+        tab.attr('aria-selected', 'true');
+        $('#' + tab.attr('aria-controls')).prop('hidden', false);
+    });
+
     ui.export_gemp = function export_gemp(deck) {
         $('#export-deck').text(deck.get_export('gemp'));
         $('#exportModal').modal('show');

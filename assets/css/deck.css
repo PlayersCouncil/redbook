@@ -286,9 +286,9 @@
 .rb-more-toggle { height: 30px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-control); font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .rb-more-toggle.active { background: var(--rb-control-hover); }
 .rb-more-count { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--rb-primary); color: var(--rb-primary-ink); font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
-.rb-more { display: flex; flex-direction: column; gap: 12px; padding: 10px 12px 12px; border: 1px solid var(--rb-line); border-radius: 8px; background: var(--rb-page); }
-.rb-more fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-.rb-more legend { margin-bottom: 4px; padding: 0; border: 0; font-size: 13px; font-weight: 700; color: var(--rb-ink); }
+div.rb-more { display: flex; flex-direction: column; gap: 12px; padding: 10px 12px 12px; border: 1px solid var(--rb-line); border-radius: 8px; background: var(--rb-page); }
+div.rb-more fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+div.rb-more legend { margin-bottom: 4px; padding: 0; border: 0; font-size: 13px; font-weight: 700; color: var(--rb-ink); }
 .rb-more-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
 .rb-more-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; }
 .rb-mentions .rb-more-grid { gap: 6px 16px; }

@@ -1,0 +1,24 @@
+{#
+   A panel (Ketura, 2026-11-09; the design's .rb-panel): a head with its title and an optional
+   "more" link, an optional strip under it (tabs, filters), a body that scrolls on its own
+   when the panel is given a height, and an optional foot. For any page built from panels.
+
+   {% embed 'Panel/panel.html.twig' with {id: 'decks', title: 'Decks', more: {href: url, label: 'All'}} %}
+       {% block panel_strip %}...tabs...{% endblock %}
+       {% block panel_body %}...{% endblock %}
+   {% endembed %}
+
+   Variables: id (names the heading, for aria-labelledby), title, more (optional {href, label}),
+   classes (optional, added to the panel), body_classes (optional, added to the body)
+#}
+<section class="rb-panel{% if classes is defined %} {{ classes }}{% endif %}" aria-labelledby="h-{{ id }}">
+    <div class="rb-panel-head">
+        <h2 id="h-{{ id }}">{{ title }}</h2>
+        {% if more is defined and more %}<a class="rb-more" href="{{ more.href }}">{{ more.label }}</a>{% endif %}
+    </div>
+    {% block panel_strip %}{% endblock %}
+    <div class="rb-scroll rb-grow{% if body_classes is defined %} {{ body_classes }}{% endif %}">
+        {% block panel_body %}{% endblock %}
+    </div>
+    {% block panel_foot %}{% endblock %}
+</section>

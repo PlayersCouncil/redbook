@@ -293,12 +293,7 @@ a.rb-deck-name:hover { color: var(--rb-link); text-decoration: none; }
     .rb-splitter { display: none; }
 }
 @media (max-width: 1399px) { .rb-nav > li > a .rb-nav-label { display: none; } .rb-nav > li > a { padding: 0 9px; } }
-@media (max-width: 1199px) {
-    .rb-feeds { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
-    .rb-cover-inner { grid-template-columns: 1fr; gap: 14px; }
-    .rb-cover-frame { padding: 20px 24px 10px; }
-    .rb-cover h1 { font-size: 60px; }
-}
+/* the front page's responsive rules are in front.css, after its own */
 @media (max-width: 1199px) { .rb-brand > span { display: none; } .rb-brand { margin-right: 6px; } }
 @media (max-width: 1099px) {
     .rb-topbar .rb-nav-primary { display: none; }
@@ -317,12 +312,6 @@ a.rb-deck-name:hover { color: var(--rb-link); text-decoration: none; }
     html.rb-onepage body { overflow: visible; }
     html.rb-onepage .rb-main { overflow: visible; }
     .rb-scroll { overflow: visible; }
-    .rb-feeds { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; height: auto; }
-    .rb-cover h1 { font-size: 40px; }
-    .rb-frame-the { font-size: 18px; }
-    .rb-frame-top { top: -16px; height: 26px; }
-    .rb-bookplate { grid-template-columns: 1fr; }
-    .rb-bookplate > :first-child { display: none; }
     .rb-bar-tools .rb-theme-switch, .rb-bar-tools .rb-lang { display: none; }
     .rb-split { flex-direction: column; }
     .rb-splitter { display: none; }

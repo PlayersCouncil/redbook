@@ -936,3 +936,15 @@ library.edit.thumbnail_none: "Aún no hay carta: búscala por nombre"
 library.edit.thumbnail_cultures_hint: "Una o dos, en cualquier combinación; la primera va arriba a la izquierda."
 library.edit.thumbnail_swap: Intercambiarlas
 library.edit.thumbnail_auto_hint: "La miniatura de su primer mazo."
+
+# the front page (Ketura, 2026-11-09)
+home:
+  dotd: "Mazo del día"
+  read_deck: "Leer el mazo"
+  decks: "Mazos"
+  all_decklists: "Todas las listas"
+  new: "Nuevos"
+  popular: "Populares"
+  posts: "Artículos"
+  events: "Eventos"
+  years_past: "Esta semana en años pasados"

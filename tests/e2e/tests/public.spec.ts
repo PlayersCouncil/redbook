@@ -29,6 +29,20 @@ test('home page renders with navigation', async ({ page }) => {
   expect(js).toBeGreaterThan(0);
 });
 
+test('the front page: the cover, the decks feed and its tabs, the feeds still to come', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.rb-cover h1')).toHaveAccessibleName('Red Book');
+  await expect(page.locator('header.rb-topbar')).toHaveClass(/rb-hinge/);
+  const newFeed = page.locator('#feed-new'), popular = page.locator('#feed-popular');
+  await expect(newFeed).toBeVisible();
+  await expect(popular).toBeHidden();
+  await page.locator('.rb-tabs button[aria-controls=feed-popular]').click();
+  await expect(popular).toBeVisible();
+  await expect(newFeed).toBeHidden();
+  await expect(page.locator('.rb-tabs button[aria-controls=feed-popular]')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('.rb-feed-soon h2')).toHaveText(['Posts', 'Events', 'This Week in Years Past']);
+});
+
 test('the theme switch: light, the system theme, or dark, kept across pages', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/');

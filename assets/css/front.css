@@ -68,3 +68,37 @@
 .rb-year { display: grid; gap: 3px; }
 .rb-year-num { font: 15px/1 var(--rb-font-display); color: var(--rb-ink-3); letter-spacing: .06em; }
 
+
+/* Red Book's front page in the site's shell (Ketura, 2026-11-09): the cover, then the feeds
+   filling what's left of the window, each scrolling on its own; a phone's page just scrolls */
+#wrapper.rb-front { padding-bottom: 0; }
+.rb-front-main { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 10px; padding: 16px; }
+.rb-front-main > .rb-feeds { flex: 1 1 auto; min-height: 0; height: auto; }
+.rb-cover-inner.is-title-only { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+.rb-bookplate-main { min-width: 0; }
+.rb-deckrow .rb-thumb { width: 78px; }
+.rb-feed-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 24px; color: var(--rb-ink-3); }
+.rb-feed-placeholder .fas { font-size: 28px; opacity: .6; }
+.rb-feed-placeholder p { margin: 0; font: 15px var(--rb-font-ui); }
+
+/* responsive (the design's section 19, kept after the rules it overrides) */
+@media (max-width: 1199px) {
+    .rb-feeds { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+    .rb-cover-inner { grid-template-columns: 1fr; gap: 14px; }
+    .rb-cover-frame { padding: 20px 24px 10px; }
+    .rb-cover h1 { font-size: 60px; }
+}
+/* below 992px the site's shell lets go and the page scrolls: the feeds take their own height */
+@media (max-width: 991px) {
+    .rb-feeds { grid-template-rows: none; }
+    .rb-feeds > .rb-panel { max-height: 70vh; }
+}
+@media (max-width: 767px) {
+    .rb-feeds { grid-template-columns: minmax(0, 1fr); }
+    .rb-cover h1 { font-size: 40px; }
+    .rb-frame-the { font-size: 18px; }
+    .rb-frame-top { top: -16px; height: 26px; }
+    .rb-bookplate { grid-template-columns: 1fr; }
+    .rb-bookplate > :first-child { display: none; }
+    .rb-feed-soon .rb-feed-placeholder { padding: 14px; }
+}

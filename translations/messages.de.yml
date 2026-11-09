@@ -568,3 +568,15 @@ tournamentLegality:
   title: Turnierzulässigkeit
   joust: Tjost
   melee: Buhurt
+
+# the front page (Ketura, 2026-11-09)
+home:
+  dotd: "Deck des Tages"
+  read_deck: "Deck lesen"
+  decks: "Decks"
+  all_decklists: "Alle Decklisten"
+  new: "Neu"
+  popular: "Beliebt"
+  posts: "Beiträge"
+  events: "Veranstaltungen"
+  years_past: "Diese Woche in früheren Jahren"

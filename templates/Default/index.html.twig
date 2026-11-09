@@ -1,46 +1,90 @@
 {% extends 'base.html.twig' %}
-{% import "macros.html.twig" as macros %}
+{#
+   The front page (Ketura, 2026-11-09; the design's reference/index.html): the cover band with
+   the gilt-framed title and the Deck of the Day bookplate, then four feeds. Only the decks
+   feed has data yet; Posts, Events and This Week in Years Past are placeholders until those
+   sections are built. Deck of the Day is drawn from the popular decks, a new one each day.
+#}
+{% block topbar_edge %}rb-hinge{% endblock %}
+{% block wrapper_class %}rb-fill rb-front{% endblock %}
 
-{% macro decklist_row(decklist) %}
-    {% import "macros.html.twig" as macros %}
-    <tr>
-        <td>
-            <a href="{{ path('decklist_detail', {decklist_id: decklist.id, decklist_name: decklist.nameCanonical}) }}">{{ decklist.name }}</a>
-            <div class="small text-muted">
-                {{ macros.username_colorless(decklist.user) }}
-                &middot; {{ decklist.targetFormat }}
-                &middot; {% for row in decklist.cultures | slice(0, 3) %}{{ row.culture.name }}{% if not loop.last %}, {% endif %}{% endfor %}
-            </div>
-        </td>
-        <td class="text-right small">{{ macros.decklist_social_icons(decklist) }}</td>
-    </tr>
+{% macro deck_row(decklist, format_names) %}
+    {% import 'Tags/tags.html.twig' as tags %}
+    {% set url = path('decklist_detail', {decklist_id: decklist.id, decklist_name: decklist.nameCanonical}) %}
+    <li><div class="rb-deckrow">
+        <a href="{{ url }}" tabindex="-1" aria-hidden="true">{% include 'Decklist/thumbnail.html.twig' with {decklist: decklist} %}</a>
+        <a class="rb-deck-name" href="{{ url }}">{{ decklist.name }}</a>
+        <div class="rb-meta">{{ decklist.user.displayName }} · <time datetime="{{ decklist.dateCreation | date('c') }}">{{ decklist.dateCreation | date('M j, Y') }}</time></div>
+        <div class="rb-deckrow-line is-split">
+            <span class="rb-deckrow-line">{% if decklist.targetFormat %}{{ tags.format(format_names[decklist.targetFormat] ?? decklist.targetFormat, false) }}{% endif %}</span>
+            <span class="rb-size" title="{{ 'decklist.browse.col.size' | trans }}"><span class="rb-fp">{{ decklist.nbFreePeoples ?: '–' }}</span><span class="sep">/</span><span class="rb-sh">{{ decklist.nbShadow ?: '–' }}</span></span>
+        </div>
+        <div class="rb-deckrow-line is-split">
+            <span></span>
+            {% include 'Default/votes.html.twig' with {decklist: decklist} %}
+        </div>
+    </div></li>
 {% endmacro %}
 
 {% block body %}
     {% import _self as home %}
-    <div class="main container">
+    {% import 'Tags/tags.html.twig' as tags %}
+    {% set dotd = popular_decklists ? popular_decklists[('now' | date('z')) % (popular_decklists | length)] : null %}
+    <section class="rb-cover rb-leather rb-tooled-bottom">
+        <div class="rb-cover-inner{% if not dotd %} is-title-only{% endif %}">
+            <div class="rb-cover-brand">
+                <div class="rb-cover-frame">
+                    <span class="rb-frame-lines"></span>
+                    <div class="rb-frame-top" aria-hidden="true"><span class="seg l"></span><span class="rb-frame-the">the</span><span class="seg r"></span></div>
+                    {# the odd casing is the face's (see the top bar's wordmark) #}
+                    <h1 aria-label="{{ 'site.name' | trans }}"><span class="rb-cap">R</span>ed <span class="rb-cap">b</span>OOk</h1>
+                </div>
+            </div>
+            {% if dotd %}
+                {% set url = path('decklist_detail', {decklist_id: dotd.id, decklist_name: dotd.nameCanonical}) %}
+                <article class="rb-bookplate" aria-labelledby="dotd-name">
+                    <a href="{{ url }}" tabindex="-1" aria-hidden="true">{% include 'Decklist/thumbnail.html.twig' with {decklist: dotd} %}</a>
+                    <div class="rb-bookplate-main">
+                        <div class="rb-bookplate-eyebrow"><b>{{ 'home.dotd' | trans }}</b><span class="rb-meta">{{ 'now' | date('l, F j') }}</span></div>
+                        <a id="dotd-name" class="rb-deck-name" href="{{ url }}">{{ dotd.name }}</a>
+                        <div class="rb-bookplate-facts">
+                            {% if dotd.targetFormat %}{{ tags.format(format_names[dotd.targetFormat] ?? dotd.targetFormat, false) }}{% endif %}
+                            <span class="rb-size" title="{{ 'decklist.browse.col.size' | trans }}"><span class="rb-fp">{{ dotd.nbFreePeoples ?: '–' }}</span><span class="sep">/</span><span class="rb-sh">{{ dotd.nbShadow ?: '–' }}</span></span>
+                            <span class="rb-meta">{{ dotd.user.displayName }}</span>
+                        </div>
+                    </div>
+                    <div class="rb-bookplate-actions">
+                        <a class="btn btn-primary btn-sm" href="{{ url }}"><span class="fas fa-book-open"></span>{{ 'home.read_deck' | trans }}</a>
+                        <span style="flex: 1"></span>
+                        {% include 'Default/votes.html.twig' with {decklist: dotd} %}
+                    </div>
+                </article>
+            {% endif %}
+        </div>
+    </section>
+    <div class="rb-front-main">
         {% include 'alerts.html.twig' %}
         {% include 'banner-alerts.html.twig' %}
-        <h1 class="site-title hidden-xs">{{ 'site.name' | trans }}</h1>
-        <div class="site-slogan">{{ 'slogan' | trans }}</div>
-    </div>
-
-    <div class="main white container">
-        <div class="row">
-            <div class="col-md-6">
-                <h3>{{ 'decklist.list.types.popular' | trans }}</h3>
-                <table class="table table-condensed">
-                    {% for decklist in popular_decklists %}{{ home.decklist_row(decklist) }}{% else %}<tr><td class="text-muted">{{ 'decklist.list.none' | trans }}</td></tr>{% endfor %}
-                </table>
-                <a href="{{ path('decklists_list', {sort: 'rated'}) }}">{{ 'seemore.decklists' | trans }}</a>
-            </div>
-            <div class="col-md-6">
-                <h3>{{ 'decklist.list.types.recent' | trans }}</h3>
-                <table class="table table-condensed">
-                    {% for decklist in recent_decklists %}{{ home.decklist_row(decklist) }}{% else %}<tr><td class="text-muted">{{ 'decklist.list.none' | trans }}</td></tr>{% endfor %}
-                </table>
-                <a href="{{ path('decklists_list') }}">{{ 'seemore.decklists' | trans }}</a>
-            </div>
+        <div class="rb-feeds">
+            {% embed 'Panel/panel.html.twig' with {id: 'decks', title: 'home.decks' | trans, more: {href: path('decklists_list'), label: 'home.all_decklists' | trans}} %}
+                {% block panel_strip %}
+                    <div class="rb-tabs" role="tablist">
+                        <button type="button" role="tab" aria-selected="true" aria-controls="feed-new"><span class="fas fa-feather-alt"></span>{{ 'home.new' | trans }}</button>
+                        <button type="button" role="tab" aria-selected="false" aria-controls="feed-popular"><svg class="rb-ri" aria-hidden="true"><use href="#ri-cheers"/></svg>{{ 'home.popular' | trans }}</button>
+                    </div>
+                {% endblock %}
+                {% block panel_body %}
+                    {% import 'Default/index.html.twig' as home %}
+                    <ul class="rb-feed" id="feed-new" role="tabpanel">{% for decklist in recent_decklists %}{{ home.deck_row(decklist, format_names) }}{% else %}<li class="rb-meta">{{ 'decklist.list.none' | trans }}</li>{% endfor %}</ul>
+                    <ul class="rb-feed" id="feed-popular" role="tabpanel" hidden>{% for decklist in popular_decklists %}{{ home.deck_row(decklist, format_names) }}{% else %}<li class="rb-meta">{{ 'decklist.list.none' | trans }}</li>{% endfor %}</ul>
+                {% endblock %}
+            {% endembed %}
+            {# not built yet: their panels hold the place #}
+            {% for feed in [{key: 'posts', icon: 'fa-scroll'}, {key: 'events', icon: 'fa-calendar-alt'}, {key: 'years_past', icon: 'fa-hourglass-half'}] %}
+                {% embed 'Panel/panel.html.twig' with {id: feed.key, title: ('home.' ~ feed.key) | trans, classes: 'rb-feed-soon', body_classes: 'rb-feed-placeholder'} %}
+                    {% block panel_body %}<span class="fas {{ feed.icon }}" aria-hidden="true"></span><p>{{ 'nav.notyet' | trans }}</p>{% endblock %}
+                {% endembed %}
+            {% endfor %}
         </div>
     </div>
 {% endblock %}
