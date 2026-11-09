@@ -1,0 +1,69 @@
+/* The decklist form: publishing a deck and editing a decklist, the publish gate */
+
+/* the decklist form's version line, state panel and derived-from picker (Ketura, 2026-11-07) */
+.rb-version-line { font-size: 1.1em; margin-bottom: 8px; }
+.rb-inline-form { display: inline-block; margin: 0; }
+.rb-state p { margin-bottom: 8px; }
+.rb-state p:last-child { margin-bottom: 0; }
+.rb-state-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.alert-default { background: #f5f5f5; border-color: #ddd; color: #555; }
+.rb-derived-chosen { display: flex; align-items: center; gap: 8px; }
+.rb-derived-chosen[hidden], .rb-derived-search[hidden], .rb-derived-results[hidden] { display: none; }
+.rb-derived-card { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 8px 12px; background: #fafafa; }
+.rb-derived-name { font-weight: bold; margin-right: 8px; }
+.rb-derived-meta { color: #777; font-size: .9em; }
+.rb-derived-results { margin: 6px 0 0; max-height: 260px; overflow-y: auto; }
+.rb-derived-result { text-align: left; }
+.rb-reader-version { font-size: .85em; color: #777; margin-left: 6px; }
+.rb-withdrawn-note form, .rb-withdrawn-note .btn { margin-left: 6px; }
+
+/* the decklist form, laid out as the deckbuilder (Ketura, 2026-11-07): the deck on the left,
+   the form scrolling on the right with the notes at their natural height */
+.rb-publish-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rb-publish-format { font-weight: 700; font-size: calc(16px * var(--rb-text-scale)); }
+.rb-publish-info .deck-validation .alert { margin-bottom: 4px; }
+.rb-publish-info .deck-validation p { margin: 0; }
+/* the right side (Ketura, 2026-11-07): a large title, the notice and deck name fixed at the
+   top, the buttons at the bottom, the rest scrolling between; at least a third of the width,
+   ahead of the deck, the reverse of the deckbuilder */
+@media (min-width: 992px) {
+    /* half and half by default (Ketura, 2026-11-08) */
+    .rb-publish .rb-col-right { flex: 0 0 calc(50% - 9px); width: auto; }
+    .rb-publish .rb-col-left { flex: 1 1 0; width: auto; }
+    .rb-publish-side { display: flex; flex-direction: column; min-height: 0; }
+    .rb-publish-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
+    /* the line between deck and form, dragged to resize them (Ketura, 2026-11-07) */
+    .rb-publish-splitter { flex: 0 0 9px; margin: 0 4px; cursor: col-resize; position: relative; }
+    .rb-publish-splitter::before { content: ""; position: absolute; top: 0; bottom: 0; left: 4px; width: 1px; background: var(--rb-line-strong); }
+    .rb-publish-splitter:hover::before, body.rb-resizing .rb-publish-splitter::before { left: 3px; width: 3px; background: #D4A017; }
+    body.rb-resizing { cursor: col-resize; user-select: none; }
+}
+@media (max-width: 991px) { .rb-publish-splitter { display: none; } }
+.rb-publish-title { flex: none; margin-top: 18px; margin-bottom: 14px; }
+.rb-publish-top { flex: none; }
+.rb-publish-top .alert { margin-bottom: 10px; }
+.rb-derived-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 8px; vertical-align: middle; }
+.rb-derived-tags .rb-tag-chip { padding: 0 8px; font-size: 12px; }
+#version-card { margin: 6px 0; }
+.rb-publish-top .form-group { margin-bottom: 10px; }
+.rb-publish-scroll { padding: 12px 12px 18px 8px; border-top: 1px solid var(--rb-line); }
+.rb-publish-scroll > .form-group { margin-bottom: 20px; }
+.rb-publish .rb-form-actions { flex: none; margin: 0; padding: 10px 0 4px; border-top: 1px solid var(--rb-line); }
+.rb-publish .rb-notes, .rb-publish .rb-notes-section, .rb-publish .rb-md-editor { flex: none; }
+.rb-publish .rb-notes { padding: 0; margin: 4px 0 20px; gap: 14px; }
+/* fixed heights here: the scroll-past-the-end padding mustn't grow them */
+.rb-publish .rb-md-editor .md-editor > textarea, .rb-publish .rb-md-editor .md-editor > .md-preview { flex: none; height: 170px !important; }
+.rb-publish .rb-notes-desc .md-editor > textarea, .rb-publish .rb-notes-desc .md-editor > .md-preview { height: 170px !important; }
+.rb-publish .rb-annot-list { flex: none; overflow: visible; }
+.rb-publish .rb-release-date input { max-width: 220px; }
+
+/* the decklist form's version, under the Deck Name heading (Ketura, 2026-11-08) */
+.rb-form-version { margin: -2px 0 6px; color: var(--rb-muted); font-weight: 600; font-size: calc(13px * var(--rb-text-scale)); }
+/* derived from: several picks, each a card with Remove (Ketura, 2026-11-08) */
+.rb-derived-chosen:not(:empty) { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.rb-derived-pick { display: flex; align-items: center; gap: 6px; }
+.rb-derived-pick .rb-derived-card { flex: 1 1 auto; min-width: 0; }
+
+/* the publish gate's popup shows the whole Gemp box (Ketura, 2026-11-08) */
+.rb-publish-gate .rb-validation { margin: 10px 0 14px; }
+.rb-publish-gate .rb-validation-list { max-height: 240px; }

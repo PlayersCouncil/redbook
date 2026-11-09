@@ -1,0 +1,648 @@
+/* The deck: the deckbuilder and the deck renderer it shares with the readers, the Stats tab */
+
+/* ======================================================================
+   The deckbuilder (Ketura's region design, 2026-11-02): deck information
+   and the deck on the left, card filters and pool on the right; each part
+   scrolls on its own on a desktop, the page scrolls on a phone.
+   ====================================================================== */
+.rb-builder, .rb-review-page, .rb-reader, .rb-browse, .rb-library-view, .rb-library-drawer, .rb-new-library {
+    --rb-ink: #221F1A; --rb-muted: #6B645A; --rb-line: #DDD6C8; --rb-line-strong: #C9C0AE;
+    --rb-soft: #FBFAF6; --rb-tan: #ECE5D6; --rb-blue: #1D5FAD; --rb-blue-soft: #EEF3F9;
+    --rb-red: #B42318; --rb-red-dark: #6E140E; --rb-yellow: #E8B931; --rb-grey: #B9AFA0;
+    --rb-fp: #2B5C8F; --rb-shadow: #9A4A24; --rb-good: #24572A;
+    color: var(--rb-ink);
+}
+.container.main.rb-builder { width: auto; max-width: none; padding-top: 12px; padding-bottom: 8px; margin-bottom: 0; }
+.rb-builder button { font-family: inherit; }
+.rb-builder [hidden] { display: none !important; }
+
+.culture-icon {
+    display: inline-block; flex: 0 0 auto; width: 1.7em; height: 1.15em; vertical-align: -0.2em;
+    background-color: currentColor;
+    -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat;
+}
+
+/* ---- columns ---- */
+@media (min-width: 992px) {
+    .rb-builder-row { display: flex; }
+    /* the builder fills the space between navbar and footer; only its panes scroll */
+    #wrapper.rb-fill > .rb-builder { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .rb-builder-row { flex: 1 1 auto; min-height: 0; }
+    /* fixed halves: nothing inside (a tab, a view) may change the page's width (Ketura, 2026-11-03) */
+    #wrapper.rb-fill > .rb-builder { width: 100%; }
+    /* the whole width (Ketura, 2026-11-03): the deck side takes what the card side doesn't need,
+       the card side keeping about 640px, until the deck side has 1400px; then they share */
+    .rb-col-left, .rb-col-right { display: flex; flex-direction: column; min-height: 0; min-width: 0; max-width: none; }
+    .rb-col-left { flex: 0 0 auto; width: var(--rb-builder-left, clamp(50%, calc(100% - 640px), 1400px)); }
+    /* the bar between the panes (Ketura, 2026-11-08): the deck pane's width, dragged */
+    .rb-builder-splitter { flex: 0 0 9px; position: relative; margin: 0 -4px; cursor: col-resize; touch-action: none; z-index: 2; }
+    .rb-builder-splitter::before { content: ""; position: absolute; top: 0; bottom: 0; left: 4px; width: 1px; background: var(--rb-line); }
+    .rb-builder-splitter:hover::before, body.rb-resizing .rb-builder-splitter::before { left: 3px; width: 3px; background: #D4A017; }
+    .rb-col-right { flex: 1 1 0; width: auto; }
+    .rb-info, .rb-deck, .rb-scroll-pane, .rb-filters-scroll, .rb-pool { scrollbar-gutter: stable; }
+    .rb-info { flex: 0 0 auto; max-height: 62%; overflow-y: auto; }
+    .rb-deck { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+    .rb-tab-content { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .rb-tab-content > .tab-pane.active { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+    .rb-scroll-pane.active { overflow-y: auto; padding-top: 10px; }
+    /* panes that fill the space and keep their scrolling inside (Notes, Stats) */
+    .rb-fixed-pane.active { overflow: hidden; padding-top: 10px; display: flex; flex-direction: column; }
+    .rb-notes { flex: 1 1 auto; min-height: 0; }
+    /* the two editors share the height; the annotations, now last, take what they need up to a
+       third, their list scrolling (Ketura, 2026-11-07) */
+    .rb-notes .rb-notes-start { flex: 1 1 0; min-height: 270px; }
+    .rb-notes .rb-notes-desc { flex: 1.5 1 0; min-height: 170px; }
+    .rb-notes-annot { flex: 0 1 auto; max-height: 34%; }
+    .rb-md-editor { flex: 1 1 auto; min-height: 0; }
+    .rb-build-pane .rb-filters { flex: 0 0 auto; max-height: 58%; overflow: hidden; }
+    .rb-filters-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+    .rb-build-pane .rb-pool { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+}
+.rb-deck { border-top: 1px solid var(--rb-line); padding: 10px 2px 12px 0; }
+
+/* ---- shared controls ---- */
+.rb-btn { height: 34px; padding: 0 12px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; color: var(--rb-ink); font-size: calc(14px * var(--rb-text-scale)); font-weight: 500; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.rb-btn:hover:not([disabled]) { background: var(--rb-soft); }
+.rb-btn[disabled] { color: #9A9184; cursor: default; }
+.rb-btn-primary { border: 0; background: var(--rb-blue); color: #fff; font-weight: 700; padding: 0 18px; }
+.rb-btn-primary:hover:not([disabled]) { background: #174E8E; }
+.rb-btn-primary[disabled] { background: var(--rb-grey); color: #fff; }
+.rb-btn-small { height: 28px; font-size: calc(13px * var(--rb-text-scale)); padding: 0 8px; }
+.rb-field { display: flex; flex-direction: column; gap: 2px; margin: 0; font-weight: normal; min-width: 0; }
+.rb-field > span { font-size: calc(12px * var(--rb-text-scale)); font-weight: 600; color: var(--rb-muted); }
+.rb-field input, .rb-field select, .rb-field textarea, .rb-stat input, .rb-stat select, .rb-search input {
+    height: 32px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; font-size: calc(13px * var(--rb-text-scale)); color: var(--rb-ink); min-width: 0;
+}
+.rb-field textarea { height: auto; padding: 6px 8px; resize: vertical; }
+.rb-field.rb-inline { flex-direction: row; align-items: center; gap: 6px; }
+.rb-field.rb-inline > span { flex: 0 0 74px; }
+.rb-field.rb-inline select { flex: 1 1 auto; }
+.rb-check { display: flex; align-items: center; gap: 6px; font-weight: 600; margin: 0; }
+.rb-check input { width: 16px; height: 16px; margin: 0; }
+.rb-muted, .rb-hint { color: var(--rb-muted); font-size: calc(12px * var(--rb-text-scale)); }
+.rb-menu-wrap { position: relative; }
+.rb-menu { position: absolute; top: 40px; left: 0; z-index: 30; min-width: 230px; padding: 6px; border: 1px solid var(--rb-line-strong); border-radius: 8px; background: #fff; box-shadow: 0 6px 20px rgba(34, 31, 26, .18); display: flex; flex-direction: column; gap: 2px; }
+.rb-menu button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-height: 34px; padding: 6px 10px; border: 0; border-radius: 6px; background: #fff; text-align: left; font-size: calc(14px * var(--rb-text-scale)); color: var(--rb-ink); cursor: pointer; }
+.rb-menu button:hover, .rb-menu button.active { background: #F1ECE2; }
+.rb-menu button span { font-size: calc(12px * var(--rb-text-scale)); color: var(--rb-muted); }
+.rb-menu hr { margin: 4px 0; border-color: var(--rb-line); }
+.rb-menu .rb-danger { color: #A1291D; font-weight: 600; }
+
+/* ---- deck information ("pink") ---- */
+.rb-info { display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; }
+.rb-name-field input { height: 40px; font-size: calc(20px * (1 + (var(--rb-text-scale) - 1) * 0.87)); font-weight: 700; }
+/* name and format on one row, the format a quarter of it (Ketura, 2026-11-03) */
+.rb-title-row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); gap: 10px; align-items: end; }
+.rb-format-field select { height: 40px; font-size: calc(13px * var(--rb-text-scale)); min-width: 0; width: 100%; }
+.rb-format-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rb-format-row:not(:has(> button:not([hidden]))) { display: none; }
+@media (max-width: 480px) { .rb-title-row { grid-template-columns: minmax(0, 1fr); } }
+#btn-suggest-format { border-color: var(--rb-fp); background: var(--rb-blue-soft); color: #1F4670; font-weight: 600; height: 36px; }
+/* converting to the PC's cards stands out (Ketura, 2026-11-08) */
+#btn-convert-pc { height: 36px; border-color: #D9731A; background: #E8801F; color: #fff; font-weight: 700; }
+#btn-convert-pc:hover, #btn-convert-pc:focus-visible { background: #CF6B12; border-color: #B85E0F; }
+.rb-popover { position: absolute; top: 62px; right: 0; z-index: 30; width: 330px; max-width: 100%; padding: 8px; border: 1px solid var(--rb-line-strong); border-radius: 8px; background: #fff; box-shadow: 0 6px 20px rgba(34, 31, 26, .18); display: flex; flex-direction: column; gap: 4px; }
+.rb-suggestion { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 6px 8px; border: 0; border-radius: 6px; background: #F6F3EC; text-align: left; cursor: pointer; }
+.rb-suggestion:hover { background: #EDE6D8; }
+.rb-suggestion span { font-size: calc(12px * var(--rb-text-scale)); color: var(--rb-good); }
+.rb-suggestion small { color: var(--rb-muted); }
+.rb-validation { border-radius: 6px; border: 1px solid var(--rb-line); background: #F6F3EC; color: var(--rb-muted); }
+.rb-validation-line { padding: 8px 10px; }
+.rb-validation.is-good { border-color: #9CC79B; background: #EDF6EC; color: var(--rb-good); font-weight: 700; }
+.rb-validation.is-unavailable { border-color: #E2C78F; background: #FBF4E4; color: #6A4A10; }
+.rb-validation.is-bad { border-color: #E3A49C; background: #FBEDEB; color: #8E1C12; }
+.rb-validation-head { padding: 6px 10px 2px; font-weight: 700; }
+.rb-validation-list { margin: 0; padding: 0 10px 6px 26px; max-height: 70px; overflow-y: auto; line-height: calc(22px * var(--rb-text-scale)); }
+.rb-validation.deck-validation-pending { opacity: .65; }
+.rb-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.rb-save-status { flex: 1 1 140px; font-size: calc(12px * var(--rb-text-scale)); color: var(--rb-muted); }
+.rb-save-status.is-dirty { color: #8A5A00; }
+.rb-save-status.is-saved { color: #4F6B3A; }
+.rb-draft-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid #E2C78F; border-radius: 6px; background: #FBF4E4; color: #6A4A10; }
+.rb-historic { border: 1px solid var(--rb-line); border-radius: 8px; background: var(--rb-soft); }
+.rb-historic > h3 { margin: 0; padding: 8px 12px; font-size: calc(14px * var(--rb-text-scale)); font-weight: 700; border-bottom: 1px solid var(--rb-line); }
+.rb-historic > .rb-check { margin: 10px 12px 0; }
+.rb-historic-badge { margin-left: 8px; padding: 2px 8px; border-radius: 10px; background: #E8E1D2; font-size: calc(11px * var(--rb-text-scale)); color: #4A443B; }
+#historic-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin: 0; padding: 10px 12px 12px; border: 0; min-width: 0; }
+#historic-fields[disabled] { opacity: .45; }
+#historic-fields .rb-wide { grid-column: span 2; }
+
+/* the historian's review of an archive deck */
+.rb-review { border: 1px solid #E2C78F; border-radius: 8px; background: #FBF4E4; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.rb-review.is-verified { border-color: #9CC79B; background: #EDF6EC; }
+.rb-review-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.rb-review-head h3 { margin: 0; font-size: calc(14px * var(--rb-text-scale)); font-weight: 700; }
+.rb-review-status { flex: 1 1 auto; font-size: calc(13px * var(--rb-text-scale)); color: #6A4A10; }
+.rb-review.is-verified .rb-review-status { color: var(--rb-good); }
+.rb-review-link { font-size: calc(13px * var(--rb-text-scale)); }
+.rb-review-flags { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0; padding: 0; list-style: none; }
+.rb-review-flags[hidden] { display: none; }
+.rb-flag { padding: 1px 8px; border-radius: 10px; background: #fff; border: 1px solid #E2C78F; font-size: calc(12px * var(--rb-text-scale)); color: #6A4A10; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-flag-problems, .rb-flag-no_format { border-color: #E3A49C; color: #8E1C12; }
+.rb-review-hint { flex: 1 1 160px; font-size: calc(12px * var(--rb-text-scale)); color: var(--rb-muted); }
+.rb-review-original > summary { cursor: pointer; font-size: calc(13px * var(--rb-text-scale)); font-weight: 700; }
+.rb-review-original > summary a { font-weight: 400; margin-left: 6px; }
+.rb-review-unresolved { margin: 8px 0; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-review-unresolved ul { margin: 4px 0 0; padding-left: 20px; }
+.rb-review-raw { margin: 8px 0 0; max-height: 260px; overflow: auto; font-size: calc(12px * var(--rb-text-scale)); white-space: pre-wrap; background: #fff; }
+
+/* historic accounts and unverified archive decks, site-wide */
+.rb-user-historic { margin-left: 4px; font-size: calc(10px * var(--rb-text-scale)); font-weight: 600; vertical-align: middle; background: #8C8273; letter-spacing: .02em; }
+.rb-unverified-badge { margin-left: 6px; font-size: calc(10px * var(--rb-text-scale)); font-weight: 600; vertical-align: middle; }
+
+/* ---- the deck ("green") ---- */
+.rb-deck-top { display: flex; gap: 14px; align-items: flex-start; }
+.rb-deck-top-left { flex: 0 0 200px; display: flex; flex-direction: column; gap: 10px; }
+.rb-deck-top-right { flex: 1 1 0; min-width: 0; }
+.rb-display-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border: 1px solid var(--rb-line); border-radius: 8px; background: var(--rb-soft); }
+/* the deck's view and grouping, above its scrolling area */
+.rb-deck-toolbar { flex: 0 0 auto; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 8px 0; border-top: 1px solid var(--rb-line); }
+.rb-deck-toolbar .rb-display-opts { flex: 0 1 auto; min-width: 0; display: flex; }
+.rb-deck-toolbar .rb-opt { flex: 0 0 auto; gap: 0; padding: 0 10px; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-deck-toolbar .rb-opt svg { flex: 0 0 auto; }
+/* icons only, each button keeping the width its word gives it; a click shows the word for a
+   moment, then it slides away (Ketura, 2026-11-04). app.deck_editor pins the widths. */
+.rb-deck-toolbar .rb-opt span { max-width: 0; margin-left: 0; overflow: hidden; white-space: nowrap; opacity: 0;
+    transition: max-width .5s ease, margin-left .5s ease, opacity .35s ease; }
+.rb-deck-toolbar .rb-opt.show-label span, .rb-deck-toolbar.rb-measuring .rb-opt span { max-width: 7em; margin-left: 5px; opacity: 1; }
+.rb-deck-toolbar.rb-no-anim .rb-opt span { transition: none; }
+@media (max-width: 480px) { .rb-deck-toolbar .rb-opt span { display: none; } }
+.rb-deck-toolbar:empty { display: none; }
+.rb-deck-toolbar + .rb-deck { border-top: 0; padding-top: 2px; }
+.rb-opt { height: 30px; padding: 0 2px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; color: var(--rb-ink); font-size: calc(12px * var(--rb-text-scale)); font-weight: 500; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.rb-opt.active, .rb-opt[data-active] { background: var(--rb-ink); border-color: var(--rb-ink); color: #fff; }
+.rb-slot-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.rb-slot-head h3 { margin: 0; font-size: calc(14px * var(--rb-text-scale)); font-weight: 700; }
+.rb-plus { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 5px; background: var(--rb-blue); color: #fff; font-size: calc(16px * var(--rb-text-scale)); font-weight: 700; line-height: 1; cursor: pointer; flex: 0 0 auto; }
+.rb-empty { color: var(--rb-muted); }
+.rb-line { display: flex; align-items: center; gap: 7px; min-height: 28px; }
+.rb-line .rb-name { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--rb-ink); }
+/* a group's lines: all as wide as its longest, plus a rem; the pool's row highlight (Ketura, 2026-11-03) */
+.rb-lines { display: grid; grid-template-columns: minmax(0, max-content); max-width: 100%; }
+.rb-lines .rb-line { padding: 0 1rem 0 3px; }
+#deck .rb-line[data-code] { border-radius: 4px; }
+#deck .rb-line[data-code]:hover { background: var(--rb-blue-soft); }
+.rb-sub { color: var(--rb-muted); font-weight: normal; }
+.rb-pc { padding: 0 4px; border-radius: 3px; background: #D9E6F4; color: #1F4670; font-size: calc(10px * var(--rb-text-scale)); font-weight: 700; }
+.rb-qty { flex: 0 0 auto; display: flex; gap: 2px; }
+.rb-qty button { width: 24px; height: 24px; padding: 0; border-radius: 5px; font-size: calc(12px * var(--rb-text-scale)); font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.rb-n { border: 1px solid var(--rb-line-strong); background: #fff; color: var(--rb-ink); }
+.rb-n.active, .rb-n.is-filled { background: var(--rb-ink); border-color: var(--rb-ink); color: #fff; }
+.rb-n[disabled] { opacity: .3; cursor: default; }
+/* the X is half as loud as the rest (Ketura, 2026-11-02) */
+.rb-x { border: 0; background: var(--rb-red); color: #fff; opacity: .5; }
+.rb-x:hover { opacity: .85; }
+.rb-trash { border: 0; background: var(--rb-red-dark); color: #fff; }
+.is-pending .rb-name, .is-pending .rb-n, .is-pending .culture-icon, .is-pending .rb-tile-img img { opacity: .4; }
+.is-pending .rb-name { text-decoration: line-through; }
+/* Gemp's problem cards: red, and dashed for colour-blind readers */
+.is-problem .rb-name { color: var(--rb-red); text-decoration: underline dashed var(--rb-red); text-underline-offset: 3px; }
+.is-problem .rb-tile-img { outline: 3px dashed var(--rb-red); outline-offset: 1px; }
+/* and a red wash over the picture (Ketura, 2026-11-08) */
+.is-problem .rb-tile-img::after { content: ""; position: absolute; inset: 0; background: rgba(200, 40, 40, .32); pointer-events: none; }
+.rb-site-n { flex: 0 0 16px; text-align: right; font-weight: 600; color: var(--rb-muted); }
+.rb-site-empty .rb-plus { width: 24px; height: 24px; }
+.rb-choose { color: var(--rb-muted); font-style: italic; }
+.rb-draw-head { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--rb-line); font-size: calc(20px * (1 + (var(--rb-text-scale) - 1) * 0.87)); font-weight: 700; }
+/* Free Peoples and Shadow side by side once the deck area has room, each view by its own
+   measure (Ketura, 2026-11-08; they used to wait for the thumbnails' width in every view) */
+.rb-deck { container: deck / inline-size; }
+.rb-sides { display: flex; flex-direction: column; gap: 0 28px; }
+.rb-side { min-width: 0; margin-top: 12px; }
+/* the list: once a column of lines fits each side, the deckbuilder's wider for its count
+   buttons */
+@container deck (min-width: 640px) {
+    .rb-readonly .rb-sides.view-list { flex-direction: row; }
+    .rb-readonly .rb-sides.view-list .rb-side { flex: 1 1 0; }
+}
+@container deck (min-width: 860px) {
+    .rb-sides.view-list { flex-direction: row; }
+    .rb-sides.view-list .rb-side { flex: 1 1 0; }
+}
+/* thumbnails: room for three cards a side (3 x 118 + 2 x 8 per side, 28 between); below it
+   the sides stack and their groups pair up */
+@container deck (min-width: 768px) {
+    .rb-sides.view-thumb, .rb-sides.view-half { flex-direction: row; }
+    .rb-sides.view-thumb .rb-side, .rb-sides.view-half .rb-side { flex: 1 1 0; }
+}
+/* culture or type groups sit next to each other when they fit */
+.rb-groups { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0 28px; }
+.rb-group { flex: 0 1 auto; min-width: 0; max-width: 100%; }
+/* the list's groups pair up only when a line still has room for a long name (Ketura,
+   2026-11-08): the deckbuilder's lines carry the count buttons, the reader's don't */
+.view-list-groups .rb-group { flex: 1 1 420px; }
+.rb-readonly .view-list-groups .rb-group { flex-basis: 300px; }
+.rb-groups .rb-thumbs { display: flex; flex-wrap: wrap; }
+.rb-groups .rb-thumbs > .rb-tile { width: 118px; }
+.rb-side-head { margin: 0; padding-bottom: 3px; font-size: calc(17px * (1 + (var(--rb-text-scale) - 1) * 0.97)); font-weight: 700; border-bottom: 2px solid currentColor; }
+.rb-sides { margin-top: 6px; }
+.rb-side-free_peoples .rb-side-head { color: var(--rb-fp); }
+.rb-side-shadow .rb-side-head { color: var(--rb-shadow); }
+.rb-group { margin-top: 10px; }
+.rb-group-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: calc(15px * var(--rb-text-scale)); font-weight: 700; }
+.rb-group-head .culture-icon { width: 2em; height: 1.3em; }
+.rb-count { font-weight: 400; color: var(--rb-muted); }
+.rb-thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+.rb-tile { display: flex; flex-direction: column; gap: 5px; min-width: 0; padding: 5px 5px 6px; border-radius: 8px; background: var(--rb-tan); }
+.rb-tile-img { position: relative; aspect-ratio: 357 / 497; overflow: hidden; border-radius: 5px; background: #E8E1D2; }
+.rb-tile-img img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.rb-thumbs.is-half .rb-tile-img { aspect-ratio: 260 / 231; }
+.rb-tile .rb-qty { justify-content: space-between; }
+.rb-tile .rb-qty button { width: 22px; }
+.rb-tile-noimg { display: block; padding: 6px; font-size: calc(12px * var(--rb-text-scale)); }
+.rb-tile-overlay { padding: 0; background: transparent; }
+.rb-tile-x { position: absolute; right: 4px; bottom: 4px; }
+/* the X over a card sits low, off the card's name and numbers, and at full strength (Ketura, 2026-11-03) */
+.rb-tile-x .rb-x { opacity: 1; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
+.rb-thumbs-single { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rb-deck-top-left .rb-slot .rb-thumbs-single { grid-template-columns: minmax(0, 110px); }
+.rb-thumbs-sites { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+/* sites read down the columns, 1-2-3 | 4-5-6 | 7-8-9, with a wider gap between columns (Ketura, 2026-11-03) */
+.rb-thumbs-sites, .rb-site-list.is-columns { grid-auto-flow: column; grid-template-rows: repeat(3, auto); grid-auto-columns: minmax(0, 1fr); }
+.rb-thumbs-sites { column-gap: 16px; }
+/* a site is an upright card turned sideways: its long edge is the 150px an upright card's
+   image is tall (a 118px tile less its padding), however wide the deck gets (Ketura, 2026-11-03) */
+.rb-thumbs-sites { grid-template-columns: none; grid-auto-columns: 150px; justify-content: start; }
+.rb-tile-empty.rb-tile-empty-card { aspect-ratio: 357 / 497; }
+.rb-thumbs.is-half .rb-tile-empty.rb-tile-empty-card { aspect-ratio: 260 / 227; }
+.rb-slot-empty .rb-plus { width: 24px; height: 24px; }
+.rb-tile-site .rb-tile-img { aspect-ratio: 497 / 357; }
+.rb-tile-empty { position: relative; aspect-ratio: 497 / 357; border: 2px dashed #9FB6D3; background: #F3F6FA; display: flex; align-items: center; justify-content: center; }
+.rb-tile-empty .rb-plus { width: 32px; height: 32px; font-size: calc(20px * (1 + (var(--rb-text-scale) - 1) * 0.87)); }
+.rb-site-num { position: absolute; top: 3px; left: 3px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--rb-ink); color: #fff; font-size: calc(11px * var(--rb-text-scale)); font-weight: 700; display: flex; align-items: center; justify-content: center; }
+@media (max-width: 600px) {
+    .rb-deck-top { flex-direction: column; }
+    .rb-deck-top-left { flex-basis: auto; width: 100%; }
+}
+
+/* ---- card filters ("orange") ---- */
+.rb-tabs { margin-bottom: 0; }
+.rb-filters { display: flex; flex-direction: column; gap: 8px; padding: 10px 2px 10px 0; }
+.rb-filters-scroll { display: flex; flex-direction: column; gap: 8px; }
+.rb-search { position: relative; display: flex; align-items: center; gap: 8px; }
+.rb-search input { flex: 1 1 auto; height: 38px; padding-left: 34px; font-size: calc(14px * var(--rb-text-scale)); }
+.rb-search-icon { position: absolute; left: 10px; top: 10px; color: var(--rb-muted); }
+.rb-search-tips { font-size: calc(12px * var(--rb-text-scale)); white-space: nowrap; }
+.rb-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
+.rb-row-sets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rb-row-sets select { min-width: 0; width: 100%; }
+.rb-row-side .rb-type { flex: 1 1 140px; }
+.rb-seg { display: flex; border: 1px solid var(--rb-line-strong); border-radius: 6px; overflow: hidden; }
+.rb-seg button { height: 32px; padding: 0 10px; border: 0; border-right: 1px solid var(--rb-line); background: #fff; font-size: calc(13px * var(--rb-text-scale)); font-weight: 500; color: var(--rb-ink); cursor: pointer; }
+.rb-seg button:last-child { border-right: 0; }
+.rb-seg button.active { background: var(--rb-ink); color: #fff; }
+.rb-cultures { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; }
+.rb-culture { width: 31px; height: 31px; padding: 0; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; color: var(--rb-ink); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.rb-culture .culture-icon { width: 22px; height: 20px; }
+.rb-culture.active { background: var(--rb-ink); border-color: var(--rb-ink); color: #fff; }
+.rb-culture.dim { opacity: .3; }
+.rb-culture-sep { width: 1px; height: 24px; margin: 0 5px; background: var(--rb-line-strong); }
+.rb-more-toggle { height: 30px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; font-size: calc(13px * var(--rb-text-scale)); font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.rb-more-toggle.active { background: #F1ECE2; }
+.rb-more-count { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--rb-blue); color: #fff; font-size: calc(11px * var(--rb-text-scale)); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.rb-more { display: flex; flex-direction: column; gap: 12px; padding: 10px 12px 12px; border: 1px solid var(--rb-line); border-radius: 8px; background: var(--rb-soft); }
+.rb-more fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.rb-more legend { margin-bottom: 4px; padding: 0; border: 0; font-size: calc(13px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-ink); }
+.rb-more-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
+.rb-more-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; }
+.rb-mentions .rb-more-grid { gap: 6px 16px; }
+.rb-quick > span, .rb-quick > label { margin: 0; font-size: calc(13px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-ink); }
+.rb-stat { display: flex; align-items: center; gap: 6px; margin: 0; font-weight: normal; }
+.rb-stat > span { flex: 0 0 82px; font-size: calc(12px * var(--rb-text-scale)); font-weight: 600; color: var(--rb-muted); }
+.rb-stat select { flex: 0 0 48px; padding: 0 4px; }
+.rb-stat input { flex: 1 1 auto; width: 60px; }
+@media (max-width: 600px) {
+    .rb-more-cols, .rb-more-grid, .rb-row-sets { grid-template-columns: minmax(0, 1fr); }
+}
+.rb-showing { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 8px; background: var(--rb-tan); }
+.rb-showing-label { font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; color: #4A443B; }
+.rb-chip { height: 26px; padding: 0 8px; border: 1px solid #B9CCE3; border-radius: 13px; background: var(--rb-blue-soft); color: #1F4670; font-size: calc(12px * var(--rb-text-scale)); font-weight: 600; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.rb-chip-fixed { border-color: var(--rb-line-strong); background: #fff; color: #4A443B; cursor: default; }
+.rb-clear-all { height: 26px; padding: 0 6px; border: 0; background: transparent; color: #8C1D18; font-size: calc(12px * var(--rb-text-scale)); font-weight: 600; cursor: pointer; }
+.rb-showing-count { margin-left: auto; font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; color: #4A443B; }
+
+/* ---- card pool ("navy") ---- */
+.rb-pool { padding: 8px 2px 8px 0; }
+/* sort on the left (about half its old width), views centred, pager on the right (Ketura, 2026-11-03) */
+.rb-pool-head { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; margin-bottom: 8px; }
+.rb-pool-head .rb-field.rb-inline { justify-self: start; }
+.rb-pool-head .rb-field.rb-inline > span { flex: 0 0 auto; }
+.rb-pool-head .rb-sort { width: 130px; }
+.rb-pool-head .rb-pager-top { justify-self: end; }
+.rb-pool-views { display: flex; gap: 4px; justify-self: center; }
+.rb-pool-views .rb-opt { width: 40px; height: 32px; }
+.rb-pager { display: flex; align-items: center; gap: 6px; font-size: calc(12px * var(--rb-text-scale)); font-weight: 600; color: #4A443B; }
+.rb-pager-top { margin-left: auto; }
+.rb-pager-bottom { justify-content: center; margin-top: 10px; }
+.rb-page { width: 32px; height: 32px; padding: 0; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; font-size: calc(16px * var(--rb-text-scale)); cursor: pointer; }
+.rb-page[disabled] { color: var(--rb-grey); border-color: var(--rb-line); cursor: default; }
+.rb-pool-empty { padding: 20px 0; color: var(--rb-muted); }
+/* list: two columns of rows when there is room; the whole row highlights and shows the card */
+.rb-pool-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0 10px; }
+.rb-pool-row { display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 4px; border-bottom: 1px solid #EFEAE0; border-radius: 4px; }
+.rb-pool-row:hover { background: var(--rb-blue-soft); }
+.rb-pool-row .rb-name { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--rb-ink); }
+.rb-pool-row.is-banned .rb-name, .rb-pool-row.is-banned .culture-icon { opacity: .55; }
+.rb-pool-buttons { flex: 0 0 auto; display: flex; gap: 3px; }
+.rb-pool-add, .rb-pool-rb { width: 26px; height: 24px; padding: 0; border-radius: 5px; font-size: calc(17px * (1 + (var(--rb-text-scale) - 1) * 0.97)); font-weight: 700; line-height: 1; cursor: pointer; }
+/* + : blue when not in the deck, yellow when in it, grey when banned or at the limit (Ketura, 2026-11-02) */
+.rb-pool-add { border: 0; }
+.rb-pool-add.is-none { background: var(--rb-blue); color: #fff; }
+.rb-pool-add.is-some { background: var(--rb-yellow); color: var(--rb-ink); }
+.rb-pool-add.is-off { background: var(--rb-grey); color: #fff; }
+.rb-pool-add[disabled] { cursor: default; }
+.rb-pool-rb { border: 1px solid #8A6A1F; background: #fff; color: #8A6A1F; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-pool-rb.active { background: #8A6A1F; color: #fff; }
+.rb-badge { flex: 0 0 auto; padding: 1px 5px; border-radius: 4px; background: #4A443B; color: #fff; font-size: calc(10px * var(--rb-text-scale)); font-weight: 700; }
+.rb-badge-banned { background: #8E1C12; }
+.rb-badge-rb { background: #8A6A1F; }
+.rb-badge-site { background: var(--rb-ink); }
+.rb-pool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 10px; }
+.rb-pool-tile { position: relative; }
+.rb-pool-img { display: block; aspect-ratio: 357 / 497; overflow: hidden; border-radius: 6px; background: #E8E1D2; }
+.rb-pool-img img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.rb-pool-grid.is-half .rb-pool-img { aspect-ratio: 260 / 231; }
+.rb-pool-tile.is-site .rb-pool-img { aspect-ratio: 497 / 357; }
+.rb-pool-tile.is-banned img { filter: grayscale(1) opacity(.6); }
+.rb-pool-badges { position: absolute; top: 4px; right: 4px; display: flex; gap: 3px; }
+.rb-pool-tile .rb-pool-buttons { position: absolute; right: 4px; bottom: 4px; }
+.rb-pool-tile .rb-pool-add, .rb-pool-tile .rb-pool-rb { width: 28px; height: 28px; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
+
+/* the deckbuilder's Archive info tab */
+.rb-archive-pane { display: flex; flex-direction: column; gap: 14px; padding: 12px 2px; }
+.rb-tab-dot { display: inline-block; width: 7px; height: 7px; margin-left: 4px; border-radius: 50%; background: #D08A00; vertical-align: middle; }
+.rb-review h4 { margin: 4px 0; font-size: calc(13px * var(--rb-text-scale)); font-weight: 700; }
+.rb-review-sources { margin: 0; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-review-unresolved ul { list-style: none; padding-left: 0; }
+.rb-review-unresolved li { padding: 5px 0; border-top: 1px solid #EBDDBB; }
+.rb-line-search { padding: 0; border: 0; background: none; color: #A3238B; font-family: Menlo, Consolas, monospace; font-size: calc(12.5px * var(--rb-text-scale)); text-align: left; text-decoration: underline dotted; cursor: pointer; }
+.rb-line-search .fas { font-size: calc(10px * var(--rb-text-scale)); color: var(--rb-muted); }
+.rb-line-search:hover { color: var(--rb-blue); text-decoration-style: solid; }
+.rb-candidates { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.rb-candidate { padding: 2px 8px; border: 1px solid var(--rb-line-strong); border-radius: 12px; background: #fff; color: var(--rb-ink); font-size: calc(12px * var(--rb-text-scale)); cursor: pointer; }
+.rb-candidate:hover { border-color: var(--rb-blue); color: var(--rb-blue); }
+.rb-candidate small { color: var(--rb-muted); }
+.rb-candidate.is-added { border-color: #9CC79B; background: #EDF6EC; }
+.rb-candidate.is-added::after { content: " \2713 " attr(data-count); color: var(--rb-good); font-weight: 700; }
+.rb-review-guessed > summary { cursor: pointer; font-size: calc(13px * var(--rb-text-scale)); font-weight: 700; }
+.rb-review-guessed ul { margin: 4px 0 0; padding-left: 18px; font-size: calc(13px * var(--rb-text-scale)); }
+
+/* a click anywhere on a pool card adds it */
+.rb-pool-tile, .rb-pool-row { cursor: pointer; }
+
+/* collapsible deck sections (Ketura, 2026-11-03): the whole heading is the toggle */
+.rb-section-toggle { width: 100%; display: flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.rb-section-label { flex: 1 1 auto; min-width: 0; }
+.rb-collapse { flex: 0 0 auto; width: 24px; height: 24px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; color: var(--rb-ink); display: inline-flex; align-items: center; justify-content: center; }
+.rb-section-toggle:hover .rb-collapse { border-color: var(--rb-ink); }
+.rb-deck-head { margin: 0 0 8px; padding-bottom: 3px; font-size: calc(18px * (1 + (var(--rb-text-scale) - 1) * 0.93)); font-weight: 700; border-bottom: 2px solid var(--rb-ink); }
+.rb-deck-head.is-collapsed { border-bottom-style: dashed; }
+/* the three headings light up under the pointer, to say they fold (Ketura, 2026-11-08) */
+.rb-deck-head .rb-section-toggle, .rb-side-head .rb-section-toggle { padding: 2px 4px; border-radius: 5px 5px 0 0; transition: background-color .12s; }
+.rb-deck-head .rb-section-toggle:hover, .rb-side-head .rb-section-toggle:hover,
+.rb-deck-head .rb-section-toggle:focus-visible, .rb-side-head .rb-section-toggle:focus-visible { background: #F6E7B8; }
+.rb-side.is-collapsed .rb-side-head { border-bottom-style: dashed; }
+/* collapsed sites: list lines in three columns */
+.rb-site-list.is-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 16px; }
+/* collapsed: the three columns sit close together, centred (Ketura, 2026-11-03) */
+.rb-site-list.is-columns { grid-auto-columns: minmax(0, max-content); grid-template-columns: none; justify-content: center; column-gap: 28px; }
+.rb-site-list.is-columns .rb-line { min-width: 0; }
+.rb-site-list.is-columns .rb-name, .rb-site-list.is-columns .rb-choose { min-width: 0; overflow: visible; white-space: normal; }
+@media (max-width: 600px) { .rb-site-list.is-columns { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; } }
+
+/* Quick Search: every group at once, in columns, on desktops (Ketura, 2026-11-03) */
+.rb-quick-btn { display: none; height: 34px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; color: var(--rb-ink); font-size: calc(14px * var(--rb-text-scale)); text-align: left; align-items: center; gap: 8px; cursor: pointer; }
+.rb-quick-value { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-quick-panel { z-index: 40; overflow-y: auto; padding: 10px 12px 12px; border: 1px solid var(--rb-line-strong); border-radius: 8px; background: #fff; box-shadow: 0 8px 24px rgba(34, 31, 26, .2); }
+.rb-quick-panel[hidden] { display: none !important; }
+.rb-quick-any { margin-bottom: 6px; }
+.rb-quick-groups { column-width: 190px; column-gap: 18px; }
+.rb-quick-group { break-inside: avoid; margin-bottom: 10px; }
+.rb-quick-group h4 { margin: 0 0 3px; font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--rb-muted); }
+.rb-quick-item { display: block; width: 100%; padding: 3px 6px; border: 0; border-radius: 4px; background: none; color: var(--rb-ink); font-size: calc(13px * var(--rb-text-scale)); text-align: left; cursor: pointer; }
+.rb-quick-item:hover, .rb-quick-item:focus { background: #F1ECE2; outline: none; }
+.rb-quick-item.active { background: var(--rb-ink); color: #fff; }
+@media (min-width: 992px) {
+    .rb-quick-native { display: none; }
+    .rb-quick-btn { display: flex; width: 100%; }
+}
+
+/* starting fellowship: an S on the card's right edge, grey, or yellow when marked (Ketura, 2026-11-03) */
+.rb-start { width: 22px; height: 26px; padding: 0; border: 0; border-radius: 5px; background: #4A4A4A; color: #fff; font-size: calc(13px * var(--rb-text-scale)); font-weight: 800; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
+.rb-start.active { background: var(--rb-yellow); color: #111; }
+.rb-tile-img .rb-start { position: absolute; right: 0; top: 50%; transform: translateY(-50%); border-radius: 5px 0 0 5px; }
+.rb-line .rb-start { flex: 0 0 auto; width: 22px; height: 22px; box-shadow: none; }
+/* off: the S struck through (Ketura, 2026-11-03) */
+.rb-start:not(.active) { background-image: linear-gradient(to top right, transparent calc(50% - 1px), rgba(255, 255, 255, .9) calc(50% - 1px), rgba(255, 255, 255, .9) calc(50% + 1px), transparent calc(50% + 1px)); }
+
+/* History: saved and published versions in one timeline (Ketura, 2026-11-03) */
+.rb-history-published td { background: #F6F3EC; }
+.rb-history-social { display: inline-flex; gap: 12px; margin-left: 12px; color: var(--rb-muted); font-size: calc(12px * var(--rb-text-scale)); }
+
+/* the Notes tab (Ketura, 2026-11-03) */
+/* a little inset, so the focus ring of a box at the edge isn't cut off by the pane (Ketura, 2026-11-03) */
+.rb-notes { display: flex; flex-direction: column; gap: 10px; padding: 0 4px 4px; }
+.rb-notes-tags > label { display: block; margin: 0 0 3px; font-size: calc(13px * var(--rb-text-scale)); font-weight: 700; }
+.rb-tag-input { display: flex; align-items: flex-start; gap: 10px; }
+.rb-tag-entry { position: relative; flex: 0 0 220px; }
+.rb-tag-entry input { width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-tag-chips { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-height: 30px; }
+.rb-tag-chip { display: inline-flex; align-items: center; gap: 2px; padding: 1px 4px 1px 9px; border-radius: 12px; background: var(--rb-tan); font-size: calc(13px * var(--rb-text-scale)); }
+.rb-tag-chip button { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--rb-muted); font-size: calc(15px * var(--rb-text-scale)); line-height: 1; cursor: pointer; }
+.rb-tag-chip button:hover { background: #fff; color: var(--rb-red); }
+.rb-tag-suggest, .rb-annot-suggest { position: absolute; z-index: 30; top: 100%; left: 0; right: 0; margin-top: 3px; max-height: 260px; overflow-y: auto; padding: 4px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; box-shadow: 0 6px 18px rgba(34, 31, 26, .16); }
+.rb-tag-suggest button, .rb-annot-suggest button { display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 4px 8px; border: 0; border-radius: 4px; background: none; font-size: calc(13px * var(--rb-text-scale)); text-align: left; cursor: pointer; }
+.rb-tag-suggest button:hover, .rb-annot-suggest button:hover { background: #F1ECE2; }
+.rb-tag-suggest small, .rb-annot-suggest small { color: var(--rb-muted); }
+.rb-notes-section { display: flex; flex-direction: column; gap: 5px; min-height: 0; }
+.rb-notes-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.rb-notes-head h3 { margin: 0; font-size: calc(14px * var(--rb-text-scale)); font-weight: 700; }
+.rb-notes-head .rb-hint { margin-left: auto; font-size: calc(12px * var(--rb-text-scale)); color: var(--rb-muted); }
+.rb-notes-bid > label { display: block; margin: 0 0 3px; font-size: calc(13px * var(--rb-text-scale)); font-weight: 700; }
+.rb-notes-bid input { width: 220px; max-width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-starting-list { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-starting-label { font-weight: 600; color: var(--rb-muted); }
+.rb-starting-card { padding: 1px 8px; border-radius: 12px; background: var(--rb-yellow); color: #111; }
+/* black on the yellow, whatever the link colours say; underlined on hover (Ketura, 2026-11-03) */
+a.rb-starting-card, a.rb-starting-card:visited, a.rb-starting-card:hover, a.rb-starting-card:focus { color: #111; text-decoration: none; }
+a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline; }
+/* the starting companions (Ketura, 2026-11-07): + to pick one from the deck, pills with x to take one off */
+.rb-starting-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rb-starting-fields { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 4px; }
+.rb-starting-bid { width: 120px; height: 28px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-notes .rb-btn.rb-start-pick { width: 28px; height: 28px; padding: 0; justify-content: center; font-size: calc(18px * var(--rb-text-scale)); font-weight: 700; line-height: 1; }
+.rb-notes .rb-btn.rb-start-pick[aria-pressed=true] { background: #2F6DB5; border-color: transparent; color: #fff; }
+.rb-starting-pill { display: inline-flex; align-items: center; gap: 2px; padding: 1px 9px 1px 4px; border-radius: 12px; background: var(--rb-yellow); }
+.rb-starting-pill .rb-starting-card { padding: 0; background: none; }
+.rb-starting-remove { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: none; color: #5a4a10; font-size: calc(15px * var(--rb-text-scale)); line-height: 1; cursor: pointer; }
+.rb-starting-remove:hover { background: #fff; color: var(--rb-red); }
+#deck.rb-picking-start .rb-pick-off { opacity: .3; filter: grayscale(1); cursor: not-allowed; }
+#deck.rb-picking-start .rb-pick-off, #deck.rb-picking-start .rb-pick-off:hover { outline: none; }
+.rb-annot-pick { margin-left: auto; }
+.rb-notes .rb-btn.rb-annot-pick[aria-pressed=true] { background: #2F6DB5; border-color: transparent; color: #fff; }
+.rb-annot-add { position: relative; flex: 0 1 260px; }
+/* picking a card to annotate: the deck's cards light up under the pointer */
+/* picking (Ketura, 2026-11-07): every card that can be picked outlined, gold under the pointer */
+#deck.rb-picking .rb-line[data-code], #deck.rb-picking .rb-tile[data-code] { cursor: copy; outline: 1px solid #9DB3CC; outline-offset: 1px; border-radius: 4px; }
+#deck.rb-picking .rb-line[data-code]:hover, #deck.rb-picking .rb-tile[data-code]:hover { outline: 2px solid #D4A017; }
+.rb-annot.is-new { animation: rb-annot-flash 1.2s ease-out; }
+@keyframes rb-annot-flash { from { background: #fdf3c8; } to { background: transparent; } }
+.rb-annot-add input { width: 100%; height: 28px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-annot-list { flex: 1 1 auto; min-height: 60px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.rb-annot { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.rb-annot-card { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-annot-out { margin-left: 1px; color: var(--rb-muted); font-weight: 700; cursor: help; }
+.rb-annot-remove { width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--rb-muted); font-size: calc(16px * var(--rb-text-scale)); line-height: 1; cursor: pointer; }
+.rb-annot-remove:hover { color: var(--rb-red); }
+.rb-annot textarea { width: 100%; resize: none; padding: 4px 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: calc(13px * var(--rb-text-scale));
+    /* never shorter than a line (Ketura, 2026-11-07) */
+    min-height: calc(1.5em + 10px); line-height: 1.5; }
+@media (max-width: 600px) { .rb-annot { grid-template-columns: minmax(0, 1fr) auto; } .rb-annot-card { grid-column: 1 / -1; } }
+/* an annotation's fullscreen button and fullscreen box, as the editors' (Ketura, 2026-11-07) */
+.rb-annot-title, .rb-annot-done { display: none; }
+.rb-annot-full { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0;
+    border: 1px solid #ccc; border-radius: 4px; background: #fff; color: #333; cursor: pointer; }
+.rb-annot-full:hover { background: #e6e6e6; border-color: #adadad; }
+.rb-annot.is-full {
+    position: fixed; top: 5vh; left: 5vw; width: 90vw; height: 90vh; z-index: 99999;
+    display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 16px 24px 18px; border-radius: 10px; background: #fff;
+    box-shadow: 0 0 0 100vmax rgba(28, 24, 16, .6), 0 10px 40px rgba(0, 0, 0, .45); animation: none;
+}
+.rb-annot.is-full .rb-annot-card { display: none; }
+.rb-annot.is-full .rb-annot-title { display: block; padding: 0 50px; text-align: center; font-size: calc(20px * var(--rb-text-scale)); font-weight: 700; }
+.rb-annot.is-full textarea { flex: 1 1 0; min-height: 0; resize: none; padding: 14px 18px; border-color: #ddd; font-size: calc(17px * var(--rb-text-scale)); line-height: 1.55; }
+.rb-annot.is-full .rb-annot-full { position: absolute; top: 14px; right: 18px; }
+.rb-annot.is-full .rb-annot-full .fa-expand::before { content: "\f066"; }
+.rb-annot.is-full .rb-annot-done { display: flex; justify-content: center; }
+.rb-annot.is-full .rb-annot-done .btn { min-width: 120px; }
+
+/* the Stats tab (Ketura, 2026-11-03) */
+/* room inside the tab, so nothing runs into the pane's edges (Ketura, 2026-11-03) */
+.rb-stats { display: flex; flex-direction: column; gap: 26px; padding: 12px 16px 24px; }
+.rb-stats-section h3 { margin: 0 0 6px; font-size: calc(15px * var(--rb-text-scale)); font-weight: 700; }
+.rb-stats-section .rb-hint { margin: 0 0 8px; font-size: calc(12px * var(--rb-text-scale)); color: var(--rb-muted); }
+.rb-draw-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rb-draw-sep { width: 10px; }
+.rb-draw-status { margin: 8px 0 4px; font-size: calc(12px * var(--rb-text-scale)); color: var(--rb-muted); }
+.rb-draw-hand { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 22px; min-height: 40px; }
+.rb-draw-group { display: flex; flex-wrap: wrap; gap: 5px; padding: 4px; border-radius: 6px; }
+.rb-draw-group.is-fp { background: #F4EBD8; }
+.rb-draw-group.is-shadow { background: #EDE5F4; }
+.rb-draw-group.is-extra { border: 1px dashed var(--rb-line-strong); }
+.rb-draw-card { width: 84px; aspect-ratio: 260 / 231; overflow: hidden; border-radius: 4px; background: #222; }
+.rb-draw-card img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+.rb-draw-chance { margin-top: 10px; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-draw-chance .rb-hint { font-size: calc(12px * var(--rb-text-scale)); color: var(--rb-muted); }
+.rb-draw-odds { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: calc(12px * var(--rb-text-scale)); }
+.rb-odds-label { color: var(--rb-muted); }
+.rb-chart { width: 100%; min-height: 160px; }
+/* a fixed height, so redrawing it never collapses the page and jumps the scroll */
+.rb-chart.rb-chart-tall { height: 300px; }
+.rb-runout-inputs { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-runout-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.rb-runout-row label { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-weight: 600; }
+.rb-runout-row input[type=number] { width: 60px; height: 28px; padding: 0 6px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-weight: 400; }
+.rb-runout-who { flex: 0 0 110px; font-weight: 700; }
+/* each side's moves: the name centred over its turns, on one line (Ketura, 2026-11-04) */
+.rb-runout-moves { flex-direction: column; gap: 4px; }
+.rb-runout-moves .rb-runout-who { flex: none; white-space: nowrap; text-align: center; }
+.rb-runout-moves .rb-pattern { justify-content: center; }
+.rb-first { display: inline-flex; align-items: center; gap: 4px; }
+.rb-first > span { font-weight: 600; margin-right: 2px; }
+.rb-first button, .rb-pattern-turn button { height: 26px; padding: 0 9px; border: 1px solid var(--rb-line-strong); background: #fff; font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; cursor: pointer; }
+.rb-first button { border-radius: 6px; }
+.rb-first button.active, .rb-pattern-turn button.active { background: var(--rb-ink); border-color: var(--rb-ink); color: #fff; }
+.rb-pattern { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.rb-pattern-turn { display: inline-flex; }
+.rb-pattern-turn button:first-child { border-radius: 6px 0 0 6px; }
+.rb-pattern-turn button:last-child { border-radius: 0 6px 6px 0; border-left: 0; }
+.rb-pattern-text { margin-left: 6px; font-family: Menlo, Consolas, monospace; color: var(--rb-muted); }
+.rb-runout-summary { margin: 4px 0 0; font-size: calc(13px * var(--rb-text-scale)); }
+
+/* hover counts on the Stats bars must not catch the pointer, or the bar loses its hover */
+.rb-chart .highcharts-data-labels, .rb-chart .highcharts-data-labels *, .rb-chart .rb-bar-count { pointer-events: none; }
+/* the deckbuilder on a published deck, unchanged since (Ketura, 2026-11-08): it waits behind
+   this until a new version is chosen */
+.rb-gate { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(28, 24, 16, .55); backdrop-filter: blur(2px); }
+.rb-gate-card { max-width: 560px; padding: 24px 28px; border-radius: 12px; background: #fff; box-shadow: 0 12px 40px rgba(0, 0, 0, .4); text-align: center; }
+.rb-gate-card h2 { margin: 0 0 12px; font-size: calc(24px * var(--rb-text-scale)); font-weight: 800; }
+.rb-gate-card p { font-size: calc(15px * var(--rb-text-scale)); }
+.rb-gate-next { color: var(--rb-muted); }
+.rb-gate-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin: 18px 0 8px; }
+
+/* the draw deck's size, after the Legal badge in the reader and on the deckbuilder's
+   toolbar (Ketura, 2026-11-08) */
+.rb-draw-total { display: inline-block; padding: 1px 8px; border-radius: 4px; background: #EFEAE0; font-size: 85%; font-weight: 700; color: var(--rb-ink); white-space: nowrap; }
+/* the toolbar: its buttons centred, the draw deck's size at the right out of their way */
+.rb-deck-toolbar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; justify-content: stretch; }
+.rb-toolbar-mid { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.rb-toolbar-side:last-child { justify-self: end; }
+
+/* the culture pie: each slice's symbol over its count; a slice's name outside on hover */
+.rb-pie-label { display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none; }
+.rb-pie-icon { width: 30px; height: 30px; background-color: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
+/* the count on a black box (Ketura, 2026-11-08) */
+.rb-pie-count { padding: 1px 6px; border-radius: 4px; background: #1E1B16; font-weight: 700; font-size: 12px; line-height: 1.4; color: #fff; }
+
+/* A deck as it was published (Ketura, 2026-11-08): the deck side greyed, a banner with New
+   Revision above it; a change asks first (ui.deckedit) */
+.rb-builder.is-locked .rb-col-left { position: relative; }
+.rb-builder.is-locked .rb-col-left::after { content: ''; position: absolute; inset: 0; z-index: 5; background: rgba(110, 110, 110, .16); pointer-events: none; }
+.rb-builder.is-locked .rb-col-left > .rb-info, .rb-builder.is-locked .rb-col-left > .rb-deck { filter: grayscale(.6); }
+.rb-revision-banner { position: relative; z-index: 6; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 8px; padding: 8px 12px; border-radius: 8px; background: #3A3428; color: #fff; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-revision-banner > span:nth-child(2) { flex: 1 1 220px; }
+.rb-revision-banner .rb-btn { margin-left: auto; }
+#revision-prompt .modal-body p { font-size: calc(15px * var(--rb-text-scale)); }
+
+/* Publish, apart from who can see the deck as it stands */
+.rb-btn-publish:not([disabled]) { border-color: #2F6B3A; background: #2F6B3A; color: #fff; font-weight: 700; }
+.rb-btn-publish:not([disabled]):hover, .rb-btn-publish:not([disabled]):focus { border-color: #245530; background: #245530; color: #fff; }
+.rb-btn-publish svg { vertical-align: -2px; }
+
+/* the deck History's revisions since the last publication, and the decklists' detail edits */
+.rb-history-group td { padding-top: 10px !important; background: #EFEAE0; color: #5B4A2A; font-weight: 700; font-size: calc(12px * var(--rb-text-scale)); }
+.rb-history-patch td { background: #FAF8F3; color: var(--rb-muted); }
+.rb-history-changed { color: #5B4A2A; }
+
+/* Any version of a card (Ketura, 2026-11-08): "(any)" after the title; a tile split down the
+   middle between two versions; picking a card for it */
+.rb-any { color: var(--rb-muted); font-weight: 600; font-style: italic; }
+.rb-name.is-generic { font-style: normal; }
+.rb-tile-split { position: absolute; inset: 0; display: block; overflow: hidden; border-radius: inherit; }
+.rb-tile-half { position: absolute; inset: 0; overflow: hidden; }
+.rb-tile-half img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.rb-tile-half-left { clip-path: inset(0 50% 0 0); }
+.rb-tile-half-right { clip-path: inset(0 0 0 50%); }
+.rb-tile-split::after { content: ''; position: absolute; top: 0; bottom: 0; left: calc(50% - 1px); width: 2px; background: #fff; box-shadow: 0 0 3px rgba(0, 0, 0, .5); }
+.rb-tile-any { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); padding: 1px 8px; border-radius: 10px; background: rgba(31, 27, 22, .82); color: #fff; font-size: calc(11px * var(--rb-text-scale)); font-weight: 700; white-space: nowrap; pointer-events: none; }
+.rb-any-pick { display: inline-flex; align-items: center; gap: 5px; }
+.rb-any-pick.active { border-color: #2F6B3A; background: #2F6B3A; color: #fff; }
+.rb-any-icon { font-size: 1.15em; font-weight: 700; line-height: 1; }
+.is-picking-any .rb-line[data-key], .is-picking-any .rb-tile[data-key] { cursor: crosshair; }
+.is-picking-any .rb-line[data-key]:hover, .is-picking-any .rb-tile[data-key]:hover { outline: 2px solid #2F6B3A; outline-offset: 1px; }
+@container deck (max-width: 520px) { .rb-any-word { display: none; } }
+
+/* a deck as published (Ketura, 2026-11-08): Build is closed until New Revision; a change
+   attempted shows the banner again */
+.rb-builder.is-locked a[href="#tab-pane-build"] { opacity: .45; cursor: not-allowed; }
+.rb-builder.is-locked .rb-col-left :is(button, input, select, textarea, a[role=button]):not(#btn-preview):not(#btn-more):not(#btn-visibility):not(#btn-publish):not(.rb-opt):not([data-collapse]):not(.rb-menu *) { cursor: not-allowed; }
+@keyframes rb-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(212, 160, 23, 0); } 30% { box-shadow: 0 0 0 5px rgba(212, 160, 23, .75); } }
+.rb-revision-banner.is-pulse { animation: rb-pulse .7s ease-out 1; }
+
+/* a generic card's hover, split between two versions as its tile is (Ketura, 2026-11-08) */
+.rb-hover .rb-hover-half { display: none; }
+.rb-hover.is-split img:first-child { clip-path: inset(0 50% 0 0); }
+.rb-hover.is-split .rb-hover-half { display: block; position: absolute; inset: 0; clip-path: inset(0 0 0 50%); }
+.rb-hover.is-split::after { content: ''; position: absolute; top: 0; bottom: 0; left: calc(50% - 1px); width: 2px; background: #fff; box-shadow: 0 0 4px rgba(0, 0, 0, .6); }
+.rb-lib-culture-order { position: absolute; top: -7px; right: -7px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--rb-ink); color: #fff; font-size: 10px; font-weight: 700; line-height: 16px; }
+
+/* a read-only list line copies as "2x Card" (Ketura, 2026-11-04; restored 2026-11-09): its
+   parts inline in one span, the marks left out of a selection, an any-version line's
+   stand-in name copied but not shown */
+.rb-line-text { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-line-text .rb-name { display: inline; overflow: visible; white-space: inherit; }
+.rb-readonly .rb-line-text .rb-qty-text { display: inline-block; margin-right: 3px; }
+.rb-line-text .rb-site-n { display: inline-block; min-width: 16px; margin-right: 4px; }
+.rb-no-copy, .rb-no-copy-name, .rb-line-text .rb-pc, .rb-line-text .rb-any, .rb-line-text .rb-annot-mark { user-select: none; }
+.rb-no-copy { display: inline-flex; align-items: center; gap: 7px; margin-right: 7px; vertical-align: middle; }
+.rb-no-copy:empty { display: none; }

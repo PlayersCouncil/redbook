@@ -20,7 +20,17 @@ export function buildCss() {
   return src(
     [
       "assets/css/bootstrap.css",
-      "assets/css/style.css",
+      // the site's own, in cascade order (Ketura, 2026-11-09: split from one style.css)
+      "assets/css/tokens.css",
+      "assets/css/legacy.css",
+      "assets/css/shell.css",
+      "assets/css/deck.css",
+      "assets/css/components.css",
+      "assets/css/reader.css",
+      "assets/css/browse.css",
+      "assets/css/publish.css",
+      "assets/css/library.css",
+      "assets/css/pages.css",
       "assets/css/icons.css",
       "assets/css/languages.css",
     ],

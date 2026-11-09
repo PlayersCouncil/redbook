@@ -1,0 +1,304 @@
+/* The lists of decks: the decklists page and My Decks */
+
+/* ---- the decklists page (Ketura, 2026-11-05) ----
+   Search and filters on top, the decks below as compact rows: format first, then the draw
+   deck's size per side (a fragment's missing side shown as a dash), then cultures. */
+.container.main.rb-browse { width: auto; max-width: 1440px; padding-top: 14px; }
+/* the sides in the Stats charts' colours (Ketura, 2026-11-05): tan for the Free Peoples,
+   purple for the Shadow, darkened to read as text */
+.rb-browse { --rb-side-fp: #85642A; --rb-side-sh: #6B4A8C; }
+.rb-browse-fields { display: flex; flex-direction: column; gap: 10px; }
+.rb-browse-pane { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--rb-line); border-radius: 10px; background: var(--rb-soft); }
+.rb-browse-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+/* the page's title, above the pane rather than in it (Ketura, 2026-11-06) */
+.rb-browse-title { margin: 0 0 10px; font-size: calc(34px * (1 + (var(--rb-text-scale) - 1) * 0.45)); line-height: 1.1; font-weight: 700; letter-spacing: -.01em; color: var(--rb-ink); }
+.rb-filters-toggle { display: none; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; font-size: calc(13px * var(--rb-text-scale)); font-weight: 600; }
+.rb-browse-pane.is-open .rb-filters-toggle { background: var(--rb-tan); }
+.rb-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; margin: 0; font-weight: 400; }
+.rb-field > span, .rb-field > label, .rb-browse-label { font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; margin: 0; }
+.rb-browse-search { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.rb-field-cards, .rb-field-tags { grid-column: 1 / -1; }
+/* the Tags drawer hangs under the field (Ketura, 2026-11-07) */
+.rb-field-tags { position: relative; }
+.rb-card-picks { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; height: auto; min-height: 30px; padding: 2px 4px; cursor: text; }
+.rb-card-picks .twitter-typeahead { flex: 1 1 120px; }
+.rb-card-picks #browse-tag { flex: 1 1 120px; min-width: 0; }
+.rb-card-picks #browse-card, .rb-card-picks #browse-tag, .rb-card-picks .tt-hint { width: 100%; height: 24px; border: 0; outline: 0; padding: 0 4px; background: transparent; }
+.rb-card-pick { display: inline-flex; align-items: center; gap: 4px; padding: 1px 4px 1px 8px; border-radius: 12px; background: var(--rb-blue-soft); border: 1px solid #C8D7EA; font-size: calc(12px * var(--rb-text-scale)); font-weight: 600; white-space: nowrap; }
+.rb-card-pick button { border: 0; background: none; padding: 0 2px; font-size: calc(15px * var(--rb-text-scale)); line-height: 1; color: var(--rb-muted); cursor: pointer; }
+.rb-card-picks .tt-dropdown-menu { min-width: 260px; margin-top: 4px; padding: 4px 0; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; box-shadow: 0 4px 14px rgba(0, 0, 0, .12); }
+.rb-card-picks .tt-suggestion { padding: 3px 10px; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-card-picks .tt-suggestion.tt-cursor { background: #FBE38E; }
+.rb-browse-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 16px; }
+.rb-field-format select { width: 230px; }
+.rb-dates { display: flex; align-items: center; gap: 4px; }
+.rb-dates input { flex: 1 1 0; width: auto; min-width: 0; max-width: 170px; }
+.rb-browse-also .rb-card-picks-row { display: flex; flex-wrap: wrap; gap: 4px; }
+.rb-browse-submit { display: flex; }
+.rb-toggles { display: flex; flex-wrap: wrap; gap: 4px; }
+.rb-toggle, .rb-culture-pick { position: relative; margin: 0; font-weight: 600; cursor: pointer; }
+.rb-toggle input, .rb-culture-pick input { position: absolute; opacity: 0; pointer-events: none; }
+.rb-toggle > span { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; white-space: nowrap; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; font-size: calc(13px * var(--rb-text-scale)); color: var(--rb-muted); }
+.rb-toggle input:checked + span { background: var(--rb-ink); border-color: var(--rb-ink); color: #fff; }
+.rb-toggle-free_peoples input:checked + span { background: var(--rb-side-fp); border-color: var(--rb-side-fp); }
+.rb-toggle-shadow input:checked + span { background: var(--rb-side-sh); border-color: var(--rb-side-sh); }
+.rb-toggle input:focus-visible + span, .rb-culture-pick input:focus-visible + span { outline: 2px solid var(--rb-blue); outline-offset: 1px; }
+.rb-browse-cultures { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.rb-browse-cultures .rb-browse-label { margin-right: 6px; }
+.rb-culture-pick > span { width: 34px; height: 32px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; }
+.rb-culture-pick .culture-icon { width: 24px; height: 22px; }
+.rb-culture-pick input:checked + span { background: #FBE38E; border-color: #B58B00; box-shadow: inset 0 0 0 1px #B58B00; }
+.rb-browse-cultures .rb-culture-sep { width: 1px; height: 26px; margin: 0 6px; background: var(--rb-line-strong); }
+.rb-browse-actions { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+/* Reset, beside Search (Ketura, 2026-11-07): quieter while there's nothing to reset */
+.rb-browse-clear.is-idle { color: var(--rb-muted); }
+
+/* the count on the left, the pager in the middle, the sort on the right */
+.rb-results-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px 16px; margin-bottom: 6px; }
+.rb-results-count { font-size: calc(15px * var(--rb-text-scale)); font-weight: 700; }
+.rb-results-head .rb-pager { grid-column: 2; }
+.rb-results-sort { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 8px; margin: 0; }
+.rb-results-sort span { font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; }
+.rb-results-sort select { width: 150px; }
+/* under the results: the pager in the middle, the page size on the right (Ketura, 2026-11-06) */
+.rb-results-foot { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 6px 16px; padding-top: 8px; }
+.rb-results-foot .rb-pager { grid-column: 2; }
+.rb-results-limit { grid-column: 3; justify-self: end; display: flex; align-items: center; gap: 8px; margin: 0; }
+.rb-results-limit span { font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; }
+.rb-results-limit select { width: 80px; }
+/* tags on a row search for their decks */
+.rb-tag-link { border: 0; cursor: pointer; color: inherit; }
+.rb-tag-link:hover, .rb-tag-link:focus-visible { background: #E9D9B4; }
+.rb-tag-link.is-on { background: #FBE38E; }
+
+/* a wide window: the filters in a pane on the left, the results on the right, and only the
+   results (or a long filter pane) scroll; the column headings stay put (Ketura, 2026-11-06) */
+@media (min-width: 992px) {
+    #wrapper.rb-fill > .container.main.rb-browse {
+        flex: 1 1 auto; min-height: 0; width: 100%; max-width: none; padding: 10px 12px 10px 8px;
+        /* the pane about as wide as the Show buttons, wider by dragging the bar beside it
+           (app.splitter.js; Ketura, 2026-11-07) */
+        display: grid; grid-template-columns: var(--rb-pane-width, 392px) 17px minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); gap: 0;
+    }
+    .rb-browse > :not(.rb-browse-pane):not(.rb-browse-results):not(.rb-browse-title):not(.rb-browse-side):not(.rb-browse-splitter) { grid-column: 1 / -1; grid-row: 1; }
+    /* the title over the pane; the results start level with it */
+    .rb-browse > .rb-browse-title { grid-column: 1; grid-row: 2; }
+    .rb-browse > .rb-browse-pane { grid-column: 1; grid-row: 3; margin: 0; overflow-y: auto; scrollbar-gutter: stable; }
+    .rb-browse > .rb-browse-results { grid-column: 3; grid-row: 2 / 4; display: flex; flex-direction: column; min-height: 0; }
+    .rb-browse > .rb-browse-splitter { grid-column: 2; grid-row: 2 / 4; position: relative; cursor: col-resize; touch-action: none; }
+    .rb-browse > .rb-browse-splitter::before { content: ""; position: absolute; top: 0; bottom: 0; left: 8px; width: 1px; background: var(--rb-line); }
+    .rb-browse > .rb-browse-splitter:hover::before, body.rb-resizing .rb-browse > .rb-browse-splitter::before { left: 7px; width: 3px; background: #D4A017; }
+    .rb-browse .rb-browse-pane .rb-toggles { flex-wrap: wrap; }
+    .rb-results-head, .rb-results-foot { flex: 0 0 auto; }
+    .rb-results-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-gutter: stable; border-top: 2px solid var(--rb-line-strong); }
+    .rb-results-scroll .rb-decks thead th { position: sticky; top: 0; z-index: 1; background: #fff; }
+    /* the pane: one field to a line */
+    .rb-browse-pane .rb-browse-search { grid-template-columns: minmax(0, 1fr); }
+    .rb-browse-pane .rb-browse-filters { flex-direction: column; align-items: stretch; }
+    .rb-browse-pane .rb-field-format select { width: 100%; }
+    .rb-browse-pane .rb-dates input { max-width: none; }
+    .rb-browse-pane .rb-toggles { flex-wrap: nowrap; }
+    .rb-browse-pane .rb-browse-cultures .rb-browse-label { width: 100%; }
+    .rb-browse-pane .rb-browse-cultures .rb-culture-sep { width: 100%; height: 0; margin: 2px 0; background: none; }
+    .rb-browse-pane .rb-browse-actions { margin: 6px 0 0; width: 100%; justify-content: flex-start; gap: 8px; }
+}
+/* the filters' toggle is for a phone; above that the pane's top holds nothing */
+@media (min-width: 768px) {
+    .rb-browse-top { display: none; }
+}
+
+.rb-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; }
+.rb-page { min-width: 32px; height: 30px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--rb-line-strong); border-radius: 5px; background: #fff; color: var(--rb-blue); font-size: calc(13px * var(--rb-text-scale)); font-weight: 600; font-variant-numeric: tabular-nums; }
+a.rb-page:hover, a.rb-page:focus { background: var(--rb-blue-soft); text-decoration: none; }
+.rb-page.is-current { background: var(--rb-ink); border-color: var(--rb-ink); color: #fff; }
+.rb-page-step { color: var(--rb-ink); font-size: calc(11px * var(--rb-text-scale)); }
+.rb-page.is-disabled { color: var(--rb-grey); border-color: var(--rb-line); }
+.rb-page-jump { display: inline-flex; gap: 4px; margin: 0 0 0 8px; }
+/* a page number typed, no spinner (Ketura, 2026-11-07) */
+.rb-page-jump input { -moz-appearance: textfield; appearance: textfield; }
+.rb-page-jump input::-webkit-inner-spin-button, .rb-page-jump input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.rb-page-jump input { width: 84px; height: 30px; padding: 0 6px; border: 1px solid var(--rb-line-strong); border-radius: 5px; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-page-jump button { height: 30px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 5px; background: var(--rb-soft); font-size: calc(13px * var(--rb-text-scale)); font-weight: 600; }
+/* while the next results load: the old ones dim under a spinner */
+.rb-browse-results { position: relative; min-height: 160px; }
+.rb-browse-results.is-loading > * { opacity: .35; pointer-events: none; transition: opacity .15s; }
+.rb-browse-results.is-loading::after { content: ''; position: absolute; left: 50%; top: 90px; width: 44px; height: 44px; margin-left: -22px; border: 4px solid var(--rb-line); border-top-color: var(--rb-ink); border-radius: 50%; animation: rb-spin .8s linear infinite; }
+@keyframes rb-spin { to { transform: rotate(360deg); } }
+.rb-results-none { padding: 40px 0; text-align: center; color: var(--rb-muted); font-size: calc(15px * var(--rb-text-scale)); }
+/* the table sized to its content and centred (Ketura, 2026-11-05) */
+.rb-decks { width: auto; margin: 0 auto; border-collapse: collapse; font-size: calc(14px * var(--rb-text-scale)); }
+.rb-decks th { padding: 6px 8px; border-bottom: 2px solid var(--rb-line-strong); font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; white-space: nowrap; text-align: center; }
+.rb-decks th a { color: inherit; }
+.rb-decks th a.is-sorted { color: var(--rb-ink); }
+.rb-decks td { padding: 6px 8px; border-bottom: 1px solid var(--rb-line); vertical-align: middle; }
+.rb-decks tbody tr { cursor: pointer; }
+.rb-decks tbody tr:hover { background: #FFF7D6; }
+/* the headings centred, and every column but the deck's (Ketura, 2026-11-06) */
+.rb-decks td { text-align: center; }
+.rb-decks td.rb-col-deck { text-align: left; }
+.rb-decks .rb-row-cultures, .rb-decks .rb-row-tags { justify-content: center; }
+.rb-col-format { min-width: 110px; max-width: 190px; }
+.rb-decks td.rb-col-thumb { padding: 5px 6px 5px 0; }
+.rb-fmt { font-weight: 700; }
+.rb-col-size { white-space: nowrap; }
+.rb-col-score { white-space: nowrap; font-size: calc(15px * var(--rb-text-scale)); }
+.rb-col-score .rb-comments { display: block; margin: 2px 0 0; font-size: calc(12px * var(--rb-text-scale)); }
+.rb-score.is-zero { color: var(--rb-grey); font-weight: 400; }
+.rb-score.is-fiery { color: #C2410C; }
+.rb-size { display: inline-flex; align-items: baseline; justify-content: flex-start; min-width: 0; padding: 2px 6px; border-radius: 5px; font-variant-numeric: tabular-nums; font-weight: 700; font-size: calc(14px * var(--rb-text-scale)); }
+.rb-size-fp { color: var(--rb-side-fp); min-width: 2ch; text-align: right; }
+.rb-size-sh { color: var(--rb-side-sh); min-width: 2ch; text-align: left; }
+.rb-size-slash { margin: 0 2px; color: var(--rb-grey); font-weight: 400; }
+.rb-size .is-none { color: var(--rb-grey); font-weight: 400; }
+/* a line per side: Free Peoples above, Shadow below */
+.rb-row-cultures { display: flex; align-items: center; gap: 2px; min-width: 0; height: 20px; }
+.rb-row-cultures .culture-icon { width: 22px; height: 18px; }
+.rb-col-deck { min-width: 200px; max-width: 460px; }
+.rb-deck-name { display: block; font-size: calc(20px * var(--rb-text-scale)); line-height: 1.15; overflow-wrap: anywhere; font-weight: 700; color: var(--rb-ink); }
+.rb-deck-by { display: block; margin-top: 3px; font-size: calc(13px * var(--rb-text-scale)); color: var(--rb-muted); }
+.rb-deck-dot { margin: 0 3px; }
+.rb-col-tags { max-width: 220px; }
+/* the decklists' tags take the room the cultures had (Ketura, 2026-11-07) */
+.rb-decks:not(.rb-my-decks-table) .rb-col-tags { max-width: none; width: 30%; min-width: 120px; }
+.rb-decks:not(.rb-my-decks-table) .rb-row-tags { flex-wrap: wrap; row-gap: 3px; }
+.rb-row-tags { display: flex; flex-wrap: wrap; gap: 3px; }
+.rb-row-tags .rb-tag-chip { padding: 1px 8px; font-size: calc(12px * var(--rb-text-scale)); white-space: nowrap; }
+.rb-archive-mark { margin-left: 4px; padding: 0 5px; border-radius: 3px; background: var(--rb-tan); font-size: calc(11px * var(--rb-text-scale)); font-weight: 600; }
+.rb-score { color: var(--rb-blue); font-weight: 700; }
+.rb-comments { margin-left: 8px; color: var(--rb-good); }
+
+/* a phone: each deck a block of three lines (format, size and year; the name; cultures and rating) */
+@media (max-width: 767px) {
+    .rb-browse-pane:not(.is-open) > :not(.rb-browse-top) { display: none; }
+    .rb-filters-toggle { display: inline-flex !important; }
+    .rb-browse-search { grid-template-columns: minmax(0, 1fr); }
+    .rb-field-format select { width: 100%; }
+    .rb-field-format { flex: 1 1 100%; }
+    .rb-browse-actions { margin-left: 0; width: 100%; justify-content: flex-start; gap: 8px; }
+    .rb-results-head { grid-template-columns: 1fr auto; }
+    .rb-results-head .rb-pager { grid-column: 1 / -1; grid-row: 2; }
+    .rb-results-sort { grid-column: 2; grid-row: 1; }
+    .rb-page-jump { display: none; }
+    .rb-results-foot { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+    .rb-results-foot .rb-pager, .rb-results-limit { grid-column: 1; justify-self: center; }
+    .rb-decks thead { display: none; }
+    .rb-decks, .rb-decks tbody { display: block; }
+    .rb-decks { width: 100%; }
+    .rb-decks tr { display: grid; grid-template-columns: auto auto auto minmax(0, 1fr); grid-template-areas: "thumb score size fmt" "thumb deck deck deck" "thumb tags tags tags"; gap: 2px 8px; padding: 8px 2px; border-bottom: 1px solid var(--rb-line); }
+    .rb-deck-name { font-size: calc(16px * var(--rb-text-scale)); }
+    .rb-decks td.rb-col-thumb { grid-area: thumb; padding: 0; }
+    .rb-decks .rb-thumb { width: 80px; }
+    .rb-decks td { padding: 0; border: 0; width: auto; max-width: none; min-width: 0; }
+    .rb-decks td.rb-col-format { grid-area: fmt; white-space: normal; } .rb-decks td.rb-col-size { grid-area: size; }
+    .rb-decks td.rb-col-score { grid-area: score; } .rb-decks td.rb-col-deck { grid-area: deck; }
+    .rb-decks td.rb-col-tags { grid-area: tags; }
+    .rb-col-score .rb-comments { display: inline; margin-left: 6px; }
+    .rb-fmt { min-width: 0; }
+    .rb-decks td.rb-col-tags:empty { display: none; }
+    /* a phone's block of lines reads from the left */
+    .rb-decks td { text-align: left; }
+    .rb-decks .rb-row-cultures, .rb-decks .rb-row-tags { justify-content: flex-start; }
+}
+
+/* ---- My Decks (Ketura, 2026-11-07): tabs for the user's decks and their favourites over
+   three panes: the decklists page's filters, slimmer; the decks; and what can be done, to new
+   decks and to the ones ticked ---- */
+.rb-browse-alerts:empty { display: none; }
+.rb-tabs { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 4px 20px; margin: 0 0 10px; border-bottom: 2px solid var(--rb-line-strong); }
+.rb-tab-row { display: flex; gap: 4px; margin-bottom: -2px; }
+.rb-tab {
+    padding: 4px 16px 6px; border: 2px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0;
+    font-size: calc(32px * var(--rb-text-scale)); font-weight: 800; line-height: 1.15; color: #A9A194; text-decoration: none;
+}
+.rb-tab:hover, .rb-tab:focus-visible { color: #6E665A; text-decoration: none; background: #F6F2EA; }
+.rb-tab.is-active { color: var(--rb-ink); background: #fff; border-color: var(--rb-line-strong); border-bottom: 2px solid #fff; }
+.rb-slot-count { margin: 0 0 8px auto; font-size: calc(13px * var(--rb-text-scale)); font-weight: 600; color: var(--rb-muted); white-space: nowrap; }
+.rb-slot-count.is-full { color: #B03A2E; }
+/* the include row doesn't apply to favourites: greyed out, kept for the decks tab */
+.rb-field-include.is-off { opacity: .4; pointer-events: none; }
+
+/* the actions pane */
+.rb-browse-side { display: flex; flex-direction: column; gap: 14px; }
+.rb-side-section { display: flex; flex-direction: column; gap: 6px; padding: 12px; border: 1px solid var(--rb-line); border-radius: 10px; background: var(--rb-soft); }
+.rb-side-title { margin: 0 0 2px; font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .04em; }
+.rb-side-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 12px; text-align: left; white-space: normal; font-size: calc(14px * var(--rb-text-scale)); font-weight: 600; }
+.rb-side-danger:not(:disabled) { color: #B03A2E; }
+.rb-side-hint { margin: 0; font-size: calc(12px * var(--rb-text-scale)); color: var(--rb-muted); }
+.rb-selection:not(.is-off) .rb-side-hint { display: none; }
+.rb-selection.is-off { background: #F3F1EC; }
+.rb-selection.is-off .rb-side-title { opacity: .6; }
+.rb-selected-count { color: var(--rb-ink); }
+
+/* the decks */
+.rb-my-decks-table td.rb-col-pick, .rb-my-decks-table th.rb-col-pick { width: 28px; padding: 6px 2px 6px 4px; cursor: default; }
+.rb-col-pick input { margin: 0; width: 16px; height: 16px; cursor: pointer; vertical-align: middle; }
+.rb-fmt-state { display: block; margin-top: 3px; }
+.rb-fmt-state .label { font-size: 70%; }
+.rb-col-visibility { white-space: nowrap; }
+/* "Fellowship Block" on one line (Ketura, 2026-11-07) */
+.rb-my-decks-table .rb-fmt { white-space: nowrap; }
+.rb-vis { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px 2px 6px; border-radius: 12px; font-size: calc(13px * var(--rb-text-scale)); font-weight: 700; color: #6E665A; background: #EFEAE0; }
+.rb-vis-hidden { color: #4E5E70; background: #E3E9EF; }
+.rb-vis-published { color: #2F6B3A; background: #DDEEDD; }
+.rb-col-published { white-space: nowrap; }
+a.rb-vis-published:hover, a.rb-vis-published:focus { color: #1F4F28; background: #CCE5CC; text-decoration: none; }
+/* under the pill: the deck's own number, or how it stands to what was published (Ketura, 2026-11-08) */
+.rb-deck-current { display: block; margin-top: 3px; color: var(--rb-muted); font-size: calc(12px * var(--rb-text-scale)); font-weight: 600; white-space: nowrap; }
+.rb-my-decks-table td, .rb-my-decks-table th { padding-left: 6px; padding-right: 6px; }
+.rb-my-decks-table { width: 100%; }
+/* the tags take what room is left, most of it on a wide window */
+.rb-my-decks-table .rb-col-tags { min-width: 70px; width: 18%; }
+.rb-my-decks-table .rb-col-deck { min-width: 150px; }
+.rb-my-decks-table .rb-thumb { width: 84px; }
+.rb-my-decks-table .rb-row-tags { flex-wrap: wrap; justify-content: flex-start; row-gap: 3px; }
+.rb-my-decks-table th.rb-col-tags { text-align: left; }
+.rb-col-actions { white-space: nowrap; }
+.rb-icon-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0; border: 1px solid transparent; border-radius: 5px; background: none; color: var(--rb-muted); }
+.rb-icon-btn:hover, .rb-icon-btn:focus-visible { border-color: var(--rb-line-strong); background: #fff; color: var(--rb-ink); text-decoration: none; }
+.rb-icon-btn.rb-icon-danger:hover { color: #B03A2E; }
+.rb-icon-btn.is-disabled { opacity: .35; cursor: default; }
+.rb-icon-btn.is-disabled:hover { border-color: transparent; background: none; color: var(--rb-muted); }
+/* the buttons' tooltips: at once, to the left, clear of the column headings above */
+.rb-icon-btn[data-tip]:hover::after, .rb-icon-btn[data-tip]:focus-visible::after {
+    content: attr(data-tip); position: absolute; right: calc(100% + 6px); top: 50%; transform: translateY(-50%);
+    padding: 2px 8px; border-radius: 4px; background: #2B2620; color: #fff; font-size: 12px; font-weight: 600; line-height: 1.5;
+    white-space: nowrap; pointer-events: none; z-index: 60;
+}
+
+@media (min-width: 992px) {
+    /* the filters pane about as wide as the Show buttons; the actions a narrow column */
+    /* the filters' width set by dragging the bar beside them (app.splitter.js) */
+    #wrapper.rb-fill > .container.main.rb-browse.rb-my-decks { grid-template-columns: var(--rb-pane-width, 392px) 17px minmax(0, 1fr) 220px; column-gap: 0; }
+    .rb-my-decks > .rb-browse-splitter { grid-row: 3; }
+    .rb-my-decks .rb-browse-pane .rb-culture-pick > span { width: 32px; }
+    .rb-my-decks > .rb-browse-title { grid-column: 1 / -1; grid-row: 2; }
+    .rb-my-decks > .rb-browse-pane { grid-row: 3; }
+    .rb-my-decks > .rb-browse-results { grid-column: 3; grid-row: 3; margin-right: 18px; }
+    .rb-my-decks > .rb-browse-side { grid-column: 4; grid-row: 3; min-height: 0; overflow-y: auto; }
+}
+/* a laptop's width: the actions in a strip over the decks, which keep the room for their columns */
+@media (min-width: 992px) and (max-width: 1399px) {
+    #wrapper.rb-fill > .container.main.rb-browse.rb-my-decks { grid-template-columns: var(--rb-pane-width, 340px) 17px minmax(0, 1fr); grid-template-rows: auto auto auto minmax(0, 1fr); }
+    .rb-my-decks-table td, .rb-my-decks-table th { padding-left: 5px; padding-right: 5px; }
+    .rb-my-decks > .rb-browse-pane, .rb-my-decks > .rb-browse-splitter { grid-row: 3 / 5; }
+    .rb-my-decks > .rb-browse-side { grid-column: 3; grid-row: 3; flex-direction: row; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; overflow: visible; }
+    .rb-my-decks > .rb-browse-results { grid-row: 4; margin-right: 0; }
+    .rb-my-decks .rb-side-section { flex-direction: row; flex-wrap: wrap; align-items: center; padding: 6px 8px; }
+    .rb-my-decks .rb-side-title { margin: 0 4px 0 2px; }
+    .rb-my-decks .rb-side-btn { width: auto; padding: 4px 10px; font-size: calc(13px * var(--rb-text-scale)); }
+    .rb-my-decks .rb-side-hint { display: none; }
+}
+@media (max-width: 991px) {
+    .rb-browse-splitter { display: none; }
+    .rb-browse-side { flex-direction: row; flex-wrap: wrap; margin: 10px 0; }
+    .rb-side-section { flex: 1 1 260px; }
+}
+@media (max-width: 767px) {
+    .rb-tab { font-size: calc(22px * var(--rb-text-scale)); padding: 4px 10px 6px; }
+    .rb-my-decks-table tr { grid-template-columns: auto auto auto minmax(0, 1fr); grid-template-areas: "pick thumb size fmt" "pick thumb deck deck" "pick thumb pub vis" "pick thumb tags tags" "pick thumb acts acts"; }
+    .rb-my-decks-table td.rb-col-published { grid-area: pub; }
+    .rb-my-decks-table td.rb-col-pick { grid-area: pick; width: auto; padding: 0; }
+    .rb-my-decks-table td.rb-col-visibility { grid-area: vis; }
+    .rb-my-decks-table td.rb-col-actions { grid-area: acts; }
+    .rb-my-decks-table .rb-col-tags { min-width: 0; width: auto; }
+}

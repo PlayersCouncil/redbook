@@ -1,0 +1,60 @@
+/* Tokens (Ketura, 2026-11-09): the culture palette; the theme's light and dark tokens join it */
+
+/* ---- culture colours (Ketura, 2026-11-03) ----
+   The one place the site keeps them: CSS uses var(--rb-culture-gondor), JS reads them
+   through app.cultures.color('gondor'). From the card templates of sets 5-13 by
+   docker/tools/culture_colors.py: the main colour is the title bar's gradient, the light
+   one the tint of the collector's-info patch. The Balrog's fiery template isn't Moria's. */
+:root {
+    --rb-culture-dunland: #676E7D; --rb-culture-dunland-light: #766B5B;
+    --rb-culture-dwarven: #420726; --rb-culture-dwarven-light: #C9BFA1;
+    --rb-culture-elven: #346186; --rb-culture-elven-light: #BBB9BC;
+    --rb-culture-gandalf: #446D81; --rb-culture-gandalf-light: #CEAC87;
+    --rb-culture-gollum: #536F7C; --rb-culture-gollum-light: #736F6C;
+    --rb-culture-gondor: #6C5D8C; --rb-culture-gondor-light: #D0C8D3;
+    --rb-culture-isengard: #3F7C4E; --rb-culture-isengard-light: #AAB3A4;
+    --rb-culture-men: #D1AA3D; --rb-culture-men-light: #767677;
+    --rb-culture-moria: #BD5F03; --rb-culture-moria-light: #BFA67A;
+    --rb-culture-orc: #9D3A21; --rb-culture-orc-light: #9F8D79;
+    --rb-culture-raider: #E4C632; --rb-culture-raider-light: #BEA86C;
+    --rb-culture-ringwraith: #244B5E; --rb-culture-ringwraith-light: #8C9AA5;
+    --rb-culture-rohan: #1A69AC; --rb-culture-rohan-light: #687080;
+    --rb-culture-sauron: #791217; --rb-culture-sauron-light: #D5B4A2;
+    --rb-culture-shire: #3F523C; --rb-culture-shire-light: #C3C79F;
+    --rb-culture-uruk-hai: #398129; --rb-culture-uruk-hai-light: #A6AC9B;
+    /* each culture's five card-template colours, from Ketura's thumbnail tuner (2026-11-05) */
+    /* Dwarven: the thumbnail's background is base2 */
+    --rb-culture-dwarven-background: #D6D1B4; --rb-culture-dwarven-base1: #8F6B2D; --rb-culture-dwarven-base2: #282617; --rb-culture-dwarven-contrast: #814D37; --rb-culture-dwarven-symbol: #5C513F;
+    /* Elven: the thumbnail's background is base2 */
+    --rb-culture-elven-background: #BEBEC0; --rb-culture-elven-base1: #5699B7; --rb-culture-elven-base2: #346186; --rb-culture-elven-contrast: #91A9C5; --rb-culture-elven-symbol: #4D2315;
+    /* Gandalf: the thumbnail's background is base2 */
+    --rb-culture-gandalf-background: #DCC29F; --rb-culture-gandalf-base1: #99823E; --rb-culture-gandalf-base2: #55392B; --rb-culture-gandalf-contrast: #6A9CB5; --rb-culture-gandalf-symbol: #CEAC87;
+    /* Gollum (Free Peoples): the thumbnail's background is base1 */
+    --rb-culture-gollum-background: #C6C8C7; --rb-culture-gollum-base1: #BD9E99; --rb-culture-gollum-base2: #6C3C3C; --rb-culture-gollum-contrast: #7B939F; --rb-culture-gollum-symbol: #8A7E56;
+    /* Gondor: the thumbnail's background is base2 */
+    --rb-culture-gondor-background: #E8E3DF; --rb-culture-gondor-base1: #DED9E0; --rb-culture-gondor-base2: #44484B; --rb-culture-gondor-contrast: #5C4998; --rb-culture-gondor-symbol: #887D85;
+    /* Rohan: the thumbnail's background is base1 */
+    --rb-culture-rohan-background: #C9CCDD; --rb-culture-rohan-base1: #77404B; --rb-culture-rohan-base2: #362426; --rb-culture-rohan-contrast: #1577BA; --rb-culture-rohan-symbol: #8A9EB5;
+    /* Shire: the thumbnail's background is background */
+    --rb-culture-shire-background: #CAD0AE; --rb-culture-shire-base1: #91916B; --rb-culture-shire-base2: #4B4930; --rb-culture-shire-contrast: #4D5C73; --rb-culture-shire-symbol: #55743B;
+    /* Dunland: the thumbnail's background is base1 */
+    --rb-culture-dunland-background: #CFC7B4; --rb-culture-dunland-base1: #676E7D; --rb-culture-dunland-base2: #241F19; --rb-culture-dunland-contrast: #8F98A9; --rb-culture-dunland-symbol: #040000;
+    /* Gollum (Shadow): the thumbnail's background is base2 */
+    --rb-culture-gollum-shadow-background: #DAD5CF; --rb-culture-gollum-shadow-base1: #BBAE9D; --rb-culture-gollum-shadow-base2: #252F27; --rb-culture-gollum-shadow-contrast: #7B939F; --rb-culture-gollum-shadow-symbol: #7E5E37;
+    /* Isengard: the thumbnail's background is contrast */
+    --rb-culture-isengard-background: #C4CFC1; --rb-culture-isengard-base1: #444D54; --rb-culture-isengard-base2: #080A09; --rb-culture-isengard-contrast: #223B28; --rb-culture-isengard-symbol: #E7E2DF;
+    /* Men: the thumbnail's background is base2 */
+    --rb-culture-men-background: #BCBDC1; --rb-culture-men-base1: #9D9A8B; --rb-culture-men-base2: #1F2024; --rb-culture-men-contrast: #D19F48; --rb-culture-men-symbol: #9C783A;
+    /* Moria: the thumbnail's background is base1 */
+    --rb-culture-moria-background: #CFC9A7; --rb-culture-moria-base1: #5F3423; --rb-culture-moria-base2: #1B1F20; --rb-culture-moria-contrast: #BB5F1E; --rb-culture-moria-symbol: #8E8586;
+    /* Orc: the thumbnail's background is base2 */
+    --rb-culture-orc-background: #D2CAB7; --rb-culture-orc-base1: #7B767C; --rb-culture-orc-base2: #4B5054; --rb-culture-orc-contrast: #AF5137; --rb-culture-orc-symbol: #8B9050;
+    /* Raider: the thumbnail's background is contrast */
+    --rb-culture-raider-background: #F4EAB9; --rb-culture-raider-base1: #B69670; --rb-culture-raider-base2: #241C19; --rb-culture-raider-contrast: #EFD344; --rb-culture-raider-symbol: #AB7944;
+    /* Ringwraith: the thumbnail's background is base2 */
+    --rb-culture-ringwraith-background: #C5BDBA; --rb-culture-ringwraith-base1: #353A3D; --rb-culture-ringwraith-base2: #040404; --rb-culture-ringwraith-contrast: #265765; --rb-culture-ringwraith-symbol: #4E4F54;
+    /* Sauron: the thumbnail's background is base2 */
+    --rb-culture-sauron-background: #D7C1AA; --rb-culture-sauron-base1: #898981; --rb-culture-sauron-base2: #2B2B29; --rb-culture-sauron-contrast: #B91317; --rb-culture-sauron-symbol: #7A251E;
+    /* Uruk-hai: the thumbnail's background is base1 */
+    --rb-culture-uruk-hai-background: #D6DFCE; --rb-culture-uruk-hai-base1: #315671; --rb-culture-uruk-hai-base2: #0F2231; --rb-culture-uruk-hai-contrast: #017136; --rb-culture-uruk-hai-symbol: #6A7D9E;
+}

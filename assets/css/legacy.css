@@ -1,0 +1,417 @@
+/* From ThronesDB, still in use: the card pages, search, reviews, profiles and the like */
+
+/* The site's text size (Ketura, 2026-11-06): every font size here and in bootstrap.css is a
+   multiple of this, so one number sets them all. Text of 16px and under grows by all of it,
+   larger titles by less (down to a fifth of it from 40px up), and form controls' heights
+   follow their text. */
+:root { --rb-text-scale: 1.3; }
+
+/* fonts */
+
+body {
+}
+
+.card-content {
+    font: calc(16px * var(--rb-text-scale))/calc(20px * var(--rb-text-scale)) 'Crimson Text', serif;
+}
+.card-content abbr[title] {
+    border-bottom: none;
+}
+
+.card-errata-long {
+    font-weight: bold;
+}
+
+.card-errata-short {
+    font-style: italic;
+}
+
+.card-name {
+    font-family: 'Julius Sans One', sans-serif;
+    font-weight: 700;
+}
+.card-preview {
+    color: red;
+}
+.card-type, .card-designer {
+    font-weight: 700;
+}
+.card-traits, .card-text i {
+    font-weight: 700;
+    font-style: italic;
+}
+.card-text {
+    border-left-width: 2px;
+    border-left-style: solid;
+}
+.card-text p {
+    margin: 6px;
+}
+.card-flavor {
+    font-style: italic;
+}
+.card-flavor cite {
+    white-space: nowrap;
+}
+
+.card-rarity {
+    padding-top: 5px;
+}
+.card-flavor cite::before {
+    /* en dash followed by non-breaking zero-width space */
+    content: "\2013\FEFF";
+}
+
+.navbar-static-top {
+    z-index: auto;
+}
+
+.display-spoiler-card {
+    margin-bottom: 1em;
+}
+
+.display-spoiler-card h4 {
+    border-bottom: 1px solid #ddd;
+}
+.deck-loading {
+    padding: 50px 0;
+    text-align: center;
+}
+.tab-content {
+    padding-top: 15px;
+}
+.dropdown-menu label {
+    margin: 0;
+}
+.dropdown-menu input[type=checkbox], .dropdown-menu input[type=radio] {
+    margin: -4px 8px 0 -6px;
+}
+
+html, body {
+    height: 100%;
+    min-height: 100%;
+}
+td.type, td.faction {
+    text-align:center;
+}
+.container.main {
+    margin-bottom: 20px;
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+.container.main.white {
+    background-color: #fff;
+}
+.container.main.admin {
+    background-color: #fff;
+    border: 1px solid red;
+}
+div.tags span.tag {
+    font-size: 75%;
+    color: darkgray;
+}
+div.tags span.tag:not(:first-child)::before {
+    content: " - ";
+}
+
+.social-icons>*{margin-left:5px}
+.social-icon-like{color:#1D5FAD}
+.social-icon-fire{color:#D9531E}
+.social-icon-favorite{color:#B7860B}
+.social-icon-comment{color:green}
+.social-icon-version{color:blue}
+
+/*** generic ****/
+
+.smaller {
+    font-size: 70%;
+}
+
+/* for the sets list in card search */
+ol {
+    padding-left: 30px;
+}
+
+/********** icon-bg ***********/
+
+/********* ONE DECK *********/
+
+.deck-content {
+    margin-bottom: 15px;
+}
+
+/********** DECK EDITOR ************/
+
+/** Description panel **/
+div#description img,
+div#description-preview img {
+    max-width: 100%;
+}
+
+/********* LIST OF DECKS ************/
+
+.list-decks > thead > tr {
+    font-size: 2em;
+}
+.list-decks > tbody > tr > td {
+    vertical-align: middle;
+}
+.list-decks img {
+    height: 64px;
+}
+
+/********** NEW DECK **********/
+
+/********* DRAW SIMULATOR ************/
+
+#table-draw-simulator-content img {width:98px;height:136px;float:left;margin:5px;box-shadow: black 0px 0px 5px;border-radius: 5px;}
+
+#table-draw-simulator-content div.card-proxy {background:#888;color:white;width:99px;height:138px;float:left;margin:5px;box-shadow: black 0px 0px 5px;border-radius: 5px;}
+
+#table-draw-simulator-content div.card-proxy div{position: relative;top: 50%; transform: translateY(-50%);text-align:center}
+
+/*********** TYPEAHEAD **************/
+
+.twitter-typeahead{width:100%;background-color:#fff}
+.twitter-typeahead .tt-hint{color:#aaa;margin-left:11px;margin-top:4px;display:none}
+.twitter-typeahead .tt-query{margin-bottom:0}
+.tt-dropdown-menu{min-width:160px;margin-top:2px;padding:5px 0;background-color:#fff;border:1px solid #ccc;border:1px solid rgba(0,0,0,.2);*border-right-width:2px;*border-bottom-width:2px;-webkit-border-radius:6px;-moz-border-radius:6px;border-radius:6px;-webkit-box-shadow:0 5px 10px rgba(0,0,0,.2);-moz-box-shadow:0 5px 10px rgba(0,0,0,.2);box-shadow:0 5px 10px rgba(0,0,0,.2);-webkit-background-clip:padding-box;-moz-background-clip:padding;background-clip:padding-box}
+.tt-suggestion{display:block;padding:3px 20px}
+.tt-suggestion.tt-cursor{color:#fff;background-color:#0081c2;background-image:-moz-linear-gradient(top,#08c,#0077b3);background-image:-webkit-gradient(linear,0 0,0 100%,from(#08c),to(#0077b3));background-image:-webkit-linear-gradient(top,#08c,#0077b3);background-image:-o-linear-gradient(top,#08c,#0077b3);background-image:linear-gradient(to bottom,#08c,#0077b3);background-repeat:repeat-x;filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff0088cc',endColorstr='#ff0077b3',GradientType=0)}
+.tt-suggestion.tt-cursor a{color:#fff}
+.tt-suggestion p{margin:0}
+
+/************** QTIP ****************/
+.qtip-thronesdb{border-radius:2px;max-width:400px}
+.qtip-thronesdb-text{font-size:calc(15px * var(--rb-text-scale))}
+.qtip-thronesdb-image{max-width:none;padding:0;border:0;background:transparent;box-shadow:none}
+.qtip-thronesdb-image .qtip-content{padding:0}
+
+/***************** THUMBNAIL CARD IMAGE **************/
+
+/************** INDEX PAGE ***************/
+
+h1.site-title {
+    font-family: 'Julius Sans One', sans-serif;
+    position:relative;
+    font-size:calc(116px * (1 + (var(--rb-text-scale) - 1) * 0.2));
+    text-align:center;
+    margin-top: 0;
+}
+div.site-slogan {
+    font-family: 'Open Sans Condensed', sans-serif;
+    position:relative;
+    font-size:calc(40px * (1 + (var(--rb-text-scale) - 1) * 0.2));
+    text-align:center;
+}
+
+/************ LIST OF DECKLISTS **************/
+
+/************* DECKLIST *********************/
+
+.row.title {
+    padding-top:20px;
+    padding-bottom:10px
+}
+#deck-description h1 {
+    font-size: 171%;
+}
+#deck-description h2 {
+    font-size: 143%;
+}
+#deck-description h3 {
+    font-size: 121%;
+}
+#deck-description h4 {
+    font-size: 107%;
+}
+
+/************** FACTIONS COLORS **************/
+
+/**************** REVIEW ON CARD PAGE ******************/
+
+article.review {
+    margin-top: 2em;
+    padding-top: 2em;
+    border-top: 1px solid #ddd;
+}
+article.review:first-child {
+    margin-top: 0;
+}
+article.review .review-like {
+    float:left;
+    font-size: 120%;
+    width:50px
+}
+article.review .review-content {
+    margin-left: 50px
+}
+article.review .review-text :first-child {
+    margin-top: 0;
+}
+article.review .review-date {
+    clear: both;
+    text-align: right
+}
+article.review .review-author {
+    text-align: right
+}
+article.review .review-comment {
+    border-top: 1px solid #ddd;
+    padding: 0.5em;
+}
+
+/****************** BOOTSTRAP MARKDOWN *******************/
+
+.md-editor.md-fullscreen-mode {
+    z-index: 99;
+}
+
+/* PRINT STYLESHEETS */
+
+@media print {
+    h1 {
+        font-size: calc(24px * (1 + (var(--rb-text-scale) - 1) * 0.73));
+    }
+    a[href]:after {
+        content: none !important;
+    }
+    body { height: auto; display: block; overflow: visible; }
+    #wrapper, #wrapper.rb-fill { display: block; border: none; padding: 0; min-height: auto; overflow: visible; }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+	.icon::after {
+	    font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+	}
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+    
+}
+
+/*************** DECK(LIST) COMPARE *****************/
+
+.diff {
+    background: rgba(255,0,0,.5);
+}
+
+/**************** Tournament Legality indicators *******/
+
+abbr.legality.rl-joust,
+abbr.legality.rl-melee {
+    color: #639;
+}
+
+abbr.legality.banned {
+    color: #f00;
+}
+
+/******* Deck view ********/
+/* Shrink a bit these buttons in Spanish to keep them showing in a single row */
+
+/*** Rules Reference, Tournament Regulations pages ******/
+
+#rules div.example {
+    padding-left: 3em;
+}
+
+/* FAQ */
+#faq .new {
+    color: #ee0000;
+}
+
+#faq div.example {
+    padding-left: 3em;
+}
+
+/**** Restricted Lists ****/
+
+/** Search Syntax Page **/
+
+/* Panel list control panel */
+.panel-list .row {
+    margin: 0 0 16px 0;
+    display: flex;
+    flex-wrap: wrap;
+}
+.panel-list .panel-search {
+    flex-grow: 0;
+    order: 1;
+    width: 100%;
+    padding-top: 12px;
+}
+.panel-list .show-all, .panel-list .hide-all {
+    flex: auto;
+    flex-grow: 2;
+}
+.panel-list .hide-all {
+    margin-left: 12px;
+}
+.panel-dropdown, .panel-dropdown button, .panel-dropdown .dropdown-menu {
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .panel-list .row > * {
+        margin: 0;
+    }
+    .panel-list .hide-all, .panel-list .show-all {
+        flex: none;
+    }
+    .panel-list .panel-search {
+        flex-grow: 1;
+        order: 0;
+        width: unset;
+        padding: 0;
+    }
+    .panel-list .panel-search:not(:first-child) { /* when surrounded by buttons */
+        padding: 0 12px;
+    }
+    .panel-dropdown {
+        padding-left: 12px;
+    }
+    .panel-dropdown, .panel-dropdown button, .panel-dropdown .dropdown-menu {
+        width: unset;
+    }
+}
+
+/* LOTR card symbols. Card text writes cultures as [ELVEN]; until there are
+   culture icons the name is shown in small capitals. */
+.culture-symbol { font-weight: bold; font-variant: small-caps; text-transform: lowercase; }
+.culture-symbol:empty { display: none; }
+.card-unique { margin-right: 1px; }
+.card-versions ol li { margin-bottom: 4px; }
+.deck-section-title { margin: 12px 0 4px; font-weight: bold; }
+.deck-culture { margin: 8px 0 2px; color: #777; }
+.deck-site-number { min-height: 1.5em; }
+.deck-site-number .site-number { display: inline-block; width: 1.6em; color: #999; text-align: right; margin-right: .4em; }
+.deck-site-number .deck-card { display: inline-block; }
+.deck-card-edit a { color: #999; margin-left: 2px; }
+.deck-card-edit a:hover { color: #337ab7; }
+.deck-validation-pending { opacity: .6; }
+.deck-problems { margin: 4px 0 0; padding-left: 18px; }

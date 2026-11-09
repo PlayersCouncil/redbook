@@ -15,7 +15,7 @@ Balrog's fiery red is not Moria's).
 
 The art, the text box and the left-side icons are never sampled.
 
-Prints CSS custom properties for assets/css/style.css (the "culture colours" block,
+Prints CSS custom properties for assets/css/tokens.css (the "culture colours" block,
 which is where the site reads them from). Run it with the card list the database gives:
 
   docker exec redbook_db mariadb -uredbook -p... redbook -N -e "

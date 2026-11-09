@@ -1,0 +1,47 @@
+/* The shell: the page is the window, the navbar and footer (Ketura, 2026-11-03) */
+
+/* The page is the window (Ketura, 2026-11-03): navbar and footer stay put, the
+   content between them scrolls; an rb-fill page lets its own panes scroll instead. */
+body { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+body > .navbar { flex: 0 0 auto; margin-bottom: 0; }
+#wrapper { display: block; flex: 1 1 auto; min-height: 0; overflow-y: auto; border-bottom: 4px solid #c0392b; padding-bottom: 20px; }
+#wrapper.rb-fill { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
+footer { flex: 0 0 auto; padding: 4px 0; background-color: #95a5a6; font-size: calc(12px * (1 + (var(--rb-text-scale) - 1) * .4)); line-height: 1.4; }
+.rb-footer { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 18px; }
+.rb-footer-links { display: flex; flex-wrap: wrap; gap: 0 12px; }
+.rb-footer-links a { white-space: nowrap; }
+.rb-footer-disclaimer { flex: 1 1 420px; margin: 0; color: #2c3e50; }
+@media (max-width: 991px) {
+    /* phones and narrow windows: the page scrolls as before, footer at the end */
+    body { height: auto; display: block; overflow: visible; }
+    #wrapper, #wrapper.rb-fill { display: block; overflow: visible; }
+}
+.navbar-default {
+    font-size: calc(16px * var(--rb-text-scale));
+}
+/* the navbar and footer grow less than the text (Ketura, 2026-11-06), so the navbar stays on
+   one line and the footer stays out of the way; the navbar spans the window */
+.navbar-default .navbar-nav > li > a, .navbar-default .navbar-brand { font-size: calc(16px * (1 + (var(--rb-text-scale) - 1) * .4)); }
+.navbar-default .navbar-form .form-control, .navbar-default .navbar-form .btn, .navbar-default .navbar-text { font-size: calc(14px * (1 + (var(--rb-text-scale) - 1) * .4)); }
+.navbar-default .navbar-form .form-control { height: 36px; }
+.navbar-default .navbar-form .btn { height: 36px; }
+@media (min-width: 992px) { body > .navbar > .container { width: auto; max-width: 1800px; } }
+/* sections not built yet (Ketura, 2026-11-06): greyed out, no link */
+.navbar-default .navbar-nav > li.rb-nav-soon > a { opacity: .45; cursor: default; }
+/* the header has a dozen entries: tighter between 1100 and 1199, the menu button below 1100 */
+@media (min-width: 1100px) and (max-width: 1199px) {
+    .navbar-default .navbar-nav > li > a { padding-left: 9px; padding-right: 9px; }
+    .navbar-default .navbar-brand { padding-right: 9px; }
+}
+@media (max-width: 1099px) {
+    .navbar-header { float: none; }
+    .navbar-toggle { display: block; }
+    .navbar-collapse { border-top: 1px solid rgba(0, 0, 0, .1); }
+    .navbar-collapse.collapse { display: none !important; }
+    .navbar-collapse.collapse.in { display: block !important; overflow-y: auto; }
+    .navbar-nav, .navbar-right { float: none !important; margin: 7px -15px; }
+    .navbar-nav > li { float: none; }
+    .navbar-nav > li > a { padding-top: 10px; padding-bottom: 10px; }
+    .navbar-nav .open .dropdown-menu { position: static; float: none; width: auto; margin-top: 0; background-color: transparent; border: 0; box-shadow: none; }
+    .navbar-nav .open .dropdown-menu > li > a, .navbar-nav .open .dropdown-menu .dropdown-header { padding: 5px 15px 5px 25px; }
+}
