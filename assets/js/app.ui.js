@@ -133,6 +133,12 @@
         $('#' + tab.attr('aria-controls')).prop('hidden', false);
     });
 
+    /** One of the theme's tokens as it is now, e.g. ui.token('--rb-fp-solid'), for code that
+        needs a colour value (charts); it changes with the theme */
+    ui.token = function token(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    };
+
     ui.export_gemp = function export_gemp(deck) {
         $('#export-deck').text(deck.get_export('gemp'));
         $('#exportModal').modal('show');

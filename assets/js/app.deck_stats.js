@@ -26,17 +26,32 @@
  */
 (function app_deck_stats(stats, $)
 {
-    var FP = '#D9C49A',
-        FP_LIGHT = '#EFE5CF',
-        SHADOW = '#8B6AA8',
-        YOU = '#1D5FAD',
-        THEM = '#B4572E',
+    // the charts' colours come from the theme's tokens (Ketura, 2026-11-09), read again on
+    // every refresh, so they follow a switch to the dark theme: the sides' solid colours,
+    // never a culture's, and you and your opponent in the action's blue and the fire's orange
+    var C = {},
         library = [],
         hand = [],
         sorted_count = 0,
         drawn = 0,
         runout = {fp_play: 3, shadow_play: 4, you: 'DSDSD'.split(''), them: 'DSDSD'.split(''), first: 'you', their_deck: null},
         RUNOUT_KEY = 'stats-runout';
+
+    function palette()
+    {
+        var tk = app.ui.token, side = function (name, by) { return Highcharts.Color(tk(name)).brighten(by).get(); };
+        C = {
+            fp: tk('--rb-fp-solid'), fp_light: tk('--rb-fp-soft'), fp_mid: side('--rb-fp-solid', 0.12),
+            shadow: tk('--rb-shadow-solid'), shadow_mid: side('--rb-shadow-solid', 0.16), shadow_ink: tk('--rb-shadow'),
+            you: tk('--rb-primary'), them: tk('--rb-fire'),
+            ink: tk('--rb-ink'), ink2: tk('--rb-ink-2'), ink3: tk('--rb-ink-3'), line: tk('--rb-line'), line_strong: tk('--rb-line-strong'),
+            page: tk('--rb-page'), leaf: tk('--rb-leaf'),
+            row: Highcharts.Color(tk('--rb-highlight')).setOpacity(0.35).get()
+        };
+        // axes, gridlines and legends in the theme's inks, for every chart drawn after this
+        var axis = {labels: {style: {color: C.ink2}}, title: {style: {color: C.ink2}}, lineColor: C.line_strong, tickColor: C.line_strong, gridLineColor: C.line};
+        Highcharts.setOptions({xAxis: axis, yAxis: axis, legend: {itemStyle: {color: C.ink}, itemHoverStyle: {color: C.ink}}, title: {style: {color: C.ink}}});
+    }
 
     function t(key, params)
     {
@@ -223,7 +238,7 @@
                 }
                 return ticks;
             },
-            labels: {formatter: abs_label}, plotLines: [{value: 0, width: 1, color: '#999', zIndex: 4}]}, extra || {});
+            labels: {formatter: abs_label}, plotLines: [{value: 0, width: 1, color: C.ink3, zIndex: 4}]}, extra || {});
     }
 
     /** the sums of each row's stack, both sides, for split_axis */
@@ -283,7 +298,7 @@
             }
             clear();
             current = row;
-            axis.addPlotBand({id: 'rb-row', from: row - 0.5, to: row + 0.5, color: 'rgba(246, 222, 150, .55)', zIndex: 0});
+            axis.addPlotBand({id: 'rb-row', from: row - 0.5, to: row + 0.5, color: C.row, zIndex: 0});
             var box = chart.container.getBoundingClientRect();
             _.each(chart.series, function (series) {
                 var point = series.points && series.points[row];
@@ -293,8 +308,8 @@
                 // the count on a black box, easier to read than outlined text (Ketura, 2026-11-08)
                 var bar = point.graphic.element.getBoundingClientRect(),
                     label = chart.renderer.label(String(Math.abs(point.y)), 0, 0)
-                        .attr({fill: '#1E1B16', padding: 3, r: 3, zIndex: 9, 'class': 'rb-bar-count'})
-                        .css({fontWeight: '700', fontSize: '12px', color: '#fff', pointerEvents: 'none'})
+                        .attr({fill: C.ink, padding: 3, r: 3, zIndex: 9, 'class': 'rb-bar-count'})
+                        .css({fontWeight: '700', fontSize: '12px', color: C.page, pointerEvents: 'none'})
                         .add(),
                     size = label.getBBox();
                 label.attr({x: Math.round(bar.left - box.left + bar.width / 2 - size.width / 2), y: Math.round(bar.top - box.top + bar.height / 2 - size.height / 2)});
@@ -336,8 +351,8 @@
             rows.push({label: String(cost), fp: fp, shadow: sh});
         }
         var series = [
-                {name: t('side.free_peoples'), color: FP, data: _.map(rows, function (r) { return -r.fp; })},
-                {name: t('side.shadow'), color: SHADOW, data: _.map(rows, function (r) { return r.shadow; })}
+                {name: t('side.free_peoples'), color: C.fp, data: _.map(rows, function (r) { return -r.fp; })},
+                {name: t('side.shadow'), color: C.shadow, data: _.map(rows, function (r) { return r.shadow; })}
             ];
         bar_chart('#stats-chart-twilight', _.extend(base('bar', 70 + rows.length * 26), {
             xAxis: {categories: _.pluck(rows, 'label'), title: {text: t('deckbuilder.statstab.twilight_axis')}, reversed: true},
@@ -372,18 +387,18 @@
             half = totals.shadow / 2,
             series = [
                 // companions match the other Free Peoples cards; allies are the odd one out (Ketura, 2026-11-03)
-                {name: t('deckbuilder.statstab.companions'), color: '#C4AC78', data: values('companion', true)},
-                {name: t('deckbuilder.statstab.allies'), color: FP, data: values('ally', true)},
-                {name: t('deckbuilder.statstab.other_fp'), color: '#C4AC78', data: values('fp', true), showInLegend: false},
-                {name: t('deckbuilder.statstab.minions'), color: SHADOW, data: values('minion', false)},
-                {name: t('deckbuilder.statstab.other_shadow'), color: '#A88DC0', data: values('shadow', false), showInLegend: false}
+                {name: t('deckbuilder.statstab.companions'), color: C.fp_mid, data: values('companion', true)},
+                {name: t('deckbuilder.statstab.allies'), color: C.fp, data: values('ally', true)},
+                {name: t('deckbuilder.statstab.other_fp'), color: C.fp_mid, data: values('fp', true), showInLegend: false},
+                {name: t('deckbuilder.statstab.minions'), color: C.shadow, data: values('minion', false)},
+                {name: t('deckbuilder.statstab.other_shadow'), color: C.shadow_mid, data: values('shadow', false), showInLegend: false}
             ];
         bar_chart('#stats-chart-types', _.extend(base('bar', 60 + keys.length * 40), {
             xAxis: {categories: _.map(keys, label), title: {text: null}},
             // the dotted line: at least half of the Shadow side should be minions (Ketura, 2026-11-03)
             yAxis: split_axis(stack_totals(series).concat([half]), half ? {plotLines: [
-                {value: 0, width: 1, color: '#999', zIndex: 4},
-                {value: half, width: 2, color: '#4B2F66', dashStyle: 'Dot', zIndex: 5}
+                {value: 0, width: 1, color: C.ink3, zIndex: 4},
+                {value: half, width: 2, color: C.shadow_ink, dashStyle: 'Dot', zIndex: 5}
             ]} : {}),
             series: series
         }));
@@ -437,10 +452,10 @@
                 hover = chart.renderer.g().attr({zIndex: 10}).add();
                 if(thin(point)) {
                     chart.renderer.path(['M', cx + Math.cos(a) * (r + 2), cy + Math.sin(a) * (r + 2), 'L', x, up ? y + 4 : y - 14])
-                        .attr({stroke: '#5A544A', 'stroke-width': 1}).add(hover);
+                        .attr({stroke: C.ink2, 'stroke-width': 1}).add(hover);
                 }
                 chart.renderer.text(_.escape(point.name) + (thin(point) ? ' · ' + point.y : ''), tx, y)
-                    .attr({align: align}).css({fontSize: '13px', fontWeight: '700', color: '#2A261F'}).add(hover);
+                    .attr({align: align}).css({fontSize: '13px', fontWeight: '700', color: C.ink}).add(hover);
             },
             hide_name = function () {
                 if(hover) {
@@ -505,7 +520,7 @@
             credits: {enabled: false},
             legend: {enabled: false},
             tooltip: {enabled: false},
-            plotOptions: {pie: {animation: false, borderColor: '#fff', borderWidth: 1, states: {hover: {brightness: 0.06, halo: false}}}},
+            plotOptions: {pie: {animation: false, borderColor: C.leaf, borderWidth: 1, states: {hover: {brightness: 0.06, halo: false}}}},
             series: [
                 // the Shadow half from the top round to the bottom on the right; Free Peoples from the bottom round to the top on the left
                 half(t('side.shadow'), slices('shadow'), 0),
@@ -615,8 +630,8 @@
             + '<button type="button" data-first="you"' + (runout.first === 'you' ? ' class="active"' : '') + '>' + t('deckbuilder.statstab.you') + '</button>'
             + '<button type="button" data-first="them"' + (runout.first === 'them' ? ' class="active"' : '') + '>' + t('deckbuilder.statstab.them') + '</button></span>'
             + '</div>'
-            + '<div class="rb-runout-row rb-runout-moves"><span class="rb-runout-who" style="color:' + YOU + '">' + t('deckbuilder.statstab.your_moves') + '</span>' + pattern_html('you') + '</div>'
-            + '<div class="rb-runout-row rb-runout-moves"><span class="rb-runout-who" style="color:' + THEM + '">' + t('deckbuilder.statstab.their_moves') + '</span>' + pattern_html('them') + '</div>');
+            + '<div class="rb-runout-row rb-runout-moves"><span class="rb-runout-who" style="color:' + C.you + '">' + t('deckbuilder.statstab.your_moves') + '</span>' + pattern_html('you') + '</div>'
+            + '<div class="rb-runout-row rb-runout-moves"><span class="rb-runout-who" style="color:' + C.them + '">' + t('deckbuilder.statstab.their_moves') + '</span>' + pattern_html('them') + '</div>');
     }
 
     /**
@@ -641,18 +656,18 @@
                 }
                 return {
                     type: 'line', data: [{x: end[0], y: end[1]}, {x: end[0], y: end[1] / 2, dataLabels: {enabled: labelled}}, {x: end[0], y: 0}],
-                    color: '#8A8A8A', lineWidth: 2, dashStyle: 'Dash', marker: {enabled: false}, enableMouseTracking: false,
+                    color: C.ink3, lineWidth: 2, dashStyle: 'Dash', marker: {enabled: false}, enableMouseTracking: false,
                     showInLegend: false, zIndex: z,
                     dataLabels: {enabled: false, align: 'right', verticalAlign: 'middle', x: -8, y: 0, crop: false, overflow: 'none',
-                        style: {color: color, fontWeight: '700', fontSize: '12px', textShadow: '0 0 3px #fff, 0 0 2px #fff'},
+                        style: {color: color, fontWeight: '700', fontSize: '12px', textShadow: '0 0 3px ' + C.page + ', 0 0 2px ' + C.page},
                         formatter: function () { return Translator.transChoice('deckbuilder.statstab.cards_remain', end[1], {count: end[1]}); }}
                 };
             },
             series = _.compact([
-                guide(them_end, THEM, !close, 1),
-                guide(you_end, YOU, true, 2),
-                {name: t('deckbuilder.statstab.them'), color: THEM, data: result.them.points, dashStyle: 'ShortDash', zIndex: 3},
-                {name: t('deckbuilder.statstab.you'), color: YOU, data: result.you.points, zIndex: 4, lineWidth: 3}
+                guide(them_end, C.them, !close, 1),
+                guide(you_end, C.you, true, 2),
+                {name: t('deckbuilder.statstab.them'), color: C.them, data: result.them.points, dashStyle: 'ShortDash', zIndex: 3},
+                {name: t('deckbuilder.statstab.you'), color: C.you, data: result.you.points, zIndex: 4, lineWidth: 3}
             ]);
         $('#stats-chart-runout').highcharts({
             chart: {type: 'line', height: 300, backgroundColor: 'transparent', style: {fontFamily: 'inherit'}, spacingLeft: 0, spacingRight: 6},
@@ -723,6 +738,7 @@
         }
         var draw = app.deck.get_draw_deck(),
             pile = draw_pile().length;
+        palette();
         chart_twilight(draw);
         chart_types(draw);
         chart_cultures(draw);
@@ -736,6 +752,8 @@
 
     stats.setup = function setup()
     {
+        // a switch of theme redraws the charts in its colours
+        document.addEventListener('rb-theme', function () { stats.refresh(); });
         var root = $('#deck-stats');
         load_runout();
         root.on('click', '[data-draw]', function () { stats.draw($(this).data('draw') + ''); });

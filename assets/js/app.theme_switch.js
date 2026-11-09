@@ -26,7 +26,8 @@
     var mode = read();
 
     function apply() {
-        var dark = mode === 'dark' || (mode === 'auto' && !!(mq && mq.matches));
+        var dark = mode === 'dark' || (mode === 'auto' && !!(mq && mq.matches)),
+            changed = dark !== html.classList.contains('pc-dark');
         html.classList.toggle('pc-dark', dark);
         html.classList.remove('theme-light', 'theme-dark', 'theme-auto');
         html.classList.add('theme-' + mode);
@@ -34,6 +35,8 @@
         for (var i = 0; i < buttons.length; i++) {
             buttons[i].setAttribute('aria-pressed', buttons[i].getAttribute('data-theme-set') === mode ? 'true' : 'false');
         }
+        // for what draws its own colours, like the charts (Red Book, 2026-11-09)
+        if (changed) document.dispatchEvent(new CustomEvent('rb-theme', {detail: {dark: dark}}));
     }
 
     document.addEventListener('click', function (e) {
