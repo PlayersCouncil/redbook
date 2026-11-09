@@ -1,14 +1,16 @@
-/* global _, app, Translator */
+/* global _, app, Translator, Routing */
 
 /**
- * A library's view (Ketura, 2026-11-08): one decklist open at a time. Opening a row fetches its
- * deck and draws it as the decklist reader does (app.deck, app.deck_editor read-only), in the
- * one #deck, moved into that row; Previous and Next open the neighbours. The address's
- * #deck-N opens that one.
+ * A library's view (Ketura, 2026-11-08; reworked 2026-11-09): one decklist open at a time.
+ * Opening a row (animated, CSS) fetches its deck and draws it as the decklist reader does
+ * (app.deck, app.deck_editor read-only), in the one #deck, moved into that row; Previous and
+ * Next open the neighbours, as does a deck in the contents, which also scrolls to it. The
+ * address's #deck-N opens that one. The header holds Cheers, Favourite and Comment
+ * (app.social) and Back to Top; its height places the open row's head under it.
  */
 (function ui_library_view(ui, $)
 {
-    var data_ready = false, decks = {}, open_row = null;
+    var data_ready = false, decks = {}, open_row = null, view, scroll_wanted = null;
 
     function draw(row)
     {
@@ -19,23 +21,28 @@
         row.find('.rb-lv-deck-slot').append($('#deck-toolbar'), $('#deck'));
         app.deck.init(deck);
         app.deck_editor.render();
+        // the deck drawn makes the page longer: a scroll that ran short can finish now
+        if(scroll_wanted && scroll_wanted.is(row)) {
+            scroll_wanted = null;
+            row[0].scrollIntoView({block: 'start', behavior: 'smooth'});
+        }
     }
 
-    function open(row, scroll)
+    /** Opens a row (closing any other); instant: no animation for the one closing */
+    function open(row, scroll, instant)
     {
         if(open_row && open_row.is(row)) {
             close();
             return;
         }
-        close();
+        close(instant);
         open_row = row.addClass('is-open');
         row.find('.rb-lv-head').attr('aria-expanded', 'true');
-        row.find('.rb-lv-body').prop('hidden', false);
         if(window.history.replaceState) {
             window.history.replaceState(null, '', '#' + row.attr('id'));
         }
         if(scroll) {
-            row[0].scrollIntoView({block: 'start', behavior: 'smooth'});
+            scroll_to(row);
         }
         var id = row.data('entry');
         if(decks[id]) {
@@ -51,20 +58,92 @@
         });
     }
 
-    function close()
+    /**
+     * Scrolls a row to just under the header, once it has opened: while it is still sliding
+     * open the page may not yet be long enough to bring it up that far
+     */
+    function scroll_to(row)
+    {
+        scroll_wanted = decks[row.data('entry')] && data_ready ? null : row;
+        var done = false, go = function () {
+            if(!done) {
+                done = true;
+                row[0].scrollIntoView({block: 'start', behavior: 'smooth'});
+            }
+        };
+        row.find('.rb-lv-body').one('transitionend', go);
+        setTimeout(go, 400);
+    }
+
+    /** Closes the open row; its deck stays in it until another row opens */
+    function close(instant)
     {
         if(!open_row) {
             return;
         }
-        $('.rb-lv-deck-home').append($('#deck-toolbar'), $('#deck'));
-        open_row.removeClass('is-open').find('.rb-lv-head').attr('aria-expanded', 'false');
-        open_row.find('.rb-lv-body').prop('hidden', true);
+        var row = open_row;
+        if(instant) {
+            row.addClass('no-anim');
+            setTimeout(function () { row.removeClass('no-anim'); }, 50);
+        }
+        row.removeClass('is-open').find('.rb-lv-head').attr('aria-expanded', 'false');
         open_row = null;
+    }
+
+    /** The header's height, so an open row's head sticks just under it */
+    function measure()
+    {
+        view[0].style.setProperty('--rb-lv-header-h', Math.round($('#library-top').outerHeight()) + 'px');
+    }
+
+    function setup_social()
+    {
+        var post = {id: view.data('id'), token: view.data('token')};
+        $('#social-like').on('click', function () { app.social.toggle(this, Routing.generate('library_like'), post); });
+        $('#social-favorite').on('click', function () { app.social.toggle(this, Routing.generate('library_favorite'), post); });
+        $('#social-comment').on('click', function (event) {
+            event.preventDefault();
+            var text = $('#comment-form-text');
+            (text.length ? text : $('#library-comments'))[0].scrollIntoView({block: 'center', behavior: 'smooth'});
+            text.trigger('focus');
+        });
+        if(!$('#social-favorite').length) {
+            return;   // logged out
+        }
+        comment_form(post);
+        if(view.is('[data-owner]')) {
+            app.social.comment_hiding('#library-comments', function (id, hidden) {
+                return Routing.generate('library_comment_hide', {comment_id: id, hidden: hidden});
+            });
+        }
+    }
+
+    /** The comment form; a posted comment joins the list, and a fresh form follows */
+    function comment_form(post)
+    {
+        $('#comment-form').nextAll('.rb-comment-form').remove();
+        app.social.comment_form('#comment-form', {
+            url: Routing.generate('library_comment'),
+            fields: post,
+            users: view.data('commenters') || [],
+            title: $.trim($('.rb-library-title').text()),
+            posted: function (row) {
+                var count = $('#library-comments tbody tr').length + 1;
+                $('#library-comments tbody').append(row);
+                $('#library-comments .rb-comments-count').text(Translator.transChoice('decklist.view.comments.count', count, {count: count}));
+                $('#social-comment .num').text(count);
+                app.social.set_pressed('#social-comment', true);
+                comment_form(post);
+            }
+        });
     }
 
     ui.on_dom_loaded = function on_dom_loaded()
     {
+        view = $('.rb-library-view');
         app.deck_editor.setup('#deck', '#deck-toolbar', {readonly: true});
+        measure();
+        $(window).on('resize', _.debounce(measure, 100));
         var list = $('#library-list');
         list.on('click', '.rb-lv-head', function () {
             open($(this).closest('.rb-lv-entry'), false);
@@ -72,11 +151,27 @@
         list.on('click', '[data-step]', function () {
             var row = $(this).closest('.rb-lv-entry'), next = $(this).data('step') < 0 ? row.prev('.rb-lv-entry') : row.next('.rb-lv-entry');
             if(next.length) {
-                open(next, true);
+                open(next, true, true);
             }
         });
+        // a deck in the contents: its row, opened and scrolled to
+        $('.rb-lv-toc').on('click', '.rb-lv-toc-link', function (event) {
+            event.preventDefault();
+            var row = $('#' + $(this).data('row'));
+            if(!row.is(open_row)) {
+                open(row, true, true);
+            } else {
+                row[0].scrollIntoView({block: 'start', behavior: 'smooth'});
+            }
+        });
+        $('#btn-back-to-top').on('click', function () {
+            $('#library-intro')[0].scrollIntoView({block: 'start', behavior: 'smooth'});
+        });
+        setup_social();
         var wanted = window.location.hash && list.find(window.location.hash.replace(/[^#\w-]/g, ''));
-        open(wanted && wanted.length ? wanted : list.find('.rb-lv-entry').first(), !!(wanted && wanted.length));
+        if(wanted && wanted.length) {
+            open(wanted, true);
+        }
     };
 
     ui.on_data_loaded = function on_data_loaded()

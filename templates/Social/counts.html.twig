@@ -1,0 +1,9 @@
+{# The counts of a decklist or library, read-only (the design's .rb-votes; shared, Ketura
+   2026-11-09): Cheers, Fire if any, favourites if asked for, comments.
+   Variables: subject (a decklist or a library); favorites (optional, true to show them) #}
+<span class="rb-votes">
+    <span class="v-cheers{% if not subject.nbVotes %} is-zero{% endif %}" title="{{ 'decklist.view.social.like' | trans }}"><svg class="rb-ri" aria-hidden="true"><use href="#ri-cheers"/></svg>{{ subject.nbVotes }}</span>
+    {% if subject.nbFires ?? 0 %}<span class="v-fire" title="{{ 'decklist.view.social.fire' | trans }}"><svg class="rb-ri" aria-hidden="true"><use href="#ri-fire"/></svg>{{ subject.nbFires }}</span>{% endif %}
+    {% if favorites ?? false %}<span class="v-fav{% if not subject.nbFavorites %} is-zero{% endif %}" title="{{ 'decklist.view.social.favorite' | trans }}"><svg class="rb-ri" aria-hidden="true"><use href="#ri-fav"/></svg>{{ subject.nbFavorites }}</span>{% endif %}
+    <span class="v-comments{% if not subject.nbComments %} is-zero{% endif %}" title="{{ 'decklist.view.social.comment' | trans }}"><span class="fas fa-comment" aria-hidden="true"></span>{{ subject.nbComments }}</span>
+</span>

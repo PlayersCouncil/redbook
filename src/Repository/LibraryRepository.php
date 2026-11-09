@@ -32,6 +32,7 @@ class LibraryRepository extends EntityRepository
         match ($filters['sort'] ?? 'new') {
             'old' => $qb->orderBy('l.dateUpdate', 'ASC'),
             'name' => $qb->orderBy('l.name', 'ASC'),
+            'popular' => $qb->orderBy('l.nbVotes', 'DESC')->addOrderBy('l.nbFavorites', 'DESC'),
             'size' => $qb->addSelect('(SELECT COUNT(e2.id) FROM App\Entity\LibraryEntry e2 WHERE e2.library = l) AS HIDDEN size')->orderBy('size', 'DESC'),
             default => $qb->orderBy('l.dateUpdate', 'DESC'),
         };

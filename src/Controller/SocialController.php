@@ -823,21 +823,13 @@ class SocialController extends AbstractController
 
         $comment_text = trim($request->get('comment'));
         if ($decklist && !$decklist->isWithdrawn() && !empty($comment_text)) {
-            $comment_text = preg_replace(
-                '%(?<!\()\b(?:(?:https?|ftp)://)(?:((?:(?:[a-z\d\x{00a1}-\x{ffff}]+-?)*[a-z\d\x{00a1}-\x{ffff}]+)'
-                . '(?:\.(?:[a-z\d\x{00a1}-\x{ffff}]+-?)*[a-z\d\x{00a1}-\x{ffff}]+)*(?:\.[a-z\x{00a1}-\x{ffff}]{2,6}))'
-                . '(?::\d+)?)(?:[^\s]*)?%iu',
-                '[$1]($0)',
-                $comment_text
-            );
-
             $mentioned_usernames = [];
             $matches = [];
             if (preg_match_all('/`@([\w_]+)`/', $comment_text, $matches, PREG_PATTERN_ORDER)) {
                 $mentioned_usernames = array_unique($matches[1]);
             }
 
-            $comment_html = $texts->markdown($comment_text);
+            $comment_html = $texts->comment($comment_text);
 
             $now = new DateTime();
 

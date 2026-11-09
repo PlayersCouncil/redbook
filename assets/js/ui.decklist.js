@@ -47,27 +47,13 @@
         $('#deleteModal').modal('show');
     };
 
-    /** A like or favourite button: pressed once the user has, its count from the server */
-    function set_pressed(button, on, count)
-    {
-        $(button).toggleClass('is-on', on).attr('aria-pressed', on)
-            .find('.fa-thumbs-up, .fa-bookmark, .fa-comment').toggleClass('fas', on).toggleClass('far', !on);
-        if(count !== undefined) {
-            $(button).find('.num').text(count);
-        }
-    }
+    // the like and favourite buttons, and the comments, are app.social's (shared with
+    // libraries, Ketura 2026-11-09)
+    var set_pressed = app.social.set_pressed;
 
     function toggle(button, route, done)
     {
-        if(button.hasClass('processing')) {
-            return;
-        }
-        button.addClass('processing').data('touched', true);
-        $.post(Routing.generate(route), {id: app.deck.get_id()}, function (data)
-        {
-            set_pressed(button, !button.hasClass('is-on'), data);
-            done && done(button.hasClass('is-on'));
-        }).always(function () { button.removeClass('processing'); });
+        app.social.toggle(button, Routing.generate(route), {id: app.deck.get_id()}, done);
     }
 
     /**
@@ -119,40 +105,13 @@
 
     ui.setup_comment_form = function setup_comment_form()
     {
-
         // the deckbuilder's markdown editor (Ketura, 2026-11-08): its toolbar, Preview,
         // fullscreen, symbols and # for cards, with @ for the people in the conversation
-        var form = $('<form method="POST" class="rb-comment-form" action="' + Routing.generate('decklist_comment') + '"><input type="hidden" name="id" value="' + app.deck.get_id() + '">'
-                + '<div class="rb-md-editor"><textarea id="comment-form-text" rows="6" name="comment" data-md-title="' + _.escape(Translator.trans('decklist.reader.comment')) + '" placeholder="'
-                + _.escape(Translator.trans('decklist.reader.comment_placeholder')) + '"></textarea></div>'
-                + '<button type="submit" class="btn btn-success">' + Translator.trans('decklist.view.comments.submit') + '</button></form>').insertAfter('#comment-form');
-        app.md_editor.attach('#comment-form-text', {
+        app.social.comment_form('#comment-form', {
+            url: Routing.generate('decklist_comment'),
+            fields: {id: app.deck.get_id()},
             users: Commenters,
-            footer: Translator.trans('decklist.reader.comment_hint'),
-            deck: $.trim($('.decklist-name').text())
-        });
-
-        var already_submitted = false;
-        form.on('submit', function (event)
-        {
-            event.preventDefault();
-            var data = $(this).serialize();
-            if(already_submitted)
-                return;
-            already_submitted = true;
-            $.ajax(Routing.generate('decklist_comment'), {
-                data: data,
-                type: 'POST',
-                success: function (data, textStatus, jqXHR)
-                {
-                    form.replaceWith('<div class="alert alert-success" role="alert">Your comment has been posted. It will appear on the site in a few minutes.</div>');
-                },
-                error: function (jqXHR, textStatus, errorThrown)
-                {
-                    console.log('[' + moment().format('YYYY-MM-DD HH:mm:ss') + '] Error on ' + this.url, textStatus, errorThrown);
-                    form.replaceWith('<div class="alert alert-danger" role="alert">An error occured while posting your comment (' + jqXHR.statusText + '). Reload the page and try again.</div>');
-                }
-            });
+            title: $.trim($('.decklist-name').text())
         });
 
         $('#social-comment').on('click', function (event)
@@ -243,74 +202,11 @@
     ui.setup_comment_hide = function setup_comment_hide()
     {
         if(app.user.data && app.user.data.is_author) {
-            $('.comment-hide-button').remove();
-            $('<a href="#" class="comment-hide-button"><span class="text-danger" style="margin-left:.5em"><i class="fas fa-times"></i></span></a>').appendTo('.collapse.in > .comment-date').on('click', function (event)
-            {
-                if(confirm('Do you really want to hide this comment for everybody?')) {
-                    ui.hide_comment($(this).closest('td'));
-                }
-                return false;
-            });
-            $('<a href="#" class="comment-hide-button"><span class="text-success" style="margin-left:.5em"><i class="fas fa-check"></i></span></a>').appendTo('.collapse:not(.in) > .comment-date').on('click', function (event)
-            {
-                if(confirm('Do you really want to unhide this comment?')) {
-                    ui.unhide_comment($(this).closest('td'));
-                }
-                return false;
+            app.social.comment_hiding('.rb-reader-comments', function (id, hidden) {
+                return Routing.generate('decklist_comment_hide', {comment_id: id, hidden: hidden});
             });
         }
     };
-
-    ui.hide_comment = function hide_comment(element)
-    {
-        var id = element.attr('id').replace(/comment-/, '');
-        $.ajax(Routing.generate('decklist_comment_hide', {comment_id: id, hidden: 1}), {
-            type: 'POST',
-            dataType: 'json',
-            success: function (data, textStatus, jqXHR)
-            {
-                if(data === true) {
-                    $(element).find('.collapse').collapse('hide');
-                    $(element).find('.comment-toggler').show().prepend('The comment will be hidden for everyone in a few minutes.');
-                    setTimeout(ui.setup_comment_hide, 1000);
-                } else {
-                    alert(data);
-                }
-            },
-            error: function (jqXHR, textStatus, errorThrown)
-            {
-                console.log('[' + moment().format('YYYY-MM-DD HH:mm:ss') + '] Error on ' + this.url, textStatus, errorThrown);
-                alert('An error occured while hiding this comment (' + jqXHR.statusText + '). Reload the page and try again.');
-            }
-        });
-    };
-
-    ui.unhide_comment = function unhide_comment(element)
-    {
-        var id = element.attr('id').replace(/comment-/, '');
-        $.ajax(Routing.generate('decklist_comment_hide', {comment_id: id, hidden: 0}), {
-            type: 'POST',
-            dataType: 'json',
-            success: function (data, textStatus, jqXHR)
-            {
-                if(data === true) {
-                    $(element).find('.collapse').collapse('show');
-                    $(element).find('.comment-toggler').hide();
-                    setTimeout(setup_comment_hide, 1000);
-                } else {
-                    alert(data);
-                }
-            },
-            error: function (jqXHR, textStatus, errorThrown)
-            {
-                console.log('[' + moment().format('YYYY-MM-DD HH:mm:ss') + '] Error on ' + this.url, textStatus, errorThrown);
-                alert('An error occured while unhiding this comment (' + jqXHR.statusText + '). Reload the page and try again.');
-            }
-        });
-    };
-
-
-
 
     /* ---- the reader (Ketura, 2026-11-04) ---- */
 

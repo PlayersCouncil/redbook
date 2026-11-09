@@ -1,0 +1,17 @@
+{# A list of comments (Ketura, 2026-11-09; shared by decklists and libraries), then the place
+   the comment form goes. Variables: comments, count #}
+<table class="table rb-comments-table">
+    <thead>
+    <tr>
+        <th>
+            <span class="fas fa-comment"></span> <span class="rb-comments-count">{{ 'decklist.view.comments.count'|trans({'%count%': count}) }}</span>
+        </th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for comment in comments %}
+        {% include 'Social/comment.html.twig' with {comment: comment} %}
+    {% endfor %}
+    </tbody>
+</table>
+<a id="comment-form"></a>

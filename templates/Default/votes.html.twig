@@ -1,7 +1,0 @@
-{# A decklist's counts, read-only (the design's .rb-votes): Cheers, Fire if any, comments.
-   Variables: decklist #}
-<span class="rb-votes">
-    <span class="v-cheers{% if not decklist.nbVotes %} is-zero{% endif %}" title="{{ 'decklist.view.social.like' | trans }}"><svg class="rb-ri" aria-hidden="true"><use href="#ri-cheers"/></svg>{{ decklist.nbVotes }}</span>
-    {% if decklist.nbFires %}<span class="v-fire" title="{{ 'decklist.view.social.fire' | trans }}"><svg class="rb-ri" aria-hidden="true"><use href="#ri-fire"/></svg>{{ decklist.nbFires }}</span>{% endif %}
-    <span class="v-comments{% if not decklist.nbComments %} is-zero{% endif %}" title="{{ 'decklist.view.social.comment' | trans }}"><span class="fas fa-comment" aria-hidden="true"></span>{{ decklist.nbComments }}</span>
-</span>

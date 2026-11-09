@@ -1435,7 +1435,14 @@ decklist.publish.gate.blocked: "This deck can't be published as it stands. Only 
 decklist.publish.gate.republish_blocked: "It can't be published again as it stands: only legal decks and deck fragments can be. %problems%"
 
 # Libraries (Ketura, 2026-11-08)
-library.list.title: Deck Library
+library.view.social.like: "Cheers: a library worth reading"
+library.view.social.favorite: "Favourite: keep it in your favourites"
+library.view.social.own: "You made this library"
+library.view.back_to_top: "Back to Top"
+library.view.contents: "Decks"
+library.view.login_to_comment: "Log in to comment"
+library.list.title: Libraries
+library.list.intro: "A <strong>Deck Library</strong> is a collection of decks curated by a user with optional commentary, for teaching or reference."
 library.deleted: "{1} The library was deleted.|]1,Inf[ %count% libraries were deleted."
 library.official: PC
 library.official_title: "A Players Council library"
@@ -1492,6 +1499,8 @@ library.browse.sorts.new: Recently changed
 library.browse.sorts.old: Least recently changed
 library.browse.sorts.name: Name
 library.browse.sorts.size: Most decks
+library.browse.sorts.popular: Most liked
+library.browse.likes: Likes
 library.browse.col.library: Library
 library.browse.col.decks: Decks
 library.browse.col.visibility: Who Can See It

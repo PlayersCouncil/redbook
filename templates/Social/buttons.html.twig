@@ -1,0 +1,23 @@
+{# Like (Cheers), Favourite and Comment (Ketura, 2026-11-09; shared by a decklist's reader and a
+   library's view). Logged out, each leads to the login page. Pressed states come from the
+   page's script (app.social.set_pressed), or here when given.
+   Variables: subject (nbVotes, nbFavorites, nbComments); kind ('decklist' or 'library', for
+   the titles); state (optional {liked, favorite, commented}); own (optional: the viewer made
+   it, so can't like it) #}
+{% set state = state ?? {} %}
+{% set titles = kind == 'library' ? {like: 'library.view.social.like', favorite: 'library.view.social.favorite', comment: 'decklist.view.social.comment'} : {like: 'decklist.view.social.like', favorite: 'decklist.view.social.favorite', comment: 'decklist.view.social.comment'} %}
+{% if is_granted('IS_AUTHENTICATED_REMEMBERED') %}
+    <button type="button" id="social-like" class="rb-react r-cheers rb-social-btn is-like{% if state.liked ?? false %} is-on{% endif %}" aria-pressed="{{ (state.liked ?? false) ? 'true' : 'false' }}"
+            title="{{ (own ?? false) ? ((kind == 'library' ? 'library.view.social.own' : 'decklist.reader.own_deck') | trans) : titles.like | trans }}"{% if own ?? false %} disabled{% endif %}>
+        <svg class="rb-ri" aria-hidden="true"><use href="#ri-cheers"/></svg><span class="num">{{ subject.nbVotes }}</span></button>
+    <button type="button" id="social-favorite" class="rb-react r-fav rb-social-btn is-favorite{% if state.favorite ?? false %} is-on{% endif %}" aria-pressed="{{ (state.favorite ?? false) ? 'true' : 'false' }}" title="{{ titles.favorite | trans }}">
+        <svg class="rb-ri" aria-hidden="true"><use href="#ri-fav"/></svg><span class="num">{{ subject.nbFavorites }}</span></button>
+    <a href="#comment-form" id="social-comment" class="rb-react rb-social-btn is-comment{% if state.commented ?? false %} is-on{% endif %}" title="{{ titles.comment | trans }}">
+        <span class="{{ (state.commented ?? false) ? 'fas' : 'far' }} fa-comment" aria-hidden="true"></span><span class="num">{{ subject.nbComments }}</span></a>
+{% else %}
+    {# logged out: the buttons lead to the login page #}
+    {% for social in [{key: 'like', react: 'cheers', num: subject.nbVotes}, {key: 'favorite', react: 'fav', num: subject.nbFavorites}, {key: 'comment', react: null, num: subject.nbComments}] %}
+        <a href="{{ path('fos_user_security_login') }}" class="rb-react{% if social.react %} r-{{ social.react }}{% endif %} rb-social-btn is-{{ social.key }}" title="{{ titles[social.key] | trans }}">
+            {% if social.react %}<svg class="rb-ri" aria-hidden="true"><use href="#ri-{{ social.react }}"/></svg>{% else %}<span class="far fa-comment" aria-hidden="true"></span>{% endif %}<span class="num">{{ social.num }}</span></a>
+    {% endfor %}
+{% endif %}

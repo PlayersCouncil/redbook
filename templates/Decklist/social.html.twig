@@ -14,18 +14,5 @@
                 title="{{ 'decklist.reader.fire_locked' | trans }}">
             <svg class="rb-ri" aria-hidden="true"><use href="#ri-fire"/></svg><span class="num">{{ decklist.nbFires }}</span></button>
     </span>
-    {% if is_granted('IS_AUTHENTICATED_REMEMBERED') %}
-        <button type="button" id="social-like" class="rb-react r-cheers rb-social-btn is-like" aria-pressed="false" title="{{ 'decklist.view.social.like' | trans }}">
-            <svg class="rb-ri" aria-hidden="true"><use href="#ri-cheers"/></svg><span class="num">{{ decklist.nbVotes }}</span></button>
-        <button type="button" id="social-favorite" class="rb-react r-fav rb-social-btn is-favorite" aria-pressed="false" title="{{ 'decklist.view.social.favorite' | trans }}">
-            <svg class="rb-ri" aria-hidden="true"><use href="#ri-fav"/></svg><span class="num">{{ decklist.nbFavorites }}</span></button>
-        <a href="#comment-form" id="social-comment" class="rb-react rb-social-btn is-comment" title="{{ 'decklist.view.social.comment' | trans }}">
-            <span class="far fa-comment" aria-hidden="true"></span><span class="num">{{ decklist.nbComments }}</span></a>
-    {% else %}
-        {# logged out: the buttons lead to the login page #}
-        {% for social in [{key: 'like', react: 'cheers', num: decklist.nbVotes}, {key: 'favorite', react: 'fav', num: decklist.nbFavorites}, {key: 'comment', react: null, num: decklist.nbComments}] %}
-            <a href="{{ path('fos_user_security_login') }}" class="rb-react{% if social.react %} r-{{ social.react }}{% endif %} rb-social-btn is-{{ social.key }}" title="{{ ('decklist.view.social.' ~ social.key) | trans }}">
-                {% if social.react %}<svg class="rb-ri" aria-hidden="true"><use href="#ri-{{ social.react }}"/></svg>{% else %}<span class="far fa-comment" aria-hidden="true"></span>{% endif %}<span class="num">{{ social.num }}</span></a>
-        {% endfor %}
-    {% endif %}
+    {% include 'Social/buttons.html.twig' with {subject: decklist, kind: 'decklist'} %}
 </div>

@@ -24,7 +24,10 @@
 <div class="main white container rb-browse rb-libraries{% if mine %} rb-my-decks rb-my-libraries{% endif %}">
     <div class="rb-browse-alerts">{% include 'alerts.html.twig' %}</div>
 
-    <h1 class="rb-browse-title">{{ mine ? ('nav.mylibraries' | trans) : ('library.list.title' | trans) }}</h1>
+    <div class="rb-browse-title">
+        <h1>{{ mine ? ('nav.mylibraries' | trans) : ('library.list.title' | trans) }}</h1>
+        {% if not mine %}<p class="rb-browse-intro">{{ 'library.list.intro' | trans | raw }}</p>{% endif %}
+    </div>
 
     <form method="get" action="{{ path(list_route) }}" class="rb-browse-pane" id="browse-form">
         <div class="rb-browse-top" id="browse-top">{{ block('browse_top') }}</div>
@@ -140,7 +143,7 @@
             <label class="rb-results-sort">
                 <span>{{ 'decklist.browse.sort' | trans }}</span>
                 <select name="sort" form="browse-form" class="form-control input-sm" data-autosubmit data-default="new">
-                    {% for sort in ['new', 'old', 'name', 'size'] %}
+                    {% for sort in ['new', 'old', 'popular', 'name', 'size'] %}
                         <option value="{{ sort }}"{% if sorted == sort %} selected{% endif %}>{{ ('library.browse.sorts.' ~ sort) | trans }}</option>
                     {% endfor %}
                 </select>
@@ -163,9 +166,14 @@
                             {{ library.user.displayName }} <span class="rb-deck-dot" aria-hidden="true">•</span>
                             <time datetime="{{ library.dateUpdate | date('Y-m-d') }}" data-absolute>{{ library.dateUpdate | date('M j, Y') }}</time>
                         </span>
+                        {# the description, a few lines of it (Ketura, 2026-11-09) #}
+                        {% if library.descriptionHtml %}<span class="rb-lib-card-description">{{ library.descriptionHtml | striptags | trim }}</span>{% endif %}
                         {% if library.tagList %}<span class="rb-row-tags tags">{% for tag in library.tagList %}<button type="button" class="rb-tag-chip rb-tag-link{% if tag in (f.tags ?? []) %} is-on{% endif %}" data-tag="{{ tag }}" title="{{ 'decklist.browse.tag_search' | trans }}">{{ tag }}</button>{% endfor %}</span>{% endif %}
                     </span>
-                    <span class="rb-lib-card-count" title="{{ 'library.view.decks' | trans({'%count%': count}) }}"><strong class="rb-library-count">{{ count }}</strong> {{ 'library.browse.decks_word' | trans({'%count%': count}) }}</span>
+                    <span class="rb-lib-card-side">
+                        <span class="rb-lib-card-count" title="{{ 'library.view.decks' | trans({'%count%': count}) }}"><strong class="rb-library-count">{{ count }}</strong> {{ 'library.browse.decks_word' | trans({'%count%': count}) }}</span>
+                        {% include 'Social/counts.html.twig' with {subject: library, favorites: true} %}
+                    </span>
                 </li>
             {% endfor %}
             </ul>

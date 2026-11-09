@@ -105,14 +105,83 @@ class Library implements \App\Classes\ThumbnailSubject
     #[ORM\OrderBy(['position' => 'ASC'])]
     protected Collection $entries;
 
+    /** Likes (Cheers), favourites and comments (Ketura, 2026-11-09), as a decklist has them */
+    #[ORM\Column(name: 'nb_votes', type: 'integer', options: ['default' => 0])]
+    protected int $nbVotes = 0;
+
+    #[ORM\Column(name: 'nb_favorites', type: 'integer', options: ['default' => 0])]
+    protected int $nbFavorites = 0;
+
+    #[ORM\Column(name: 'nb_comments', type: 'integer', options: ['default' => 0])]
+    protected int $nbComments = 0;
+
+    /** @var Collection<int, User> */
+    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\JoinTable(name: 'library_vote', joinColumns: [new ORM\JoinColumn(name: 'library_id', referencedColumnName: 'id', onDelete: 'CASCADE')], inverseJoinColumns: [new ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', onDelete: 'CASCADE')])]
+    protected Collection $votes;
+
+    /** @var Collection<int, User> */
+    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\JoinTable(name: 'library_favorite', joinColumns: [new ORM\JoinColumn(name: 'library_id', referencedColumnName: 'id', onDelete: 'CASCADE')], inverseJoinColumns: [new ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', onDelete: 'CASCADE')])]
+    protected Collection $favorites;
+
+    /** @var Collection<int, LibraryComment> */
+    #[ORM\OneToMany(targetEntity: LibraryComment::class, mappedBy: 'library', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OrderBy(['dateCreation' => 'ASC'])]
+    protected Collection $comments;
+
     public function __construct()
     {
         $this->entries = new ArrayCollection();
+        $this->votes = new ArrayCollection();
+        $this->favorites = new ArrayCollection();
+        $this->comments = new ArrayCollection();
         $this->dateCreation = new DateTime();
         $this->dateUpdate = new DateTime();
     }
 
     public function getId(): ?int { return $this->id; }
+    public function getNbVotes(): int { return $this->nbVotes; }
+    public function getNbFavorites(): int { return $this->nbFavorites; }
+    public function getNbComments(): int { return $this->nbComments; }
+    /** @return Collection<int, User> */
+    public function getVotes(): Collection { return $this->votes; }
+    /** @return Collection<int, User> */
+    public function getFavorites(): Collection { return $this->favorites; }
+    /** @return Collection<int, LibraryComment> */
+    public function getComments(): Collection { return $this->comments; }
+
+    /** Like or unlike; true if the user likes it now */
+    public function toggleVote(User $user): bool
+    {
+        return $this->toggle($this->votes, $user, $this->nbVotes);
+    }
+
+    /** Favourite or unfavourite; true if it is the user's favourite now */
+    public function toggleFavorite(User $user): bool
+    {
+        return $this->toggle($this->favorites, $user, $this->nbFavorites);
+    }
+
+    /** @param Collection<int, User> $who */
+    private function toggle(Collection $who, User $user, int &$count): bool
+    {
+        if ($who->contains($user)) {
+            $who->removeElement($user);
+            $count = max(0, $count - 1);
+            return false;
+        }
+        $who->add($user);
+        $count++;
+        return true;
+    }
+
+    public function addComment(LibraryComment $comment): void
+    {
+        $comment->setLibrary($this);
+        $this->comments->add($comment);
+        $this->nbComments++;
+    }
     public function getUuid() { return $this->uuid; }
     public function setUuid($uuid): void { $this->uuid = $uuid; }
     public function getPublicId(): ?int { return $this->publicId; }

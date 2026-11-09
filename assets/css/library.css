@@ -41,22 +41,40 @@
     .rb-library-head span + span { display: none; }
 }
 
-/* the view, headed as the decklist reader (Ketura, 2026-11-08): the whole width, one row per
-   deck, one open at a time, the deck on white and the commentary on the page's tint */
-.rb-library-view { width: 100%; padding-bottom: 30px; }
+/* the view (Ketura, 2026-11-08; reworked 2026-11-09). The header, as the decklist reader's,
+   stays at the top as the page scrolls. Between margins: the description centred, then the
+   decks as a table of contents (a quarter) beside the notes, then the comments. The decks are
+   a little narrower than the window, each row opening (animated) to the deck and its
+   commentary; an open row's head stays under the header while its deck scrolls by. */
+.rb-library-view { width: 100%; padding-bottom: 30px; --rb-lv-header-h: 110px; }
+.rb-lv-header { position: sticky; top: 0; z-index: 20; box-shadow: var(--rb-shadow-1); }
 .rb-lv-header-thumb .rb-thumb { width: 72px; }
 .rb-library-title { margin: 0; font-size: 26px; font-weight: 700; line-height: 1.2; }
-.rb-lv-intro { padding: 14px 28px 16px; border-bottom: 2px solid var(--rb-divide); background: var(--rb-page); }
-.rb-lv-intro .rb-reader-text { font-size: 17.5px; }
-.rb-lv-intro.has-both { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 28px; }
-.rb-lv-intro.has-both .rb-lv-general-notes { padding-left: 28px; border-left: 2px solid var(--rb-divide); }
-.rb-lv-section-head { margin: 0 0 6px; font-size: 19px; font-weight: 700; color: var(--rb-ink); }
+.rb-lv-header .rb-reader-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+
+.rb-lv-page { max-width: 1180px; margin: 0 auto; padding: 22px 32px 0; scroll-margin-top: var(--rb-lv-header-h); }
+.rb-lv-description { max-width: 820px; margin: 0 auto; padding-bottom: 18px; border-bottom: 2px solid var(--rb-divide); text-align: center; font-size: 18px; }
 .rb-lv-description > :last-child, .rb-library-notes-body > :last-child { margin-bottom: 0; }
-.rb-library-list { list-style: none; margin: 0; padding: 0; }
-.rb-lv-entry { border-bottom: 1px solid var(--rb-line); scroll-margin-top: 60px; }
+.rb-lv-overview { display: grid; grid-template-columns: minmax(220px, 1fr) minmax(0, 3fr); gap: 28px; padding: 20px 0; }
+.rb-lv-overview.no-notes { grid-template-columns: minmax(0, 1fr); }
+.rb-lv-general-notes { font-size: 17.5px; padding-left: 28px; border-left: 2px solid var(--rb-divide); }
+.rb-lv-toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.rb-lv-toc-link { display: flex; align-items: center; gap: 10px; padding: 5px 6px; border-radius: var(--rb-radius); color: var(--rb-ink); text-decoration: none !important; }
+.rb-lv-toc-link:hover { background: var(--rb-hover); }
+.rb-lv-toc-link.is-gone { opacity: .55; }
+.rb-lv-toc .rb-lv-thumb .rb-thumb { width: 56px; }
+.rb-lv-toc .rb-deck-name { font-size: 15.5px; }
+.rb-lv-toc .rb-deck-by { font-size: 12.5px; }
+.rb-lv-comments { padding: 4px 0 20px; border-top: 1px solid var(--rb-line); }
+.rb-lv-section-head { margin: 0 0 6px; font-size: 19px; font-weight: 700; color: var(--rb-ink); }
+
+/* the decks: the width the decklist reader leaves its deck and commentary, its tools column
+   (a fifth) shared out as the margins (Ketura) */
+.rb-library-list { list-style: none; margin: 0 10%; padding: 0; border-top: 2px solid var(--rb-divide); }
+.rb-lv-entry { border-bottom: 1px solid var(--rb-line); scroll-margin-top: var(--rb-lv-header-h); }
 .rb-lv-head { display: flex; align-items: center; gap: 14px; width: 100%; padding: 6px 18px 6px 10px; border: 0; background: var(--rb-leaf); text-align: left; color: var(--rb-ink); }
 .rb-lv-head:hover { background: var(--rb-page); }
-.rb-lv-entry.is-open > .rb-lv-head { background: var(--rb-selected); color: var(--rb-selected-ink); }
+.rb-lv-entry.is-open > .rb-lv-head { position: sticky; top: var(--rb-lv-header-h); z-index: 10; background: var(--rb-selected); color: var(--rb-selected-ink); box-shadow: var(--rb-shadow-1); }
 .rb-lv-entry.is-open > .rb-lv-head .rb-deck-name, .rb-lv-entry.is-open > .rb-lv-head .rb-deck-by, .rb-lv-entry.is-open > .rb-lv-head .rb-lv-num,
 .rb-lv-entry.is-open > .rb-lv-head .rb-lv-chevron, .rb-lv-entry.is-open > .rb-lv-head .rb-lv-has-notes { color: var(--rb-selected-ink); }
 .rb-lv-num { flex: 0 0 30px; font-weight: 700; color: var(--rb-ink-2); text-align: right; font-variant-numeric: tabular-nums; }
@@ -64,23 +82,37 @@
 .rb-lv-meta { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
 .rb-lv-meta .rb-deck-name { font-weight: 700; color: var(--rb-ink); }
 .rb-lv-has-notes { color: var(--rb-ink-2); }
-.rb-lv-chevron { color: var(--rb-ink-2); transition: transform .15s; }
+.rb-lv-chevron { color: var(--rb-ink-2); transition: transform .25s; }
 .rb-lv-entry.is-open .rb-lv-chevron { transform: rotate(180deg); }
 .rb-lv-entry.is-gone > .rb-lv-head { opacity: .55; }
-.rb-lv-body:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr) var(--rb-desc-width, 40%); border-top: 2px solid var(--rb-divide); }
+/* opening and closing slide (Ketura, 2026-11-09): the row's height eases between none and all */
+.rb-lv-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s ease; }
+.rb-lv-entry.is-open > .rb-lv-body { grid-template-rows: 1fr; }
+.rb-lv-entry.no-anim > .rb-lv-body, .rb-lv-entry.no-anim .rb-lv-chevron { transition: none; }
+.rb-lv-body-inner { min-height: 0; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) var(--rb-desc-width, 40%); }
+.rb-lv-entry.is-open .rb-lv-body-inner { border-top: 2px solid var(--rb-divide); }
+.rb-lv-entry:not(.is-open) .rb-lv-body-inner { visibility: hidden; transition: visibility 0s .3s; }
+@media (prefers-reduced-motion: reduce) { .rb-lv-body, .rb-lv-chevron { transition: none; } }
 .rb-lv-deck { min-width: 0; background: var(--rb-leaf); }
 .rb-lv-flags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 14px 0; }
 .rb-lv-open { margin-left: auto; font-size: 13px; }
-.rb-lv-deck .rb-deck { border-top: 0; padding: 2px 14px 14px; max-height: 78vh; overflow-y: auto; scrollbar-gutter: stable; }
+.rb-lv-deck .rb-deck { border-top: 0; padding: 2px 14px 14px; }
 .rb-lv-notes { display: flex; flex-direction: column; padding: 12px 28px 16px; border-left: 2px solid var(--rb-divide); background: var(--rb-page); }
 .rb-lv-notes .rb-reader-text { flex: 1 1 auto; font-size: 17.5px; }
 .rb-lv-nav { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 .rb-lv-empty { padding: 20px 28px; }
+@media (max-width: 1199px) {
+    .rb-library-list { margin: 0 3%; }
+}
 @media (max-width: 991px) {
-    .rb-lv-intro.has-both, .rb-lv-body:not([hidden]) { grid-template-columns: 1fr; }
-    .rb-lv-intro.has-both .rb-lv-general-notes { padding-left: 0; border-left: 0; }
+    .rb-lv-overview, .rb-lv-body-inner { grid-template-columns: 1fr; }
+    .rb-lv-general-notes { padding-left: 0; border-left: 0; padding-top: 16px; border-top: 2px solid var(--rb-divide); }
     .rb-lv-notes { border-left: 0; border-top: 2px solid var(--rb-divide); }
-    .rb-lv-intro, .rb-lv-notes { padding-left: 16px; padding-right: 16px; }
+    .rb-lv-page { padding-left: 16px; padding-right: 16px; }
+    .rb-lv-notes { padding-left: 16px; padding-right: 16px; }
+    .rb-library-list { margin: 0; }
+    /* the page scrolls as a whole here: the header stays put above it */
+    .rb-lv-header { top: 0; }
 }
 .rb-library-drawer [hidden] { display: none !important; }
 .rb-lib-meta .rb-deck-name, .rb-library-build .rb-deck-name, .rb-lv-meta .rb-deck-name { font-size: 17px; line-height: 1.25; }
@@ -98,6 +130,15 @@
 .rb-lib-card-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
 .rb-lib-card-body .rb-deck-name { font-size: 18px; font-weight: 700; line-height: 1.25; }
 .rb-lib-card-body .rb-row-tags { flex-wrap: wrap; row-gap: 3px; }
+/* the title, with what a library is under it (Ketura, 2026-11-09) */
+div.rb-browse-title h1 { margin: 0; font: inherit; letter-spacing: inherit; color: inherit; }
+.rb-browse-intro { margin: 4px 0 0; font: 400 15px/1.4 var(--rb-font-ui); letter-spacing: 0; color: var(--rb-ink-2); }
+.rb-browse-intro strong { color: var(--rb-ink); }
+/* a card: its description (a few lines), tags; on the right its decks, then its counts */
+.rb-lib-card-description { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden;
+    font: 14px/1.35 var(--rb-font-prose); color: var(--rb-ink-2); }
+.rb-lib-card-side { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.rb-lib-card-side .rb-votes { gap: 8px; font-size: 13px; }
 .rb-lib-card-count { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; color: var(--rb-ink-2); font-size: 12px; letter-spacing: .03em; }
 .rb-lib-card-count strong { font-size: 22px; color: var(--rb-ink); line-height: 1.1; }
 .rb-library-build-pane > .rb-browse-pane, .rb-library-build-pane > .rb-browse-results { flex: 0 0 auto; overflow: visible; max-height: none; }

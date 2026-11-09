@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Card;
 use App\Entity\Culture;
 use App\Entity\Library;
+use App\Entity\LibraryComment;
 use App\Entity\LibraryEntry;
 use App\Entity\PublishedDeck;
 use App\Entity\User;
@@ -12,6 +13,7 @@ use App\Repository\FormatRepository;
 use App\Repository\LibraryRepository;
 use App\Services\LibraryManager;
 use App\Services\PublishedDeckManager;
+use App\Services\Texts;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -372,7 +374,80 @@ class LibraryController extends AbstractController
             'entry_data' => array_map(fn (LibraryEntry $e) => $this->decklistData($e->getDecklist(), $names), $entries),
             'can_edit' => $canEdit,
             'private_view' => $private,
+            // what this viewer has done, for the Cheers, Favourite and Comment buttons
+            'social' => [
+                'liked' => $user !== null && $library->getVotes()->contains($user),
+                'favorite' => $user !== null && $library->getFavorites()->contains($user),
+                'commented' => $user !== null && $library->getComments()->exists(fn ($i, LibraryComment $c) => $c->getUser() === $user),
+            ],
+            'commenters' => array_values(array_unique(array_map(fn (LibraryComment $c) => $c->getUser()->getUsername(), $library->getComments()->toArray()))),
         ]);
+    }
+
+    /* ---- likes, favourites and comments (Ketura, 2026-11-09) ---- */
+
+    /** A library the logged-in user can see, from the posted uuid */
+    private function socialTarget(Request $request): array
+    {
+        $user = $this->requireUser();
+        $this->requireToken($request);
+        $library = $this->findLibrary((string) $request->request->get('id'));
+        if (!$this->libraries->canView($user, $library)) {
+            throw new NotFoundHttpException("This library doesn't exist.");
+        }
+        return [$library, $user];
+    }
+
+    /** Like or unlike (Cheers); a curator can't like their own. Answers {count, on} */
+    #[Route(path: '/library/like', name: 'library_like', methods: ['POST'])]
+    public function likeAction(Request $request): JsonResponse
+    {
+        [$library, $user] = $this->socialTarget($request);
+        if ($library->getUser() === $user) {
+            throw new AccessDeniedHttpException("You can't like your own library.");
+        }
+        $on = $library->toggleVote($user);
+        $this->managerRegistry->getManager()->flush();
+        return new JsonResponse(['count' => $library->getNbVotes(), 'on' => $on]);
+    }
+
+    /** Favourite or unfavourite. Answers {count, on} */
+    #[Route(path: '/library/favorite', name: 'library_favorite', methods: ['POST'])]
+    public function favoriteAction(Request $request): JsonResponse
+    {
+        [$library, $user] = $this->socialTarget($request);
+        $on = $library->toggleFavorite($user);
+        $this->managerRegistry->getManager()->flush();
+        return new JsonResponse(['count' => $library->getNbFavorites(), 'on' => $on]);
+    }
+
+    /** A comment; answers the comment as the list shows it, to add to the page */
+    #[Route(path: '/library/comment', name: 'library_comment', methods: ['POST'])]
+    public function commentAction(Request $request, Texts $texts): Response
+    {
+        [$library, $user] = $this->socialTarget($request);
+        $text = trim((string) $request->request->get('comment'));
+        if ($text === '') {
+            throw new BadRequestHttpException('The comment is empty.');
+        }
+        $comment = new LibraryComment($user, $texts->comment($text));
+        $library->addComment($comment);
+        $this->managerRegistry->getManager()->flush();
+        return $this->render('Social/comment.html.twig', ['comment' => $comment]);
+    }
+
+    /** The curator hides a comment for everyone, or shows it again */
+    #[Route(path: '/library/comment/hide/{comment_id}/{hidden}', name: 'library_comment_hide', methods: ['POST'], requirements: ['comment_id' => '\d+', 'hidden' => '[01]'])]
+    public function hideCommentAction(int $comment_id, int $hidden): JsonResponse
+    {
+        $user = $this->requireUser();
+        $comment = $this->managerRegistry->getRepository(LibraryComment::class)->find($comment_id) ?? throw new NotFoundHttpException();
+        if ($comment->getLibrary()->getUser() !== $user) {
+            return new JsonResponse("You can't hide comments on this library.");
+        }
+        $comment->setIsHidden((bool) $hidden);
+        $this->managerRegistry->getManager()->flush();
+        return new JsonResponse(true);
     }
 
     /** One decklist of a library, opened in its view: the deck, rendered when it's opened */

@@ -819,7 +819,14 @@ decklist.publish.gate.blocked: "Este mazo no se puede publicar tal como está. S
 decklist.publish.gate.republish_blocked: "No se puede volver a publicar tal como está: solo se pueden publicar mazos legales y fragmentos de mazo. %problems%"
 
 # Libraries (Ketura, 2026-11-08)
-library.list.title: Biblioteca de mazos
+library.view.social.like: "Me gusta: una biblioteca que vale la pena"
+library.view.social.favorite: "Favorita: guárdala en tus favoritas"
+library.view.social.own: "Esta biblioteca es tuya"
+library.view.back_to_top: "Volver arriba"
+library.view.contents: "Mazos"
+library.view.login_to_comment: "Inicia sesión para comentar"
+library.list.title: Bibliotecas
+library.list.intro: "Una <strong>biblioteca de mazos</strong> es una colección de mazos reunida por un usuario, con comentarios opcionales, para enseñar o como referencia."
 library.deleted: "{1} Se borró la biblioteca.|]1,Inf[ Se borraron %count% bibliotecas."
 library.official: PC
 library.official_title: "Una biblioteca del Players Council"
@@ -876,6 +883,8 @@ library.browse.sorts.new: Cambiadas recientemente
 library.browse.sorts.old: Cambiadas hace más tiempo
 library.browse.sorts.name: Nombre
 library.browse.sorts.size: Más mazos
+library.browse.sorts.popular: Más gustadas
+library.browse.likes: Me gusta
 library.browse.col.library: Biblioteca
 library.browse.col.decks: Mazos
 library.browse.col.visibility: Quién puede verla

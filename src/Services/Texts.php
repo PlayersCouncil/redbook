@@ -76,6 +76,22 @@ class Texts
     }
 
     /**
+     * A comment as it is stored (Ketura, 2026-11-09, shared by decklist and library comments):
+     * bare web addresses made into links, then markdown
+     */
+    public function comment(string $text): string
+    {
+        $text = (string) preg_replace(
+            '%(?<!\()\b(?:(?:https?|ftp)://)(?:((?:(?:[a-z\d\x{00a1}-\x{ffff}]+-?)*[a-z\d\x{00a1}-\x{ffff}]+)'
+            . '(?:\.(?:[a-z\d\x{00a1}-\x{ffff}]+-?)*[a-z\d\x{00a1}-\x{ffff}]+)*(?:\.[a-z\x{00a1}-\x{ffff}]{2,6}))'
+            . '(?::\d+)?)(?:[^\s]*)?%iu',
+            '[$1]($0)',
+            $text
+        );
+        return $this->markdown($text);
+    }
+
+    /**
      * Returns the processed version of a markdown text
      * @param string $string
      * @return string

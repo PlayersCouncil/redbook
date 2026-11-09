@@ -144,9 +144,21 @@ test('private until made public; then listed, and read one deck at a time', asyn
   await expect(voter.locator('.rb-lv-description strong')).toHaveText('testing');
   await expect(voter.locator('.rb-library-notes-body')).toContainText('Notes on the library as a whole.');
   await expect(voter.locator('#btn-edit-library')).toHaveCount(0);
-  // the first deck open, drawn as the reader draws it, with the curator's notes beside it
+  // the description, then the decks as contents beside the notes (Ketura, 2026-11-09); no deck
+  // open until one is asked for
+  await expect(voter.locator('.rb-lv-toc .rb-deck-name')).toHaveCount(await voter.locator('.rb-lv-entry').count());
+  await expect(voter.locator('.rb-lv-toc .rb-deck-name').first()).toBeVisible();
+  await expect(voter.locator('.rb-lv-entry.is-open')).toHaveCount(0);
+  // a deck in the contents opens its row and brings it up under the header, which stays put
+  await voter.locator('.rb-lv-toc-link').first().click();
   const open = voter.locator('.rb-lv-entry.is-open');
   await expect(open).toHaveCount(1);
+  await expect(open).toHaveAttribute('id', 'deck-1');
+  await expect(voter.locator('.rb-lv-header')).toHaveCSS('position', 'sticky');
+  await expect.poll(async () => {
+    const head = await voter.locator('.rb-lv-header').boundingBox(), row = await open.boundingBox();
+    return head && row ? Math.abs(row.y - (head.y + head.height)) : 999;
+  }).toBeLessThan(4);
   await expect(open.locator('#deck .rb-line').first()).toBeVisible();
   await expect(open.locator('.rb-lv-notes')).toContainText('Gimli, Dwarf of Erebor');
   // Previous and Next above and below the commentary (Ketura, 2026-11-09)
@@ -159,6 +171,33 @@ test('private until made public; then listed, and read one deck at a time', asyn
   // the deck's view buttons together, not spread over the row
   const views = open.locator('.rb-display-opts').first();
   await expect(views).toHaveCSS('border-top-style', 'solid');
+  // Back to Top
+  await voter.locator('#btn-back-to-top').click();
+  await expect(voter.locator('.rb-lv-description')).toBeInViewport();
+
+  // Cheers, Favourite and Comment (Ketura, 2026-11-09)
+  const like = voter.locator('#social-like'), fav = voter.locator('#social-favorite');
+  await like.click();
+  await expect(like).toHaveAttribute('aria-pressed', 'true');
+  await expect(like.locator('.num')).toHaveText('1');
+  await fav.click();
+  await expect(fav).toHaveAttribute('aria-pressed', 'true');
+  await expect(fav.locator('.num')).toHaveText('1');
+  await voter.locator('#social-comment').click();
+  await voter.locator('#comment-form-text').fill(`A good set for run ${runId}`);
+  await voter.locator('.rb-comment-form button[type=submit]').click();
+  await expect(voter.locator('#library-comments .comment-text')).toHaveText(`A good set for run ${runId}`);
+  await expect(voter.locator('#social-comment .num')).toHaveText('1');
+  // kept: on a fresh load, pressed and counted; the list shows the counts
+  await voter.reload();
+  await expect(like).toHaveAttribute('aria-pressed', 'true');
+  await expect(voter.locator('#library-comments .comment-text')).toHaveCount(1);
+  await voter.goto(`/libraries?tags[]=e2etag${runId}`);
+  await expect(voter.locator('.rb-lib-cards .rb-votes .v-cheers')).toHaveText('1');
+  await expect(voter.locator('.rb-lib-cards .rb-lib-card-description')).toContainText('testing');
+  // its curator can't like their own
+  await page.goto(publicUrl);
+  await expect(page.locator('#social-like')).toBeDisabled();
   expect((await voter.goto(editUrl))?.status()).toBe(403);
 });
 
