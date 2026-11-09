@@ -117,6 +117,14 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
     #[ORM\Column(name: 'historic', type: 'boolean', nullable: false, options: ['default' => false])]
     protected bool $historic = false;
 
+    /**
+     * An organization's account (Ketura, 2026-11-09): Decipher, the Players Council. It owns
+     * what's put under it (the official libraries) but nobody logs in as it: it's disabled with
+     * no usable password, never claimed or merged, and admins edit its profile from theirs.
+     */
+    #[ORM\Column(name: 'organization', type: 'boolean', nullable: false, options: ['default' => false])]
+    protected bool $organization = false;
+
     /** For a historic account: source and name, the key the archive import finds it by */
     #[ORM\Column(name: 'historic_key', type: 'string', length: 255, nullable: true, unique: true)]
     protected ?string $historicKey = null;
@@ -679,6 +687,22 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
     public function setHistoric(bool $historic): void
     {
         $this->historic = $historic;
+    }
+
+    public function isOrganization(): bool
+    {
+        return $this->organization;
+    }
+
+    public function setOrganization(bool $organization): void
+    {
+        $this->organization = $organization;
+    }
+
+    /** An account nobody logs in as: a historic author's, or an organization's */
+    public function isManaged(): bool
+    {
+        return $this->historic || $this->organization;
     }
 
     public function getHistoricKey(): ?string

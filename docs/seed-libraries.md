@@ -2,8 +2,9 @@
 
 Seeded libraries are the PC's official groupings of decks (the starter decks, an event's decks,
 a set's preconstructed decks), made from a manifest rather than by hand (Ketura, 2026-11-09).
-Each becomes an **official, public library** owned by the manifest's owner account, the PC's
-own. Librarians and admins look after them like any official library.
+Each becomes an **official, public library** owned by an organization account, the PC's own
+unless the manifest names another. Librarians and admins look after them like any official
+library.
 
 ## Running it
 
@@ -18,17 +19,17 @@ docker exec -u www-data redbook php bin/console app:import:seed-libraries var/se
 
 Import the decks a manifest names first (`app:import:seed-decks`). Re-running is safe: each
 library is keyed by the manifest's `source` and its own `id`, and on re-import its name, texts,
-tags and decks follow the manifest (edits made on the site to a seeded library's fields are
-overwritten; its likes, favourites and comments stay).
-
-The owner account must exist before the first import (make it once, e.g. `PlayersCouncil`).
+tags and decks follow the manifest. That overwrites edits made on the site, as a new revision
+in the library's history (Ketura, 2026-11-09), so a re-import made by mistake is undone with
+Restore on the editor's History tab. Its likes, favourites and comments stay.
 
 ## Format
 
 ```json
 {
   "source": "gemp-starters",
-  "owner": "PlayersCouncil",
+  "owner": "Decipher",
+  "owner_name": "Decipher",
   "libraries": [
     {
       "id": "fotr-starters",
@@ -47,12 +48,31 @@ The owner account must exist before the first import (make it once, e.g. `Player
 ```
 
 - `source`: up to 30 characters; names the manifest's family. `id`: up to 100, unique in it.
+- `owner` (optional): the username of the organization account that owns the libraries; the
+  PC's (`APP_OFFICIAL_ACCOUNT`) when left out. It's made if it doesn't exist yet, shown as
+  `owner_name`. It must be an organization's account, not a person's (see below).
 - A deck is either a seeded decklist, by the `source` and `id` it was seeded with
   (`PublishedDeckSource`), or any published decklist by its number. A deck not found, or
   withdrawn, is left out and listed in the command's report; the rest still import.
 - The decks keep the manifest's order.
 - `curator` (optional): the username credited as "Curated by" on the library; the library
   still belongs to the owner account. A curator not found is reported and left off.
+
+## Organization accounts
+
+Decipher's and the Players Council's accounts are organization accounts (Ketura, 2026-11-09):
+like historic accounts, nobody logs in as them. They're disabled with no usable password, can't
+be claimed or merged, and only own things. Admins edit their profiles (name, bio, colour) with
+the Edit Profile button on the account's page. One is made the first time it's needed (Make
+Official, a seed import), or by hand:
+
+```
+docker exec -u www-data redbook php bin/console app:account:organization Decipher "Decipher"
+docker exec -u www-data redbook php bin/console app:account:organization PlayersCouncil "Players Council" --convert
+```
+
+`--convert` turns an existing ordinary account into an organization's (its login stops working
+and its roles are dropped); without it the command refuses one.
 
 ## Official libraries made from a user's
 

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Page } from '@playwright/test';
-import { test, expect, runId, waitForCardData } from '../helpers/test';
+import { test, expect, runId, waitForCardData, snap } from '../helpers/test';
 import { storageFor, loadUsers } from '../helpers/users';
 import { appConsole } from '../helpers/console';
 
@@ -98,6 +98,37 @@ test('a new library from My Libraries, filled from the Build tab', async ({ page
   await expect(page.locator('#library-tags')).toHaveValue(`e2etag${runId}`);
   await expect(page.locator('[data-thumb-mode="cultures"]')).toHaveAttribute('aria-checked', 'true');
   await expect(page.locator('#library-thumb-preview .rb-thumb-shadow')).toHaveClass(/rb-thumb-c-moria/);
+});
+
+test('the History tab: each save a revision, and Restore puts an earlier one back', async ({ page }) => {
+  page.on('dialog', (dialog) => dialog.accept());
+  await page.goto(editUrl);
+  await waitForCardData(page);
+  await page.click('#tab-header-history');
+  const rows = page.locator('#library-history tbody tr');
+  // made, then saved with its decks
+  await expect(rows.last()).toContainText('Created');
+  await expect(rows.first()).toContainText('Edited');
+  await expect(rows.first()).toContainText('Current');
+  const before = await rows.count();
+
+  // a save shows in it at once, with what it changed
+  await page.fill('#library-name', `${name} renamed`);
+  await page.click('#btn-save');
+  await expect(page.locator('#save-status')).toHaveText('Saved');
+  await expect(rows).toHaveCount(before + 1);
+  await expect(rows.first()).toContainText('Changed: name');
+
+  // Restore: the name as it was, as a new revision of its own
+  await rows.nth(1).getByRole('button', { name: 'Restore' }).click();
+  await expect(page).toHaveURL(/#tab-pane-history$/);
+  await expect(page.locator('.alert')).toContainText('The library is back as it was');
+  await expect(page.locator('#library-name')).toHaveValue(name);
+  await expect(page.locator('#tab-pane-history')).toBeVisible();
+  await expect(rows).toHaveCount(before + 2);
+  await expect(rows.first()).toContainText('Restored to');
+  await expect(rows.first()).toContainText('Changed: name');
+  await snap(page, 'library history');
 });
 
 test('a deck comes out with X then the bin; Keep takes it back', async ({ page }) => {
@@ -244,7 +275,7 @@ test('seeded libraries: official, public, and updated in place on a second impor
   const decklistUrl = await page.locator('.rb-lv-open').first().getAttribute('href') ?? '';
   const decklistId = Number(decklistUrl.match(/\/decklist\/view\/(\d+)/)![1]);
   const manifest = (title: string) => JSON.stringify({
-    source: 'e2e', owner: loadUsers().author.username,
+    source: 'e2e', owner: `E2EOrg${runId}`, owner_name: `E2E Org ${runId}`,
     libraries: [{ id: `seeded-${runId}`, name: title, description: 'Seeded **for the test**.', tags: [`e2eseed${runId}`],
       decks: [{ decklist: decklistId, annotation: 'From the manifest.' }, { decklist: 999999999 }] }],
   });
@@ -260,12 +291,17 @@ test('seeded libraries: official, public, and updated in place on a second impor
   expect(appConsole(['app:import:seed-libraries', '-'], manifest(`E2E seeded again ${runId}`))).toContain('1 updated');
   await page.goto(`/libraries?tags[]=e2eseed${runId}`);
   await expect(page.locator('.rb-lib-cards .rb-deck-name')).toHaveText(`E2E seeded again ${runId}`);
+  // owned by an organization account, made for it (Ketura, 2026-11-09): nobody logs in as it
+  await page.locator('.rb-lib-cards .rb-deck-name').click();
+  await expect(page.locator('.rb-reader-author')).toContainText(`E2E Org ${runId}`);
+  await expect(page.locator('.rb-reader-author .rb-user-organization')).toBeVisible();
+  // a person's account can't own them
+  expect(() => appConsole(['app:import:seed-libraries', '-'], JSON.stringify({ source: 'e2e', owner: loadUsers().author.username, libraries: [] }))).toThrow();
 });
 
 
 test('an admin makes a user library official: a copy owned by the PC, crediting its curator', async ({ browser }) => {
-  // the official account, made once (it may be there already), and an admin of this run's own
-  try { appConsole(['fos:user:create', 'PlayersCouncil', 'pc@redbook.invalid', `pc-${runId}-pw`]); } catch { /* there already */ }
+  // an admin of this run's own; the PC's organization account is made the first time it's needed
   const adminName = `e2e_admin_${runId}`, password = `pw-${runId}-admin`;
   appConsole(['fos:user:create', adminName, `${adminName}@example.test`, password]);
   appConsole(['fos:user:promote', adminName, 'ROLE_ADMIN']);
@@ -284,7 +320,8 @@ test('an admin makes a user library official: a copy owned by the PC, crediting 
   await expect(admin).not.toHaveURL(publicUrl);
   await expect(admin).toHaveURL(/\/library\/view\/\d+\//);
   await expect(admin.locator('.rb-library-title')).toHaveText(name);
-  await expect(admin.locator('.rb-reader-author')).toContainText('PlayersCouncil');
+  await expect(admin.locator('.rb-reader-author')).toContainText('Players Council');
+  await expect(admin.locator('.rb-reader-author .rb-user-organization')).toBeVisible();
   await expect(admin.locator('.rb-official-mark')).toBeVisible();
   await expect(admin.locator('.rb-curator')).toContainText(loadUsers().author.username);
   await expect(admin.locator('.rb-curator a[href*="/library/view/"]')).toHaveAttribute('href', new URL(publicUrl).pathname);
@@ -297,6 +334,26 @@ test('an admin makes a user library official: a copy owned by the PC, crediting 
   await admin.goto(publicUrl);
   await expect(admin.locator('.rb-official-mark')).toHaveCount(0);
   await expect(admin.locator('#btn-official-copy')).toHaveAttribute('href', new URL(officialUrl).pathname);
+
+  // the copy's history says how it came to be, and who refreshed it
+  await admin.goto(officialUrl);
+  await admin.locator('#btn-edit-library').click();
+  await admin.click('#tab-header-history');
+  const rows = admin.locator('#library-history tbody tr');
+  await expect(rows.last()).toContainText('Made official from');
+  await expect(rows.last().locator('a[href*="/library/view/"]')).toHaveAttribute('href', new URL(publicUrl).pathname);
+
+  // the organization's profile: edited by an admin, not logged in as
+  await admin.goto(officialUrl);
+  await admin.locator('.rb-reader-author a.username').click();
+  await expect(admin.locator('.jumbotron')).toContainText('organization');
+  await admin.locator('#btn-edit-organization').click();
+  await expect(admin.locator('#username')).toHaveCount(0);
+  await expect(admin.locator('#email')).toHaveCount(0);
+  await snap(admin, 'organization profile edit');
+  await admin.fill('#resume', `The Players Council, ${runId}.`);
+  await admin.locator('form button[type=submit]').click();
+  await expect(admin.locator('.alert')).toContainText("Saved Players Council's profile.");
   await context.close();
 });
 

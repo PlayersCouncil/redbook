@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Entity\Library;
 use App\Entity\LibraryEntry;
+use App\Entity\LibraryRevision;
 use App\Entity\PublishedDeck;
 use App\Entity\User;
 use DateTime;
@@ -176,31 +177,155 @@ class LibraryManager
         $this->touch($library);
     }
 
+    /* ---- history (Ketura, 2026-11-09) ---- */
+
+    /**
+     * Makes a change to the library and records it as a revision: who, how (a LibraryRevision
+     * kind), and what changed. Nothing is recorded when nothing changed, unless it was just
+     * made. A library from before there was history gets its state before the change recorded
+     * first, as its baseline, so the first recorded change can be undone too.
+     * @template T
+     * @param callable(): T $apply
+     * @param array $extra kept with the changes (a revert's revision, a copy's original)
+     * @return T
+     */
+    public function change(Library $library, ?User $actor, string $kind, callable $apply, array $extra = []): mixed
+    {
+        $before = null;
+        if ($library->getId() !== null) {
+            // against the library as it is, so a change nobody recorded isn't put down to this one
+            $before = $this->snapshot($library);
+            if ($this->latestRevision($library) === null && !self::isEmpty($before)) {
+                $baseline = new LibraryRevision($library, null, LibraryRevision::BASELINE, $before, null);
+                $baseline->setDateCreation($library->getDateUpdate());
+                $this->em->persist($baseline);
+            }
+        }
+        $result = $apply();
+        $after = $this->snapshot($library);
+        $changes = $before === null ? [] : self::diff($before, $after);
+        if ($changes !== [] || $before === null) {
+            $changes += $extra;
+            $this->em->persist(new LibraryRevision($library, $actor, $kind, $after, $changes ?: null));
+        }
+        return $result;
+    }
+
+    /**
+     * The library's contents as a revision keeps them
+     * @return array{name: string, description: string, notes: string, tags: string, thumbnail: array, entries: array<array{decklist: int, annotation: string}>}
+     */
+    public function snapshot(Library $library): array
+    {
+        $entries = $library->getEntries()->toArray();
+        usort($entries, fn (LibraryEntry $a, LibraryEntry $b) => $a->getPosition() <=> $b->getPosition());
+        return [
+            'name' => $library->getName(),
+            'description' => (string) $library->getDescriptionMd(),
+            'notes' => (string) $library->getNotesMd(),
+            'tags' => (string) $library->getTags(),
+            'thumbnail' => [
+                'card' => $library->getOwnThumbnailCard()?->getCode(),
+                'crop' => $library->getThumbnailCrop(),
+                'cultures' => $library->getOwnThumbnailCultures() ?: null,
+            ],
+            'entries' => array_map(fn (LibraryEntry $e) => ['decklist' => (int) $e->getDecklist()->getId(), 'annotation' => (string) $e->getAnnotationMd()], $entries),
+        ];
+    }
+
+    private static function isEmpty(array $snapshot): bool
+    {
+        return $snapshot['entries'] === [] && $snapshot['description'] === '' && $snapshot['notes'] === '' && $snapshot['tags'] === '';
+    }
+
+    /**
+     * What changed between two snapshots: the texts and thumbnail that differ, the decklists
+     * added and removed, those whose commentary changed, and whether the rest moved
+     * @return array{fields?: string[], added?: int[], removed?: int[], annotated?: int[], reordered?: bool}
+     */
+    public static function diff(array $before, array $after): array
+    {
+        $fields = array_values(array_filter(['name', 'description', 'notes', 'tags', 'thumbnail'], fn ($f) => ($before[$f] ?? null) != ($after[$f] ?? null)));
+        $notes = fn (array $s) => array_column($s['entries'] ?? [], 'annotation', 'decklist');
+        $a = $notes($before);
+        $b = $notes($after);
+        $kept = array_keys(array_intersect_key($b, $a));
+        $order = array_values(array_filter(array_keys($a), fn ($id) => isset($b[$id])));
+        return array_filter([
+            'fields' => $fields,
+            'added' => array_keys(array_diff_key($b, $a)),
+            'removed' => array_keys(array_diff_key($a, $b)),
+            'annotated' => array_values(array_filter($kept, fn ($id) => $a[$id] !== $b[$id])),
+            'reordered' => $order !== $kept,
+        ]);
+    }
+
+    public function latestRevision(Library $library): ?LibraryRevision
+    {
+        return $this->em->getRepository(LibraryRevision::class)->findOneBy(['library' => $library], ['id' => 'DESC']);
+    }
+
+    /** @return LibraryRevision[] newest first */
+    public function revisions(Library $library): array
+    {
+        if ($library->getId() === null) {
+            return [];
+        }
+        return $this->em->getRepository(LibraryRevision::class)->findBy(['library' => $library], ['id' => 'DESC']);
+    }
+
+    /**
+     * Puts the library back as a revision had it, as a new revision. A decklist since withdrawn
+     * or deleted can't come back; their ids are returned (and kept with the revert).
+     * @return int[]
+     */
+    public function revert(Library $library, LibraryRevision $to, ?User $actor): array
+    {
+        $snapshot = $to->getSnapshot();
+        $ids = array_column($snapshot['entries'] ?? [], 'decklist');
+        $present = [];
+        foreach ($ids ? $this->em->getRepository(PublishedDeck::class)->findBy(['id' => $ids]) : [] as $decklist) {
+            if (!$decklist->isWithdrawn()) {
+                $present[$decklist->getId()] = true;
+            }
+        }
+        $missing = array_values(array_filter($ids, fn ($id) => !isset($present[$id])));
+        $this->change($library, $actor, LibraryRevision::REVERT, function () use ($library, $snapshot) {
+            $this->save($library, $snapshot);
+            $thumbnail = $snapshot['thumbnail'] ?? [];
+            $card = isset($thumbnail['card']) ? $this->em->getRepository(\App\Entity\Card::class)->findOneBy(['code' => $thumbnail['card']]) : null;
+            $library->setThumbnailCard($card);
+            $library->setThumbnailCrop($card ? ($thumbnail['crop'] ?? null) : null);
+            $library->setThumbnailCultures($thumbnail['cultures'] ?? null);
+        }, array_filter(['revision' => $to->getId(), 'missing' => $missing]));
+        return $missing;
+    }
+
     /**
      * Makes a user's library official by copying it (Ketura, 2026-11-09): a new library owned by
      * the PC's account, public, crediting the user as its curator and remembering where it came
      * from. The user's library stays theirs, untouched; the official copy is the Librarians' to
      * look after from then on. Refreshing copies the original's contents over again.
      */
-    public function promote(Library $original, User $officialAccount): Library
+    public function promote(Library $original, User $officialAccount, ?User $actor): Library
     {
         $copy = $this->create($officialAccount, $original->getName());
         $copy->setOfficial(true);
         $copy->setCurator($original->getUser());
         $copy->setPromotedFrom($original);
-        $this->copyContents($original, $copy);
+        $this->change($copy, $actor, LibraryRevision::PROMOTE, fn () => $this->copyContents($original, $copy));
         $this->setVisibility($copy, Library::PUBLIC);
         return $copy;
     }
 
     /** The official copy, made again from its original: texts, tags, thumbnail and decks */
-    public function refreshFromOriginal(Library $copy): bool
+    public function refreshFromOriginal(Library $copy, ?User $actor): bool
     {
         $original = $copy->getPromotedFrom();
         if ($original === null) {
             return false;
         }
-        $this->copyContents($original, $copy);
+        $this->change($copy, $actor, LibraryRevision::REFRESH, fn () => $this->copyContents($original, $copy));
         return true;
     }
 

@@ -9,11 +9,11 @@
         <div class="jumbotron background-{{ user.color }}-10">
             <h1>
                 <span class="{{ user.color }}">{{ user.displayName }}</span>
-                {{ tags.historic(user) }}
+                {{ tags.account(user) }}
                 {% if user.role('ROLE_ADMIN') %}
                     <span class="fas fa-user-tie admin" title="Administrator"></span>
                 {% endif %}
-                {% if not user.historic %}<small>{{ user.reputation }}</small>{% endif %}
+                {% if not user.managed %}<small>{{ user.reputation }}</small>{% endif %}
             </h1>
             {% if user.aliases | length %}
                 <p class="small">{{ 'user.aliases' | trans }}:
@@ -24,6 +24,11 @@
                     {{ 'user.historic.intro' | trans({'%name%': user.displayName, '%source%': user.historicSource}) }}
                     {% if app.user and not app.user.historic %}
                         <a href="{{ path('historic_claim_form', {user_id: user.id}) }}" class="btn btn-sm btn-default">{{ 'claim.button' | trans }}</a>
+                    {% endif %}
+                {% elseif user.organization %}
+                    {{ 'user.organization.intro' | trans({'%name%': user.displayName}) }}
+                    {% if is_granted('ROLE_ADMIN') %}
+                        <a href="{{ path('user_profile_edit', {user_id: user.id}) }}" class="btn btn-sm btn-default" id="btn-edit-organization">{{ 'user.organization.edit' | trans }}</a>
                     {% endif %}
                 {% else %}
                 Member since {{ user.dateCreation|date('Y-m-d') }}.

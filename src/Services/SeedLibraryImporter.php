@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Entity\Library;
+use App\Entity\LibraryRevision;
 use App\Entity\PublishedDeck;
 use App\Entity\PublishedDeckSource;
 use App\Entity\User;
@@ -12,7 +13,8 @@ use InvalidArgumentException;
 /**
  * Seeded libraries (Ketura, 2026-11-09): the PC's official groupings (the starter decks, an
  * event's decks, a set's preconstructed decks) made from a manifest rather than by hand. Each
- * becomes an official, public library owned by the manifest's owner account (the PC's own),
+ * becomes an official, public library owned by an organization account (the PC's own, or the
+ * manifest's owner),
  * which Librarians may then look after as any official library. Re-importing a manifest
  * updates each library in place, keyed by (source, id): its name, texts, tags and decks follow
  * the manifest. docs/seed-libraries.md has the format.
@@ -22,6 +24,7 @@ class SeedLibraryImporter
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly LibraryManager $libraries,
+        private readonly OrganizationAccounts $organizations,
     ) {
     }
 
@@ -35,10 +38,15 @@ class SeedLibraryImporter
         if ($source === '' || strlen($source) > 30) {
             throw new InvalidArgumentException('The manifest needs a "source" (up to 30 characters).');
         }
+        // an organization's account (Ketura, 2026-11-09): the PC's unless the manifest names
+        // another, made the first time it's needed
         $ownerName = trim((string) ($manifest['owner'] ?? ''));
-        $owner = $ownerName !== '' ? $this->em->getRepository(User::class)->findOneBy(['username' => $ownerName]) : null;
-        if (!$owner instanceof User) {
-            throw new InvalidArgumentException(sprintf('The owner account "%s" doesn\'t exist; make it first (the PC\'s own account).', $ownerName));
+        try {
+            $owner = $ownerName === ''
+                ? $this->organizations->official()
+                : $this->organizations->get($ownerName, trim((string) ($manifest['owner_name'] ?? '')) ?: $ownerName);
+        } catch (\RuntimeException $e) {
+            throw new InvalidArgumentException($e->getMessage());
         }
         if (!is_array($manifest['libraries'] ?? null)) {
             throw new InvalidArgumentException('The manifest needs a "libraries" list.');
@@ -81,13 +89,15 @@ class SeedLibraryImporter
                 $report['missing'][] = $id . ': curator ' . $curatorName;
             }
             $library->setCurator($curator instanceof User ? $curator : null);
-            $this->libraries->save($library, [
+            // naive on purpose (Ketura, 2026-11-09): a re-import overwrites the library, as a new
+            // revision, so a mistaken one is undone from its history
+            $this->libraries->change($library, null, LibraryRevision::SEED, fn () => $this->libraries->save($library, [
                 'name' => (string) ($row['name'] ?? $id),
                 'description' => (string) ($row['description'] ?? ''),
                 'notes' => (string) ($row['notes'] ?? ''),
                 'tags' => implode(' ', (array) ($row['tags'] ?? [])),
                 'entries' => $entries,
-            ]);
+            ]));
             $this->libraries->setVisibility($library, Library::PUBLIC);
             $this->em->flush();
         }

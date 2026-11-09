@@ -108,7 +108,7 @@
                     <td class="rb-col-deck">
                         <a href="{{ url }}" class="rb-deck-name">{{ decklist.name }}</a>
                         <span class="rb-deck-by">
-                            {{ decklist.user.displayName }}{% if decklist.user.historic %} {{ tags.historic(decklist.user, 'decklist.browse.archive') }}{% endif %}
+                            {{ decklist.user.displayName }}{% if decklist.user.historic %} {{ tags.account(decklist.user, 'decklist.browse.archive') }}{% endif %}
                             <span class="rb-deck-dot" aria-hidden="true">•</span> <time datetime="{{ decklist.dateCreation | date('Y-m-d') }}" data-absolute>{{ decklist.dateCreation | date('M j, Y') }}</time>
                         </span>
                     </td>

@@ -64,10 +64,38 @@ class UserController extends AbstractController
     /**
      * @return Response
      */
-    #[Route(path: '/user/profile_edit', name: 'user_profile_edit', methods: ['GET'])]
-    public function editProfileAction()
+    /**
+     * The profile being edited: your own; or, for an admin, an organization's (Ketura,
+     * 2026-11-09: nobody logs in as one, so its profile is edited from an admin's)
+     */
+    private function profileTarget(mixed $userId): User
     {
-        $user = $this->getUser();
+        $self = $this->getUser();
+        if (!$self instanceof User) {
+            throw $this->createAccessDeniedException();
+        }
+        if ($userId === null || $userId === '' || (int) $userId === $self->getId()) {
+            return $self;
+        }
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $target = $this->managerRegistry->getRepository(User::class)->find((int) $userId);
+        if (!$target instanceof User || !$target->isOrganization()) {
+            throw $this->createNotFoundException('Only an organization\'s profile can be edited by an admin.');
+        }
+        return $target;
+    }
+
+    private function profileEditUrl(User $user): string
+    {
+        return $user->isOrganization()
+            ? $this->generateUrl('user_profile_edit', ['user_id' => $user->getId()])
+            : $this->generateUrl('user_profile_edit');
+    }
+
+    #[Route(path: '/user/profile_edit', name: 'user_profile_edit', methods: ['GET'])]
+    public function editProfileAction(Request $request)
+    {
+        $user = $this->profileTarget($request->query->get('user_id'));
 
         $factions = $this->managerRegistry->getRepository(Faction::class)->findAll();
 
@@ -86,17 +114,19 @@ class UserController extends AbstractController
     #[Route(path: '/user/profile_save', name: 'user_profile_save', methods: ['POST'])]
     public function saveProfileAction(Request $request, SessionInterface $session, \Symfony\Contracts\Translation\TranslatorInterface $translator)
     {
-        /* @var UserInterface $user */
-        $user = $this->getUser();
+        $user = $this->profileTarget($request->request->get('user_id'));
         $em = $this->managerRegistry->getManager();
+        $back = $this->profileEditUrl($user);
+        // an organization's: its name, bio and colour; its username addresses it and its email is none
+        $organization = $user->isOrganization();
 
         $username = filter_var($request->get('username'), FILTER_SANITIZE_STRING);
-        if ($username !== $user->getUserIdentifier()) {
+        if (!$organization && $username !== $user->getUserIdentifier()) {
             $user_existing = $em->getRepository(User::class)->findOneBy(array('username' => $username));
 
             if ($user_existing) {
                 $session->getFlashBag()->set('error', "Username $username is already taken.");
-                return $this->redirectToRoute('user_profile_edit');
+                return $this->redirect($back);
             }
 
             $user->setUsername($username);
@@ -112,34 +142,31 @@ class UserController extends AbstractController
         )->setParameters(['id' => $user->getId(), 'name' => $shown])->getSingleScalarResult();
         if ($taken > 0) {
             $session->getFlashBag()->set('error', $translator->trans('user.display_name_taken', ['%name%' => $displayName ?: $user->getUsername()]));
-            return $this->redirectToRoute('user_profile_edit');
+            return $this->redirect($back);
         }
         $user->setDisplayName($displayName);
 
-        $email = filter_var($request->get('email'), FILTER_SANITIZE_STRING);
-        if ($email !== $user->getEmail()) {
-            $user->setEmail($email);
-        }
-
         $resume = filter_var($request->get('resume'), FILTER_SANITIZE_STRING);
         $faction_code = filter_var($request->get('user_faction_code'), FILTER_SANITIZE_STRING);
-        $notifAuthor = $request->get('notif_author') ? true : false;
-        $notifCommenter = $request->get('notif_commenter') ? true : false;
-        $notifMention = $request->get('notif_mention') ? true : false;
-        $shareDecks = $request->get('share_decks') ? true : false;
-
         $user->setColor($faction_code);
         $user->setResume($resume);
-        $user->setIsNotifAuthor($notifAuthor);
-        $user->setIsNotifCommenter($notifCommenter);
-        $user->setIsNotifMention($notifMention);
-        $user->setIsShareDecks($shareDecks);
+
+        if (!$organization) {
+            $email = filter_var($request->get('email'), FILTER_SANITIZE_STRING);
+            if ($email !== $user->getEmail()) {
+                $user->setEmail($email);
+            }
+            $user->setIsNotifAuthor($request->get('notif_author') ? true : false);
+            $user->setIsNotifCommenter($request->get('notif_commenter') ? true : false);
+            $user->setIsNotifMention($request->get('notif_mention') ? true : false);
+            $user->setIsShareDecks($request->get('share_decks') ? true : false);
+        }
 
         $this->managerRegistry->getManager()->flush();
 
-        $session->getFlashBag()->set('notice', "Successfully saved your profile.");
+        $session->getFlashBag()->set('notice', $organization ? $translator->trans('user.organization.saved', ['%name%' => $user->getDisplayName()]) : "Successfully saved your profile.");
 
-        return $this->redirectToRoute('user_profile_edit');
+        return $this->redirect($back);
     }
 
     /**

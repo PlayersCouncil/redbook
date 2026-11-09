@@ -172,3 +172,11 @@ div.rb-browse-title h1 { margin: 0; font: inherit; letter-spacing: inherit; colo
 .rb-library-tabs .rb-browse-intro { margin-top: 8px; }
 .rb-curator { color: var(--rb-ink-2); }
 .rb-reader-buttons .rb-inline-form { display: inline-flex; margin: 0; }
+
+/* the editor's History tab (Ketura, 2026-11-09): the deckbuilder's History table */
+.rb-lib-history td { vertical-align: top !important; }
+.rb-lib-history .rb-nowrap { white-space: nowrap; font-size: 0.8125rem; color: var(--rb-ink-2); }
+.rb-lib-history .rb-history-by { font-weight: 400; color: var(--rb-ink-2); }
+.rb-history-changes { margin: 2px 0 0; font-size: 0.8125rem; }
+.rb-history-changes li { overflow-wrap: anywhere; }
+.rb-history-none { color: var(--rb-ink-2); }

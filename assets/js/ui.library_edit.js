@@ -249,8 +249,12 @@
         $('#btn-save, #btn-revert').prop('disabled', true);
         $('#save-status').text(t('deckbuilder.info.saving')).attr('class', 'rb-save-status');
         $.ajax(page.save_url, {type: 'POST', data: {library: now, token: page.token}, dataType: 'json'})
-            .done(function () {
+            .done(function (response) {
                 saved = now;
+                // the History tab, with this save in it (Ketura, 2026-11-09)
+                if(response && response.history) {
+                    $('#library-history').replaceWith(response.history);
+                }
                 $('#library-entries .rb-lib-entry.is-pending').remove();
                 renumber();
                 saving = false;
@@ -330,6 +334,10 @@
         $(window).on('beforeunload', function () {
             return is_dirty() ? t('library.edit.leave') : undefined;
         });
+        // back from a Restore: on the History tab
+        if(window.location.hash === '#tab-pane-history') {
+            $('#tab-header-history').tab('show');
+        }
 
         // up and down
         entries.on('click', '[data-move]', function () {

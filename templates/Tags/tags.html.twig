@@ -45,8 +45,9 @@
     {%- endif -%}
 {%- endmacro %}
 
-{# an account brought in from the archives #}
-{% macro historic(user, label = 'user.historic.badge') %}
+{# an account nobody logs in as: one brought in from the archives, or an organization's (Ketura, 2026-11-09) #}
+{% macro account(user, label = 'user.historic.badge') %}
     {%- import _self as tags -%}
-    {%- if user.historic -%}{{ tags.status(null, 'fa-archive', label | trans, 'user.historic.badge_title' | trans, null, 'rb-user-historic') }}{%- endif -%}
+    {%- if user.historic -%}{{ tags.status(null, 'fa-archive', label | trans, 'user.historic.badge_title' | trans, null, 'rb-user-historic') }}
+    {%- elseif user.organization -%}{{ tags.status(null, 'fa-landmark', 'user.organization.badge' | trans, 'user.organization.badge_title' | trans, null, 'rb-user-organization') }}{%- endif -%}
 {%- endmacro %}

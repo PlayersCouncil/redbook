@@ -9,12 +9,20 @@
             <div class="col-md-6 col-md-offset-3">
                 <div class="panel panel-default">
                     <div class="panel-heading">
-                        <h3 class="panel-title" id="title">Profile</h3>
+                        <h3 class="panel-title" id="title">{% if user.organization %}{{ 'user.organization.edit_title' | trans({'%name%': user.displayName}) }}{% else %}Profile{% endif %}</h3>
                     </div>
                     <div class="panel-body" id="main">
 
                         <form role="form" action="{{ path('user_profile_save') }}" method="POST">
-
+                            {#
+                               An organization's account (Ketura, 2026-11-09), edited by an admin: its
+                               name, bio and colour. Its username addresses it (APP_OFFICIAL_ACCOUNT),
+                               and it has no email, notifications or decks of its own to share.
+                            #}
+                            {% if user.organization %}
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                <p class="help-block">{{ 'user.organization.edit_help' | trans({'%username%': user.username}) }}</p>
+                            {% else %}
                             <div class="form-group">
                                 <label>Reputation</label>
                                 <p>{{ user.reputation }}</p>
@@ -25,6 +33,7 @@
                                 <input type="text" name="username" id="username" value="{{ user.username }}"
                                        class="form-control">
                             </div>
+                            {% endif %}
 
                             <div class="form-group">
                                 <label for="display_name">{{ 'user.display_name' | trans }}</label>
@@ -33,16 +42,21 @@
                                 <p class="help-block">{{ 'user.display_name_help' | trans }}</p>
                             </div>
 
+                            {% if not user.organization %}
                             <div class="form-group">
                                 <label for="email">Email</label>
                                 <input type="text" name="email" id="email" value="{{ user.email }}"
                                        class="form-control">
                             </div>
 
+                            {% endif %}
+
                             <div class="form-group">
-                                <label for="resume">Something about you</label>
+                                <label for="resume">{% if user.organization %}{{ 'user.organization.about' | trans }}{% else %}Something about you{% endif %}</label>
                                 <textarea id="resume" name="resume" class="form-control">{{ user.resume }}</textarea>
                             </div>
+
+                            {% if not user.organization %}
 
                             <div class="checkbox">
                                 <label>
@@ -78,6 +92,7 @@
                                     public instead of private. You can then send the link to your friends. If you
                                     uncheck the box, all your decks become private immediately.</p>
                             </div>
+                            {% endif %}
 
                             <div class="form-group">
                                 <label for="color">Select a faction color for your username</label>

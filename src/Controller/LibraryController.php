@@ -7,11 +7,13 @@ use App\Entity\Culture;
 use App\Entity\Library;
 use App\Entity\LibraryComment;
 use App\Entity\LibraryEntry;
+use App\Entity\LibraryRevision;
 use App\Entity\PublishedDeck;
 use App\Entity\User;
 use App\Repository\FormatRepository;
 use App\Repository\LibraryRepository;
 use App\Services\LibraryManager;
+use App\Services\OrganizationAccounts;
 use App\Services\PublishedDeckManager;
 use App\Services\Texts;
 use Doctrine\Persistence\ManagerRegistry;
@@ -206,9 +208,11 @@ class LibraryController extends AbstractController
             $library = $this->libraries->create($user, (string) $request->request->get('name'), (string) $request->request->get('description'));
             // decklists picked on the way in (Add to Library's + Add New Library with a selection)
             $ids = array_filter(array_map('intval', explode(',', (string) $request->request->get('decklists'))));
-            if ($ids) {
-                $this->libraries->add($library, $this->managerRegistry->getRepository(PublishedDeck::class)->findBy(['id' => $ids]));
-            }
+            $this->libraries->change($library, $user, LibraryRevision::CREATE, function () use ($library, $ids) {
+                if ($ids) {
+                    $this->libraries->add($library, $this->managerRegistry->getRepository(PublishedDeck::class)->findBy(['id' => $ids]));
+                }
+            });
             $this->managerRegistry->getManager()->flush();
             return $this->redirectToRoute('library_edit', ['library_uuid' => $library->getUuid()]);
         }
@@ -235,7 +239,46 @@ class LibraryController extends AbstractController
             'library' => $library,
             'entries' => array_map(fn (LibraryEntry $entry) => $this->entryData($entry, $names), $library->getEntries()->toArray()),
             'is_owner' => $library->getUser()->getId() === $this->getUser()?->getId(),
-        ]);
+        ] + $this->historyParams($library));
+    }
+
+    /**
+     * The library's History tab (Ketura, 2026-11-09): its revisions, newest first, and the
+     * decklists their changes name
+     */
+    private function historyParams(Library $library): array
+    {
+        $revisions = $this->libraries->revisions($library);
+        $ids = [];
+        foreach ($revisions as $revision) {
+            foreach (['added', 'removed', 'annotated', 'missing'] as $list) {
+                array_push($ids, ...($revision->getChanges()[$list] ?? []));
+            }
+        }
+        $decklists = [];
+        foreach ($ids ? $this->managerRegistry->getRepository(PublishedDeck::class)->findBy(['id' => array_unique($ids)]) : [] as $decklist) {
+            $decklists[$decklist->getId()] = $decklist;
+        }
+        return ['revisions' => $revisions, 'revision_decklists' => $decklists];
+    }
+
+    /** Puts the library back as an earlier revision had it, as a new revision */
+    #[Route(path: '/my/library/revert/{library_uuid}', name: 'library_revert', methods: ['POST'], requirements: ['library_uuid' => self::UUID])]
+    public function revertAction(Request $request, string $library_uuid, TranslatorInterface $translator): Response
+    {
+        $library = $this->editable($library_uuid);
+        $this->requireToken($request);
+        $revision = $this->managerRegistry->getRepository(LibraryRevision::class)->find((int) $request->request->get('revision'));
+        if (!$revision instanceof LibraryRevision || $revision->getLibrary()->getId() !== $library->getId()) {
+            throw new NotFoundHttpException('No such revision of this library.');
+        }
+        $missing = $this->libraries->revert($library, $revision, $this->requireUser());
+        $this->managerRegistry->getManager()->flush();
+        $this->addFlash('notice', $translator->trans('library.history.reverted', ['%date%' => $revision->getDateCreation()->format('Y-m-d H:i')]));
+        if ($missing) {
+            $this->addFlash('error', $translator->trans('library.history.missing', ['%count%' => count($missing)]));
+        }
+        return $this->redirect($this->generateUrl('library_edit', ['library_uuid' => $library->getUuid()]) . '#tab-pane-history');
     }
 
     /** A decklist as the editor and the drawer show it */
@@ -279,9 +322,15 @@ class LibraryController extends AbstractController
         if (!is_array($data)) {
             throw new BadRequestHttpException('Nothing to save.');
         }
-        $this->libraries->save($library, $data);
+        $this->libraries->change($library, $this->requireUser(), LibraryRevision::EDIT, fn () => $this->libraries->save($library, $data));
         $this->managerRegistry->getManager()->flush();
-        return new JsonResponse(['success' => true, 'name' => $library->getName(), 'count' => $library->getEntries()->count()]);
+        return new JsonResponse([
+            'success' => true,
+            'name' => $library->getName(),
+            'count' => $library->getEntries()->count(),
+            // the History tab again, with this save in it
+            'history' => $this->renderView('Library/history.html.twig', ['library' => $library] + $this->historyParams($library)),
+        ]);
     }
 
     /** Private, hidden or public; public the first time gives it its public number */
@@ -407,7 +456,7 @@ class LibraryController extends AbstractController
 
     /** An admin makes a public user library official: a copy owned by the PC's account */
     #[Route(path: '/library/promote', name: 'library_promote', methods: ['POST'])]
-    public function promoteAction(Request $request, string $officialAccount, TranslatorInterface $translator): Response
+    public function promoteAction(Request $request, OrganizationAccounts $organizations, TranslatorInterface $translator): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
         $this->requireToken($request);
@@ -417,12 +466,14 @@ class LibraryController extends AbstractController
         }
         $existing = $this->libraries->officialCopyOf($library);
         if ($existing === null) {
-            $owner = $this->managerRegistry->getRepository(User::class)->findOneBy(['username' => $officialAccount]);
-            if (!$owner instanceof User) {
-                $this->addFlash('error', $translator->trans('library.promote.no_account', ['%name%' => $officialAccount]));
+            // the PC's organization account, made the first time (Ketura, 2026-11-09)
+            try {
+                $owner = $organizations->official();
+            } catch (\RuntimeException $e) {
+                $this->addFlash('error', $e->getMessage());
                 return $this->redirectToRoute('library_view', ['public_id' => $library->getPublicId(), 'library_name' => $library->getNameCanonical()]);
             }
-            $existing = $this->libraries->promote($library, $owner);
+            $existing = $this->libraries->promote($library, $owner, $this->requireUser());
             $this->managerRegistry->getManager()->flush();
             $this->addFlash('notice', $translator->trans('library.promote.done'));
         }
@@ -436,7 +487,7 @@ class LibraryController extends AbstractController
         $this->denyAccessUnlessGranted('ROLE_LIBRARIAN');
         $this->requireToken($request);
         $library = $this->findLibrary((string) $request->request->get('id'));
-        if (!$library->isOfficial() || !$this->libraries->refreshFromOriginal($library)) {
+        if (!$library->isOfficial() || !$this->libraries->refreshFromOriginal($library, $this->requireUser())) {
             throw new BadRequestHttpException("This library wasn't copied from another.");
         }
         $this->managerRegistry->getManager()->flush();
@@ -571,7 +622,7 @@ class LibraryController extends AbstractController
         $library = $name !== '' ? $this->libraries->create($user, $name) : $this->editable((string) $request->request->get('library'));
         $ids = array_filter(array_map('intval', (array) ($request->request->all()['decklists'] ?? [])));
         $decklists = $ids ? $this->managerRegistry->getRepository(PublishedDeck::class)->findBy(['id' => $ids]) : [];
-        $added = $this->libraries->add($library, $decklists);
+        $added = $this->libraries->change($library, $user, $name !== '' ? LibraryRevision::CREATE : LibraryRevision::ADD, fn () => $this->libraries->add($library, $decklists));
         $this->managerRegistry->getManager()->flush();
         return new JsonResponse([
             'added' => $added,
