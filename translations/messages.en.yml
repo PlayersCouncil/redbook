@@ -1537,7 +1537,12 @@ decklist.browse.failed: "The search didn't go through. Try again."
 library.visibility.public_hint: "Listed in the Deck Library for everyone"
 library.edit.thumbnail: Thumbnail
 library.edit.thumbnail_search: "Find any card by name"
-library.edit.thumbnail_default: "Its first deck's thumbnail"
-library.edit.thumbnail_clear: "Use the first deck's"
 library.view.commentary: Commentary
 library.browse.decks_word: "{1} deck|]1,Inf[ decks|{0} decks"
+library.edit.thumbnail_mode.card: "A Card"
+library.edit.thumbnail_mode.cultures: Cultures
+library.edit.thumbnail_mode.auto: "First Deck's"
+library.edit.thumbnail_none: "No card yet: find one by name"
+library.edit.thumbnail_cultures_hint: "One or two, any combination; the first goes top left."
+library.edit.thumbnail_swap: Swap them
+library.edit.thumbnail_auto_hint: "The thumbnail of its first deck."

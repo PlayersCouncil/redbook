@@ -4,13 +4,18 @@
    bottom right (Gollum can be either), divided along the diagonal; a fragment's main culture
    filling the tile (PublishedDeck::pickThumbnailCultures). Each
    culture's framing is set in style.css (.rb-thumb-c-<code>).
-   Variables: decklist; thumb_card to show another card instead, or false for the cultures #}
+   Every thumbnail on the site comes from here (shared, Ketura 2026-11-09): a decklist, a deck
+   not yet published, a library (App\Classes\ThumbnailSubject). With no card and no cultures,
+   a book. app.thumbnail.js draws the same markup for the editors' live previews.
+   Variables: decklist (any ThumbnailSubject); thumb_card to show another card instead, or false for the cultures #}
 {% set card = thumb_card ?? decklist.thumbnailCard %}
 {% if card and card.imageUrl %}
     {# just the card's picture (Ketura, 2026-11-07), framed by its template: characters, sites,
        and everything else (the ring included), unless the author framed it themselves #}
     {% set crop = decklist.thumbnailCropFor(card) %}
     <span class="rb-thumb rb-thumb-card rb-thumb-tpl-{{ card.thumbnailTemplate }}"><img src="{{ card.imageUrl }}" alt="{{ card.fullName }}" loading="lazy"{% if crop %} style="width: {{ crop.w }}%; left: {{ crop.l }}%; top: {{ crop.t }}%"{% endif %}></span>
+{% elseif decklist.thumbnailCultures is empty %}
+    <span class="rb-thumb rb-thumb-empty" aria-hidden="true"><span class="fas fa-book"></span></span>
 {% else %}
     {% set parts = decklist.thumbnailCultures %}
     <span class="rb-thumb rb-thumb-cultures" role="img" aria-label="{{ parts | map(p => p.name) | join(' / ') }}">

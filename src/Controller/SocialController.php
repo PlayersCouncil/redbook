@@ -1182,26 +1182,11 @@ class SocialController extends AbstractController
      */
     private function thumbnailCropFrom(Request $request, PublishedDeck $decklist): ?array
     {
-        $crop = json_decode((string) $request->request->get('thumbnail_crop'), true);
-        if (!is_array($crop) || !is_string($crop['code'] ?? null)) {
-            return null;
-        }
-        $found = false;
+        $codes = [];
         foreach ($decklist->getSlots() as $slot) {
-            $found = $found || $slot->getCard()->getCode() === $crop['code'];
+            $codes[] = $slot->getCard()->getCode();
         }
-        $w = $crop['w'] ?? null;
-        $l = $crop['l'] ?? null;
-        $t = $crop['t'] ?? null;
-        if (!$found || !is_numeric($w) || !is_numeric($l) || !is_numeric($t)) {
-            return null;
-        }
-        [$w, $l, $t] = [round((float) $w, 2), round((float) $l, 2), round((float) $t, 2)];
-        // the editor's smallest box is an eighth of the picture, and the box stays on it
-        if ($w < 100 || $w > 2000 || $l > 0 || $l < 100 - $w || $t > 0 || $t < -2 * $w) {
-            return null;
-        }
-        return ['code' => $crop['code'], 'w' => $w, 'l' => $l, 't' => $t];
+        return \App\Classes\ThumbnailCrop::sanitize((string) $request->request->get('thumbnail_crop'), $codes);
     }
 
     private function dateFrom(mixed $value): ?DateTime

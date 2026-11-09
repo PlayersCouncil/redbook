@@ -22,7 +22,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: \App\Repository\LibraryRepository::class)]
 #[ORM\Table(name: 'library')]
 #[ORM\Index(name: 'library_visibility_idx', columns: ['visibility', 'date_update'])]
-class Library
+class Library implements \App\Classes\ThumbnailSubject
 {
     public const PRIVATE = 'private';
     public const HIDDEN = 'hidden';
@@ -64,10 +64,22 @@ class Library
     #[ORM\Column(name: 'notes_html', type: 'text', nullable: true)]
     protected ?string $notesHtml = null;
 
-    /** Its own thumbnail (Ketura, 2026-11-08): any card, picked by name; else its first deck's */
+    /**
+     * Its own thumbnail (Ketura, 2026-11-08/09): any card, picked by name and framed by hand or
+     * by its template; or a banner of one or two cultures, in any combination; or neither, and
+     * its first deck's
+     */
     #[ORM\ManyToOne(targetEntity: Card::class)]
     #[ORM\JoinColumn(name: 'thumbnail_card_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
     protected ?Card $thumbnailCard = null;
+
+    /** @var array{code: string, w: float, l: float, t: float}|null */
+    #[ORM\Column(name: 'thumbnail_crop', type: 'json', nullable: true)]
+    protected ?array $thumbnailCrop = null;
+
+    /** @var array<array{code: string, name: string, side: string}>|null the banner's cultures, top left then bottom right */
+    #[ORM\Column(name: 'thumbnail_cultures', type: 'json', nullable: true)]
+    protected ?array $thumbnailCultures = null;
 
     #[ORM\Column(name: 'tags', type: 'string', length: 4000, nullable: true)]
     protected ?string $tags = null;
@@ -119,8 +131,48 @@ class Library
     public function setNotesMd(?string $notesMd): void { $this->notesMd = $notesMd; }
     public function getNotesHtml(): ?string { return $this->notesHtml; }
     public function setNotesHtml(?string $notesHtml): void { $this->notesHtml = $notesHtml; }
-    public function getThumbnailCard(): ?Card { return $this->thumbnailCard; }
+    /** The card it was given, whatever it shows */
+    public function getOwnThumbnailCard(): ?Card { return $this->thumbnailCard; }
     public function setThumbnailCard(?Card $card): void { $this->thumbnailCard = $card; }
+    public function getThumbnailCrop(): ?array { return $this->thumbnailCrop; }
+    public function setThumbnailCrop(?array $crop): void { $this->thumbnailCrop = $crop; }
+    /** @return array<array{code: string, name: string, side: string}> */
+    public function getOwnThumbnailCultures(): array { return $this->thumbnailCultures ?? []; }
+    public function setThumbnailCultures(?array $cultures): void { $this->thumbnailCultures = $cultures ?: null; }
+
+    /** card, cultures, or auto: its first deck's */
+    public function getThumbnailMode(): string
+    {
+        return $this->thumbnailCultures ? 'cultures' : ($this->thumbnailCard ? 'card' : 'auto');
+    }
+
+    public function getThumbnailCard(): ?Card
+    {
+        return match ($this->getThumbnailMode()) {
+            'card' => $this->thumbnailCard,
+            'cultures' => null,
+            default => $this->getFirstAvailableDecklist()?->getThumbnailCard(),
+        };
+    }
+
+    public function getThumbnailCropFor(?Card $card): ?array
+    {
+        if ($this->getThumbnailMode() === 'card') {
+            return $card && ($this->thumbnailCrop['code'] ?? null) === $card->getCode() ? $this->thumbnailCrop : null;
+        }
+        return $this->getFirstAvailableDecklist()?->getThumbnailCropFor($card);
+    }
+
+    /** Its own banner: one culture fills the tile, two share it on the diagonal */
+    public function getThumbnailCultures(): array
+    {
+        $own = $this->getOwnThumbnailCultures();
+        if ($own) {
+            $corners = count($own) === 1 ? ['full'] : ['fp', 'shadow'];
+            return array_map(fn ($c, $corner) => $c + ['corner' => $corner], array_slice($own, 0, 2), $corners);
+        }
+        return $this->getThumbnailMode() === 'card' ? [] : ($this->getFirstAvailableDecklist()?->getThumbnailCultures() ?? []);
+    }
     public function getTags(): ?string { return $this->tags; }
     public function setTags(?string $tags): void { $this->tags = $tags; }
     public function getVisibility(): string { return $this->visibility; }

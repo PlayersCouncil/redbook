@@ -145,23 +145,98 @@
         show_suggestions();
     }
 
-    /* ---- the thumbnail: any card, by name ---- */
+    /*
+     * ---- the thumbnail (Ketura, 2026-11-08/09): a card, framed by hand with the shared crop
+     * editor; a banner of one or two cultures, the first top left; or the first deck's ----
+     */
 
-    function set_thumbnail(card)
+    var thumb = {mode: 'auto', card: null, cultures: []};
+
+    function render_thumbnail()
     {
-        $('#library-thumb').val(card ? card.code : '');
-        $('#library-thumb-preview').html(card
-            ? '<span class="rb-thumb rb-thumb-card rb-thumb-tpl-' + thumbnail_template(card) + '"><img src="' + _.escape(card.image_url) + '" alt="' + _.escape(card.label) + '"></span>'
-            : $('#thumb-fallback').html());
-        $('#thumb-name').text(card ? card.label : t('library.edit.thumbnail_default'));
-        $('#thumb-clear').prop('hidden', !card);
+        var preview = $('#library-thumb-preview'), crop = app.thumbnail.parse_crop($('#library-thumb-crop').val());
+        if(thumb.mode === 'card' && thumb.card) {
+            preview.html(app.thumbnail.card_html(thumb.card, crop));
+        } else if(thumb.mode === 'cultures' && thumb.cultures.length) {
+            preview.html(app.thumbnail.cultures_html(app.thumbnail.culture_parts(thumb.cultures)));
+        } else {
+            preview.html($('#thumb-fallback').html());
+        }
+        $('#thumb-edit').prop('hidden', !(thumb.mode === 'card' && thumb.card));
+        $('[data-thumb-mode]').each(function () {
+            var on = $(this).data('thumb-mode') === thumb.mode;
+            $(this).toggleClass('active', on).attr('aria-checked', on ? 'true' : 'false');
+        });
+        $('[data-thumb-panel]').each(function () {
+            $(this).prop('hidden', $(this).data('thumb-panel') !== thumb.mode);
+        });
+        $('#thumb-name').text(thumb.card ? thumb.card.label : t('library.edit.thumbnail_none'));
+        var codes = _.pluck(thumb.cultures, 'code');
+        $('.rb-lib-culture').each(function () {
+            var at = codes.indexOf($(this).data('culture'));
+            $(this).attr('aria-pressed', at !== -1 ? 'true' : 'false').find('.rb-lib-culture-order').text(at !== -1 && codes.length > 1 ? at + 1 : '');
+        });
+        $('#thumb-swap').prop('hidden', codes.length < 2);
+    }
+
+    function set_card(card)
+    {
+        if(!thumb.card || thumb.card.code !== card.code) {
+            // a framing is for one card
+            $('#library-thumb-crop').val('');
+        }
+        thumb.card = card;
+        thumb.mode = 'card';
+        render_thumbnail();
         changed();
     }
 
-    /** As Card::getThumbnailTemplate frames it */
-    function thumbnail_template(card)
+    /** A click adds a culture, or takes it off; a third replaces the first */
+    function toggle_culture(button)
     {
-        return ['companion', 'ally', 'minion', 'follower'].indexOf(card.type_code) !== -1 ? 'character' : card.type_code === 'site' ? 'site' : 'modifier';
+        var code = button.data('culture'), at = _.pluck(thumb.cultures, 'code').indexOf(code);
+        if(at !== -1) {
+            thumb.cultures.splice(at, 1);
+        } else {
+            thumb.cultures.push({code: code, name: button.data('name'), side: button.data('side')});
+            if(thumb.cultures.length > 2) {
+                thumb.cultures.shift();
+            }
+        }
+        render_thumbnail();
+        changed();
+    }
+
+    function setup_thumbnail()
+    {
+        thumb.mode = page.thumbnail.mode;
+        thumb.card = page.thumbnail.card;
+        thumb.cultures = (page.thumbnail.cultures || []).slice(0, 2);
+        render_thumbnail();
+        $('[data-thumb-mode]').on('click', function () {
+            thumb.mode = $(this).data('thumb-mode');
+            render_thumbnail();
+            changed();
+            if(thumb.mode === 'card' && !thumb.card) {
+                $('#thumb-search').trigger('focus');
+            }
+        });
+        $('.rb-lib-culture').on('click', function () { toggle_culture($(this)); });
+        $('#thumb-swap').on('click', function () {
+            thumb.cultures.reverse();
+            render_thumbnail();
+            changed();
+        });
+        app.thumbnail.crop_editor({
+            dialog: '#thumb-crop',
+            field: '#library-thumb-crop',
+            pencil: '#thumb-edit',
+            current: function () { return thumb.mode === 'card' ? thumb.card : null; },
+            applied: function () {
+                render_thumbnail();
+                changed();
+            }
+        });
     }
 
     function setup_thumbnail_search()
@@ -183,7 +258,7 @@
         input.on('typeahead:selected typeahead:autocompleted', function (event, card)
         {
             input.typeahead('val', '');
-            set_thumbnail(card);
+            set_card({code: card.code, image: card.image_url, template: app.thumbnail.template(card.type_code), label: card.label});
         });
     }
 
@@ -196,7 +271,12 @@
             description: $('#library-description').val(),
             notes: $('#library-notes-text').val(),
             tags: tags().join(' '),
-            thumbnail: $('#library-thumb').val(),
+            thumbnail: {
+                mode: thumb.mode,
+                card: thumb.card ? thumb.card.code : '',
+                crop: app.thumbnail.parse_crop($('#library-thumb-crop').val()),
+                cultures: _.pluck(thumb.cultures, 'code')
+            },
             // one marked for removal goes when it's saved
             entries: $('#library-entries .rb-lib-entry').not('.is-pending').map(function () {
                 return {decklist: $(this).data('decklist'), annotation: $(this).find('textarea[data-annotation]').val()};
@@ -301,6 +381,7 @@
         _.each(page.entries, function (entry) { add_entry(entry.decklist, entry.annotation); });
         renumber();
         render_chips();
+        setup_thumbnail();
         app.md_editor && app.md_editor.attach('#library-description', {deck: $('#library-name').val()});
         app.md_editor && app.md_editor.attach('#library-notes-text', {deck: $('#library-name').val()});
         saved = state();
@@ -427,7 +508,6 @@
             set_tags(_.without(tags(), tag));
         });
 
-        $('#thumb-clear').on('click', function () { set_thumbnail(null); });
 
         // who can see it
         $('#btn-visibility').on('click', function (event) {

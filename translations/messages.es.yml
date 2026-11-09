@@ -921,7 +921,12 @@ decklist.browse.failed: "La búsqueda no se completó. Inténtalo de nuevo."
 library.visibility.public_hint: "Aparece en la Biblioteca de mazos para todos"
 library.edit.thumbnail: Miniatura
 library.edit.thumbnail_search: "Busca cualquier carta por nombre"
-library.edit.thumbnail_default: "La miniatura de su primer mazo"
-library.edit.thumbnail_clear: "Usar la del primer mazo"
 library.view.commentary: Comentario
 library.browse.decks_word: "{1} mazo|]1,Inf[ mazos|{0} mazos"
+library.edit.thumbnail_mode.card: "Una carta"
+library.edit.thumbnail_mode.cultures: Culturas
+library.edit.thumbnail_mode.auto: "La del primer mazo"
+library.edit.thumbnail_none: "Aún no hay carta: búscala por nombre"
+library.edit.thumbnail_cultures_hint: "Una o dos, en cualquier combinación; la primera va arriba a la izquierda."
+library.edit.thumbnail_swap: Intercambiarlas
+library.edit.thumbnail_auto_hint: "La miniatura de su primer mazo."

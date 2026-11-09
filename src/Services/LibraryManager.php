@@ -124,7 +124,7 @@ class LibraryManager
      * The editor's Save: the name, description, notes and tags, and the entries in their new
      * order with their commentary. An entry left out is removed; a decklist not yet in it
      * (added from the Build tab) is added.
-     * @param array{name?: string, description?: string, notes?: string, tags?: string, thumbnail?: string, entries?: array<array{decklist: int, annotation?: string}>} $data
+     * @param array{name?: string, description?: string, notes?: string, tags?: string, thumbnail?: array, entries?: array<array{decklist: int, annotation?: string}>} $data
      */
     public function save(Library $library, array $data): void
     {
@@ -138,9 +138,8 @@ class LibraryManager
             preg_split('/\s+/', (string) ($data['tags'] ?? ''))
         ), 'strlen'));
         $library->setTags($tags ? implode(' ', $tags) : null);
-        if (array_key_exists('thumbnail', $data)) {
-            $code = trim((string) $data['thumbnail']);
-            $library->setThumbnailCard($code !== '' ? $this->em->getRepository(\App\Entity\Card::class)->findOneBy(['code' => $code]) : null);
+        if (is_array($data['thumbnail'] ?? null)) {
+            $this->setThumbnail($library, $data['thumbnail']);
         }
 
         $existing = [];
@@ -175,6 +174,37 @@ class LibraryManager
             }
         }
         $this->touch($library);
+    }
+
+    /**
+     * The library's own thumbnail (Ketura, 2026-11-08/09): a card (any with a picture, framed
+     * by hand or by its template), a banner of one or two cultures in any combination, or
+     * neither, for its first deck's. One clears the others.
+     * @param array{mode?: string, card?: string, crop?: mixed, cultures?: string[]} $thumbnail
+     */
+    public function setThumbnail(Library $library, array $thumbnail): void
+    {
+        $library->setThumbnailCard(null);
+        $library->setThumbnailCrop(null);
+        $library->setThumbnailCultures(null);
+        $mode = (string) ($thumbnail['mode'] ?? 'auto');
+        if ($mode === 'card') {
+            $card = $this->em->getRepository(\App\Entity\Card::class)->findOneBy(['code' => (string) ($thumbnail['card'] ?? '')]);
+            if ($card && $card->getImageUrl()) {
+                $library->setThumbnailCard($card);
+                $library->setThumbnailCrop(\App\Classes\ThumbnailCrop::sanitize($thumbnail['crop'] ?? null, [$card->getCode()]));
+            }
+        } elseif ($mode === 'cultures') {
+            $parts = [];
+            foreach (array_slice(array_values(array_unique(array_map('strval', (array) ($thumbnail['cultures'] ?? [])))), 0, 2) as $code) {
+                $culture = $this->em->getRepository(\App\Entity\Culture::class)->findOneBy(['code' => $code]);
+                // the cultures with a side have banner art; the One Ring has none
+                if ($culture && $culture->getSide()) {
+                    $parts[] = ['code' => $culture->getCode(), 'name' => $culture->getName(), 'side' => $culture->getSide()];
+                }
+            }
+            $library->setThumbnailCultures($parts);
+        }
     }
 
     /** The latest public version of the decklist's line, when it's newer than this one */

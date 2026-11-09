@@ -17,7 +17,7 @@ use stdClass;
 #[ORM\Index(name: 'published_deck_format_idx', columns: ['target_format', 'completeness', 'half'])]
 #[ORM\Index(name: 'published_deck_review_idx', columns: ['review_status', 'reviewed_at'])]
 #[ORM\UniqueConstraint(name: 'published_deck_line_version', columns: ['line_id', 'version'])]
-class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDeckInterface
+class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDeckInterface, \App\Classes\ThumbnailSubject
 {
     /**
      * How long after publishing the author can still withdraw a decklist to fix it

@@ -27,7 +27,7 @@
             {% endif %}
             <div class="rb-reader-title">
                 <div class="rb-reader-name">
-                    <span class="rb-lv-header-thumb">{% include 'Library/thumbnail.html.twig' %}</span>
+                    <span class="rb-lv-header-thumb">{% include 'Decklist/thumbnail.html.twig' with {decklist: library} %}</span>
                     <h1 class="rb-library-title">{{ library.name }}</h1>
                     <span class="rb-reader-version">{{ 'library.view.decks' | trans({'%count%': entries | length}) }}</span>
                     {% if library.tagList %}

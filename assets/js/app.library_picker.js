@@ -17,6 +17,9 @@
 
     function close()
     {
+        if(request) {
+            request.abort();
+        }
         if(drawer) {
             drawer.remove();
             drawer = null;
@@ -68,10 +71,14 @@
         request = $.ajax(Routing.generate('library_picker'), {data: {q: q, decklists: ids}, dataType: 'json', traditional: false});
         request.done(function (response) {
             token = response.token;
+            // closed while it was on its way
+            if(!drawer) {
+                return;
+            }
             render(response.libraries);
             place();
         }).fail(function (xhr, status) {
-            if(status === 'abort') {
+            if(status === 'abort' || !drawer) {
                 return;
             }
             if(xhr.status === 401) {
@@ -90,13 +97,16 @@
         data.token = token;
         $.ajax(Routing.generate('library_add'), {type: 'POST', data: data, dataType: 'json'})
             .done(function (response) {
+                $(document).trigger('library:added', [response]);
+                if(!drawer) {
+                    return;
+                }
                 message(_.escape(response.message) + ' <a href="' + _.escape(response.edit) + '">' + _.escape(t('library.picker.open')) + '</a>', response.added ? 'ok' : 'info');
                 drawer.find('.rb-ld-new-form').prop('hidden', true);
                 drawer.find('.rb-ld-new').prop('hidden', false);
                 load();
-                $(document).trigger('library:added', [response]);
             })
-            .fail(function () { message(_.escape(t('library.picker.failed')), 'error'); });
+            .fail(function () { drawer && message(_.escape(t('library.picker.failed')), 'error'); });
     }
 
     picker.open = function open(button, decklist_ids)

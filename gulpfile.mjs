@@ -83,6 +83,7 @@ export function buildAppJs() {
       "assets/js/app.deck_charts.js",
       "assets/js/app.ui.js",
       "assets/js/app.splitter.js",
+      "assets/js/app.thumbnail.js",
       "assets/js/app.library_picker.js",
     ],
     { base: "assets" },

@@ -55,11 +55,32 @@ test('a new library from My Libraries, filled from the Build tab', async ({ page
   await page.keyboard.press('Enter');
   await expect(page.locator('#tag-input .rb-tag-chip')).toContainText(`e2etag${runId}`);
   await page.fill('#library-notes-text', 'Notes on the library as a whole.');
-  // its own thumbnail, any card found by name (Ketura, 2026-11-08)
+  // its own thumbnail (Ketura, 2026-11-08/09): any card found by name, framed by hand with the
+  // crop editor the decklist form shares...
+  await page.click('[data-thumb-mode="card"]');
   await page.fill('#thumb-search', 'Gandalf, The Grey Wizard');
   await page.locator('.tt-suggestion').first().click();
   await expect(page.locator('#library-thumb-preview .rb-thumb-card img')).toBeVisible();
-  await expect(page.locator('#thumb-clear')).toBeVisible();
+  await page.locator('#thumb-edit').click();
+  await expect(page.locator('#thumb-crop')).toBeVisible();
+  await page.locator('#thumb-crop .rb-crop-frame').focus();
+  await page.keyboard.press('-');
+  await page.keyboard.press('ArrowRight');
+  await page.click('#thumb-crop .rb-crop-confirm');
+  await expect(page.locator('#thumb-crop')).toBeHidden();
+  await expect(page.locator('#library-thumb-crop')).toHaveValue(/"w":/);
+  await expect(page.locator('#library-thumb-preview .rb-thumb-card img')).toHaveAttribute('style', /width/);
+  // ...or a banner of one or two cultures, in any combination: a third replaces the first
+  await page.click('[data-thumb-mode="cultures"]');
+  for (const code of ['shire', 'moria', 'sauron']) {
+    await page.click(`.rb-lib-culture[data-culture="${code}"]`);
+  }
+  await expect(page.locator('.rb-lib-culture[aria-pressed="true"]')).toHaveCount(2);
+  await expect(page.locator('.rb-lib-culture[data-culture="moria"] .rb-lib-culture-order')).toHaveText('1');
+  await expect(page.locator('#library-thumb-preview .rb-thumb-part')).toHaveCount(2);
+  await expect(page.locator('#library-thumb-preview .rb-thumb-fp')).toHaveClass(/rb-thumb-c-moria/);
+  await page.click('#thumb-swap');
+  await expect(page.locator('#library-thumb-preview .rb-thumb-fp')).toHaveClass(/rb-thumb-c-sauron/);
 
   await page.click('#btn-save');
   await expect(page.locator('#save-status')).toHaveText('Saved');
@@ -72,7 +93,8 @@ test('a new library from My Libraries, filled from the Build tab', async ({ page
   await expect(entries.nth(0).locator('.rb-deck-name')).toHaveText(second!);
   await expect(entries.nth(1).locator('textarea[data-annotation]')).toHaveValue('The first deck. [[Gimli, Dwarf of Erebor]] starts.');
   await expect(page.locator('#library-tags')).toHaveValue(`e2etag${runId}`);
-  await expect(page.locator('#library-thumb')).not.toHaveValue('');
+  await expect(page.locator('[data-thumb-mode="cultures"]')).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('#library-thumb-preview .rb-thumb-shadow')).toHaveClass(/rb-thumb-c-moria/);
 });
 
 test('a deck comes out with X then the bin; Keep takes it back', async ({ page }) => {
@@ -113,6 +135,7 @@ test('private until made public; then listed, and read one deck at a time', asyn
   await voter.goto(`/libraries?tags[]=e2etag${runId}`);
   // as cards, two to a row (Ketura, 2026-11-08)
   await expect(voter.locator('.rb-lib-cards .rb-deck-name')).toHaveText(name);
+  await expect(voter.locator('.rb-lib-cards .rb-thumb-part')).toHaveCount(2);
   await voter.locator('.rb-lib-cards .rb-deck-name').click();
   await expect(voter).toHaveURL(/\/library\/view\/\d+\//);
   await expect(voter.locator('.rb-library-title')).toHaveText(name);

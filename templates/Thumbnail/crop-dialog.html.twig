@@ -1,0 +1,31 @@
+{#
+   The crop editor (Ketura, 2026-11-07; shared 2026-11-09): the whole card with a box for the
+   part the thumbnail shows, moved by dragging it and resized from its edges and corners,
+   always the tile's shape. Moved to the end of the page when it opens. app.thumbnail.js runs
+   it; the decklist form and the library editor include it.
+#}
+<div class="rb-crop" id="thumb-crop" role="dialog" aria-modal="true" aria-labelledby="thumb-crop-title" hidden>
+    <div class="rb-crop-dialog">
+        <h2 class="rb-crop-title" id="thumb-crop-title">{{ 'decklist.publish.crop.title' | trans }}</h2>
+        <p class="rb-crop-hint">{{ 'decklist.publish.crop.hint' | trans }}</p>
+        <div class="rb-crop-body">
+            <div class="rb-crop-stage">
+                <img class="rb-crop-image" alt="" draggable="false">
+                <div class="rb-crop-frame" tabindex="0" aria-label="{{ 'decklist.publish.crop.frame' | trans }}">
+                    {% for handle in ['n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw'] %}<span class="rb-crop-handle rb-crop-{{ handle }}" data-handle="{{ handle }}"></span>{% endfor %}
+                </div>
+            </div>
+            <div class="rb-crop-side">
+                <span class="rb-crop-label">{{ 'decklist.publish.crop.preview' | trans }}</span>
+                <span class="rb-thumb rb-thumb-card rb-crop-preview"><img alt=""></span>
+            </div>
+        </div>
+        <div class="rb-crop-actions">
+            <button type="button" class="btn btn-default rb-crop-reset">{{ 'decklist.publish.crop.reset' | trans }}</button>
+            <span class="rb-crop-gap"></span>
+            <button type="button" class="btn btn-default rb-crop-cancel">{{ 'decklist.publish.crop.cancel' | trans }}</button>
+            <button type="button" class="btn btn-primary rb-crop-confirm">{{ 'decklist.publish.crop.confirm' | trans }}</button>
+        </div>
+    </div>
+</div>
+

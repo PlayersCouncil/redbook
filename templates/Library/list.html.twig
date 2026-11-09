@@ -154,7 +154,7 @@
                 {% set url = library.publicId ? path('library_view', {public_id: library.publicId, library_name: library.nameCanonical}) : path('library_view_private', {library_uuid: library.uuid}) %}
                 {% set count = (library.entries | filter(e => e.available)) | length %}
                 <li class="rb-lib-card" data-href="{{ url }}">
-                    <span class="rb-lib-card-thumb">{% include 'Library/thumbnail.html.twig' %}</span>
+                    <span class="rb-lib-card-thumb">{% include 'Decklist/thumbnail.html.twig' with {decklist: library} %}</span>
                     <span class="rb-lib-card-body">
                         <a href="{{ url }}" class="rb-deck-name deck-name">{{ library.name }}</a>
                         <span class="rb-deck-by">
@@ -187,7 +187,7 @@
                 {% set url = path('library_edit', {library_uuid: library.uuid}) %}
                 <tr data-href="{{ url }}" class="rb-library-row rb-row-{{ library.visibility }}" data-uuid="{{ library.uuid }}">
                     <td class="rb-col-pick"><input type="checkbox" aria-label="{{ 'decks.browse.pick' | trans({'%name%': library.name}) }}"></td>
-                    <td class="rb-col-thumb">{% include 'Library/thumbnail.html.twig' %}</td>
+                    <td class="rb-col-thumb">{% include 'Decklist/thumbnail.html.twig' with {decklist: library} %}</td>
                     <td class="rb-col-deck">
                         <a href="{{ url }}" class="rb-deck-name deck-name">{{ library.name }}</a>
                         {% if library.official %}<span class="rb-official-mark" title="{{ 'library.official_title' | trans }}">{{ 'library.official' | trans }}</span>{% endif %}
