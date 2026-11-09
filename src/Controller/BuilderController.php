@@ -54,6 +54,11 @@ class BuilderController extends AbstractController
     ) {
     }
 
+    /**
+     * New Deck (Ketura, 2026-11-08): a format and a name, and optionally where to import it
+     * from: Gemp (a shared deck's address), a pasted deck list, a text file, or another Red
+     * Book deck. Import Deck leads here too.
+     */
     #[Route(path: '/deck/new', name: 'deck_buildform', methods: ['GET'])]
     public function buildformAction(TranslatorInterface $translator, DeckManager $deckManager): Response
     {
@@ -64,67 +69,121 @@ class BuilderController extends AbstractController
         ]);
     }
 
-    #[Route(path: '/deck/build', name: 'deck_initbuild', methods: ['POST'])]
-    public function initbuildAction(Request $request, TranslatorInterface $translator, DeckManager $deckManager): Response
+    /** Import Deck: the New Deck page, at its import fields */
+    #[Route(path: '/deck/import', name: 'deck_import', methods: ['GET'])]
+    public function importAction(): Response
     {
+        return $this->redirect($this->generateUrl('deck_buildform') . '#import');
+    }
+
+    #[Route(path: '/deck/build', name: 'deck_initbuild', methods: ['POST'])]
+    public function initbuildAction(
+        Request $request,
+        TranslatorInterface $translator,
+        DeckManager $deckManager,
+        DeckImportService $deckImportService,
+        FormatGuesser $guesser,
+        \App\Services\GempDeckFetcher $gempFetcher,
+    ): Response {
         $user = $this->requireUser();
         if (count($user->getDecks()) >= $user->getMaxNbDecks()) {
             $this->addFlash('error', $translator->trans('decks.save.outOfSlots'));
             return $this->redirectToRoute('decks_list');
         }
+        $back = $this->generateUrl('deck_buildform');
         $format = $this->selectableFormat((string) $request->request->get('target_format'));
+        $name = trim(strip_tags((string) $request->request->get('name')));
+
+        // where to import from: one of them, or none for a blank deck
+        $gemp = trim((string) $request->request->get('gemp_url'));
+        $list = trim((string) $request->request->get('content'));
+        $file = $request->files->get('upfile');
+        $redbook = trim((string) $request->request->get('redbook'));
+        $sources = array_filter(['gemp' => $gemp !== '', 'list' => $list !== '', 'file' => $file !== null, 'redbook' => $redbook !== '']);
+        if (count($sources) > 1) {
+            $this->addFlash('error', $translator->trans('decks.import.error.several'));
+            return $this->redirect($back . '#import');
+        }
+
+        if (isset($sources['redbook'])) {
+            $deck = $this->copyFromRedBook($redbook, $name, $user, $deckManager);
+            if ($deck === null) {
+                $this->addFlash('error', $translator->trans('decks.import.error.redbook'));
+                return $this->redirect($back . '#import');
+            }
+            $this->managerRegistry->getManager()->flush();
+            return $this->redirectToRoute('deck_edit', ['deck_uuid' => $deck->getUuid()]);
+        }
+
+        if ($sources) {
+            $source = null;
+            if (isset($sources['gemp'])) {
+                try {
+                    $text = $gempFetcher->fetch($gemp);
+                } catch (\InvalidArgumentException $e) {
+                    $this->addFlash('error', $translator->trans('decks.import.error.gemp', ['%reason%' => $e->getMessage()]));
+                    return $this->redirect($back . '#import');
+                }
+                $source = 'Gemp';
+            } elseif (isset($sources['file'])) {
+                $mime = (string) $file->getMimeType();
+                if (!str_starts_with($mime, 'text') && $mime !== 'application/octet-stream') {
+                    $this->addFlash('error', $translator->trans('decks.import.error.file'));
+                    return $this->redirect($back . '#import');
+                }
+                $text = (string) file_get_contents($file->getPathname());
+                $source = $file->getClientOriginalName();
+            } else {
+                $text = $list;
+            }
+            return $this->importText($text, $source, $format, $name, $user, $deckManager, $deckImportService, $guesser, $translator);
+        }
+
         if ($format === null) {
             $this->addFlash('error', $translator->trans('decks.build.errors.noformat'));
-            return $this->redirectToRoute('deck_buildform');
+            return $this->redirect($back);
         }
-        $name = trim(strip_tags((string) $request->request->get('name')))
-            ?: $translator->trans('decks.build.newname_format', ['%format%' => $format->getName()]);
-
-        $deck = $deckManager->create($user, $name, $format->getCode());
+        $deck = $deckManager->create($user, $name ?: $translator->trans('decks.build.newname_format', ['%format%' => $format->getName()]), $format->getCode());
         $this->managerRegistry->getManager()->flush();
 
         return $this->redirectToRoute('deck_edit', ['deck_uuid' => $deck->getUuid()]);
     }
 
-    #[Route(path: '/deck/import', name: 'deck_import', methods: ['GET'])]
-    public function importAction(TranslatorInterface $translator, DeckManager $deckManager): Response
+    /**
+     * Another Red Book deck, by address or id: a saved deck you can see (/deck/view/<uuid>, a
+     * bare uuid) or a decklist (/decklist/view/<id>, a bare number), cloned as Clone does
+     */
+    private function copyFromRedBook(string $ref, string $name, User $user, DeckManager $deckManager): ?Deck
     {
-        return $this->render('Builder/directimport.html.twig', [
-            'pagetitle' => $translator->trans('decks.import.title'),
-            'formats' => $this->formats->findSelectable(),
-            'default_format' => $deckManager->getDefaultFormat(),
-        ]);
+        if (preg_match('/(' . self::UUID . ')/i', $ref, $m)) {
+            $source = $this->managerRegistry->getRepository(Deck::class)->findOneBy(['uuid' => strtolower($m[1]), 'dateDeleted' => null]);
+            if ($source === null || !($source->isShared() || $source->getUser()->getId() === $user->getId())) {
+                return null;
+            }
+            return $deckManager->copy($user, $source, $name ?: $source->getName() . ' (clone)');
+        }
+        if (preg_match('#/decklist/(?:view/)?(\d+)#', $ref, $m) || preg_match('/^\s*(\d+)\s*$/', $ref, $m)) {
+            $decklist = $this->managerRegistry->getRepository(PublishedDeck::class)->find((int) $m[1]);
+            if ($decklist === null || ($decklist->isWithdrawn() && $decklist->getUser()->getId() !== $user->getId())) {
+                return null;
+            }
+            return $deckManager->copyDecklist($user, $decklist, $name ?: null);
+        }
+        return null;
     }
 
     /**
-     * Imports pasted text or an uploaded text file: Gemp deck strings or card lists,
-     * several decks separated by "===" lines (DeckImportService).
+     * Pasted text, a text file or what a Gemp address gave: Gemp deck strings or card lists,
+     * several decks separated by "===" lines (DeckImportService)
      */
-    #[Route(path: '/deck/fileimport', name: 'deck_fileimport', methods: ['POST'])]
-    public function fileimportAction(
-        Request $request,
-        DeckImportService $deckImportService,
-        DeckManager $deckManager,
-        TranslatorInterface $translator,
-        FormatGuesser $guesser,
-    ): Response {
-        $user = $this->requireUser();
-        $text = (string) $request->request->get('content');
-        $uploadedFile = $request->files->get('upfile');
-        if ($uploadedFile !== null) {
-            $mime = (string) $uploadedFile->getMimeType();
-            if (!str_starts_with($mime, 'text') && $mime !== 'application/octet-stream') {
-                throw new BadRequestHttpException('Unsupported file format');
-            }
-            $text = (string) file_get_contents($uploadedFile->getPathname());
-        }
+    private function importText(string $text, ?string $source, ?Format $format, string $name, User $user, DeckManager $deckManager,
+        DeckImportService $deckImportService, FormatGuesser $guesser, TranslatorInterface $translator): Response
+    {
         if (trim($text) === '') {
             $this->addFlash('error', $translator->trans('decks.import.error.empty'));
-            return $this->redirectToRoute('deck_import');
+            return $this->redirect($this->generateUrl('deck_buildform') . '#import');
         }
-        $format = $this->selectableFormat((string) $request->request->get('target_format'));
         $parsed = $deckImportService->parseTextImport($text);
-
         if (count($user->getDecks()) + count($parsed['decks']) > $user->getMaxNbDecks()) {
             $this->addFlash('error', $translator->trans('decks.save.outOfSlots'));
             return $this->redirectToRoute('decks_list');
@@ -135,11 +194,11 @@ class BuilderController extends AbstractController
             $code = $format?->getCode()
                 ?? $guesser->guessContent($data['content'])?->getCode()
                 ?? (string) $deckManager->getDefaultFormat();
-            // where it came from, for its history (Ketura, 2026-11-08)
-            $last = $deckManager->create($user, $data['name'], $code, $data['content'],
-                ['type' => 'import', 'source' => $uploadedFile !== null ? $uploadedFile->getClientOriginalName() : null]);
+            // the name given, for a single deck; where it came from, for its history (Ketura, 2026-11-08)
+            $deckName = $name !== '' && count($parsed['decks']) === 1 ? $name : $data['name'];
+            $last = $deckManager->create($user, $deckName, $code, $data['content'], ['type' => 'import', 'source' => $source]);
             foreach ($data['warnings'] as $warning) {
-                $this->addFlash('warning', $data['name'] . ': ' . $warning);
+                $this->addFlash('warning', $deckName . ': ' . $warning);
             }
         }
         $this->managerRegistry->getManager()->flush();
@@ -147,14 +206,14 @@ class BuilderController extends AbstractController
         foreach (array_unique($parsed['errors']) as $error) {
             $this->addFlash('error', $error);
         }
-        if (count($parsed['decks'])) {
+        if (count($parsed['decks']) > 1) {
             $this->addFlash('notice', $translator->trans('decks.import.imported', ['%count%' => count($parsed['decks'])]));
         }
         // a single deck opens in the deckbuilder
         if (count($parsed['decks']) === 1 && $last !== null) {
             return $this->redirectToRoute('deck_edit', ['deck_uuid' => $last->getUuid()]);
         }
-        return $this->redirectToRoute('decks_list');
+        return $this->redirect($this->generateUrl(count($parsed['decks']) ? 'decks_list' : 'deck_buildform') . (count($parsed['decks']) ? '' : '#import'));
     }
 
     /** Text export: format=text (card list, the default) or format=gemp (Gemp deck string) */
@@ -699,22 +758,7 @@ class BuilderController extends AbstractController
             $this->addFlash('error', $translator->trans('decks.save.outOfSlots'));
             return $this->redirectToRoute('decks_list');
         }
-        $deck = new Deck();
-        $deck->setUuid(Uuid::uuid4());
-        $deck->setOrigin(['type' => 'decklist', 'id' => $decklist->getId(), 'name' => $decklist->getName(), 'version' => $decklist->getVersionLabel()]);
-        // the bid and starting setup carry over; the notes and card annotations are the
-        // author's own (Ketura, 2026-11-08)
-        $deckManager->save($user, $deck, [
-            'name' => $decklist->getName(),
-            'description' => '',
-            'content' => $decklist->getSlots()->getContent(),
-            'target_format' => $decklist->getTargetFormat(),
-            'effective_date' => $decklist->getEffectiveDate(),
-            'decklist_id' => $decklist->getId(),
-            'starting' => $decklist->getStarting(),
-            'starting_bid' => $decklist->getStartingBid(),
-            'starting_notes' => $decklist->getStartingNotes(),
-        ]);
+        $deck = $deckManager->copyDecklist($user, $decklist);
         $this->managerRegistry->getManager()->flush();
         return $this->redirectToRoute('deck_edit', ['deck_uuid' => $deck->getUuid()]);
     }

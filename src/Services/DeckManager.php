@@ -96,6 +96,12 @@ class DeckManager
     /** The format a new deck targets when none is chosen: the first hall format */
     public function getDefaultFormat(): ?string
     {
+        // Fellowship Block, where there is one, rather than the first hall format (Anything Goes)
+        // (Ketura, 2026-11-08)
+        $fellowship = $this->em->getRepository(Format::class)->findOneBy(['code' => 'fotr_block', 'retired' => false]);
+        if ($fellowship !== null) {
+            return $fellowship->getCode();
+        }
         $formats = $this->em->getRepository(Format::class)->findBy(['hall' => true, 'retired' => false], ['position' => 'ASC'], 1);
         return $formats ? $formats[0]->getCode() : null;
     }
@@ -439,6 +445,29 @@ class DeckManager
             'starting_bid' => $source instanceof Deck || $source instanceof \App\Entity\PublishedDeck ? $source->getStartingBid() : null,
             'starting_notes' => $source instanceof Deck || $source instanceof \App\Entity\PublishedDeck ? $source->getStartingNotes() : null,
             'annotations' => [],
+        ]);
+        return $deck;
+    }
+
+    /**
+     * A new deck from a published decklist: its cards, format, bid and starting setup; the
+     * notes and card annotations are the author's own (Ketura, 2026-11-08)
+     */
+    public function copyDecklist(UserInterface $user, PublishedDeck $decklist, ?string $name = null): Deck
+    {
+        $deck = new Deck();
+        $deck->setUuid(\Ramsey\Uuid\Uuid::uuid4());
+        $deck->setOrigin(['type' => 'decklist', 'id' => $decklist->getId(), 'name' => $decklist->getName(), 'version' => $decklist->getVersionLabel()]);
+        $this->save($user, $deck, [
+            'name' => $name ?: $decklist->getName(),
+            'description' => '',
+            'content' => $decklist->getSlots()->getContent(),
+            'target_format' => $decklist->getTargetFormat(),
+            'effective_date' => $decklist->getEffectiveDate(),
+            'decklist_id' => $decklist->getId(),
+            'starting' => $decklist->getStarting(),
+            'starting_bid' => $decklist->getStartingBid(),
+            'starting_notes' => $decklist->getStartingNotes(),
         ]);
         return $deck;
     }

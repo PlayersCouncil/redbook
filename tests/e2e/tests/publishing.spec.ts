@@ -31,7 +31,7 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   await page.goto('/deck/import');
   await page.selectOption('#target_format', 'fotr_block');
   await page.fill('#content', `E2E versions ${runId}\n${gemp}`);
-  await page.click('form[action$="/deck/fileimport"] button[type=submit]');
+  await page.click('#new-deck-submit');
   await expect(page).toHaveURL(/\/deck\/edit\//);
   await waitForCardData(page);
   deckUuid = page.url().match(/\/deck\/edit\/([0-9a-f-]{36})/)![1];

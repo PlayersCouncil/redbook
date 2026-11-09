@@ -89,7 +89,7 @@ test('import a Gemp deck string and export it back unchanged', async ({ page }) 
   await page.goto('/deck/import');
   await page.selectOption('#target_format', 'fotr_block');
   await page.fill('#content', `${deckName}\n${gemp}`);
-  await page.click('form[action$="/deck/fileimport"] button[type=submit]');
+  await page.click('#new-deck-submit');
   await expect(page).toHaveURL(/\/deck\/edit\//);
   await waitForCardData(page);
   await expect(page.locator('#deck-validation')).toContainText('Deck is valid for Fellowship Block');
@@ -329,7 +329,7 @@ test('any version of a card: the Ring-bearer, a site; not a card with one versio
   await page.goto('/deck/import');
   await page.selectOption('#target_format', 'fotr_block');
   await page.fill('#content', `E2E any ${runId}\n${gemp}`);
-  await page.click('form[action$="/deck/fileimport"] button[type=submit]');
+  await page.click('#new-deck-submit');
   await expect(page).toHaveURL(/\/deck\/edit\//);
   await waitForCardData(page);
   if (await page.locator('.rb-opt-view[data-view=list][aria-pressed=false]').count()) {
@@ -377,4 +377,42 @@ test('any version of a card: the Ring-bearer, a site; not a card with one versio
   await page.click('.rb-any-pick');
   await page.locator('.rb-slot-ring_bearer .rb-line').click();
   await expect(page.locator('.rb-slot-ring_bearer .rb-name')).toContainText('Frodo, Son of Drogo');
+});
+
+test('New Deck: Fellowship Block first, imports on the same page, the button says which', async ({ page }) => {
+  // Import Deck leads to New Deck (Ketura, 2026-11-08)
+  await page.goto('/deck/import');
+  await expect(page).toHaveURL(/\/deck\/new#import$/);
+  await expect(page.locator('#target_format')).toHaveValue('fotr_block');
+  await expect(page.locator('.rb-new-private')).toContainText('Decks on Red Book are private by default.');
+  const button = page.locator('#new-deck-submit');
+  await expect(button).toHaveText('Create New Deck');
+  await page.fill('#content', '1x Gimli, Dwarf of Erebor');
+  await expect(button).toHaveText('Import Deck');
+  // one source at a time
+  await page.fill('#redbook', '12345');
+  await button.click();
+  await expect(page.locator('.alert')).toContainText('Fill in one way to import the deck, not several.');
+  // another Red Book deck, by address: a clone, named as given
+  const [, gemp] = fixture('fellowship-gemp.txt').trim().split('\n');
+  await page.goto('/deck/new');
+  await page.fill('#content', `E2E source ${runId}\n${gemp}`);
+  await button.click();
+  await expect(page).toHaveURL(/\/deck\/edit\//);
+  const source = page.url();
+  await page.goto('/deck/new');
+  await page.fill('#name', `E2E from Red Book ${runId}`);
+  await page.fill('#redbook', source);
+  await expect(button).toHaveText('Import Deck');
+  await button.click();
+  await expect(page).toHaveURL(/\/deck\/edit\//);
+  expect(page.url()).not.toBe(source);
+  await waitForCardData(page);
+  await expect(page.locator('#deck-name')).toHaveValue(`E2E from Red Book ${runId}`);
+  await expect(page.locator('.rb-draw-total')).toContainText('60');
+  // Gemp: only Gemp's own addresses
+  await page.goto('/deck/new');
+  await page.fill('#gemp_url', 'https://example.com/deck');
+  await button.click();
+  await expect(page.locator('.alert')).toContainText("Couldn't import from Gemp: not a Gemp address.");
 });

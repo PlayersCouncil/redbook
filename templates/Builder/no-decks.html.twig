@@ -10,14 +10,11 @@
         </div>
     </div>
     <div style="text-align:center">
+        {# both lead to New Deck, which imports too (Ketura, 2026-11-08) #}
         <a href="{{ path('deck_buildform') }}" class="btn btn-default btn-lg"><span
                     class="fas fa-plus"></span> {{ 'decks.form.build' | trans }}</a>
         <a href="{{ path('deck_import') }}" class="btn btn-default btn-lg"><span
                     class="fas fa-file-import"></span> {{ 'forms.import' | trans }}</a>
-        <button type="button" class="btn btn-default btn-lg" onclick="$('#fileModal').modal('show')"><span
-                    class="fas fa-file-upload"></span> {{ 'forms.upload' | trans }}</button>
     </div>
-
-    {% include 'Modale/file.html.twig' %}
 
 {% endblock %}

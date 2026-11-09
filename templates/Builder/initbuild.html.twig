@@ -1,15 +1,38 @@
-{# New deck: pick the format it targets (decision 0020) and a name #}
+{#
+   New Deck (Ketura, 2026-11-08): the format it targets (decision 0020) and a name, and
+   optionally where to import it from: Gemp, a pasted list, a text file, another Red Book deck.
+   Import Deck opens it at #import. The button says Import Deck once an import field is filled.
+#}
 {% extends 'base.html.twig' %}
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript">
+      $(function () {
+        var form = $('#new-deck-form'), button = $('#new-deck-submit');
+        function filled() {
+          return form.find('[data-import]').filter(function () { return this.type === 'file' ? this.files.length : $.trim(this.value) !== ''; }).length > 0;
+        }
+        function update() {
+          button.text(filled() ? button.data('import') : button.data('create'));
+        }
+        form.on('input change', '[data-import]', update);
+        update();
+        if(window.location.hash === '#import') {
+          $('#gemp_url').trigger('focus');
+        }
+      });
+    </script>
+{% endblock %}
 {% block body %}
     <div class="main white container">
         {% include 'alerts.html.twig' %}
         <div class="row">
-            <div class="col-md-6 col-md-offset-3">
+            <div class="col-md-8 col-md-offset-2 rb-new-deck">
                 <h1>{{ 'decks.form.new' | trans }}</h1>
                 {% if formats is empty %}
                     <div class="alert alert-warning">{{ 'formats.none' | trans }}</div>
                 {% else %}
-                    <form method="POST" action="{{ path('deck_initbuild') }}">
+                    <form method="POST" action="{{ path('deck_initbuild') }}" enctype="multipart/form-data" id="new-deck-form">
                         <div class="form-group">
                             <label for="target_format">{{ 'deck.target_format' | trans }}</label>
                             <select class="form-control" id="target_format" name="target_format">
@@ -17,14 +40,38 @@
                                     <option value="{{ format.code }}"{% if format.code == default_format %} selected{% endif %}>{{ format.name }}{% if format.pcErrata %} &ndash; {{ 'formats.pc_errata' | trans }}{% endif %}</option>
                                 {% endfor %}
                             </select>
-                            <span class="help-block">{{ 'decks.build.format_hint' | trans }} <a href="{{ path('formats') }}">{{ 'nav.formats' | trans }}</a></span>
+                            <span class="help-block">{{ 'decks.build.format_hint' | trans({'%link%': '<a href="https://wiki.lotrtcgpc.net/wiki/Formats" target="_blank" rel="noopener">' ~ ('decks.build.format_word' | trans) ~ '</a>'}) | raw }}</span>
                         </div>
                         <div class="form-group">
                             <label for="name">{{ 'decks.edit.form.name' | trans }}</label>
                             <input type="text" class="form-control" id="name" name="name" maxlength="255" placeholder="{{ 'decks.build.name_hint' | trans }}">
                         </div>
-                        <button type="submit" class="btn btn-success">{{ 'decks.build.start' | trans }}</button>
-                        <a href="{{ path('deck_import') }}" class="btn btn-link">{{ 'decks.import.title' | trans }}</a>
+
+                        <fieldset class="rb-new-import" id="import">
+                            <legend>{{ 'decks.build.import_heading' | trans }}</legend>
+                            <div class="form-group">
+                                <label for="gemp_url">{{ 'decks.build.from_gemp' | trans }}</label>
+                                <input type="url" class="form-control" id="gemp_url" name="gemp_url" data-import placeholder="https://play.lotrtcgpc.net/…">
+                            </div>
+                            <div class="form-group">
+                                <label for="content">{{ 'decks.build.from_list' | trans }}</label>
+                                <textarea class="form-control" id="content" name="content" rows="8" data-import placeholder="{{ 'decks.build.list_placeholder' | trans }}"></textarea>
+                                <span class="help-block small">{{ 'decks.import.intro' | trans }}</span>
+                            </div>
+                            <div class="form-group">
+                                <label for="upfile">{{ 'decks.build.from_file' | trans }}</label>
+                                <input type="file" id="upfile" name="upfile" accept=".txt,text/plain" data-import>
+                            </div>
+                            <div class="form-group">
+                                <label for="redbook">{{ 'decks.build.from_redbook' | trans }}</label>
+                                <input type="text" class="form-control" id="redbook" name="redbook" data-import placeholder="{{ 'decks.build.redbook_placeholder' | trans }}">
+                            </div>
+                            <p class="rb-new-blank">{{ 'decks.build.or_blank' | trans }}</p>
+                        </fieldset>
+
+                        <p class="rb-new-private">{{ 'decks.build.private_note' | trans }}</p>
+                        <button type="submit" class="btn btn-success btn-lg" id="new-deck-submit"
+                                data-create="{{ 'decks.build.create' | trans }}" data-import="{{ 'decks.build.import' | trans }}">{{ 'decks.build.create' | trans }}</button>
                     </form>
                 {% endif %}
             </div>

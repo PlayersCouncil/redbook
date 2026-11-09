@@ -290,11 +290,15 @@
                 if(!point || !point.y || !point.graphic) {
                     return;
                 }
-                var bar = point.graphic.element.getBoundingClientRect();
-                labels.push(chart.renderer.text(String(Math.abs(point.y)), bar.left - box.left + bar.width / 2, bar.top - box.top + bar.height / 2 + 4)
-                    .attr({align: 'center', zIndex: 9, 'class': 'rb-bar-count'})
-                    .css({fontWeight: '700', fontSize: '12px', color: '#1E1B16', pointerEvents: 'none'})
-                    .add());
+                // the count on a black box, easier to read than outlined text (Ketura, 2026-11-08)
+                var bar = point.graphic.element.getBoundingClientRect(),
+                    label = chart.renderer.label(String(Math.abs(point.y)), 0, 0)
+                        .attr({fill: '#1E1B16', padding: 3, r: 3, zIndex: 9, 'class': 'rb-bar-count'})
+                        .css({fontWeight: '700', fontSize: '12px', color: '#fff', pointerEvents: 'none'})
+                        .add(),
+                    size = label.getBBox();
+                label.attr({x: Math.round(bar.left - box.left + bar.width / 2 - size.width / 2), y: Math.round(bar.top - box.top + bar.height / 2 - size.height / 2)});
+                labels.push(label);
             });
         }).on('mouseleave', clear);
     }

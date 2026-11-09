@@ -24,7 +24,7 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await page.goto('/deck/import');
   await page.selectOption('#target_format', 'fotr_block');
   await page.fill('#content', `${deckName}\n${gemp}`);
-  await page.click('form[action$="/deck/fileimport"] button[type=submit]');
+  await page.click('#new-deck-submit');
   await expect(page).toHaveURL(/\/deck\/edit\//);
   await waitForCardData(page);
 

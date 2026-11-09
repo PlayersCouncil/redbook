@@ -1394,7 +1394,6 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
    one the tint of the collector's-info patch. The Balrog's fiery template isn't Moria's. */
 /* hover counts on the Stats bars must not catch the pointer, or the bar loses its hover */
 .rb-chart .highcharts-data-labels, .rb-chart .highcharts-data-labels *, .rb-chart .rb-bar-count { pointer-events: none; }
-.rb-chart .rb-bar-count { paint-order: stroke; stroke: rgba(255, 255, 255, .85); stroke-width: 3px; }
 :root {
     --rb-culture-dunland: #676E7D; --rb-culture-dunland-light: #766B5B;
     --rb-culture-dwarven: #420726; --rb-culture-dwarven-light: #C9BFA1;
@@ -2288,7 +2287,8 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 /* the culture pie: each slice's symbol over its count; a slice's name outside on hover */
 .rb-pie-label { display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none; }
 .rb-pie-icon { width: 30px; height: 30px; background-color: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
-.rb-pie-count { font-weight: 700; font-size: 12px; color: #fff; text-shadow: 0 0 2px #000, 0 0 2px #000; }
+/* the count on a black box (Ketura, 2026-11-08) */
+.rb-pie-count { padding: 1px 6px; border-radius: 4px; background: #1E1B16; font-weight: 700; font-size: 12px; line-height: 1.4; color: #fff; }
 
 /* A deck as it was published (Ketura, 2026-11-08): the deck side greyed, a banner with New
    Revision above it; a change asks first (ui.deckedit) */
@@ -2368,3 +2368,10 @@ p.rb-dh-cards { margin-bottom: 0; }
 .rb-derived-chosen:not(:empty) { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
 .rb-derived-pick { display: flex; align-items: center; gap: 6px; }
 .rb-derived-pick .rb-derived-card { flex: 1 1 auto; min-width: 0; }
+
+/* New Deck with its imports (Ketura, 2026-11-08) */
+.rb-new-deck h1 { margin-bottom: 18px; }
+.rb-new-import { margin: 18px 0 8px; padding: 12px 16px 4px; border: 1px solid var(--rb-line, #E3DED3); border-radius: 8px; background: #FBF9F4; }
+.rb-new-import legend { width: auto; margin: 0; padding: 0 6px; border: 0; font-size: calc(15px * var(--rb-text-scale)); font-weight: 700; }
+.rb-new-blank { margin: 4px 0 10px; color: var(--rb-muted); font-style: italic; }
+.rb-new-private { margin: 14px 0 10px; color: var(--rb-muted); }
