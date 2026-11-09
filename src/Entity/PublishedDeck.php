@@ -194,6 +194,13 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     #[ORM\Column(name: 'version', type: 'integer')]
     protected $version;
 
+    /**
+     * Edits to its public details since it was published (Ketura, 2026-11-08): 2.0.1, 2.0.2.
+     * Shown in its Details and History; elsewhere it's 2.0.
+     */
+    #[ORM\Column(name: 'patch', type: 'integer', options: ['default' => 0])]
+    protected int $patch = 0;
+
     #[ORM\ManyToOne(targetEntity: DecklistLine::class, inversedBy: 'decklists', cascade: ['persist'])]
     #[ORM\JoinColumn(name: 'line_id', referencedColumnName: 'id', nullable: false)]
     protected ?DecklistLine $line = null;
@@ -1063,6 +1070,28 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
         return $this->version;
     }
 
+    public function getPatch(): int
+    {
+        return $this->patch;
+    }
+
+    public function setPatch(int $patch): void
+    {
+        $this->patch = $patch;
+    }
+
+    /** How it's numbered almost everywhere: 2.0 (Ketura, 2026-11-08) */
+    public function getVersionLabel(): string
+    {
+        return $this->version . '.0';
+    }
+
+    /** With its detail edits: 2.0.1 */
+    public function getFullVersion(): string
+    {
+        return $this->getVersionLabel() . ($this->patch ? '.' . $this->patch : '');
+    }
+
     /**
      * @inheritdoc
      */
@@ -1079,6 +1108,8 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
             'slots' => $slots->getContent() ?: new stdClass(),
             'gemp' => $slots->toGempString(),
             'version' => $this->getVersion(),
+            'version_label' => $this->getVersionLabel(),
+            'full_version' => $this->getFullVersion(),
             'line' => $this->line?->getId(),
             'half' => $this->half,
             'tags' => $this->tags,

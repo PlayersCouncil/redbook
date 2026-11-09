@@ -234,7 +234,8 @@ class Oauth2Controller extends AbstractController
             'content' => $slots,
             'target_format' => $request->get('target_format') ?: null,
             'effective_date' => $request->get('effective_date') ?: null,
-        ]);
+        // an existing deck's save is a revision, as from the deckbuilder (Ketura, 2026-11-08)
+        ], $id ? $deck : null);
 
         $this->managerRegistry->getManager()->flush();
 

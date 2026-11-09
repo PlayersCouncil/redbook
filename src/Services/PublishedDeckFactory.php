@@ -126,6 +126,19 @@ class PublishedDeckFactory
         $decklist->setDateUpdate(new DateTime());
         $this->replaceSlots($decklist, $deck);
         $this->validator->validateDeck($decklist);
+        // the deck is that version again
+        $this->numberDeck($decklist);
+    }
+
+    /**
+     * A deck published as its latest decklist and not changed since (Ketura, 2026-11-08):
+     * the deckbuilder asks before starting a private revision of it
+     */
+    public function isUnrevised(Deck $deck): ?PublishedDeck
+    {
+        $latest = $this->defaultPrevious($deck);
+        return $latest !== null && !$latest->isWithdrawn() && (int) $deck->getMinorVersion() === 0 && (int) $deck->getMajorVersion() === (int) $latest->getVersion()
+            ? $latest : null;
     }
 
     /**
@@ -138,6 +151,20 @@ class PublishedDeckFactory
         $decklist->setLine($line);
         $decklist->setVersion($this->em->getRepository(PublishedDeck::class)->nextVersion($line));
         $decklist->setNameCanonical($this->texts->slugify($decklist->getName()) . '-' . $decklist->getVersion());
+        $this->numberDeck($decklist);
+    }
+
+    /**
+     * The deck a decklist was published from takes its number as X.0 (Ketura, 2026-11-08):
+     * its next revisions are X.1, X.2, private until it's published again
+     */
+    public function numberDeck(PublishedDeck $decklist): void
+    {
+        $deck = $decklist->getParent();
+        if ($deck instanceof Deck && $decklist->getVersion()) {
+            $deck->setMajorVersion((int) $decklist->getVersion());
+            $deck->setMinorVersion(0);
+        }
     }
 
     /**
@@ -172,10 +199,6 @@ class PublishedDeckFactory
         ?string $descriptionMd = null,
         ?DateTimeInterface $effectiveDate = null,
     ): PublishedDeck {
-        // increasing deck version
-        $deck->setMinorVersion(0);
-        $deck->setMajorVersion($deck->getMajorVersion() + 1);
-
         $name = mb_substr(trim((string) $name) ?: $deck->getName(), 0, 60);
         $descriptionMd = $descriptionMd ?: $deck->getDescriptionMd();
 
@@ -204,9 +227,9 @@ class PublishedDeckFactory
         if ($deck->getParent()) {
             $decklist->setPrecedent($deck->getParent());
         }
-        $this->continueLine($decklist, $this->defaultPrevious($deck));
         $decklist->setParent($deck);
-        $deck->setMinorVersion(1);
+        // the deck becomes X.0 with it (numberDeck)
+        $this->continueLine($decklist, $this->defaultPrevious($deck));
 
         // the snapshot taken at publication (decision 0019)
         $this->validator->validateDeck($decklist);

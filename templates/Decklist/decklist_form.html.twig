@@ -105,8 +105,10 @@
                         <input type="text" class="form-control" name="name" id="name" form="decklist-form" maxlength="60" value="{{ decklist.name }}">
                     </div>
                 </div>
-                <form action="{{ action }}" method="post" enctype="application/x-www-form-urlencoded" id="decklist-form" class="rb-publish-scroll">
+                <form action="{{ action }}" method="post" enctype="application/x-www-form-urlencoded" id="decklist-form" class="rb-publish-scroll"
+                      {%- if private_revision %} data-private-revision="{{ private_revision.version }}"{% endif %}>
                     <input type="hidden" name="_token" value="{{ csrf_token('decklist_form') }}">
+                    {% if private_revision %}<input type="hidden" name="apply_to_deck" id="apply-to-deck" value="">{% endif %}
 
                     {#
                        The thumbnail the lists show (Ketura, 2026-11-05): a card of the deck, or the
@@ -204,10 +206,10 @@
                                 <option value="">{{ 'decklist.form.previous_none' | trans }}</option>
                                 {% for line in lines %}
                                     {% set d = line.decklist %}
-                                    <option value="{{ d.id }}" data-next="{{ line.next }}" data-name="{{ d.name }}"
+                                    <option value="{{ d.id }}" data-next="{{ line.next }}.0" data-name="{{ d.name }}"
                                             data-url="{{ path('decklist_detail', {decklist_id: d.id, decklist_name: d.nameCanonical|e('url')}) }}"
                                             data-author="{{ d.user.displayName }}" data-date="{{ d.dateCreation | date('Y-m-d') }}" data-version="{{ d.version }}" data-tags="{{ d.tags }}"
-                                            {%- if previous and previous.line.id == d.line.id %} selected{% endif %}>{{ d.name }} (v{{ d.version }})</option>
+                                            {%- if previous and previous.line.id == d.line.id %} selected{% endif %}>{{ d.name }} ({{ d.versionLabel }})</option>
                                 {% endfor %}
                             </select>
                             <p class="rb-version-line" id="version-line"
@@ -218,10 +220,10 @@
                         {% else %}
                             <label>{{ 'decklist.form.version' | trans }}</label>
                             {% if previous %}
-                                <p class="rb-version-line" id="version-line">{{ 'decklist.form.version_is' | trans({'%version%': decklist.version}) | raw }}</p>
+                                <p class="rb-version-line" id="version-line">{{ 'decklist.form.version_is' | trans({'%version%': decklist.fullVersion}) | raw }}</p>
                                 <div class="rb-derived-card">{% include 'Decklist/deck-ref.html.twig' with {d: previous} %}</div>
                             {% else %}
-                                <p class="rb-version-line" id="version-line">{{ 'decklist.form.version_first' | trans({'%version%': decklist.version}) | raw }}</p>
+                                <p class="rb-version-line" id="version-line">{{ 'decklist.form.version_first' | trans({'%version%': decklist.fullVersion}) | raw }}</p>
                             {% endif %}
                         {% endif %}
                     </div>
@@ -255,4 +257,28 @@
             </div>
         </div>
     </div>
+    {#
+       Saving a changed decklist whose deck has a private revision asks whether that revision
+       takes the changes too (Ketura, 2026-11-08); ui.decklist_form shows it
+    #}
+    {% if private_revision %}
+        <div class="modal fade" id="apply-to-deck-modal" tabindex="-1" role="dialog" aria-labelledby="apply-to-deck-title">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="{{ 'forms.cancel' | trans }}"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="apply-to-deck-title">{{ 'decklist.form.apply.title' | trans }}</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>{{ 'decklist.form.apply.text' | trans({'%version%': private_revision.version, '%deck%': private_revision.name}) }}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">{{ 'forms.cancel' | trans }}</button>
+                        <button type="button" class="btn btn-default" data-apply="0">{{ 'decklist.form.apply.no' | trans }}</button>
+                        <button type="button" class="btn btn-primary" data-apply="1">{{ 'decklist.form.apply.yes' | trans({'%version%': private_revision.version}) }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}

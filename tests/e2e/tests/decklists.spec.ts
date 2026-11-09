@@ -37,9 +37,9 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await page.click('#btn-save');
   await expect(page.locator('#save-status')).toContainText('Saved as version');
 
-  // Publish is the deckbuilder's Visibility menu (Ketura, 2026-11-02)
-  await page.click('#btn-visibility');
-  await page.click('#menu-visibility [data-visibility=published]');
+  // Publish is its own button, apart from who can see the deck as it stands (Ketura, 2026-11-08)
+  await expect(page.locator('#btn-publish')).toHaveText(/^\s*Publish\s*$/);
+  await page.click('#btn-publish');
   await expect(page).toHaveURL(/\/deck\/publish\//);
   // one form for publishing and editing (Ketura, 2026-11-06), laid out as the deckbuilder
   // (2026-11-07): the deck on the left with its format, the form as a tab on the right
@@ -171,7 +171,7 @@ test('the author edits the decklist from its page; nobody else gets Edit', async
   await expect(page.locator('#annot-list textarea[data-annotation="1_12"]')).toHaveValue('The only companion.');
   await expect(page.locator('#decklist-state')).toHaveAttribute('data-state', 'grace');
   await expect(page.locator('#effective_date')).toBeDisabled();
-  await expect(page.locator('#version-line')).toContainText('Version 1');
+  await expect(page.locator('#version-line')).toContainText('Version 1.0');
   await expect(page.locator('.rb-form-actions a')).toHaveAttribute('href', new URL(decklistUrl).pathname);
   await page.fill('#description', 'Published by the **smoke test**, then edited. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');
   await page.click('.rb-form-actions button[form=decklist-form]:has-text("Save")');
@@ -285,10 +285,12 @@ test("My Decks: the decklists page's filters, who can see each deck, and favouri
   await page.goto(`/decks?name=${encodeURIComponent(deckName)}`);
   const row = page.locator('#decks tr').filter({ hasText: deckName });
   await expect(row).toHaveCount(1);
-  await expect(page.locator('.rb-my-decks-table thead th')).toHaveText(['', '', 'Size', 'Deck', 'Format', 'Visibility', 'Tags', 'Actions']);
-  // who can see it, with a link to what it was published as; its tags, which search when clicked
-  await expect(row.locator('.rb-col-visibility')).toContainText('Published');
-  await expect(row.locator('.rb-deck-published')).toContainText('v1');
+  await expect(page.locator('.rb-my-decks-table thead th')).toHaveText(['', '', 'Size', 'Deck', 'Format', 'Current', 'Published', 'Tags', 'Actions']);
+  // who can see it as it stands, and what it was published as (Ketura, 2026-11-08); its tags,
+  // which search when clicked
+  await expect(row.locator('.rb-col-visibility')).toContainText('Private');
+  await expect(row.locator('.rb-col-visibility')).toContainText('Same as 1.0');
+  await expect(row.locator('.rb-col-published a')).toContainText('1.0');
   await expect(row.locator('.rb-row-tags')).toContainText('dwarves');
   await expect(row.locator('.rb-thumb-card img')).toHaveAttribute('alt', 'Gimli, Dwarf of Erebor');
   // a row opens the deckbuilder; Preview shows the deck

@@ -116,6 +116,7 @@
         }
         $('#btn-save').prop('disabled', !dirty);
         $('#btn-revert').prop('disabled', !dirty);
+        show_publish();
     }
 
     function offer_old_draft(draft)
@@ -173,7 +174,16 @@
                     return;
                 }
                 discard_draft();
+                if(response.version !== saved_version) {
+                    // a revision now (Ketura, 2026-11-08)
+                    page.unrevised = null;
+                }
                 app.deck.init(response.deck);
+                if(response.history && app.deck_history) {
+                    app.deck_history.init(response.history);
+                    app.deck_history.setup('#history');
+                    app.deck_history.render();
+                }
                 saved_state = app.deck.get_state();
                 saved_version = response.version;
                 app.deck.changed();
@@ -302,28 +312,42 @@
     {
         var icons = {
                 'private': '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>',
-                hidden: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5l3-3M5 8l-1.5 1.5a2.1 2.1 0 0 0 3 3L8 11M11 8l1.5-1.5a2.1 2.1 0 0 0-3-3L8 5"/></svg>',
-                published: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c2 2 2 10 0 12M8 2c-2 2-2 10 0 12"/></svg>'
-            },
-            shown = page.published ? 'published' : visibility;
-        $('#btn-visibility').html(icons[shown] + ' <span>' + t('deckbuilder.visibility.' + shown) + '</span> <span aria-hidden="true">&#9662;</span>')
+                hidden: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5l3-3M5 8l-1.5 1.5a2.1 2.1 0 0 0 3 3L8 11M11 8l1.5-1.5a2.1 2.1 0 0 0-3-3L8 5"/></svg>'
+            };
+        // who can see the deck as it stands; its publications are public anyway (Ketura, 2026-11-08)
+        $('#btn-visibility').html(icons[visibility] + ' <span>' + t('deckbuilder.visibility.' + visibility) + '</span> <span aria-hidden="true">&#9662;</span>')
             .attr('title', t('deckbuilder.visibility.label'));
         $('#menu-visibility [data-visibility]').each(function () {
-            var on = $(this).data('visibility') === shown,
-                // published, it can't go back to private or hidden (Ketura, 2026-11-08)
-                locked = page.published && $(this).data('visibility') !== 'published';
-            $(this).attr('aria-checked', on).toggleClass('active', on).prop('disabled', locked)
-                .attr('title', locked ? t('deckbuilder.visibility.locked') : null);
+            var on = $(this).data('visibility') === visibility;
+            $(this).attr('aria-checked', on).toggleClass('active', on);
         });
+        show_publish();
+    }
+
+    /**
+     * Publish, with the version it makes (Ketura, 2026-11-08): 1.0 the first time, then the
+     * next of its line. A deck still as it was published has nothing new to publish.
+     */
+    function show_publish()
+    {
+        var button = $('#btn-publish'),
+            same = page.unrevised && !dirty;
+        button.html('<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c2 2 2 10 0 12M8 2c-2 2-2 10 0 12"/></svg> '
+                + _.escape(same ? t('deckbuilder.publish.published_as', {version: page.unrevised.version})
+                    : (page.next_publication ? t('deckbuilder.publish.version', {version: page.next_publication}) : t('deckbuilder.publish.first'))))
+            .prop('disabled', !!same)
+            .attr('title', same ? t('deckbuilder.publish.same_hint') : t('deckbuilder.publish.hint'));
+    }
+
+    function publish()
+    {
+        // publishing works on the saved deck
+        var go = function () { window.location = page.publish_url; };
+        return dirty ? save(false, go) : go();
     }
 
     function set_visibility(choice)
     {
-        if(choice === 'published') {
-            // publishing works on the saved deck
-            var go = function () { window.location = page.publish_url; };
-            return dirty ? save(false, go) : go();
-        }
         $.ajax(Routing.generate('deck_visibility'), {
             type: 'POST',
             data: {id: app.deck.get_id(), visibility: choice},
@@ -331,6 +355,79 @@
             success: function () {
                 visibility = choice;
                 show_visibility();
+            }
+        });
+    }
+
+    /* ---- a deck as it was published (Ketura, 2026-11-08) ---- */
+
+    /*
+     * Greyed until a revision begins: the New Revision button, or any change asks first.
+     * Looking around (the tabs, the view options, the filters, Preview, exports) doesn't.
+     */
+    var locked = false,
+        pending_target = null,
+        EDITS = '#deck-info input, #deck-info select, #deck-info textarea, #deck-info button, #deck [data-qty], #deck [data-start], #deck [data-find], '
+            + '#pool [data-add], #pool [data-rb], #tab-pane-infos input, #tab-pane-infos textarea, #tab-pane-infos select, #tab-pane-infos button, '
+            + '#tab-pane-history a[role=button], #tab-pane-archive button, #tab-pane-archive input, #tab-pane-archive select, #tab-pane-archive textarea',
+        NOT_EDITS = '#btn-preview, #btn-more, #btn-visibility, #btn-publish, .rb-menu, .rb-menu *';
+
+    function edit_target(element)
+    {
+        var target = $(element).closest(EDITS);
+        return target.length && !target.is(NOT_EDITS) ? target : null;
+    }
+
+    function guard(event)
+    {
+        if(!locked) {
+            return;
+        }
+        var target = edit_target(event.target);
+        if(!target) {
+            return;
+        }
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if(event.type === 'click' || event.type === 'focusin') {
+            pending_target = target[0];
+            if(event.type === 'focusin') {
+                target.trigger('blur');
+            }
+            $('#revision-prompt').modal('show');
+        }
+    }
+
+    function unlock()
+    {
+        locked = false;
+        $('.rb-builder').removeClass('is-locked');
+        $('#revision-banner').remove();
+    }
+
+    function setup_lock()
+    {
+        if(!page.unrevised) {
+            return;
+        }
+        locked = true;
+        $('.rb-builder').addClass('is-locked');
+        // what there is to read first: the notes (Ketura, 2026-11-08)
+        $('a[href="#tab-pane-infos"]').tab('show');
+        _.each(['mousedown', 'click', 'focusin', 'keydown'], function (type) {
+            document.addEventListener(type, guard, true);
+        });
+        $('#btn-new-revision').on('click', function () {
+            pending_target = null;
+            $('#revision-prompt').modal('show');
+        });
+        $('#revision-begin').on('click', function () {
+            var target = pending_target;
+            unlock();
+            $('#revision-prompt').modal('hide');
+            // carry on with what was asked for
+            if(target) {
+                $(target).is('input, textarea, select') ? $(target).trigger('focus') : target.click();
             }
         });
     }
@@ -404,7 +501,7 @@
                 break;
             case 'link':
                 copy_text(page.view_url);
-                $('#save-status').text(visibility === 'private' && !page.published ? t('deckbuilder.more.link_private') : t('deckbuilder.more.link_copied'));
+                $('#save-status').text(visibility === 'private' ? t('deckbuilder.more.link_private') : t('deckbuilder.more.link_copied'));
                 break;
             case 'export-gemp':
                 app.ui.export_gemp(app.deck);
@@ -526,7 +623,8 @@
             event.stopPropagation();
             toggle_menu(this, '#menu-visibility');
         });
-        $('#menu-visibility').on('click', '[data-visibility]:not([disabled])', function () {
+        $('#btn-publish').on('click', publish);
+        $('#menu-visibility').on('click', '[data-visibility]', function () {
             close_menus();
             set_visibility($(this).data('visibility'));
         });
@@ -658,6 +756,12 @@
         }
         fill_fields();
         app.deck_history && app.deck_history.render();
+        // a draft carried on from before means its revision had begun
+        if(!same(app.deck.get_state(), saved_state)) {
+            page.unrevised = null;
+            $('#revision-banner').remove();
+        }
+        setup_lock();
         show_visibility();
         show_review();
         if(window.location.hash === '#archive') {

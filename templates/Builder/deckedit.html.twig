@@ -15,12 +15,15 @@
     <script src="{{ asset('js/app.deck_notes.js') }}"></script>
     <script src="{{ asset('js/app.deck_stats.js') }}"></script>
     <script src="{{ asset('js/ui.deckedit.js') }}"></script>
+    {# unrevised: the deck as it was published; next_publication: the version publishing it again makes (Ketura, 2026-11-08) #}
     <script type="text/javascript">
       app.deck && app.deck.init({{ deck|json_encode|raw }});
       app.deck_history && app.deck_history.init({{ deck.history|json_encode|raw }});
       app.deckbuilder_page = {{ {
           published: deck.children|length > 0,
           publish_url: path('deck_publish_form', {deck_uuid: deck.uuid}),
+          unrevised: unrevised ? {version: unrevised.versionLabel, next: deck.majorVersion ~ '.1'} : null,
+          next_publication: latest_publication ? (latest_publication.version + 1) ~ '.0' : null,
           view_url: url('deck_view', {deck_uuid: deck.uuid}),
           historian: is_granted('ROLE_HISTORIAN'),
           published_versions: published_versions,
@@ -38,6 +41,14 @@
         <div class="row rb-builder-row">
             <!-- Left: deck information, then the deck -->
             <div class="col-md-6 rb-col-left">
+                {% if unrevised %}
+                    {# the deck as published, greyed until a revision begins (Ketura, 2026-11-08) #}
+                    <div class="rb-revision-banner" id="revision-banner">
+                        <span class="fas fa-lock" aria-hidden="true"></span>
+                        <span>{{ 'deckbuilder.revision.banner' | trans({'%version%': unrevised.versionLabel}) }}</span>
+                        <button type="button" class="rb-btn rb-btn-primary rb-btn-small" id="btn-new-revision"><span class="fas fa-code-branch" aria-hidden="true"></span> {{ 'deckbuilder.revision.new' | trans }}</button>
+                    </div>
+                {% endif %}
                 <section class="rb-info" id="deck-info" aria-label="{{ 'deckbuilder.info.label' | trans }}">
                     <div class="rb-draft-banner" id="draft-banner" hidden></div>
 
@@ -67,14 +78,18 @@
                     <div class="rb-actions">
                         <button type="button" class="rb-btn rb-btn-primary" id="btn-save">{{ 'deckbuilder.info.save' | trans }}</button>
                         <button type="button" class="rb-btn" id="btn-revert">{{ 'deckbuilder.info.revert' | trans }}</button>
+                        {#
+                           Who can see the deck as it stands, and publishing it, apart (Ketura, 2026-11-08):
+                           a deck published as 2.0 can be a private 2.3; Publish makes 3.0 of it
+                        #}
                         <div class="rb-menu-wrap">
                             <button type="button" class="rb-btn" id="btn-visibility" aria-haspopup="menu" aria-expanded="false"></button>
                             <div class="rb-menu" id="menu-visibility" role="menu" hidden>
                                 <button type="button" role="menuitemradio" data-visibility="private"><strong>{{ 'deckbuilder.visibility.private' | trans }}</strong><span>{{ 'deckbuilder.visibility.private_hint' | trans }}</span></button>
                                 <button type="button" role="menuitemradio" data-visibility="hidden"><strong>{{ 'deckbuilder.visibility.hidden' | trans }}</strong><span>{{ 'deckbuilder.visibility.hidden_hint' | trans }}</span></button>
-                                <button type="button" role="menuitemradio" data-visibility="published"><strong>{{ 'deckbuilder.visibility.published' | trans }}</strong><span>{{ 'deckbuilder.visibility.published_hint' | trans }}</span></button>
                             </div>
                         </div>
+                        <button type="button" class="rb-btn rb-btn-publish" id="btn-publish"></button>
                         {# the deck as others see it (Ketura, 2026-11-08) #}
                         <a href="{{ path('deck_view', {deck_uuid: deck.uuid}) }}" class="rb-btn" id="btn-preview" title="{{ 'deckbuilder.info.preview_hint' | trans }}"><span class="fas fa-eye" aria-hidden="true"></span> {{ 'deckbuilder.info.preview' | trans }}</a>
                         <div class="rb-menu-wrap">
@@ -139,33 +154,32 @@
     </div>
 
     {#
-       A published deck, unchanged since (Ketura, 2026-11-08): editing it doesn't change the
-       decklist, it makes the deck's next version. The page waits behind this until that's
-       chosen; once a change is saved it no longer asks.
+       Asked at the first change to a deck as it was published (Ketura, 2026-11-08): the change
+       starts its next private revision; the published decklist stays as it is
     #}
-    {% if published_gate %}
-        {% set gate = published_gate %}
-        <div class="rb-gate" id="published-gate" role="dialog" aria-modal="true" aria-labelledby="published-gate-title">
-            <div class="rb-gate-card">
-                <h2 id="published-gate-title">{{ 'deckbuilder.gate.title' | trans }}</h2>
-                {% set link %}<a href="{{ path('decklist_detail', {decklist_id: gate.id, decklist_name: gate.nameCanonical | e('url')}) }}">{{ gate.name }} v{{ gate.version }}</a>{% endset %}
-                <p>{{ 'deckbuilder.gate.text' | trans({'%decklist%': link}) | raw }}</p>
-                <p class="rb-gate-next">{{ 'deckbuilder.gate.next' | trans({'%version%': gate.version + 1}) }}</p>
-                <div class="rb-gate-actions">
-                    <button type="button" class="btn btn-primary btn-lg" id="published-gate-go"><span class="fas fa-code-branch"></span> {{ 'deckbuilder.gate.new_version' | trans }}</button>
-                    {% if gate.contentEditable %}
-                        <a href="{{ path('decklist_edit', {decklist_id: gate.id}) }}" class="btn btn-default">{{ 'deckbuilder.gate.fix' | trans }}</a>
-                    {% endif %}
-                    <a href="{{ path('decks_list') }}" class="btn btn-link">{{ 'deckbuilder.gate.back' | trans }}</a>
+    {% if unrevised %}
+        {% set link %}<a href="{{ path('decklist_detail', {decklist_id: unrevised.id, decklist_name: unrevised.nameCanonical | e('url')}) }}">{{ unrevised.name }} {{ unrevised.versionLabel }}</a>{% endset %}
+        <div class="modal fade" id="revision-prompt" tabindex="-1" role="dialog" aria-labelledby="revision-prompt-title">
+            <div class="modal-dialog" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="{{ 'forms.cancel' | trans }}"><span aria-hidden="true">&times;</span></button>
+                        <h4 class="modal-title" id="revision-prompt-title">{{ 'deckbuilder.revision.title' | trans }}</h4>
+                    </div>
+                    <div class="modal-body">
+                        <p>{{ 'deckbuilder.revision.text' | trans({'%decklist%': link, '%next%': deck.majorVersion ~ '.1'}) | raw }}</p>
+                        <p><strong>{{ 'deckbuilder.revision.question' | trans }}</strong></p>
+                        {% if unrevised.canWithdraw %}
+                            <p class="small text-muted">{{ 'deckbuilder.revision.fix_hint' | trans({'%date%': unrevised.graceEnds | date('Y-m-d H:i'), '%url%': path('decklist_edit', {decklist_id: unrevised.id})}) | raw }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-default" data-dismiss="modal">{{ 'forms.cancel' | trans }}</button>
+                        <button type="button" class="btn btn-primary" id="revision-begin"><span class="fas fa-code-branch" aria-hidden="true"></span> {{ 'deckbuilder.revision.begin' | trans({'%version%': deck.majorVersion ~ '.1'}) }}</button>
+                    </div>
                 </div>
-                {% if gate.contentEditable %}<p class="small text-muted">{{ 'deckbuilder.gate.fix_hint' | trans({'%date%': gate.graceEnds | date('Y-m-d H:i')}) }}</p>{% endif %}
             </div>
         </div>
-        <script>
-            document.getElementById('published-gate-go').addEventListener('click', function () {
-                document.getElementById('published-gate').remove();
-            });
-        </script>
     {% endif %}
 
     {% include 'Modale/export.html.twig' %}

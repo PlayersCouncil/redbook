@@ -278,6 +278,8 @@ class BuilderController extends AbstractController
         $em->flush();
 
         if ($request->get('format') === 'json') {
+            // the History tab redrawn with the new revision (Ketura, 2026-11-08)
+            $em->refresh($deck);
             // The deckbuilder saves in place (Ketura, 2026-11-02: Save records a version; drafts stay in the browser)
             return new JsonResponse([
                 'success' => true,
@@ -285,6 +287,7 @@ class BuilderController extends AbstractController
                 'uuid' => (string) $deck->getUuid(),
                 'version' => $deck->getVersion(),
                 'deck' => $deck->jsonSerialize(),
+                'history' => $deck->getHistory(),
                 'edit_url' => $this->generateUrl('deck_edit', ['deck_uuid' => $deck->getUuid()]),
                 'review' => $verified === null ? null : $this->reviewInfo($verified),
             ]);
@@ -494,7 +497,7 @@ class BuilderController extends AbstractController
     }
 
     #[Route(path: '/deck/edit/{deck_uuid}', name: 'deck_edit', methods: ['GET'], requirements: ['deck_uuid' => self::UUID])]
-    public function editAction(string $deck_uuid): Response
+    public function editAction(string $deck_uuid, PublishedDeckFactory $publishedDeckFactory): Response
     {
         $this->requireUser();
         $deck = $this->findDeck($deck_uuid);
@@ -510,7 +513,9 @@ class BuilderController extends AbstractController
         foreach ($deck->getChildren() as $child) {
             $published[] = [
                 'name' => $child->getName(),
-                'version' => $child->getVersion(),
+                'version' => $child->getVersionLabel(),
+                // its detail edits, 2.0.1 (Ketura, 2026-11-08)
+                'edits' => $this->decklistEdits($child),
                 'date_creation' => $child->getDateCreation()->format('c'),
                 'url' => $this->generateUrl('decklist_detail', ['decklist_id' => $child->getId(), 'decklist_name' => $child->getNameCanonical()]),
                 'likes' => $child->getNbVotes(),
@@ -522,7 +527,12 @@ class BuilderController extends AbstractController
         $imported = $archive?->getSource() !== null
             || ($this->archiveDecklist($deck)?->getSource() !== null);
         return $this->render('Builder/deckedit.html.twig', [
-            'published_gate' => $this->isOwner($deck) ? $this->unchangedPublication($deck) : null,
+            /*
+             * The owner's deck as it was published (Ketura, 2026-11-08): the deckbuilder shows it
+             * greyed, and asks before a change starts its next private revision
+             */
+            'unrevised' => $this->isOwner($deck) ? $publishedDeckFactory->isUnrevised($deck) : null,
+            'latest_publication' => $publishedDeckFactory->defaultPrevious($deck),
             'published_versions' => $published,
             'imported_from_archive' => $imported,
             'show_archive' => $showArchive,
@@ -716,33 +726,20 @@ class BuilderController extends AbstractController
             ?? throw new NotFoundHttpException("This deck doesn't exist.");
     }
 
-    /**
-     * The deck's latest public decklist, if the deck is still what was published (Ketura,
-     * 2026-11-08): editing it then starts the next version, which the deckbuilder makes plain
-     * before letting the owner in. Told by what they hold (the cards, the description, the
-     * starting setup, the notes), not by dates: a save that changed nothing still counts as
-     * unchanged.
-     */
-    private function unchangedPublication(Deck $deck): ?PublishedDeck
+    /** A decklist's detail edits for the deck's History tab: the patch, when, and what changed */
+    private function decklistEdits(PublishedDeck $decklist): array
     {
-        $latest = null;
-        foreach ($deck->getChildren() as $child) {
-            if ($child instanceof PublishedDeck && !$child->isWithdrawn()
-                && ($latest === null || ($child->getDatePublished() ?? $child->getDateCreation()) > ($latest->getDatePublished() ?? $latest->getDateCreation()))) {
-                $latest = $child;
+        $edits = [];
+        foreach ($this->managerRegistry->getRepository(\App\Entity\PublishedDeckRevision::class)->findBy(['decklist' => $decklist]) as $edit) {
+            if ($edit->getPatch()) {
+                $edits[] = [
+                    'version' => $decklist->getVersionLabel() . '.' . $edit->getPatch(),
+                    'date_creation' => $edit->getDateReplaced()->format('c'),
+                    'changed' => $edit->getChanged() ?? [],
+                ];
             }
         }
-        if ($latest === null) {
-            return null;
-        }
-        $holds = function ($d): array {
-            $cards = $d->getSlots()->getContent();
-            ksort($cards);
-            $starting = array_values($d->getStarting());
-            sort($starting);
-            return [$cards, trim((string) $d->getDescriptionMd()), $starting, (string) $d->getStartingBid(), (string) $d->getStartingNotes(), $d->getAnnotations()];
-        };
-        return $holds($deck) == $holds($latest) ? $latest : null;
+        return $edits;
     }
 
     /** The owner, or a historian on a historic author's deck */

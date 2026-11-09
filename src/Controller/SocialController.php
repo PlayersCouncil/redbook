@@ -150,13 +150,42 @@ class SocialController extends AbstractController
         TranslatorInterface $translator,
         FormatRepository $formats,
         Texts $texts,
+        PublishedDeckFactory $decklistFactory,
+        \App\Services\DeckManager $deckManager,
         int $decklist_id
     ): Response {
         $decklist = $this->editableDecklist($decklist_id);
         $em = $this->managerRegistry->getManager();
+        // the deck it was published from, while it's the author's and this is its latest publication
+        $deck = $decklist->getParent();
+        $deck = $deck instanceof Deck && $deck->getUser()->getId() === $decklist->getUser()->getId()
+            && $decklistFactory->defaultPrevious($deck)?->getId() === $decklist->getId() ? $deck : null;
 
         if ($request->isMethod('POST')) {
+            /*
+             * An edit to the details is a patch, 2.0.1 (Ketura, 2026-11-08), recorded with what
+             * it changed for the decklist's History. The deck takes it too: quietly while
+             * it's unchanged since, or as a revision when the author asks.
+             */
+            $before = PublishedDeckRevision::snapshot($decklist);
+            $record = new PublishedDeckRevision($decklist);
             $this->applyDecklistForm($decklist, $request, FormMode::Edit, $texts);
+            $after = PublishedDeckRevision::snapshot($decklist);
+            $changed = array_keys(array_filter($after, fn ($value, $key) => $value !== $before[$key], ARRAY_FILTER_USE_BOTH));
+            if ($changed) {
+                $decklist->setPatch($decklist->getPatch() + 1);
+                $record->setPatch($decklist->getPatch());
+                $record->setChanged($changed);
+                $record->setEditor($this->getUser() instanceof User ? $this->getUser() : null);
+                $em->persist($record);
+                if ($deck !== null) {
+                    $unrevised = $decklistFactory->isUnrevised($deck) !== null;
+                    $isAuthor = $this->getUser()?->getId() === $decklist->getUser()->getId();
+                    if ($unrevised || ($isAuthor && $request->request->get('apply_to_deck') === '1')) {
+                        $deckManager->applyDecklistDetails($deck, $decklist, $changed, !$unrevised);
+                    }
+                }
+            }
             $decklist->setDateUpdate(new DateTime());
             $em->flush();
 
@@ -174,9 +203,12 @@ class SocialController extends AbstractController
                 break;
             }
         }
-        $deck = $decklist->getParent();
+        $source = $decklist->getParent();
 
         return $this->renderDecklistForm(FormMode::Edit, $decklist, $formats, $translator, [
+            // a private revision the edit can go to as well (Ketura, 2026-11-08)
+            'private_revision' => $deck !== null && $this->getUser()?->getId() === $decklist->getUser()->getId()
+                && $decklistFactory->isUnrevised($deck) === null ? $deck : null,
             'action' => $this->generateUrl('decklist_edit', ['decklist_id' => $decklist->getId()]),
             'cancel' => $this->generateUrl('decklist_detail', [
                 'decklist_id' => $decklist->getId(),
@@ -184,7 +216,7 @@ class SocialController extends AbstractController
             ]),
             'previous' => $previous,
             // the deck a withdrawn decklist takes its cards from again, if it's still the author's
-            'source_deck' => $deck instanceof Deck && $deck->getUser()->getId() === $decklist->getUser()->getId() ? $deck : null,
+            'source_deck' => $source instanceof Deck && $source->getUser()->getId() === $decklist->getUser()->getId() ? $source : null,
         ]);
     }
 
@@ -342,6 +374,7 @@ class SocialController extends AbstractController
             'previous' => null,
             'lines' => [],
             'source_deck' => null,
+            'private_revision' => null,
             'duplicate_warning' => null,
         ]);
     }
@@ -361,10 +394,6 @@ class SocialController extends AbstractController
         // an empty name keeps the one it had: the deck's when publishing
         $name = mb_substr(trim(strip_tags((string) $form->get('name'))), 0, 60) ?: ($decklist->getName() ?: 'Untitled');
         $descriptionMd = trim((string) $form->get('description_'));
-        // what the commentary said before is kept (Ketura, 2026-11-07)
-        if ($mode === FormMode::Edit && ($name !== $decklist->getName() || $descriptionMd !== trim((string) $decklist->getDescriptionMd()))) {
-            $em->persist(new PublishedDeckRevision($decklist));
-        }
         $decklist->setName($name);
         $decklist->setNameCanonical($texts->slugify($name) . '-' . $decklist->getVersion());
         $decklist->setDescriptionMd($descriptionMd);
@@ -518,7 +547,7 @@ class SocialController extends AbstractController
      * @return Response
      */
     #[Route(path: '/decklist/view/{decklist_id}/{decklist_name}', name: 'decklist_detail', methods: ['GET'], defaults: ['decklist_name' => null], requirements: ['decklist_id' => '\d+'])]
-    public function viewAction(TranslatorInterface $translator, int $cacheExpiration, FormatRepository $formats, \App\Services\ReaderNotes $readerNotes, $decklist_id)
+    public function viewAction(TranslatorInterface $translator, int $cacheExpiration, FormatRepository $formats, \App\Services\ReaderNotes $readerNotes, \App\Services\DecklistHistory $history, $decklist_id)
     {
         $response = new Response();
         $response->setPublic();
@@ -578,6 +607,7 @@ class SocialController extends AbstractController
                 'successors' => array_filter($decklist->getSuccessors()->toArray(), fn (PublishedDeck $d) => !$d->isWithdrawn()),
                 'format' => $formats->findOneByCode($decklist->getTargetFormat()),
                 'reader' => $readerNotes->build($decklist),
+                'history' => $history->build($decklist, $versions),
             ),
             $response
         );

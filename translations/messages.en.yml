@@ -893,7 +893,7 @@ deckbuilder.more.export_gemp: Export for Gemp
 deckbuilder.more.export_text: Export as text
 deckbuilder.more.history: Version history
 deckbuilder.more.delete: Delete deck
-deckbuilder.history.intro: "Each Save is a version. Choosing Revert on one loads it into the editor; Save to keep it."
+deckbuilder.history.intro: "Each save that changes the deck is a revision. Revert loads one into the editor; Save to keep it."
 deckbuilder.historic.title: Historical Deck Information
 deckbuilder.historic.badge: Historic deck
 deckbuilder.historic.is_historic: This is a historic deck
@@ -1204,7 +1204,7 @@ decklist.reader.archive_comments: "{1} 1 Imported Archive Comment|]1,Inf] %count
 decklist.form.title.create: Publish Deck
 decklist.form.title.edit: Edit Decklist Details
 decklist.form.format_from_deck: "The deck's own format, fixed once published. To change it, change the deck in the deckbuilder first."
-decklist.form.version_new: "A deck of its own: version 1 of a new line."
+decklist.form.version_new: "A deck of its own: version 1.0 of a new line."
 decklist.form.version_of: "Publishing <b>version %version%</b> of:"
 decklist.form.version_is: "<b>Version %version%</b>, following:"
 decklist.form.version_first: "<b>Version %version%</b>: the first of its line."
@@ -1272,7 +1272,7 @@ decks.browse.sorts.new: Recently Changed
 decks.browse.sorts.old: Least Recently Changed
 decks.browse.sorts.name: Name
 decks.browse.pick: "Select %name%"
-decks.browse.published_as: "published as v%version%"
+decks.browse.published_as: "published as %version%"
 decks.browse.slots_title: "Your decks, of the most you can keep"
 decks.browse.tabs.label: Your decks and favorites
 decks.browse.tabs.decks: My Decks
@@ -1313,13 +1313,6 @@ deckbuilder.history.part.bid: "bid"
 deckbuilder.history.part.starting_notes: "starting notes"
 deckbuilder.history.part.annotations: "card annotations"
 deckbuilder.history.part.historic: "historical information"
-deckbuilder.gate.title: "This Deck Is Published"
-deckbuilder.gate.text: "It was published as %decklist%. Changes you make here won't change that decklist."
-deckbuilder.gate.next: "Editing makes the deck's next version, which you can publish as v%version% when it's ready."
-deckbuilder.gate.new_version: "Create a New Version"
-deckbuilder.gate.fix: "Fix the Published Decklist Instead"
-deckbuilder.gate.fix_hint: "The published decklist's cards can still be replaced until %date%."
-deckbuilder.gate.back: "Back to My Decks"
 decklist.reader.comment: "Comment"
 decklist.reader.comment_placeholder: "Your comment"
 decklist.reader.comment_hint: "Type # to insert a card name, or @ to mention someone in this conversation."
@@ -1332,4 +1325,43 @@ decklist.reader.released: "Released"
 deckbuilder.top_heading: "Ring-bearer and Sites"
 deckbuilder.info.preview: "Preview"
 deckbuilder.info.preview_hint: "The deck as others see it"
-deckbuilder.visibility.locked: "A published deck stays public."
+
+# Revisions and versions (Ketura, 2026-11-08): a deck published as 2.0, its private revisions
+# 2.1, 2.2; its decklist's detail edits 2.0.1
+deckbuilder.revision.banner: "This is the deck as published, %version%. Changes start a private revision."
+deckbuilder.revision.new: "New Revision"
+deckbuilder.revision.title: "This Deck Is Published"
+deckbuilder.revision.text: "It was published as %decklist%. New changes go into a private revision, %next%, which nobody else sees until you publish it."
+deckbuilder.revision.question: "Begin a new private revision?"
+deckbuilder.revision.fix_hint: "Until %date%, you can also <a href=\"%url%\">withdraw the published decklist</a> to fix it instead."
+deckbuilder.revision.begin: "Begin Revision %version%"
+deckbuilder.publish.first: "Publish"
+deckbuilder.publish.version: "Publish %version%"
+deckbuilder.publish.published_as: "Published as %version%"
+deckbuilder.publish.hint: "Publish the deck as it stands as a public decklist"
+deckbuilder.publish.same_hint: "The deck is as it was published. Change it to publish a new version."
+deckbuilder.history.from_decklist: "From the decklist's %version% edit"
+deckbuilder.history.changed: "Changed %parts%"
+deckbuilder.history.patch: "Decklist details edited"
+deckbuilder.history.unpublished: "Private revisions, not public until you publish %version%"
+deckbuilder.history.unpublished_first: "Private revisions, not public until you publish"
+deckbuilder.history.part.cards: "cards"
+deckbuilder.history.part.precedent: "derived-from link"
+deckbuilder.history.part.thumbnail: "thumbnail"
+decklist.history.intro: "Each published version of this deck, with the cards it changed, and the edits to its details since."
+decklist.history.this: "This version"
+decklist.history.first: "First version"
+decklist.history.edited: "Details edited"
+decklist.history.edited_by: "Edited by %name%"
+decklist.history.corrected_by: "Corrected by %name%"
+decklist.form.apply.title: "Apply to Your Private Revision?"
+decklist.form.apply.text: "You have a private version %version% of %deck%. Apply these changes to that revision too?"
+decklist.form.apply.yes: "Apply to %version% Too"
+decklist.form.apply.no: "Only This Decklist"
+# My Decks: the deck as it stands, and what it was published as (Ketura, 2026-11-08)
+decks.browse.col.current: "Current"
+decks.browse.col.published: "Published"
+decks.browse.same_as: "Same as %version%"
+decks.browse.revised: "%version% · changed"
+decks.browse.not_published: "Not published"
+decks.browse.revised_title: "Private revision %version%, changed since %published% was published"

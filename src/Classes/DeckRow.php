@@ -32,6 +32,10 @@ final class DeckRow
     public object $thumbnail;
     /** a published deck's newest public decklist */
     public ?PublishedDeck $published = null;
+    /** who can see the deck as it stands: private or hidden (Ketura, 2026-11-08) */
+    public string $current = 'private';
+    /** a published deck still as it was published: no private revision since */
+    public bool $sameAsPublished = false;
 
     private function __construct(public readonly ?Deck $deck, public readonly ?PublishedDeck $decklist)
     {
@@ -50,7 +54,10 @@ final class DeckRow
                 $row->published = $decklist;
             }
         }
-        $row->visibility = $row->published ? 'published' : ($deck->isShared() ? 'hidden' : 'private');
+        $row->current = $deck->isShared() ? 'hidden' : 'private';
+        $row->visibility = $row->published ? 'published' : $row->current;
+        $row->sameAsPublished = $row->published !== null && (int) $deck->getMinorVersion() === 0
+            && (int) $deck->getMajorVersion() === (int) $row->published->getVersion();
         $row->name = (string) $deck->getName();
         $row->format = $deck->getTargetFormat();
         $row->date = $deck->getDateUpdate() ?? $deck->getDateCreation();

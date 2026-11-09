@@ -14,7 +14,7 @@
         <td><span class="fas fa-heart social-icon-like"></span> {{ decklist.nbVotes }}</td>
         <td><span class="fas fa-star social-icon-favorite"></span> {{ decklist.nbFavorites }}</td>
         <td><span class="fas fa-comment social-icon-comment"></span> {{ decklist.nbComments }}</td>
-        <td><span class="fas fa-code-branch social-icon-version"></span> v{{ decklist.version }}</td>
+        <td><span class="fas fa-code-branch social-icon-version"></span> {{ decklist.versionLabel }}</td>
     </tr>
 {% endmacro %}
 
@@ -58,7 +58,7 @@
     </span>
     <span class="social-icon-version" data-toggle="tooltip" data-placement="bottom"
           title="{{ 'decklist.view.social.version' | trans }}">
-        <span class="fas fa-code-branch"></span> <span class="num">v{{ decklist.version }}</span>
+        <span class="fas fa-code-branch"></span> <span class="num">{{ decklist.versionLabel }}</span>
     </span>
 </span>
 {% endmacro %}

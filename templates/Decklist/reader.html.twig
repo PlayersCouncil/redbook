@@ -31,7 +31,7 @@
             {% endif %}
             {% if newer %}
                 <div class="alert alert-info rb-newer-note">
-                    {% set newerlink %}<a href="{{ path('decklist_detail', {decklist_id: newer.id, decklist_name: newer.nameCanonical|e('url')}) }}">v{{ newer.version }}</a>{% endset %}
+                    {% set newerlink %}<a href="{{ path('decklist_detail', {decklist_id: newer.id, decklist_name: newer.nameCanonical|e('url')}) }}">{{ newer.versionLabel }}</a>{% endset %}
                     {{ 'decklist.view.newer' | trans({'%link%': newerlink}) | raw }}
                 </div>
             {% endif %}
@@ -40,23 +40,23 @@
             <div class="rb-reader-name">
                 <h1 class="decklist-name">{{ subject.name }}</h1>
                 {% if is_deck %}
-                    <span class="rb-reader-version" title="{{ 'decks.version' | trans({'%version%': subject.version}) }}">v{{ subject.version }}</span>
+                    <span class="rb-reader-version" title="{{ 'decks.version' | trans({'%version%': subject.version}) }}">{{ subject.versionLabel is defined ? subject.versionLabel : subject.version }}</span>
                 {# a decklist's line of versions (Ketura, 2026-11-07); a menu once there's more than one #}
                 {% elseif versions | length > 1 %}
                     <span class="dropdown rb-reader-versions">
                         <button class="rb-btn rb-btn-small dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" id="dropdownVersions"
-                                title="{{ 'decklist.view.versions' | trans }}">v{{ subject.version }} <span class="caret"></span></button>
+                                title="{{ 'decklist.view.versions' | trans }}">{{ subject.versionLabel is defined ? subject.versionLabel : subject.version }} <span class="caret"></span></button>
                         <ul class="dropdown-menu" aria-labelledby="dropdownVersions">
                             <li class="dropdown-header">{{ 'decklist.view.versions' | trans }}</li>
                             {% for other_decklist in versions %}
                                 <li class="{% if other_decklist.id == subject.id %}disabled{% endif %}">
-                                    <a href="{{ path('decklist_detail', { 'decklist_id': other_decklist.id, 'decklist_name': other_decklist.nameCanonical|e('url') }) }}">v{{ other_decklist.version }} &middot; {{ other_decklist.name }}</a>
+                                    <a href="{{ path('decklist_detail', { 'decklist_id': other_decklist.id, 'decklist_name': other_decklist.nameCanonical|e('url') }) }}">{{ other_decklist.versionLabel }} &middot; {{ other_decklist.name }}</a>
                                 </li>
                             {% endfor %}
                         </ul>
                     </span>
                 {% else %}
-                    <span class="rb-reader-version" title="{{ 'decklist.view.versions' | trans }}">v{{ subject.version }}</span>
+                    <span class="rb-reader-version" title="{{ 'decklist.view.versions' | trans }}">{{ subject.versionLabel is defined ? subject.versionLabel : subject.version }}</span>
                 {% endif %}
                 {# the tags (Ketura, 2026-11-04); a decklist's its own since 2026-11-07 #}
                 {% set tags = subject.tags ? subject.tags | split(' ') | filter(t => t) : [] %}
@@ -81,9 +81,11 @@
             {% endif %}
             {% if format %}<a href="{{ path('format', {code: format.code}) }}">{{ format.name }}</a>{% endif %}
             {# the dates are on the Details tab (Ketura, 2026-11-08) #}
+            {# who can see the deck as it stands, and whether it's been published, apart (Ketura, 2026-11-08) #}
             {% if is_deck %}
-                {% set visibility = successors | length ? 'published' : (subject.shared ? 'hidden' : 'private') %}
+                {% set visibility = subject.shared ? 'hidden' : 'private' %}
                 <span class="rb-vis rb-vis-{{ visibility }}" title="{{ ('decks.browse.status.' ~ visibility) | trans }}">{{ ('decks.browse.show.' ~ visibility) | trans }}</span>
+                {% if successors | length %}<span class="rb-vis rb-vis-published" title="{{ 'decks.browse.status.published' | trans }}">{{ 'decks.browse.show.published' | trans }}</span>{% endif %}
             {% endif %}
             {% include 'Deck/completeness-label.html.twig' with {deck: subject} %}
             {# the draw deck's size, which the deck's own heading no longer gives (Ketura, 2026-11-08) #}
@@ -92,7 +94,7 @@
                 <span class="small text-muted rb-review-note">{{ 'decklist.review.verified_by' | trans({'%name%': subject.reviewedBy.displayName, '%date%': subject.reviewedAt | date('Y-m-d')}) }}</span>
             {% endif %}
             {% if not is_deck and duplicate %}
-                {% set duplink %}<a href="{{ path('decklist_detail', { 'decklist_id': duplicate.id, 'decklist_name': duplicate.nameCanonical|e('url') }) }}">{{ duplicate.name }} v{{ duplicate.version }}</a>{% endset %}
+                {% set duplink %}<a href="{{ path('decklist_detail', { 'decklist_id': duplicate.id, 'decklist_name': duplicate.nameCanonical|e('url') }) }}">{{ duplicate.name }} {{ duplicate.versionLabel }}</a>{% endset %}
                 <small class="text-muted">{{ 'decklist.view.duplicate' | trans({'%duplicate%': duplink}) | raw }}</small>
             {% endif %}
         </div>
@@ -104,6 +106,7 @@
             <ul class="nav nav-tabs rb-tabs" role="tablist">
                 <li role="presentation" class="active"><a href="#tab-pane-stats" aria-controls="tab-pane-stats" role="tab" data-toggle="tab">{{ 'deckbuilder.tabs.stats' | trans }}</a></li>
                 <li role="presentation"><a href="#tab-pane-details" aria-controls="tab-pane-details" role="tab" data-toggle="tab">{{ 'decklist.reader.details' | trans }}</a></li>
+                {% if not is_deck and history is defined %}<li role="presentation"><a href="#tab-pane-history" aria-controls="tab-pane-history" role="tab" data-toggle="tab">{{ 'decks.edit.tabs.history' | trans }}</a></li>{% endif %}
             </ul>
             <div class="tab-content rb-reader-scroll">
                 <div role="tabpanel" class="tab-pane active" id="tab-pane-stats">
@@ -127,6 +130,11 @@
                        archives; a saved deck's last change instead.
                     #}
                     <dl class="rb-reader-dates">
+                        {# its version with its detail edits, 2.0.1 (Ketura, 2026-11-08) #}
+                        {% if not is_deck %}
+                            <dt>{{ 'decks.history.columns.version' | trans }}</dt>
+                            <dd>{{ subject.fullVersion }}</dd>
+                        {% endif %}
                         <dt>{{ 'decklist.reader.released' | trans }}</dt>
                         <dd><time datetime="{{ subject.effectiveDate | date('Y-m-d') }}" data-absolute>{{ subject.effectiveDate | date('Y-m-d') }}</time></dd>
                         {% if is_deck %}
@@ -143,6 +151,11 @@
                         {% if subject.source %}{% include 'Decklist/source.html.twig' with {source: subject.source, decklist: subject} %}{% endif %}
                     {% endif %}
                 </div>
+                {% if not is_deck and history is defined %}
+                    <div role="tabpanel" class="tab-pane" id="tab-pane-history">
+                        {% include 'Decklist/history.html.twig' %}
+                    </div>
+                {% endif %}
             </div>
         </section>
 

@@ -39,9 +39,13 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   // never published: a new decklist
   await page.goto(`/deck/publish/${deckUuid}`);
   await expect(page.locator('#previous_version')).toHaveValue('');
-  await expect(page.locator('#version-line')).toHaveText('A deck of its own: version 1 of a new line.');
+  await expect(page.locator('#version-line')).toHaveText('A deck of its own: version 1.0 of a new line.');
   v1 = await publish(page, `${lineName} one`);
-  await expect(page.locator('.rb-reader-version')).toHaveText('v1');
+  await expect(page.locator('.rb-reader-version')).toHaveText('1.0');
+  // the decklist's History tab: its one version, so far (Ketura, 2026-11-08)
+  await page.click('a[href="#tab-pane-history"]');
+  await expect(page.locator('.rb-dh-version')).toHaveCount(1);
+  await expect(page.locator('.rb-dh-version.is-current .rb-dh-number')).toHaveText('1.0');
 
   // the deck's own page reads as the decklist's, less likes and comments, with what it was
   // published as under the commentary (Ketura, 2026-11-08)
@@ -62,7 +66,8 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   await expect(page.locator('.rb-reader-buttons-wide > *')).toHaveText(['Clone', 'Copy Text', 'Download']);
   await expect(page.locator('.rb-reader-buttons .deck-publish')).toHaveCount(0);
   await expect(page.locator('.rb-reader-posted')).toHaveText(/^Posted by /);
-  await expect(page.locator('.rb-reader-meta .rb-vis')).toHaveText('Published');
+  // who can see it as it stands, and that it's been published, apart
+  await expect(page.locator('.rb-reader-meta .rb-vis')).toHaveText(['Private', 'Published']);
   // the commentary widens from the bar beside it
   const desc = page.locator('.rb-reader-desc');
   const before = (await desc.boundingBox())!.width;
@@ -75,18 +80,35 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   await page.locator('#reader-splitter-desc').dblclick();
   await snap(page, 'saved deck in the reader');
 
-  // unchanged since publishing, the deckbuilder asks first: a new version, or the decklist
+  /*
+   * Still as published (Ketura, 2026-11-08): greyed, on the Notes tab, with New Revision; a
+   * change asks first, and carries on once a revision begins. Looking around doesn't ask.
+   */
   await page.goto(`/deck/edit/${deckUuid}`);
-  await expect(page.locator('#published-gate')).toBeVisible();
-  await expect(page.locator('#published-gate')).toContainText(`${lineName} one v1`);
-  await page.click('#published-gate-go');
-  await expect(page.locator('#published-gate')).toHaveCount(0);
-  // published, it can't go back to private or hidden; Preview shows the deck (Ketura, 2026-11-08)
-  await page.click('#btn-visibility');
-  await expect(page.locator('#menu-visibility [data-visibility=private]')).toBeDisabled();
-  await expect(page.locator('#menu-visibility [data-visibility=hidden]')).toBeDisabled();
-  await page.keyboard.press('Escape');
+  await waitForCardData(page);
+  await expect(page.locator('.rb-builder')).toHaveClass(/is-locked/);
+  await expect(page.locator('#revision-banner')).toContainText('1.0');
+  await expect(page.locator('#tab-pane-infos')).toBeVisible();
+  await expect(page.locator('#btn-publish')).toBeDisabled();
+  await expect(page.locator('#btn-publish')).toHaveText(/Published as 1\.0/);
+  await page.click('a[href="#tab-pane-stats"]');
+  await expect(page.locator('#revision-prompt')).toBeHidden();
   await expect(page.locator('#btn-preview')).toHaveAttribute('href', new RegExp(`/deck/view/${deckUuid}$`));
+  await page.click('a[href="#tab-pane-build"]');
+  await page.locator('#deck [data-qty]').first().click();
+  await expect(page.locator('#revision-prompt')).toBeVisible();
+  await expect(page.locator('#revision-prompt')).toContainText(`${lineName} one 1.0`);
+  await expect(page.locator('#revision-prompt')).toContainText('1.1');
+  await page.locator('#revision-prompt .btn-default[data-dismiss]').click();
+  await expect(page.locator('#revision-prompt')).toBeHidden();
+  await expect(page.locator('.rb-builder')).toHaveClass(/is-locked/);
+  await page.click('#btn-new-revision');
+  await page.click('#revision-begin');
+  await expect(page.locator('.rb-builder')).not.toHaveClass(/is-locked/);
+  // Private and Hidden are who sees the deck as it stands; publishing is its own button
+  await page.click('#btn-visibility');
+  await expect(page.locator('#menu-visibility [data-visibility]')).toHaveCount(2);
+  await page.keyboard.press('Escape');
   // the deck pane widens from the bar between the panes
   const left = page.locator('.rb-col-left');
   const leftBefore = (await left.boundingBox())!.width;
@@ -101,22 +123,25 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   // published before: version 2 of it, which can be cleared to stand alone
   await page.goto(`/deck/publish/${deckUuid}`);
   await expect(page.locator('#previous_version')).toHaveValue(v1.id);
-  await expect(page.locator('#version-line')).toHaveText('Publishing version 2 of:');
+  await expect(page.locator('#version-line')).toHaveText('Publishing version 2.0 of:');
   // the version it follows, as the derived-from pick shows: name, author, date, version
   await expect(page.locator('#version-card .rb-derived-name')).toHaveText(`${lineName} one`);
-  await expect(page.locator('#version-card .rb-derived-meta')).toContainText('v1');
+  await expect(page.locator('#version-card .rb-derived-meta')).toContainText('1.0');
   await page.selectOption('#previous_version', '');
-  await expect(page.locator('#version-line')).toHaveText('A deck of its own: version 1 of a new line.');
+  await expect(page.locator('#version-line')).toHaveText('A deck of its own: version 1.0 of a new line.');
   await page.selectOption('#previous_version', v1.id);
   await snap(page, 'publishing version 2');
   v2 = await publish(page, `${lineName} two`);
 
   // each version is its own decklist; the menu lists the line, and the older one points on
   await page.locator('#dropdownVersions').click();
-  await expect(page.locator('#dropdownVersions')).toContainText('v2');
-  await expect(page.locator('.rb-reader-versions .dropdown-menu a')).toHaveText([`v2 · ${lineName} two`, `v1 · ${lineName} one`]);
+  await expect(page.locator('#dropdownVersions')).toContainText('2.0');
+  await expect(page.locator('.rb-reader-versions .dropdown-menu a')).toHaveText([`2.0 · ${lineName} two`, `1.0 · ${lineName} one`]);
+  // the History tab: both, with what changed between them; the deck is 2.0 now
+  await page.click('a[href="#tab-pane-history"]');
+  await expect(page.locator('.rb-dh-version .rb-dh-head .rb-dh-number')).toHaveText(['2.0', '1.0']);
   await page.goto(v1.url);
-  await expect(page.locator('.rb-newer-note')).toContainText('v2');
+  await expect(page.locator('.rb-newer-note')).toContainText('2.0');
 });
 
 test('the author undoes publishing, replaces the cards and publishes again', async ({ page, pageAs }) => {
@@ -137,7 +162,7 @@ test('the author undoes publishing, replaces the cards and publishes again', asy
   await expect(voter.locator('h1')).toHaveText('Decklist Withdrawn');
   await voter.goto(v1.url);
   await expect(voter.locator('.rb-newer-note')).toHaveCount(0);
-  await expect(voter.locator('.rb-reader-version')).toHaveText('v1');
+  await expect(voter.locator('.rb-reader-version')).toHaveText('1.0');
   await voter.goto(`/decklists?name=${encodeURIComponent(lineName)}`);
   await expect(voter.getByRole('link', { name: `${lineName} one` })).toBeVisible();
   await expect(voter.getByRole('link', { name: `${lineName} two` })).toHaveCount(0);
@@ -155,7 +180,7 @@ test('the author undoes publishing, replaces the cards and publishes again', asy
   await expect(page).toHaveURL(new RegExp(`/decklist/view/${v2.id}/`));
   expect((await voter.goto(v2.url))?.status()).toBe(200);
   await voter.goto(v1.url);
-  await expect(voter.locator('.rb-newer-note')).toContainText('v2');
+  await expect(voter.locator('.rb-newer-note')).toContainText('2.0');
 });
 
 test('after the grace period the cards are fixed', async ({ page }) => {
@@ -182,7 +207,7 @@ test('derived from: search by author and name, or paste an address', async ({ pa
   await expect(page.locator('.rb-derived-result')).toHaveCount(1);
   await result.click();
   await expect(page.locator('#derived-chosen')).toContainText(`${lineName} two`);
-  await expect(page.locator('#derived-chosen')).toContainText('v2');
+  await expect(page.locator('#derived-chosen')).toContainText('2.0');
   await expect(page.locator('#precedent')).toHaveValue(v2.id);
   await snap(page, 'derived-from picked');
   await page.click('.rb-form-actions button[form=decklist-form]:has-text("Save")');
@@ -256,4 +281,61 @@ test('the thumbnail card can be framed by hand, one card at a time', async ({ pa
   await page.click('.rb-form-actions button[form=decklist-form]:has-text("Save")');
   await page.goto(`/decklists?name=${encodeURIComponent(`${lineName} one`)}`);
   await expect(page.locator('.rb-col-thumb .rb-thumb-card img').first()).not.toHaveAttribute('style', /.+/);
+});
+
+test('editing a published decklist: patches, the deck, and its private revision', async ({ page }) => {
+  // the deck is as published, 2.0: an edit to the decklist is 2.0.1, and the deck takes it quietly
+  await page.goto(`/decklist/edit/${v2.id}`);
+  await page.fill('#starting-notes', `Notes one ${runId}`);
+  await page.click('.rb-form-actions button[form=decklist-form]:has-text("Save")');
+  await expect(page).toHaveURL(new RegExp(`/decklist/view/${v2.id}/`));
+  await page.click('a[href="#tab-pane-details"]');
+  await expect(page.locator('.rb-reader-dates dd').first()).toHaveText('2.0.1');
+  await page.click('a[href="#tab-pane-history"]');
+  const edits = page.locator('.rb-dh-version.is-current .rb-dh-edits li');
+  await expect(edits).toHaveCount(1);
+  await expect(edits.first()).toContainText('2.0.1');
+  await expect(edits.first()).toContainText('starting notes');
+
+  // the deck still reads as published, with the notes; a revision begins, 2.1
+  await page.goto(`/deck/edit/${deckUuid}`);
+  await waitForCardData(page);
+  await expect(page.locator('.rb-builder')).toHaveClass(/is-locked/);
+  await expect(page.locator('#starting-notes')).toHaveValue(`Notes one ${runId}`);
+  await page.click('#deck-name');
+  await expect(page.locator('#revision-prompt')).toBeVisible();
+  await page.click('#revision-begin');
+  await expect(page.locator('#deck-name')).toBeFocused();
+  await page.fill('#deck-name', `${lineName} private`);
+  await page.click('#btn-save');
+  await expect(page.locator('#save-status')).toContainText('Saved as version 2.1');
+  await expect(page.locator('#btn-publish')).toHaveText(/Publish 3\.0/);
+  await page.click('#tab-header-history');
+  await expect(page.locator('.rb-history-group')).toContainText('3.0');
+  await expect(page.locator('.rb-history-changed').first()).toContainText('name');
+  await expect(page.locator('.rb-history-patch').first()).toContainText('2.0.1');
+
+  // My Decks: who sees it as it stands, and what it was published as
+  await page.goto(`/decks?name=${encodeURIComponent(`${lineName} private`)}`);
+  const row = page.locator('#decks tr').first();
+  await expect(row.locator('.rb-col-visibility')).toContainText('Private');
+  await expect(row.locator('.rb-col-visibility')).toContainText('2.1 · changed');
+  await expect(row.locator('.rb-col-published')).toContainText('2.0');
+
+  // another edit to the decklist asks whether the private 2.1 takes it too
+  await page.goto(`/decklist/edit/${v2.id}`);
+  await page.fill('#starting-notes', `Notes two ${runId}`);
+  await page.click('.rb-form-actions button[form=decklist-form]:has-text("Save")');
+  await expect(page.locator('#apply-to-deck-modal')).toBeVisible();
+  await expect(page.locator('#apply-to-deck-modal')).toContainText('2.1');
+  await page.click('#apply-to-deck-modal [data-apply="1"]');
+  await expect(page).toHaveURL(new RegExp(`/decklist/view/${v2.id}/`));
+  await page.goto(`/deck/edit/${deckUuid}`);
+  await waitForCardData(page);
+  await expect(page.locator('.rb-builder')).not.toHaveClass(/is-locked/);
+  await expect(page.locator('#starting-notes')).toHaveValue(`Notes two ${runId}`);
+  await expect(page.locator('#deck-name')).toHaveValue(`${lineName} private`);
+  await page.click('#tab-header-history');
+  await expect(page.locator('.rb-history-edit').first()).toContainText("From the decklist's 2.0.2 edit");
+  await expect(page.locator('#tab-pane-history .rb-history-saved').first()).toContainText('2.2');
 });

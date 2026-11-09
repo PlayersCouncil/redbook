@@ -1,0 +1,59 @@
+{#
+   A decklist's History tab (Ketura, 2026-11-08; App\Services\DecklistHistory): its line's
+   versions, newest first, with the cards each changed from the one before, and under each the
+   edits to its details (2.0.1) and a historian's corrections. This decklist's own is marked.
+#}
+<div class="rb-decklist-history">
+    <p class="text-muted small">{{ 'decklist.history.intro' | trans }}</p>
+    <ol class="rb-dh-list">
+        {% for row in history %}
+            {% set d = row.decklist %}
+            <li class="rb-dh-version{% if row.current %} is-current{% endif %}">
+                <div class="rb-dh-head">
+                    <span class="rb-dh-number">{{ d.versionLabel }}</span>
+                    {% if row.current %}
+                        <span class="rb-dh-name">{{ d.name }}</span>
+                        <span class="label label-default">{{ 'decklist.history.this' | trans }}</span>
+                    {% else %}
+                        <a class="rb-dh-name" href="{{ path('decklist_detail', {decklist_id: d.id, decklist_name: d.nameCanonical | e('url')}) }}">{{ d.name }}</a>
+                    {% endif %}
+                    <time class="rb-dh-date" datetime="{{ (d.datePublished ?? d.dateCreation) | date('c') }}">{{ (d.datePublished ?? d.dateCreation) | date('Y-m-d') }}</time>
+                </div>
+                {% if row.first %}
+                    <p class="rb-dh-cards text-muted">{{ 'decklist.history.first' | trans }}</p>
+                {% elseif row.added or row.removed %}
+                    <ul class="rb-dh-cards">
+                        {% for c in row.added %}
+                            <li class="is-added">+ {{ c.ring_bearer ? ('deck.ring_bearer' | trans) ~ ':' : c.qty }} <a href="{{ c.href }}" class="card-tip" data-code="{{ c.code }}">{{ c.label }}</a></li>
+                        {% endfor %}
+                        {% for c in row.removed %}
+                            <li class="is-removed">&minus; {{ c.ring_bearer ? ('deck.ring_bearer' | trans) ~ ':' : c.qty }} <a href="{{ c.href }}" class="card-tip" data-code="{{ c.code }}">{{ c.label }}</a></li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="rb-dh-cards text-muted">{{ 'deckbuilder.history.no_card_changes' | trans }}</p>
+                {% endif %}
+                {% if row.edits %}
+                    <ul class="rb-dh-edits">
+                        {% for e in row.edits %}
+                            <li{% if e.correction %} class="is-correction"{% endif %}>
+                                <span class="rb-dh-number">{{ e.version ?? '' }}</span>
+                                <span class="rb-dh-what">
+                                    {%- if e.correction -%}
+                                        {{ 'decklist.history.corrected_by' | trans({'%name%': e.editor}) }}
+                                    {%- elseif e.editor -%}
+                                        {{ 'decklist.history.edited_by' | trans({'%name%': e.editor}) }}
+                                    {%- else -%}
+                                        {{ 'decklist.history.edited' | trans }}
+                                    {%- endif -%}
+                                    {%- if e.parts %}: {% for part in e.parts %}{{ ('deckbuilder.history.part.' ~ part) | trans }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
+                                </span>
+                                <time class="rb-dh-date" datetime="{{ e.date | date('c') }}">{{ e.date | date('Y-m-d') }}</time>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ol>
+</div>

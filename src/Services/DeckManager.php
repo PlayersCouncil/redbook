@@ -115,7 +115,9 @@ class DeckManager
      */
     public function save(UserInterface $user, DeckInterface $deck, array $data, ?DeckInterface $sourceDeck = null, ?User $editor = null): ?DeckRevision
     {
-        $before = $editor && $sourceDeck && $deck instanceof Deck ? self::editSnapshot($deck) : null;
+        // what the save changes, to record it and number it (Ketura, 2026-11-08)
+        $before = $sourceDeck && $deck instanceof Deck ? self::editSnapshot($deck) : null;
+        $beforeContent = $sourceDeck ? $sourceDeck->getSlots()->getContent() : null;
         $change = null;
         if (!empty($data['decklist_id'])) {
             $decklist = $this->em->getRepository(PublishedDeck::class)->find($data['decklist_id']);
@@ -157,7 +159,10 @@ class DeckManager
         if (isset($data['shared'])) {
             $deck->setShared((bool) $data['shared']);
         }
-        $deck->setMinorVersion($deck->getMinorVersion() + 1);
+        if ($sourceDeck === null && !$deck->getMinorVersion() && !$deck->getMajorVersion()) {
+            // a new deck starts at 0.1; publishing makes it X.0
+            $deck->setMinorVersion(1);
+        }
 
         $tags = $data['tags'] ?? [];
         if (is_string($tags)) {
@@ -178,22 +183,12 @@ class DeckManager
         $deck->setLastPack($latestPack);
         $this->em->persist($deck);
 
-        if ($sourceDeck) {
-            // record the change since the last save in the deck's history
-            [$listings] = $this->diff->diffContents([$content, $sourceDeck->getSlots()->getContent()]);
-            foreach ($this->getUnsavedChanges($deck) as $change) {
-                $this->em->remove($change);
+        $listings = [[], []];
+        if ($beforeContent !== null) {
+            [$listings] = $this->diff->diffContents([$content, $beforeContent]);
+            foreach ($this->getUnsavedChanges($deck) as $unsaved) {
+                $this->em->remove($unsaved);
             }
-            if (count($listings[0]) || count($listings[1]) || $before !== null) {
-                $change = new DeckRevision();
-                $change->setDeck($deck);
-                $change->setVariation(json_encode($listings));
-                $change->setIsSaved(true);
-                $change->setVersion($deck->getVersion());
-                $this->em->persist($change);
-            }
-            $deck->setMajorVersion($sourceDeck->getMajorVersion());
-            $deck->setMinorVersion($sourceDeck->getMinorVersion());
         }
 
         $this->setSlots($deck, $content, $cards);
@@ -205,26 +200,92 @@ class DeckManager
         }
         $this->validator->validateDeck($deck);
 
-        if ($before !== null && $change !== null) {
-            $after = self::editSnapshot($deck);
-            $changed = array_keys(array_filter($after, fn ($value, $key) => $value !== $before[$key], ARRAY_FILTER_USE_BOTH));
-            if (count($listings[0]) || count($listings[1])) {
-                array_unshift($changed, 'cards');
-            }
-            if (!$changed) {
-                // saved as it was: nothing to record
-                $deck->removeChange($change);
-                $this->em->remove($change);
-                return null;
-            }
-            $change->setEditor($editor);
-            $change->setEditSummary(['changed' => array_values(array_unique($changed)), 'synced' => false]);
+        if ($beforeContent === null) {
+            return null;
         }
-        return $before !== null ? $change : null;
+        /*
+         * Each save that changes something is a revision in the deck's history, saying what
+         * it changed (Ketura, 2026-11-08); one that changes nothing isn't, and keeps the
+         * number. The owner's revisions count up from the published X.0; a historian's
+         * correction keeps the deck's number and says who made it.
+         */
+        $changed = [];
+        if (count($listings[0]) || count($listings[1])) {
+            $changed[] = 'cards';
+        }
+        if ($before !== null) {
+            $after = self::editSnapshot($deck);
+            foreach ($after as $key => $value) {
+                if ($value !== $before[$key]) {
+                    $changed[] = $key;
+                }
+            }
+        }
+        if (!$changed) {
+            return null;
+        }
+        if ($editor === null) {
+            $deck->setMinorVersion($deck->getMinorVersion() + 1);
+        }
+        $change = new DeckRevision();
+        $change->setDeck($deck);
+        $change->setVariation(json_encode($listings));
+        $change->setIsSaved(true);
+        $change->setVersion($deck->getVersion());
+        $change->setEditor($editor);
+        $change->setEditSummary(['changed' => $changed, 'synced' => false]);
+        $this->em->persist($change);
+        return $change;
     }
 
-    /** What a historian's edit can change, besides the cards, to tell what it did */
-    private static function editSnapshot(Deck $deck): array
+    /**
+     * A decklist's detail edit carried to the deck it was published from (Ketura,
+     * 2026-11-08). A deck unchanged since takes it quietly, staying the same as its
+     * publication; a private revision takes it only when the author says so, as a revision
+     * of its own. Returns the revision, if it made one.
+     *
+     * @param string[] $parts what the edit changed (PublishedDeckRevision::PARTS)
+     */
+    public function applyDecklistDetails(Deck $deck, PublishedDeck $decklist, array $parts, bool $asRevision): ?DeckRevision
+    {
+        $before = self::editSnapshot($deck);
+        // only what the edit changed: the revision's own changes to the rest stay
+        $content = $deck->getSlots()->getContent();
+        $apply = [
+            'name' => fn () => $deck->setName($decklist->getName()),
+            'description' => fn () => $deck->setDescriptionMd($decklist->getDescriptionMd()),
+            'tags' => fn () => $deck->setTags((string) $decklist->getTags()),
+            'bid' => fn () => $deck->setStartingBid($decklist->getStartingBid()),
+            'starting_notes' => fn () => $deck->setStartingNotes($decklist->getStartingNotes()),
+            'annotations' => fn () => $deck->setAnnotations($decklist->getAnnotations()),
+            // only companions the deck still holds start
+            'starting' => fn () => $deck->setStarting(array_values(array_filter($decklist->getStarting(), fn ($code) => isset($content[$code])))),
+            'precedent' => fn () => $deck->setParent($decklist->getPrecedent()),
+        ];
+        foreach ($parts as $part) {
+            isset($apply[$part]) && $apply[$part]();
+        }
+        $after = self::editSnapshot($deck);
+        $changed = array_keys(array_filter($after, fn ($value, $key) => $value !== $before[$key], ARRAY_FILTER_USE_BOTH));
+        if (in_array('precedent', $parts, true)) {
+            $changed[] = 'precedent';
+        }
+        if (!$asRevision || !$changed) {
+            return null;
+        }
+        $deck->setMinorVersion($deck->getMinorVersion() + 1);
+        $change = new DeckRevision();
+        $change->setDeck($deck);
+        $change->setVariation(json_encode([[], []]));
+        $change->setIsSaved(true);
+        $change->setVersion($deck->getVersion());
+        $change->setEditSummary(['changed' => $changed, 'synced' => false, 'from' => $decklist->getFullVersion()]);
+        $this->em->persist($change);
+        return $change;
+    }
+
+    /** What a save can change besides the cards, to tell what it did */
+    public static function editSnapshot(Deck $deck): array
     {
         return [
             'name' => (string) $deck->getName(),

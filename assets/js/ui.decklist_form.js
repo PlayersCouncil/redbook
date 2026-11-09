@@ -17,6 +17,45 @@
         ui.setup_version_line();
         ui.setup_derived_picker();
         ui.setup_splitter();
+        ui.setup_apply_prompt();
+    };
+
+    /**
+     * Saving a changed decklist whose deck has a private revision (Ketura, 2026-11-08): ask
+     * whether the revision takes the changes too. The form as it was is taken at the first
+     * touch, once its fields are filled in; saving it unchanged doesn't ask.
+     */
+    ui.setup_apply_prompt = function setup_apply_prompt()
+    {
+        var form = $('#decklist-form'), modal = $('#apply-to-deck-modal'), baseline = null, decided = false;
+        if(!form.data('private-revision') || !modal.length) {
+            return;
+        }
+        function state()
+        {
+            return $(form[0].elements).not('[name=_token], #apply-to-deck').serialize();
+        }
+        function take()
+        {
+            if(baseline === null) {
+                baseline = state();
+            }
+        }
+        $(document).one('focusin mousedown keydown', take);
+        $(window).on('load', function () { setTimeout(take, 500); });
+        form.on('submit', function (event) {
+            if(decided || baseline === null || state() === baseline) {
+                return;
+            }
+            event.preventDefault();
+            modal.modal('show');
+        });
+        modal.on('click', '[data-apply]', function () {
+            $('#apply-to-deck').val($(this).data('apply') + '');
+            decided = true;
+            modal.modal('hide');
+            form[0].requestSubmit ? form[0].requestSubmit() : form.trigger('submit');
+        });
     };
 
     /** A decklist as the form refers to it: name (linked), author, date, version, tags (Templates: Decklist/deck-ref) */
@@ -25,7 +64,7 @@
         var tags = _.filter(d.tags || [], _.identity);
         return (link === false ? '<span class="rb-derived-name">' + _.escape(d.name) + '</span>'
                 : '<a href="' + d.url + '" target="_blank" class="rb-derived-name">' + _.escape(d.name) + '</a>')
-            + '<span class="rb-derived-meta">' + _.escape(d.author) + ' &middot; ' + d.date + ' &middot; v' + d.version + '</span>'
+            + '<span class="rb-derived-meta">' + _.escape(d.author) + ' &middot; ' + d.date + ' &middot; ' + d.version + '.0' + '</span>'
             + (tags.length ? '<span class="rb-derived-tags">' + _.map(tags, function (tag) { return '<span class="rb-tag-chip">' + _.escape(tag) + '</span>'; }).join('') + '</span>' : '');
     };
 
@@ -526,7 +565,7 @@
         ui.setup_event_handlers();
         app.deck_editor.setup('#deck', '#deck-toolbar', {readonly: true});
         // an annotation shows as a mark on its card in the deck
-        app.deck_notes.setup(_.debounce(function () { app.deck_editor.render(); }, 300));
+        app.deck_notes.setup(_.debounce(function () { app.data.cards && app.deck_editor.render(); }, 300));
     };
 
     /**

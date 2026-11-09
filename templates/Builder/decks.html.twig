@@ -115,7 +115,8 @@
                     <th class="rb-col-size" title="{{ 'decklist.browse.col.size_title' | trans }}">{{ 'decklist.browse.col.size' | trans }}</th>
                     <th class="rb-col-deck"><a href="{{ list_path('decks_list', query | merge({sort: 'name', page: null})) }}"{% if sorted == 'name' %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.deck' | trans }}</a></th>
                     <th class="rb-col-format">{{ 'decklist.browse.col.format' | trans }}</th>
-                    {% if tab == 'decks' %}<th class="rb-col-visibility">{{ 'decks.browse.col.visibility' | trans }}</th>{% endif %}
+                    {# the deck as it stands, and what it was published as, apart (Ketura, 2026-11-08) #}
+                    {% if tab == 'decks' %}<th class="rb-col-visibility">{{ 'decks.browse.col.current' | trans }}</th><th class="rb-col-published">{{ 'decks.browse.col.published' | trans }}</th>{% endif %}
                     <th class="rb-col-tags">{{ 'decklist.browse.col.tags' | trans }}</th>
                     <th class="rb-col-actions">{{ 'decks.browse.col.actions' | trans }}</th>
                 </tr>
@@ -141,7 +142,6 @@
                         <span class="rb-deck-by">
                             {% if deck %}
                                 {{ 'decks.browse.changed_on' | trans }} <time datetime="{{ row.date | date('Y-m-d') }}" data-absolute>{{ row.date | date('M j, Y') }}</time>
-                                <span class="rb-deck-dot" aria-hidden="true">•</span> v{{ deck.version }}
                             {% else %}
                                 {{ row.decklist.user.displayName }}
                                 <span class="rb-deck-dot" aria-hidden="true">•</span> <time datetime="{{ row.date | date('Y-m-d') }}" data-absolute>{{ row.date | date('M j, Y') }}</time>
@@ -154,9 +154,25 @@
                     </td>
                     {% if tab == 'decks' %}
                         <td class="rb-col-visibility">
-                            {% set icons = {private: 'fa-lock', hidden: 'fa-link', published: 'fa-globe-americas'} %}
-                            <span class="rb-vis rb-vis-{{ row.visibility }}" title="{{ ('decks.browse.status.' ~ row.visibility) | trans }}"><span class="fas {{ icons[row.visibility] }} fa-fw" aria-hidden="true"></span> {{ ('decks.browse.show.' ~ row.visibility) | trans }}</span>
-                            {% if row.published %}<a href="{{ path('decklist_detail', {decklist_id: row.published.id, decklist_name: row.published.nameCanonical | e('url')}) }}" class="rb-deck-published">{{ 'decks.browse.published_as' | trans({'%version%': row.published.version}) }}</a>{% endif %}
+                            {% set icons = {private: 'fa-lock', hidden: 'fa-link'} %}
+                            <span class="rb-vis rb-vis-{{ row.current }}" title="{{ ('decks.browse.status.' ~ row.current) | trans }}"><span class="fas {{ icons[row.current] }} fa-fw" aria-hidden="true"></span> {{ ('decks.browse.show.' ~ row.current) | trans }}</span>
+                            <span class="rb-deck-current"{% if row.published and not row.sameAsPublished %} title="{{ 'decks.browse.revised_title' | trans({'%version%': deck.version, '%published%': row.published.versionLabel}) }}"{% endif %}>
+                                {%- if row.sameAsPublished -%}
+                                    {{ 'decks.browse.same_as' | trans({'%version%': row.published.versionLabel}) }}
+                                {%- elseif row.published -%}
+                                    {{ 'decks.browse.revised' | trans({'%version%': deck.version, '%published%': row.published.versionLabel}) }}
+                                {%- else -%}
+                                    {{ deck.version }}
+                                {%- endif -%}
+                            </span>
+                        </td>
+                        <td class="rb-col-published">
+                            {% if row.published %}
+                                <a href="{{ path('decklist_detail', {decklist_id: row.published.id, decklist_name: row.published.nameCanonical | e('url')}) }}" class="rb-vis rb-vis-published" title="{{ 'decks.browse.status.published' | trans }}"><span class="fas fa-globe-americas fa-fw" aria-hidden="true"></span> {{ row.published.versionLabel }}</a>
+                                <time class="rb-deck-current" datetime="{{ (row.published.datePublished ?? row.published.dateCreation) | date('Y-m-d') }}" data-absolute>{{ (row.published.datePublished ?? row.published.dateCreation) | date('M j, Y') }}</time>
+                            {% else %}
+                                <span class="rb-muted" aria-label="{{ 'decks.browse.not_published' | trans }}">—</span>
+                            {% endif %}
                         </td>
                     {% endif %}
                     <td class="rb-col-tags">
@@ -165,7 +181,12 @@
                     <td class="rb-col-actions">
                         {% if deck %}
                             <a href="{{ path('deck_view', {deck_uuid: deck.uuid}) }}" class="rb-icon-btn" data-tip="{{ 'decks.browse.do.preview' | trans }}" aria-label="{{ 'decks.browse.do.preview' | trans }}"><span class="fas fa-eye fa-fw"></span></a>
-                            <a href="{{ path('deck_publish_form', {deck_uuid: deck.uuid}) }}" class="rb-icon-btn" data-tip="{{ 'decks.browse.do.publish' | trans }}" aria-label="{{ 'decks.browse.do.publish' | trans }}"><span class="fas fa-share fa-fw"></span></a>
+                            {# nothing new to publish while it's as published (Ketura, 2026-11-08) #}
+                            {% if row.sameAsPublished %}
+                                <span class="rb-icon-btn is-disabled" data-tip="{{ 'deckbuilder.publish.same_hint' | trans }}" aria-disabled="true"><span class="fas fa-share fa-fw"></span></span>
+                            {% else %}
+                                <a href="{{ path('deck_publish_form', {deck_uuid: deck.uuid}) }}" class="rb-icon-btn" data-tip="{{ 'decks.browse.do.publish' | trans }}" aria-label="{{ 'decks.browse.do.publish' | trans }}"><span class="fas fa-share fa-fw"></span></a>
+                            {% endif %}
                             <a href="{{ path('deck_clone', {deck_uuid: deck.uuid}) }}" class="rb-icon-btn" data-tip="{{ 'decks.browse.do.clone' | trans }}" aria-label="{{ 'decks.browse.do.clone' | trans }}"><span class="fas fa-clone fa-fw"></span></a>
                             <button type="button" class="rb-icon-btn rb-icon-danger btn-delete-deck" data-tip="{{ 'decks.browse.do.delete' | trans }}" aria-label="{{ 'decks.browse.do.delete' | trans }}"><span class="fas fa-trash-alt fa-fw"></span></button>
                         {% else %}
