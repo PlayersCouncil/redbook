@@ -1460,6 +1460,16 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 .rb-reader-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
 .rb-reader-name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-width: 0; }
 .rb-reader-name h1 { margin: 0; font-size: calc(26px * (1 + (var(--rb-text-scale) - 1) * 0.67)); font-weight: 700; line-height: 1.2; }
+/* a long title wraps in its own column rather than pushing the buttons onto a line of their
+   own (Ketura, 2026-11-08); a narrow window still stacks them */
+@media (min-width: 900px) {
+    .rb-reader-title { flex-wrap: nowrap; }
+    .rb-reader-name { flex: 1 1 0; min-width: 380px; }
+    .rb-reader-name h1 { flex: 0 1 auto; min-width: 0; overflow-wrap: break-word; }
+    /* the buttons keep to their own column, wrapping within it when the window is tight */
+    .rb-reader-actions { flex: 0 1 auto; min-width: 0; justify-content: flex-end; }
+    .rb-reader-actions .rb-reader-buttons, .rb-reader-actions .rb-reader-buttons-wide { justify-content: flex-end; }
+}
 .rb-reader-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
 .rb-reader-buttons, .rb-reader-buttons-wide { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .rb-reader-buttons a.rb-btn, .rb-reader-buttons a.rb-btn:hover, .rb-reader-buttons a.rb-btn:focus { color: var(--rb-ink); text-decoration: none; }
