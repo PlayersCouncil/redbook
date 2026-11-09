@@ -44,15 +44,15 @@
                         <button type="button" class="rb-btn rb-btn-primary" id="btn-save">{{ 'deckbuilder.info.save' | trans }}</button>
                         <button type="button" class="rb-btn" id="btn-revert">{{ 'deckbuilder.info.revert' | trans }}</button>
                         {% if is_owner %}
-                            {# private, or shared by link; Publish makes it public (Ketura, 2026-11-08) #}
+                            {# who can see it: a setting, Public among the others (Ketura, 2026-11-08) #}
                             <div class="rb-menu-wrap">
                                 <button type="button" class="rb-btn" id="btn-visibility" aria-haspopup="menu" aria-expanded="false"></button>
                                 <div class="rb-menu" id="menu-visibility" role="menu" hidden>
-                                    <button type="button" role="menuitemradio" data-visibility="private"><strong>{{ 'library.visibility.private' | trans }}</strong><span>{{ 'library.visibility.private_hint' | trans }}</span></button>
-                                    <button type="button" role="menuitemradio" data-visibility="hidden"><strong>{{ 'library.visibility.hidden' | trans }}</strong><span>{{ 'library.visibility.hidden_hint' | trans }}</span></button>
+                                    {% for vis in ['private', 'hidden', 'public'] %}
+                                        <button type="button" role="menuitemradio" data-visibility="{{ vis }}"><strong>{{ ('library.visibility.' ~ vis) | trans }}</strong><span>{{ ('library.visibility.' ~ vis ~ '_hint') | trans }}</span></button>
+                                    {% endfor %}
                                 </div>
                             </div>
-                            <button type="button" class="rb-btn rb-btn-publish" id="btn-publish"></button>
                         {% endif %}
                         <a href="{{ path('library_view_private', {library_uuid: library.uuid}) }}" class="rb-btn" id="btn-preview" title="{{ 'library.edit.preview_hint' | trans }}"><span class="fas fa-eye" aria-hidden="true"></span> {{ 'deckbuilder.info.preview' | trans }}</a>
                         <span class="rb-save-status" id="save-status" aria-live="polite"></span>
@@ -79,6 +79,20 @@
                     </div>
                     <div role="tabpanel" class="tab-pane rb-scroll-pane" id="tab-pane-infos">
                         <div class="rb-notes" id="library-notes">
+                            {# its own thumbnail: any card, found by name (Ketura, 2026-11-08) #}
+                            <section class="rb-notes-section rb-lib-thumb-field" aria-labelledby="thumb-title">
+                                <div class="rb-notes-head"><h3 id="thumb-title">{{ 'library.edit.thumbnail' | trans }}</h3></div>
+                                <div class="rb-lib-thumb-row">
+                                    <span class="rb-lib-thumb-preview" id="library-thumb-preview">{% include 'Library/thumbnail.html.twig' %}</span>
+                                    <div class="rb-lib-thumb-pick">
+                                        <input type="search" class="form-control input-sm" id="thumb-search" autocomplete="off" placeholder="{{ 'library.edit.thumbnail_search' | trans }}" aria-label="{{ 'library.edit.thumbnail_search' | trans }}">
+                                        <span class="rb-lib-thumb-name" id="thumb-name">{{ library.thumbnailCard ? library.thumbnailCard.fullName : ('library.edit.thumbnail_default' | trans) }}</span>
+                                        <button type="button" class="rb-btn rb-btn-small" id="thumb-clear"{% if not library.thumbnailCard %} hidden{% endif %}>{{ 'library.edit.thumbnail_clear' | trans }}</button>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="library-thumb" value="{{ library.thumbnailCard ? library.thumbnailCard.code : '' }}">
+                                <template id="thumb-fallback">{% if library.firstAvailableDecklist %}{% include 'Decklist/thumbnail.html.twig' with {decklist: library.firstAvailableDecklist} %}{% else %}<span class="rb-thumb rb-thumb-empty" aria-hidden="true"><span class="fas fa-book"></span></span>{% endif %}</template>
+                            </section>
                             <div class="rb-notes-tags">
                                 <label for="tag-entry">{{ 'decks.edit.notes.tags.label' | trans }}</label>
                                 <div class="rb-tag-input" id="tag-input">

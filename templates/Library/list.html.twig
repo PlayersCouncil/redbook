@@ -147,55 +147,65 @@
         </div>
 
         <div class="rb-results-scroll">
-        {% if total %}
-        <table class="rb-decks rb-library-table{% if mine %} rb-my-decks-table{% endif %}">
+        {% if total and not mine %}
+            {# the public list as cards, two to a row where there's room (Ketura, 2026-11-08) #}
+            <ul class="rb-lib-cards" id="decks">
+            {% for library in rows %}
+                {% set url = library.publicId ? path('library_view', {public_id: library.publicId, library_name: library.nameCanonical}) : path('library_view_private', {library_uuid: library.uuid}) %}
+                {% set count = (library.entries | filter(e => e.available)) | length %}
+                <li class="rb-lib-card" data-href="{{ url }}">
+                    <span class="rb-lib-card-thumb">{% include 'Library/thumbnail.html.twig' %}</span>
+                    <span class="rb-lib-card-body">
+                        <a href="{{ url }}" class="rb-deck-name deck-name">{{ library.name }}</a>
+                        <span class="rb-deck-by">
+                            {% if library.official %}<span class="rb-official-mark" title="{{ 'library.official_title' | trans }}">{{ 'library.official' | trans }}</span>{% endif %}
+                            {{ library.user.displayName }} <span class="rb-deck-dot" aria-hidden="true">•</span>
+                            <time datetime="{{ library.dateUpdate | date('Y-m-d') }}" data-absolute>{{ library.dateUpdate | date('M j, Y') }}</time>
+                        </span>
+                        {% if library.tagList %}<span class="rb-row-tags tags">{% for tag in library.tagList %}<button type="button" class="rb-tag-chip rb-tag-link{% if tag in (f.tags ?? []) %} is-on{% endif %}" data-tag="{{ tag }}" title="{{ 'decklist.browse.tag_search' | trans }}">{{ tag }}</button>{% endfor %}</span>{% endif %}
+                    </span>
+                    <span class="rb-lib-card-count" title="{{ 'library.view.decks' | trans({'%count%': count}) }}"><strong class="rb-library-count">{{ count }}</strong> {{ 'library.browse.decks_word' | trans({'%count%': count}) }}</span>
+                </li>
+            {% endfor %}
+            </ul>
+        {% elseif total %}
+        <table class="rb-decks rb-library-table rb-my-decks-table">
             <thead>
                 <tr>
-                    {% if mine %}<th class="rb-col-pick"><input type="checkbox" class="toggle_all" title="{{ 'decks.selectAll' | trans }}" aria-label="{{ 'decks.selectAll' | trans }}"></th>{% endif %}
+                    <th class="rb-col-pick"><input type="checkbox" class="toggle_all" title="{{ 'decks.selectAll' | trans }}" aria-label="{{ 'decks.selectAll' | trans }}"></th>
                     <th class="rb-col-thumb"></th>
                     <th class="rb-col-deck"><a href="{{ list_path(list_route, query | merge({sort: 'name', page: null})) }}"{% if sorted == 'name' %} class="is-sorted"{% endif %}>{{ 'library.browse.col.library' | trans }}</a></th>
                     <th class="rb-col-count"><a href="{{ list_path(list_route, query | merge({sort: 'size', page: null})) }}"{% if sorted == 'size' %} class="is-sorted"{% endif %}>{{ 'library.browse.col.decks' | trans }}</a></th>
-                    {% if mine %}<th class="rb-col-visibility">{{ 'library.browse.col.visibility' | trans }}</th>{% endif %}
+                    <th class="rb-col-visibility">{{ 'library.browse.col.visibility' | trans }}</th>
                     <th class="rb-col-tags">{{ 'decklist.browse.col.tags' | trans }}</th>
-                    {% if mine %}<th class="rb-col-actions">{{ 'decks.browse.col.actions' | trans }}</th>{% endif %}
+                    <th class="rb-col-actions">{{ 'decks.browse.col.actions' | trans }}</th>
                 </tr>
             </thead>
             <tbody id="decks">
             {% for library in rows %}
                 {% set view = library.publicId and library.public ? path('library_view', {public_id: library.publicId, library_name: library.nameCanonical}) : path('library_view_private', {library_uuid: library.uuid}) %}
-                {% set url = mine ? path('library_edit', {library_uuid: library.uuid}) : view %}
-                {% set shown = library.entries | filter(e => e.available) %}
-                {% set first = shown | first %}
+                {% set url = path('library_edit', {library_uuid: library.uuid}) %}
                 <tr data-href="{{ url }}" class="rb-library-row rb-row-{{ library.visibility }}" data-uuid="{{ library.uuid }}">
-                    {% if mine %}<td class="rb-col-pick"><input type="checkbox" aria-label="{{ 'decks.browse.pick' | trans({'%name%': library.name}) }}"></td>{% endif %}
-                    <td class="rb-col-thumb">
-                        {% if first %}{% include 'Decklist/thumbnail.html.twig' with {decklist: first.decklist} %}{% else %}<span class="rb-thumb rb-thumb-empty" aria-hidden="true"><span class="fas fa-book"></span></span>{% endif %}
-                    </td>
+                    <td class="rb-col-pick"><input type="checkbox" aria-label="{{ 'decks.browse.pick' | trans({'%name%': library.name}) }}"></td>
+                    <td class="rb-col-thumb">{% include 'Library/thumbnail.html.twig' %}</td>
                     <td class="rb-col-deck">
                         <a href="{{ url }}" class="rb-deck-name deck-name">{{ library.name }}</a>
                         {% if library.official %}<span class="rb-official-mark" title="{{ 'library.official_title' | trans }}">{{ 'library.official' | trans }}</span>{% endif %}
-                        <span class="rb-deck-by">
-                            {% if not mine %}{{ library.user.displayName }} <span class="rb-deck-dot" aria-hidden="true">•</span>{% else %}{{ 'decks.browse.changed_on' | trans }}{% endif %}
-                            <time datetime="{{ library.dateUpdate | date('Y-m-d') }}" data-absolute>{{ library.dateUpdate | date('M j, Y') }}</time>
-                        </span>
+                        <span class="rb-deck-by">{{ 'decks.browse.changed_on' | trans }} <time datetime="{{ library.dateUpdate | date('Y-m-d') }}" data-absolute>{{ library.dateUpdate | date('M j, Y') }}</time></span>
                     </td>
-                    <td class="rb-col-count"><span class="rb-library-count">{{ (mine ? library.entries : shown) | length }}</span></td>
-                    {% if mine %}
-                        <td class="rb-col-visibility">
-                            {% set icons = {private: 'fa-lock', hidden: 'fa-link', public: 'fa-globe-americas'} %}
-                            <span class="rb-vis rb-vis-{{ library.visibility == 'public' ? 'published' : library.visibility }}"><span class="fas {{ icons[library.visibility] }} fa-fw" aria-hidden="true"></span> {{ ('library.visibility.' ~ library.visibility) | trans }}</span>
-                        </td>
-                    {% endif %}
+                    <td class="rb-col-count"><span class="rb-library-count">{{ library.entries | length }}</span></td>
+                    <td class="rb-col-visibility">
+                        {% set icons = {private: 'fa-lock', hidden: 'fa-link', public: 'fa-globe-americas'} %}
+                        <span class="rb-vis rb-vis-{{ library.visibility == 'public' ? 'published' : library.visibility }}"><span class="fas {{ icons[library.visibility] }} fa-fw" aria-hidden="true"></span> {{ ('library.visibility.' ~ library.visibility) | trans }}</span>
+                    </td>
                     <td class="rb-col-tags">
                         <span class="rb-row-tags tags">{% for tag in library.tagList %}<button type="button" class="rb-tag-chip rb-tag-link{% if tag in (f.tags ?? []) %} is-on{% endif %}" data-tag="{{ tag }}" title="{{ 'decklist.browse.tag_search' | trans }}">{{ tag }}</button>{% endfor %}</span>
                     </td>
-                    {% if mine %}
-                        <td class="rb-col-actions">
-                            <a href="{{ view }}" class="rb-icon-btn" data-tip="{{ 'decks.browse.do.preview' | trans }}" aria-label="{{ 'decks.browse.do.preview' | trans }}"><span class="fas fa-eye fa-fw"></span></a>
-                            <a href="{{ url }}" class="rb-icon-btn" data-tip="{{ 'library.browse.do.edit' | trans }}" aria-label="{{ 'library.browse.do.edit' | trans }}"><span class="fas fa-pencil-alt fa-fw"></span></a>
-                            <button type="button" class="rb-icon-btn rb-icon-danger btn-delete-library" data-tip="{{ 'library.browse.do.delete' | trans }}" aria-label="{{ 'library.browse.do.delete' | trans }}"><span class="fas fa-trash-alt fa-fw"></span></button>
-                        </td>
-                    {% endif %}
+                    <td class="rb-col-actions">
+                        <a href="{{ view }}" class="rb-icon-btn" data-tip="{{ 'decks.browse.do.preview' | trans }}" aria-label="{{ 'decks.browse.do.preview' | trans }}"><span class="fas fa-eye fa-fw"></span></a>
+                        <a href="{{ url }}" class="rb-icon-btn" data-tip="{{ 'library.browse.do.edit' | trans }}" aria-label="{{ 'library.browse.do.edit' | trans }}"><span class="fas fa-pencil-alt fa-fw"></span></a>
+                        <button type="button" class="rb-icon-btn rb-icon-danger btn-delete-library" data-tip="{{ 'library.browse.do.delete' | trans }}" aria-label="{{ 'library.browse.do.delete' | trans }}"><span class="fas fa-trash-alt fa-fw"></span></button>
+                    </td>
                 </tr>
             {% endfor %}
             </tbody>

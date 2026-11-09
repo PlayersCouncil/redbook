@@ -16,7 +16,7 @@
         if(!deck || !data_ready || !open_row || !open_row.is(row)) {
             return;
         }
-        row.find('.rb-lv-deck').append($('#deck-toolbar'), $('#deck'));
+        row.find('.rb-lv-deck-slot').append($('#deck-toolbar'), $('#deck'));
         app.deck.init(deck);
         app.deck_editor.render();
     }
@@ -42,7 +42,7 @@
             return draw(row);
         }
         $('#deck').html('<div class="rb-reader-loading">' + _.escape(Translator.trans('decklist.reader.loading')) + '</div>');
-        row.find('.rb-lv-deck').append($('#deck-toolbar'), $('#deck'));
+        row.find('.rb-lv-deck-slot').append($('#deck-toolbar'), $('#deck'));
         $.getJSON(row.data('url')).done(function (deck) {
             decks[id] = deck;
             draw(row);

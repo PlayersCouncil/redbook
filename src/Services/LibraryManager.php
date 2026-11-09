@@ -124,7 +124,7 @@ class LibraryManager
      * The editor's Save: the name, description, notes and tags, and the entries in their new
      * order with their commentary. An entry left out is removed; a decklist not yet in it
      * (added from the Build tab) is added.
-     * @param array{name?: string, description?: string, notes?: string, tags?: string, entries?: array<array{decklist: int, annotation?: string}>} $data
+     * @param array{name?: string, description?: string, notes?: string, tags?: string, thumbnail?: string, entries?: array<array{decklist: int, annotation?: string}>} $data
      */
     public function save(Library $library, array $data): void
     {
@@ -138,6 +138,10 @@ class LibraryManager
             preg_split('/\s+/', (string) ($data['tags'] ?? ''))
         ), 'strlen'));
         $library->setTags($tags ? implode(' ', $tags) : null);
+        if (array_key_exists('thumbnail', $data)) {
+            $code = trim((string) $data['thumbnail']);
+            $library->setThumbnailCard($code !== '' ? $this->em->getRepository(\App\Entity\Card::class)->findOneBy(['code' => $code]) : null);
+        }
 
         $existing = [];
         foreach ($library->getEntries() as $entry) {

@@ -145,6 +145,48 @@
         show_suggestions();
     }
 
+    /* ---- the thumbnail: any card, by name ---- */
+
+    function set_thumbnail(card)
+    {
+        $('#library-thumb').val(card ? card.code : '');
+        $('#library-thumb-preview').html(card
+            ? '<span class="rb-thumb rb-thumb-card rb-thumb-tpl-' + thumbnail_template(card) + '"><img src="' + _.escape(card.image_url) + '" alt="' + _.escape(card.label) + '"></span>'
+            : $('#thumb-fallback').html());
+        $('#thumb-name').text(card ? card.label : t('library.edit.thumbnail_default'));
+        $('#thumb-clear').prop('hidden', !card);
+        changed();
+    }
+
+    /** As Card::getThumbnailTemplate frames it */
+    function thumbnail_template(card)
+    {
+        return ['companion', 'ally', 'minion', 'follower'].indexOf(card.type_code) !== -1 ? 'character' : card.type_code === 'site' ? 'site' : 'modifier';
+    }
+
+    function setup_thumbnail_search()
+    {
+        var input = $('#thumb-search');
+        if(!input.length || input.data('ready')) {
+            return;
+        }
+        input.data('ready', true);
+        input.typeahead({hint: true, highlight: true, minLength: 2}, {
+            name: 'thumbcards',
+            displayKey: 'label',
+            source: function (q, cb)
+            {
+                var regexp = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+                cb(_.filter(app.data.cards.find({label: regexp}, {$orderBy: {label: 1}}), function (card) { return !!card.image_url; }).slice(0, 12));
+            }
+        });
+        input.on('typeahead:selected typeahead:autocompleted', function (event, card)
+        {
+            input.typeahead('val', '');
+            set_thumbnail(card);
+        });
+    }
+
     /* ---- saving ---- */
 
     function state()
@@ -154,6 +196,7 @@
             description: $('#library-description').val(),
             notes: $('#library-notes-text').val(),
             tags: tags().join(' '),
+            thumbnail: $('#library-thumb').val(),
             // one marked for removal goes when it's saved
             entries: $('#library-entries .rb-lib-entry').not('.is-pending').map(function () {
                 return {decklist: $(this).data('decklist'), annotation: $(this).find('textarea[data-annotation]').val()};
@@ -216,9 +259,6 @@
             var on = $(this).data('visibility') === vis;
             $(this).attr('aria-checked', on).toggleClass('active', on);
         });
-        $('#btn-publish').html('<span class="fas fa-globe-americas" aria-hidden="true"></span> ' + _.escape(t(vis === 'public' ? 'library.edit.is_public' : 'library.edit.publish')))
-            .prop('disabled', vis === 'public')
-            .attr('title', t(vis === 'public' ? 'library.edit.is_public_hint' : 'library.edit.publish_hint'));
     }
 
     function set_visibility(vis)
@@ -231,6 +271,20 @@
                     $('#save-status').html(t('library.edit.now_public', {url: _.escape(response.public_url)})).attr('class', 'rb-save-status');
                 }
             });
+    }
+
+    /**
+     * The menu hangs off its button against the window, as the deckbuilder's do, so the pane
+     * it's in can't cut it off
+     */
+    function float_below(button, popup)
+    {
+        var rect = button.getBoundingClientRect(), el = $(popup), width = el.outerWidth(), height = el.outerHeight(),
+            left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)), top = rect.bottom + 4;
+        if(top + height > window.innerHeight - 8 && rect.top - 4 - height > 8) {
+            top = rect.top - 4 - height;
+        }
+        el.css({position: 'fixed', left: left + 'px', top: top + 'px', right: 'auto'});
     }
 
     function close_menus()
@@ -373,6 +427,8 @@
             set_tags(_.without(tags(), tag));
         });
 
+        $('#thumb-clear').on('click', function () { set_thumbnail(null); });
+
         // who can see it
         $('#btn-visibility').on('click', function (event) {
             event.stopPropagation();
@@ -380,13 +436,15 @@
             close_menus();
             menu.prop('hidden', !open);
             $(this).attr('aria-expanded', open ? 'true' : 'false');
+            if(open) {
+                float_below(this, menu);
+            }
         });
+        $(window).on('resize', close_menus);
+        $('.rb-col-left').on('scroll', close_menus);
         $('#menu-visibility').on('click', '[data-visibility]', function () {
             close_menus();
             set_visibility($(this).data('visibility'));
-        });
-        $('#btn-publish').on('click', function () {
-            set_visibility('public');
         });
         $(document).on('click', function (event) {
             if(!$(event.target).closest('.rb-menu-wrap').length) {
@@ -415,6 +473,7 @@
     ui.on_data_loaded = function on_data_loaded()
     {
         ui.browse_data_loaded();
+        setup_thumbnail_search();
     };
 
     ui.on_all_loaded = function on_all_loaded()

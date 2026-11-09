@@ -853,10 +853,6 @@ library.edit.annotation_title: "Notas sobre %name%"
 library.edit.annotation_hint: "Por qué está este mazo aquí, qué fijarse en él…"
 library.edit.unsaved: Cambios sin guardar
 library.edit.saved: Guardado
-library.edit.publish: Hacer pública
-library.edit.publish_hint: "Mostrarla en la Biblioteca de mazos para todos"
-library.edit.is_public: Pública
-library.edit.is_public_hint: "Aparece en la Biblioteca de mazos. Hazla privada u oculta desde el menú de al lado."
 library.edit.now_public: "Pública en <a href=\"%url%\">%url%</a>"
 library.edit.leave: "¿Salir sin guardar los cambios de la biblioteca?"
 library.visibility.label: Quién puede verla
@@ -922,3 +918,10 @@ library.picker.login: "<a href=\"%url%\">Inicia sesión</a> para guardar mazos e
 library.picker.failed: "Algo salió mal. Inténtalo de nuevo."
 library.picker.open: Abrirla
 decklist.browse.failed: "La búsqueda no se completó. Inténtalo de nuevo."
+library.visibility.public_hint: "Aparece en la Biblioteca de mazos para todos"
+library.edit.thumbnail: Miniatura
+library.edit.thumbnail_search: "Busca cualquier carta por nombre"
+library.edit.thumbnail_default: "La miniatura de su primer mazo"
+library.edit.thumbnail_clear: "Usar la del primer mazo"
+library.view.commentary: Comentario
+library.browse.decks_word: "{1} mazo|]1,Inf[ mazos|{0} mazos"

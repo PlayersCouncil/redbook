@@ -1469,10 +1469,6 @@ library.edit.annotation_title: "Notes on %name%"
 library.edit.annotation_hint: "Why this deck is here, what to notice about it…"
 library.edit.unsaved: Unsaved changes
 library.edit.saved: Saved
-library.edit.publish: Make Public
-library.edit.publish_hint: "List it in the Deck Library for everyone"
-library.edit.is_public: Public
-library.edit.is_public_hint: "Listed in the Deck Library. Make it private or hidden from the menu beside this."
 library.edit.now_public: "Public at <a href=\"%url%\">%url%</a>"
 library.edit.leave: "Leave without saving your changes to the library?"
 library.visibility.label: Who can see it
@@ -1538,3 +1534,10 @@ library.picker.login: "<a href=\"%url%\">Log in</a> to keep decks in libraries."
 library.picker.failed: "Something went wrong. Try again."
 library.picker.open: Open it
 decklist.browse.failed: "The search didn't go through. Try again."
+library.visibility.public_hint: "Listed in the Deck Library for everyone"
+library.edit.thumbnail: Thumbnail
+library.edit.thumbnail_search: "Find any card by name"
+library.edit.thumbnail_default: "Its first deck's thumbnail"
+library.edit.thumbnail_clear: "Use the first deck's"
+library.view.commentary: Commentary
+library.browse.decks_word: "{1} deck|]1,Inf[ decks|{0} decks"

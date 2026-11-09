@@ -64,6 +64,11 @@ class Library
     #[ORM\Column(name: 'notes_html', type: 'text', nullable: true)]
     protected ?string $notesHtml = null;
 
+    /** Its own thumbnail (Ketura, 2026-11-08): any card, picked by name; else its first deck's */
+    #[ORM\ManyToOne(targetEntity: Card::class)]
+    #[ORM\JoinColumn(name: 'thumbnail_card_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    protected ?Card $thumbnailCard = null;
+
     #[ORM\Column(name: 'tags', type: 'string', length: 4000, nullable: true)]
     protected ?string $tags = null;
 
@@ -114,6 +119,8 @@ class Library
     public function setNotesMd(?string $notesMd): void { $this->notesMd = $notesMd; }
     public function getNotesHtml(): ?string { return $this->notesHtml; }
     public function setNotesHtml(?string $notesHtml): void { $this->notesHtml = $notesHtml; }
+    public function getThumbnailCard(): ?Card { return $this->thumbnailCard; }
+    public function setThumbnailCard(?Card $card): void { $this->thumbnailCard = $card; }
     public function getTags(): ?string { return $this->tags; }
     public function setTags(?string $tags): void { $this->tags = $tags; }
     public function getVisibility(): string { return $this->visibility; }
@@ -149,6 +156,17 @@ class Library
             }
         }
         return false;
+    }
+
+    /** The first of its decks readers see, for its thumbnail when it has none of its own */
+    public function getFirstAvailableDecklist(): ?PublishedDeck
+    {
+        foreach ($this->entries as $entry) {
+            if ($entry->isAvailable()) {
+                return $entry->getDecklist();
+            }
+        }
+        return null;
     }
 
     /** @return string[] */

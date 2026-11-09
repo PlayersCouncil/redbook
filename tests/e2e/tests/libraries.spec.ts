@@ -55,6 +55,11 @@ test('a new library from My Libraries, filled from the Build tab', async ({ page
   await page.keyboard.press('Enter');
   await expect(page.locator('#tag-input .rb-tag-chip')).toContainText(`e2etag${runId}`);
   await page.fill('#library-notes-text', 'Notes on the library as a whole.');
+  // its own thumbnail, any card found by name (Ketura, 2026-11-08)
+  await page.fill('#thumb-search', 'Gandalf, The Grey Wizard');
+  await page.locator('.tt-suggestion').first().click();
+  await expect(page.locator('#library-thumb-preview .rb-thumb-card img')).toBeVisible();
+  await expect(page.locator('#thumb-clear')).toBeVisible();
 
   await page.click('#btn-save');
   await expect(page.locator('#save-status')).toHaveText('Saved');
@@ -67,6 +72,7 @@ test('a new library from My Libraries, filled from the Build tab', async ({ page
   await expect(entries.nth(0).locator('.rb-deck-name')).toHaveText(second!);
   await expect(entries.nth(1).locator('textarea[data-annotation]')).toHaveValue('The first deck. [[Gimli, Dwarf of Erebor]] starts.');
   await expect(page.locator('#library-tags')).toHaveValue(`e2etag${runId}`);
+  await expect(page.locator('#library-thumb')).not.toHaveValue('');
 });
 
 test('a deck comes out with X then the bin; Keep takes it back', async ({ page }) => {
@@ -95,19 +101,22 @@ test('private until made public; then listed, and read one deck at a time', asyn
   await page.goto(editUrl);
   await waitForCardData(page);
   await expect(page.locator('#btn-visibility')).toContainText('Private');
-  await page.click('#btn-publish');
+  // Public is a setting among the others (Ketura, 2026-11-08); the menu floats over the pane
+  await page.click('#btn-visibility');
+  await expect(page.locator('#menu-visibility')).toHaveCSS('position', 'fixed');
+  await page.click('#menu-visibility [data-visibility="public"]');
   await expect(page.locator('#btn-visibility')).toContainText('Public');
-  await expect(page.locator('#btn-publish')).toBeDisabled();
   publicUrl = await page.locator('#save-status a').getAttribute('href') ?? '';
   expect(publicUrl).toMatch(/\/library\/view\/\d+\//);
 
   // the Deck Library lists it, found by its tag
   await voter.goto(`/libraries?tags[]=e2etag${runId}`);
-  await expect(voter.locator('.rb-library-table .rb-deck-name')).toHaveText(name);
-  await voter.locator('.rb-library-table .rb-deck-name').click();
+  // as cards, two to a row (Ketura, 2026-11-08)
+  await expect(voter.locator('.rb-lib-cards .rb-deck-name')).toHaveText(name);
+  await voter.locator('.rb-lib-cards .rb-deck-name').click();
   await expect(voter).toHaveURL(/\/library\/view\/\d+\//);
   await expect(voter.locator('.rb-library-title')).toHaveText(name);
-  await expect(voter.locator('.rb-library-description strong')).toHaveText('testing');
+  await expect(voter.locator('.rb-lv-description strong')).toHaveText('testing');
   await expect(voter.locator('.rb-library-notes-body')).toContainText('Notes on the library as a whole.');
   await expect(voter.locator('#btn-edit-library')).toHaveCount(0);
   // the first deck open, drawn as the reader draws it, with the curator's notes beside it
@@ -116,6 +125,9 @@ test('private until made public; then listed, and read one deck at a time', asyn
   await expect(open.locator('#deck .rb-line').first()).toBeVisible();
   await expect(open.locator('.rb-lv-notes')).toContainText('Gimli, Dwarf of Erebor');
   await expect(open.locator('[data-step="1"]')).toBeDisabled();
+  // the deck's view buttons together, not spread over the row
+  const views = open.locator('.rb-display-opts').first();
+  await expect(views).toHaveCSS('border-top-style', 'solid');
   expect((await voter.goto(editUrl))?.status()).toBe(403);
 });
 

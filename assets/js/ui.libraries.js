@@ -60,6 +60,18 @@
                 .fail(function () { app.ui.insert_alert_message('danger', Translator.trans('library.delete.failed')); });
         });
         $(document).on('browse:loaded', selection_changed);
+        // a library's card opens it, as a row does on the other lists
+        results.on('click', '.rb-lib-card[data-href]', function (event)
+        {
+            if($(event.target).closest('a, button').length || window.getSelection().toString()) {
+                return;
+            }
+            if(event.ctrlKey || event.metaKey || event.button === 1) {
+                window.open($(this).data('href'));
+            } else {
+                window.location = $(this).data('href');
+            }
+        });
     };
 
     ui.on_data_loaded = function on_data_loaded()
