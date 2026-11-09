@@ -51,6 +51,7 @@ For example, `fos:user:promote <username> ROLE_ADMIN`. Red Book's own:
 - `app:import:cards /srv/carddata`: re-import the card data (init does this; it fetches lotrtcg-card-data at `CARD_DATA_REF` first)
 - `app:formats:refresh`: copy Gemp's formats now (the crontab does it hourly)
 - `app:import:seed-decks`: import archived decks (phase3/06 batches). With no argument it imports every `*.json` in `data/seed-decks/` on the host (mounted read-only at `var/seed-decks`), one file after another: `docker exec -u www-data <project> php bin/console app:import:seed-decks`. It also takes a single file or folder inside the container, or `-` to read one batch from standard input. Re-running is safe: decks update in place and ones a historian has verified are left alone. `--dry-run` checks without saving, `--no-validate` skips Gemp
+- `app:import:seed-libraries`: import seeded (official) libraries from manifests. With no argument it imports every `*.json` in `data/seed-libraries/` on the host (mounted read-only at `var/seed-libraries`): `docker exec -u www-data <project> php bin/console app:import:seed-libraries`. It also takes a file or folder inside the container, or `-` for standard input; `--dry-run` checks without saving. Import the decks the manifests name first. The format is in `docs/seed-libraries.md`.
 
 Archived decks can be claimed by their authors; admins approve the requests at `/admin/claims`.
 
