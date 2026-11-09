@@ -2,8 +2,8 @@
 /**
  * The deckbuilder's Notes tab (Ketura, 2026-11-03).
  *
- * - Tags as chips. The entry box suggests tags from the user's own decks, with how
- *   many decks carry each, filtering as they type; any other word is a new tag.
+ * - Tags as chips (app.tag_input, shared): the entry suggests tags from the user's own
+ *   decks, with how many decks carry each, filtering as they type.
  * - Starting notes: the companions marked S (hover for the card), the bid as written
  *   ("2", "2-3"), and free text.
  * - Card annotations: a note on any card, in the deck or not (rejected options,
@@ -15,8 +15,7 @@
  */
 (function app_deck_notes(notes, $)
 {
-    var on_edit = function () {},
-        known_tags = null;
+    var on_edit = function () {};
 
     function t(key, params)
     {
@@ -29,70 +28,13 @@
         $('#annotations-field').val(JSON.stringify(app.deck.get_annotations()));
     }
 
-    /* ---- tags ---- */
+    /* ---- tags: the shared chip input (app.tag_input) ---- */
 
-    function tags()
-    {
-        return _.uniq(($('input[name=tags_]').val() || '').split(/\s+/).filter(Boolean));
-    }
-
-    function set_tags(list)
-    {
-        $('input[name=tags_]').val(_.uniq(list).join(' ')).trigger('input');
-        render_chips();
-    }
+    var tag_box = null;
 
     function render_chips()
     {
-        $('#tag-input .rb-tag-chips').html(_.map(tags(), function (tag) {
-            return '<span class="rb-tag-chip">' + _.escape(tag) + '<button type="button" data-untag="' + _.escape(tag) + '" aria-label="'
-                + t('deckbuilder.notes.tag_remove', {tag: _.escape(tag)}) + '">&times;</button></span>';
-        }).join(''));
-    }
-
-    function load_tags(then)
-    {
-        if(known_tags) {
-            return then();
-        }
-        $.getJSON(Routing.generate('deck_tags'), function (rows) {
-            known_tags = rows || [];
-            then();
-        }).fail(function () {
-            known_tags = [];
-            then();
-        });
-    }
-
-    function show_suggestions()
-    {
-        load_tags(function () {
-            var typed = ($('#tag-entry').val() || '').trim().toLowerCase(),
-                have = tags(),
-                rows = _.filter(known_tags, function (row) {
-                    return have.indexOf(row.tag) === -1 && (!typed || row.tag.toLowerCase().indexOf(typed) !== -1);
-                }).slice(0, 12),
-                box = $('#tag-input .rb-tag-suggest');
-            if(typed && !_.findWhere(known_tags, {tag: typed}) && have.indexOf(typed) === -1) {
-                rows.unshift({tag: typed, count: 0, is_new: true});
-            }
-            box.html(_.map(rows, function (row) {
-                var note = row.is_new ? t('deckbuilder.notes.tag_new')
-                    : row.count ? Translator.transChoice('deckbuilder.notes.tag_count', row.count, {count: row.count})
-                    : Translator.transChoice('deckbuilder.notes.tag_site', row.site, {count: row.site});
-                return '<button type="button" data-tag="' + _.escape(row.tag) + '">' + _.escape(row.tag) + ' <small>' + note + '</small></button>';
-            }).join('')).prop('hidden', !rows.length);
-        });
-    }
-
-    function add_typed_tag()
-    {
-        var typed = ($('#tag-entry').val() || '').trim().replace(/\s+/g, '-');
-        if(typed) {
-            set_tags(tags().concat([typed]));
-        }
-        $('#tag-entry').val('');
-        show_suggestions();
+        tag_box && tag_box.render();
     }
 
     /* ---- starting notes ---- */
@@ -291,48 +233,8 @@
         app.md_editor && app.md_editor.attach('#description');
 
         // tags
-        root.on('focus click', '#tag-entry', show_suggestions);
-        root.on('input', '#tag-entry', function () {
-            if(/[\s,]$/.test($(this).val())) {
-                add_typed_tag();
-            } else {
-                show_suggestions();
-            }
-        });
-        root.on('keydown', '#tag-entry', function (event) {
-            if(event.key === 'Enter') {
-                event.preventDefault();
-                add_typed_tag();
-            } else if(event.key === 'Backspace' && !$(this).val()) {
-                set_tags(tags().slice(0, -1));
-            } else if(event.key === 'Escape') {
-                $('#tag-input .rb-tag-suggest').prop('hidden', true);
-            }
-        });
-        // the suggestions belong to the box: they close when it loses focus, and picking one
-        // doesn't take the focus away first (Ketura, 2026-11-04)
-        root.on('blur', '#tag-entry', function () {
-            setTimeout(function () {
-                if(!$('#tag-entry').is(':focus')) {
-                    $('#tag-input .rb-tag-suggest').prop('hidden', true);
-                }
-            }, 120);
-        });
-        root.on('mousedown', '.rb-tag-suggest button', function (event) {
-            event.preventDefault();
-        });
-        root.on('click', '[data-tag]', function () {
-            set_tags(tags().concat([$(this).data('tag') + '']));
-            $('#tag-entry').val('').focus();
-            show_suggestions();
-        });
-        root.on('click', '[data-untag]', function () {
-            set_tags(_.without(tags(), $(this).data('untag') + ''));
-        });
+        tag_box = app.tag_input.attach('#tag-input', {url: Routing.generate('deck_tags')});
         $(document).on('click', function (event) {
-            if(!$(event.target).closest('#tag-input').length) {
-                $('#tag-input .rb-tag-suggest').prop('hidden', true);
-            }
             if(!$(event.target).closest('.rb-annot-add').length) {
                 $('.rb-annot-suggest').prop('hidden', true);
             }

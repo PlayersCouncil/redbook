@@ -15,7 +15,16 @@
     <script src="{{ asset('js/ui.library_view.js') }}"></script>
 {% endblock %}
 
+{# Previous and Next, above and below the commentary (Ketura, 2026-11-09) #}
+{% macro step_buttons(loop) %}
+    <div class="rb-lv-nav">
+        <button type="button" class="rb-btn" data-step="-1"{% if loop.first %} disabled{% endif %}><span class="fas fa-chevron-up" aria-hidden="true"></span> {{ 'library.view.previous' | trans }}</button>
+        <button type="button" class="rb-btn" data-step="1"{% if loop.last %} disabled{% endif %}><span class="fas fa-chevron-down" aria-hidden="true"></span> {{ 'library.view.next' | trans }}</button>
+    </div>
+{% endmacro %}
+
 {% block body %}
+    {% import _self as lv %}
     <div class="main white rb-library-view">
         <header class="rb-reader-head rb-lv-header">
             {% include 'alerts.html.twig' %}
@@ -82,22 +91,24 @@
                         <div class="rb-lv-body" id="deck-{{ loop.index }}-body" hidden>
                             <div class="rb-lv-deck">
                                 <div class="rb-lv-flags">
-                                    {% if not entry.available %}<span class="rb-lib-flag is-gone">{{ 'library.edit.withdrawn' | trans }}</span>{% endif %}
-                                    {% if d.grace_until %}<span class="rb-lib-flag is-volatile" title="{{ 'library.edit.volatile_title' | trans }}">{{ 'library.edit.volatile' | trans({'%date%': d.grace_until}) }}</span>{% endif %}
-                                    {% if d.newer %}<a class="rb-lib-flag is-newer" href="{{ d.newer.url }}">{{ 'library.view.newer' | trans({'%version%': d.newer.version}) }}</a>{% endif %}
+                                    {{ d.flags | raw }}
                                     <a class="rb-lv-open" href="{{ d.url }}">{{ 'library.view.open' | trans }} <span class="fas fa-external-link-alt" aria-hidden="true"></span></a>
+                                    {# Clone, Copy Text and Download, as the decklist's own page has them (Ketura, 2026-11-09) #}
+                                    <span class="rb-reader-buttons rb-lv-tools">
+                                        {% include 'Decklist/reader-copy-buttons.html.twig' with {clone_url: path('deck_copy', {decklist_id: entry.decklist.id}), download_url: path('decklist_download', {decklist_id: entry.decklist.id, format: 'text'})} %}
+                                    </span>
                                 </div>
                                 <div class="rb-lv-deck-slot"></div>
                             </div>
                             <div class="rb-lv-notes">
-                                <h2 class="rb-lv-section-head">{{ 'library.view.commentary' | trans }}</h2>
+                                <div class="rb-lv-notes-head">
+                                    <h2 class="rb-lv-section-head">{{ 'library.view.commentary' | trans }}</h2>
+                                    {{ lv.step_buttons(loop) }}
+                                </div>
                                 <div class="rb-reader-text">
                                     {% if entry.annotationHtml %}{{ entry.annotationHtml | raw }}{% else %}<p class="rb-muted">{{ 'library.view.no_notes' | trans }}</p>{% endif %}
                                 </div>
-                                <div class="rb-lv-nav">
-                                    <button type="button" class="rb-btn" data-step="-1"{% if loop.first %} disabled{% endif %}><span class="fas fa-chevron-up" aria-hidden="true"></span> {{ 'library.view.previous' | trans }}</button>
-                                    <button type="button" class="rb-btn" data-step="1"{% if loop.last %} disabled{% endif %}><span class="fas fa-chevron-down" aria-hidden="true"></span> {{ 'library.view.next' | trans }}</button>
-                                </div>
+                                {{ lv.step_buttons(loop) }}
                             </div>
                         </div>
                     </li>

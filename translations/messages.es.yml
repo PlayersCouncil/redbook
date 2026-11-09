@@ -891,7 +891,6 @@ library.view.decks: "{0} sin mazos|{1} 1 mazo|]1,Inf[ %count% mazos"
 library.view.updated: actualizada
 library.view.notes: Notas
 library.view.has_notes: Tiene notas
-library.view.newer: "Hay una versión más reciente: %version%"
 library.view.open: Abrir la lista del mazo
 library.view.no_notes: No hay notas sobre este mazo.
 library.view.previous: Anterior

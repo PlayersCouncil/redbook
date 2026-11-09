@@ -1,0 +1,7 @@
+{# A library entry's flags (Ketura, 2026-11-08; shared 2026-11-09): withdrawn by its author,
+   still within its undo window, or with a newer version out. The editor and the view show
+   the same; the editor gets them rendered (LibraryController::decklistData, flags).
+   Variables: d (LibraryController::decklistData) #}
+{% if d.withdrawn %}<span class="rb-lib-flag is-gone">{{ 'library.edit.withdrawn' | trans }}</span>{% endif %}
+{% if d.grace_until and not d.withdrawn %}<span class="rb-lib-flag is-volatile" title="{{ 'library.edit.volatile_title' | trans }}">{{ 'library.edit.volatile' | trans({'%date%': d.grace_until}) }}</span>{% endif %}
+{% if d.newer %}<a class="rb-lib-flag is-newer" href="{{ d.newer.url }}" target="_blank" rel="noopener">{{ 'library.edit.newer' | trans({'%version%': d.newer.version}) }}</a>{% endif %}

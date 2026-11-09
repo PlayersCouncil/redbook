@@ -8,15 +8,6 @@
 {
     var pending = [];
 
-    function selection_changed()
-    {
-        var boxes = $('#decks input[type=checkbox]'), n = boxes.filter(':checked').length;
-        var section = $('#btn-group-selection').toggleClass('is-off', !n);
-        section.find('.rb-selected-count').text(n ? '(' + n + ')' : '');
-        section.find('button').prop('disabled', !n);
-        $('.rb-library-table .toggle_all').prop('checked', boxes.length > 0 && n === boxes.length);
-    }
-
     function confirm_delete(uuids, names)
     {
         pending = uuids;
@@ -30,18 +21,8 @@
     {
         ui.browse_setup();
         var results = $('#browse-results');
-        results.on('click', '.toggle_all', function ()
-        {
-            $('#decks input[type=checkbox]').prop('checked', this.checked);
-            selection_changed();
-        });
-        results.on('click', '#decks input[type=checkbox]', selection_changed);
-        results.on('click', 'td.rb-col-pick', function (event)
-        {
-            if(event.target === this) {
-                $(this).find('input').trigger('click');
-            }
-        });
+        // ticking rows and the With Selection section (shared: ui.browse_selection)
+        ui.browse_selection();
         results.on('click', '.btn-delete-library', function ()
         {
             var tr = $(this).closest('tr');
@@ -59,7 +40,6 @@
                 .done(function () { $('#delete-library-modal').modal('hide'); ui.browse_reload(); })
                 .fail(function () { app.ui.insert_alert_message('danger', Translator.trans('library.delete.failed')); });
         });
-        $(document).on('browse:loaded', selection_changed);
         // a library's card opens it, as a row does on the other lists
         results.on('click', '.rb-lib-card[data-href]', function (event)
         {

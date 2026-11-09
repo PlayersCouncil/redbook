@@ -106,6 +106,42 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await expect(page.locator('#deck.rb-readonly')).toContainText('Ring-bearer');
   await expect(page.locator('#deck .rb-qty-text').first()).toHaveText(/^\dx$/);
   await expect(page.locator('#deck .rb-n')).toHaveCount(0);
+  // the page's own text, as a plain copy takes it when the selection starts outside the deck
+  // (the deck's copy handler doesn't see that): "1x Card" lines still, the icons and the S
+  // and note marks left out (Ketura, 2026-11-04; restored 2026-11-09)
+  const selected = await page.evaluate(() => {
+    const range = document.createRange();
+    range.selectNodeContents(document.querySelector('#deck')!);
+    const selection = window.getSelection()!;
+    selection.removeAllRanges();
+    selection.addRange(range);
+    return selection.toString().split('\n');
+  });
+  expect(selected).toContain('1x Gimli, Dwarf of Erebor');
+  expect(selected).toContain('2x Dwarven Armor');
+  expect(selected).toContain('1 Bag End');
+  expect(selected.filter((l: string) => /^\d+x$/.test(l))).toEqual([]);
+  // and the way someone actually does it (Ketura, 2026-11-09): drag from the deck's title down
+  // into the list, Ctrl+C, paste. The browser's own copy, the selection starting outside the deck.
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  await page.evaluate(() => navigator.clipboard.writeText(''));
+  // the deck scrolls in its own pane: bring the line to drag to into view first
+  const target = page.locator('#deck .rb-line', { hasText: 'Dwarven Axe' });
+  await target.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  const from = (await page.locator('h1.decklist-name').boundingBox())!;
+  const to = (await target.boundingBox())!;
+  await page.mouse.move(from.x + 2, from.y + from.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(to.x + to.width - 4, to.y + to.height / 2, { steps: 12 });
+  await page.mouse.up();
+  await page.keyboard.press('ControlOrMeta+c');
+  const pasted = (await page.evaluate(() => navigator.clipboard.readText())).split(/\r?\n/).map((l: string) => l.trim());
+  expect(pasted).toContain('1 Bag End');
+  expect(pasted).toContain('1x Gimli, Dwarf of Erebor');
+  expect(pasted).toContain('2x Dwarven Armor');
+  // no count left on a line of its own (the Stats pane's axis numbers come along too: that's fine)
+  expect(pasted.filter((l: string) => /^\d+x$/.test(l))).toEqual([]);
+  await page.evaluate(() => window.getSelection()!.removeAllRanges());
   await expect(page.locator('#tab-pane-stats #stats-chart-twilight svg')).toBeVisible();
   // the starting fellowship: an S in the deck, and the starting notes above the description,
   // which come with the page rather than after the card data (Ketura, 2026-11-04)

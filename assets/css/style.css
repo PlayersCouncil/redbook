@@ -2518,3 +2518,20 @@ p.rb-dh-cards { margin-bottom: 0; }
 .rb-lib-culture .culture-icon { width: 24px; height: 24px; }
 .rb-lib-culture-order:empty { display: none; }
 .rb-lib-culture-order { position: absolute; top: -7px; right: -7px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--rb-ink); color: #fff; font-size: 10px; font-weight: 700; line-height: 16px; }
+
+/* a read-only list line copies as "2x Card" (Ketura, 2026-11-04; restored 2026-11-09): its
+   parts inline in one span, the marks left out of a selection, an any-version line's
+   stand-in name copied but not shown */
+.rb-line-text { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rb-line-text .rb-name { display: inline; overflow: visible; white-space: inherit; }
+.rb-readonly .rb-line-text .rb-qty-text { display: inline-block; margin-right: 3px; }
+.rb-line-text .rb-site-n { display: inline-block; min-width: 16px; margin-right: 4px; }
+.rb-no-copy, .rb-no-copy-name, .rb-line-text .rb-pc, .rb-line-text .rb-any, .rb-line-text .rb-annot-mark { user-select: none; }
+.rb-no-copy { display: inline-flex; align-items: center; gap: 7px; margin-right: 7px; vertical-align: middle; }
+.rb-no-copy:empty { display: none; }
+.rb-line-text .rb-pc, .rb-line-text .rb-annot-mark { margin-left: 6px; }
+.rb-copy-only { font-size: 0; }
+.rb-lv-notes-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.rb-lv-notes-head .rb-lv-section-head { margin: 0; }
+.rb-lv-notes-head .rb-lv-nav { margin-top: 0; }
+.rb-lv-tools { margin-left: 4px; }

@@ -224,7 +224,7 @@ class LibraryController extends AbstractController
     {
         $grace = $decklist->canWithdraw() ? $decklist->getGraceEnds() : null;
         $newer = $this->libraries->newerVersion($decklist);
-        return [
+        $data = [
             'id' => $decklist->getId(),
             'name' => $decklist->getName(),
             'author' => $decklist->getUser()->getDisplayName(),
@@ -240,6 +240,9 @@ class LibraryController extends AbstractController
             'newer' => $newer ? ['version' => 'v' . $newer->getVersionLabel(), 'url' => $this->generateUrl('decklist_detail', ['decklist_id' => $newer->getId(), 'decklist_name' => $newer->getNameCanonical()])] : null,
             'thumb' => $this->renderView('Decklist/thumbnail.html.twig', ['decklist' => $decklist]),
         ];
+        // the flags, one template for the editor and the view
+        $data['flags'] = trim($this->renderView('Library/entry-flags.html.twig', ['d' => $data]));
+        return $data;
     }
 
     private function entryData(LibraryEntry $entry, array $formatNames): array

@@ -9,7 +9,7 @@
  */
 (function ui_library_edit(ui, $)
 {
-    var page, saved = '', saving = false, known_tags = null;
+    var page, saved = '', saving = false;
 
     function t(key, params)
     {
@@ -23,18 +23,8 @@
 
     function entry_html(d, annotation)
     {
-        var flags = '';
-        if(d.withdrawn) {
-            flags += '<span class="rb-lib-flag is-gone">' + _.escape(t('library.edit.withdrawn')) + '</span>';
-        } else if(d.grace_until) {
-            // still within its undo window: the author may take it down (Ketura, 2026-11-08)
-            flags += '<span class="rb-lib-flag is-volatile" title="' + _.escape(t('library.edit.volatile_title')) + '">'
-                + _.escape(t('library.edit.volatile', {date: d.grace_until})) + '</span>';
-        }
-        if(d.newer) {
-            flags += '<a class="rb-lib-flag is-newer" href="' + _.escape(d.newer.url) + '" target="_blank" rel="noopener">'
-                + _.escape(t('library.edit.newer', {version: d.newer.version})) + '</a>';
-        }
+        // the flags come rendered (Library/entry-flags, shared with the view)
+        var flags = d.flags || '';
         return '<div class="rb-lib-entry rb-kind-' + _.escape(d.kind) + '" data-decklist="' + d.id + '">'
             + '<div class="rb-lib-deck">'
             + '<div class="rb-lib-controls">'
@@ -88,61 +78,13 @@
         });
     }
 
-    /* ---- tags, as the deckbuilder's Notes tab has them ---- */
+    /* ---- tags: the shared chip input (app.tag_input) ---- */
+
+    var tag_box = null;
 
     function tags()
     {
-        return _.uniq(($('#library-tags').val() || '').split(/\s+/).filter(Boolean));
-    }
-
-    function set_tags(list)
-    {
-        $('#library-tags').val(_.uniq(list).join(' '));
-        render_chips();
-        changed();
-    }
-
-    function render_chips()
-    {
-        $('#tag-input .rb-tag-chips').html(_.map(tags(), function (tag) {
-            return '<span class="rb-tag-chip">' + _.escape(tag) + '<button type="button" data-untag="' + _.escape(tag) + '" aria-label="'
-                + t('deckbuilder.notes.tag_remove', {tag: _.escape(tag)}) + '">&times;</button></span>';
-        }).join(''));
-    }
-
-    function show_suggestions()
-    {
-        var go = function () {
-            var typed = ($('#tag-entry').val() || '').trim().toLowerCase(),
-                have = tags(),
-                rows = _.filter(known_tags, function (row) {
-                    return have.indexOf(row.tag) === -1 && (!typed || row.tag.toLowerCase().indexOf(typed) !== -1);
-                }).slice(0, 12),
-                box = $('#tag-input .rb-tag-suggest');
-            if(typed && !_.findWhere(known_tags, {tag: typed}) && have.indexOf(typed) === -1) {
-                rows.unshift({tag: typed, count: 0, is_new: true});
-            }
-            box.html(_.map(rows, function (row) {
-                var note = row.is_new ? t('deckbuilder.notes.tag_new')
-                    : row.count ? Translator.transChoice('deckbuilder.notes.tag_count', row.count, {count: row.count})
-                    : Translator.transChoice('deckbuilder.notes.tag_site', row.site, {count: row.site});
-                return '<button type="button" data-tag="' + _.escape(row.tag) + '">' + _.escape(row.tag) + ' <small>' + note + '</small></button>';
-            }).join('')).prop('hidden', !rows.length);
-        };
-        if(known_tags) {
-            return go();
-        }
-        $.getJSON(page.tags_url).done(function (rows) { known_tags = rows || []; go(); }).fail(function () { known_tags = []; go(); });
-    }
-
-    function add_typed_tag()
-    {
-        var typed = ($('#tag-entry').val() || '').trim().replace(/\s+/g, '-');
-        if(typed) {
-            set_tags(tags().concat([typed]));
-        }
-        $('#tag-entry').val('');
-        show_suggestions();
+        return tag_box ? tag_box.tags() : [];
     }
 
     /*
@@ -353,20 +295,6 @@
             });
     }
 
-    /**
-     * The menu hangs off its button against the window, as the deckbuilder's do, so the pane
-     * it's in can't cut it off
-     */
-    function float_below(button, popup)
-    {
-        var rect = button.getBoundingClientRect(), el = $(popup), width = el.outerWidth(), height = el.outerHeight(),
-            left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)), top = rect.bottom + 4;
-        if(top + height > window.innerHeight - 8 && rect.top - 4 - height > 8) {
-            top = rect.top - 4 - height;
-        }
-        el.css({position: 'fixed', left: left + 'px', top: top + 'px', right: 'auto'});
-    }
-
     function close_menus()
     {
         $('.rb-menu').prop('hidden', true);
@@ -380,7 +308,7 @@
         page = app.library_page;
         _.each(page.entries, function (entry) { add_entry(entry.decklist, entry.annotation); });
         renumber();
-        render_chips();
+        tag_box = app.tag_input.attach('#tag-input', {url: page.tags_url});
         setup_thumbnail();
         app.md_editor && app.md_editor.attach('#library-description', {deck: $('#library-name').val()});
         app.md_editor && app.md_editor.attach('#library-notes-text', {deck: $('#library-name').val()});
@@ -484,31 +412,6 @@
         });
         $(document).on('browse:loaded', mark_added);
 
-        // tags
-        $('#tag-entry').on('focus input', show_suggestions);
-        $('#tag-entry').on('keydown', function (event) {
-            if(event.key === 'Enter' || event.key === ' ' || event.key === ',') {
-                event.preventDefault();
-                add_typed_tag();
-            } else if(event.key === 'Backspace' && !$(this).val()) {
-                set_tags(tags().slice(0, -1));
-            }
-        });
-        $('#tag-entry').on('blur', function () {
-            setTimeout(function () { $('#tag-input .rb-tag-suggest').prop('hidden', true); }, 150);
-        });
-        $('#tag-input').on('mousedown', '.rb-tag-suggest button', function (event) { event.preventDefault(); });
-        $('#tag-input').on('click', '.rb-tag-suggest button', function () {
-            set_tags(tags().concat([$(this).data('tag') + '']));
-            $('#tag-entry').val('');
-            show_suggestions();
-        });
-        $('#tag-input').on('click', '[data-untag]', function () {
-            var tag = $(this).data('untag') + '';
-            set_tags(_.without(tags(), tag));
-        });
-
-
         // who can see it
         $('#btn-visibility').on('click', function (event) {
             event.stopPropagation();
@@ -517,7 +420,7 @@
             menu.prop('hidden', !open);
             $(this).attr('aria-expanded', open ? 'true' : 'false');
             if(open) {
-                float_below(this, menu);
+                ui.float_below(this, menu);
             }
         });
         $(window).on('resize', close_menus);

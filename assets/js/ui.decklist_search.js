@@ -410,6 +410,43 @@
         });
     };
 
+    /**
+     * Ticking rows, on My Decks and My Libraries (Ketura, 2026-11-07; shared 2026-11-09): the
+     * box in the header ticks them all, a click anywhere in a box's cell ticks it, and the With
+     * Selection section stays greyed out until some are ticked; a button with data-needs wants
+     * exactly that many. Returns the function that brings the section up to date.
+     */
+    ui.browse_selection = function browse_selection()
+    {
+        var results = $('#browse-results');
+        function update()
+        {
+            var boxes = $('#decks').find('input[type=checkbox]'), n = boxes.filter(':checked').length,
+                section = $('#btn-group-selection').toggleClass('is-off', !n);
+            section.find('.rb-selected-count').text(n ? '(' + n + ')' : '');
+            section.find('button').each(function ()
+            {
+                var needs = $(this).data('needs');
+                $(this).prop('disabled', needs ? n !== needs : !n);
+            });
+            results.find('.toggle_all').prop('checked', boxes.length > 0 && n === boxes.length);
+        }
+        results.on('click', '.toggle_all', function ()
+        {
+            $('#decks input[type=checkbox]').prop('checked', this.checked);
+            update();
+        });
+        results.on('click', '#decks input[type=checkbox]', update);
+        results.on('click', 'td.rb-col-pick', function (event)
+        {
+            if(event.target === this) {
+                $(this).find('input').trigger('click');
+            }
+        });
+        $(document).on('browse:loaded', update);
+        return update;
+    };
+
     /** The list again, as it is: after something on it changed (My Decks) */
     ui.browse_reload = function browse_reload()
     {

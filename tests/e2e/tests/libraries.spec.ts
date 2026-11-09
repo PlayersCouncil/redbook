@@ -147,7 +147,13 @@ test('private until made public; then listed, and read one deck at a time', asyn
   await expect(open).toHaveCount(1);
   await expect(open.locator('#deck .rb-line').first()).toBeVisible();
   await expect(open.locator('.rb-lv-notes')).toContainText('Gimli, Dwarf of Erebor');
-  await expect(open.locator('[data-step="1"]')).toBeDisabled();
+  // Previous and Next above and below the commentary (Ketura, 2026-11-09)
+  await expect(open.locator('[data-step="1"]')).toHaveCount(2);
+  await expect(open.locator('[data-step="1"]').first()).toBeDisabled();
+  // and the decklist's own Clone, Copy Text and Download
+  await expect(open.locator('.rb-lv-tools .rb-reader-clone')).toBeVisible();
+  await expect(open.locator('.rb-lv-tools [data-copy-list]').first()).toBeVisible();
+  await expect(open.locator('.rb-lv-tools a[href*="/decklist/export/text/"]').first()).toBeVisible();
   // the deck's view buttons together, not spread over the row
   const views = open.locator('.rb-display-opts').first();
   await expect(views).toHaveCSS('border-top-style', 'solid');

@@ -69,6 +69,37 @@
         setTimeout(function () { note.remove(); }, 2100);
     };
 
+    /**
+     * A menu or popover hung off its button against the window, not the pane it's in, so a
+     * scrolling pane can't cut it off (Ketura, 2026-11-03; shared 2026-11-09): below the
+     * button, or above it when there's no room below
+     */
+    ui.float_below = function float_below(button, popup, align_right) {
+        var rect = $(button)[0].getBoundingClientRect(),
+            el = $(popup),
+            width = el.outerWidth(),
+            height = el.outerHeight(),
+            left = align_right ? rect.right - width : rect.left,
+            top = rect.bottom + 4;
+        left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
+        if(top + height > window.innerHeight - 8 && rect.top - 4 - height > 8) {
+            top = rect.top - 4 - height;
+        }
+        el.css({position: 'fixed', left: left + 'px', top: top + 'px', right: 'auto'});
+    };
+
+    /**
+     * Copy Text (Ketura, 2026-11-04; shared 2026-11-09): the deck on the page, as a list,
+     * straight onto the clipboard, wherever the reader's buttons are (Decklist/reader-copy-buttons)
+     */
+    $(document).on('click', '[data-copy-list]', function (event) {
+        event.preventDefault();
+        var anchor = $(this).is(':visible') ? this : $(this).closest('.rb-reader-buttons-narrow').find('.dropdown-toggle')[0];
+        ui.copy_text(app.deck.get_export('list')).then(function () {
+            ui.toast(Translator.trans('decklist.reader.copied'), anchor);
+        });
+    });
+
     ui.export_gemp = function export_gemp(deck) {
         $('#export-deck').text(deck.get_export('gemp'));
         $('#exportModal').modal('show');

@@ -32,7 +32,6 @@
         $('#social-like').on('click', ui.send_like);
         $('#social-favorite').on('click', ui.send_favorite);
         $('#social-fire').on('click', ui.send_fire);
-        $('[data-copy-list]').on('click', ui.copy_list);
         // the lineage line opens to its tables; either table's heading closes them (Ketura, 2026-11-08)
         $('#reader-tree').on('click', '.rb-tree-summary', function () {
             $('#reader-tree').removeClass('is-collapsed').find('.rb-tree-summary').attr('aria-expanded', 'true');
@@ -46,16 +45,6 @@
     ui.delete_form = function delete_form()
     {
         $('#deleteModal').modal('show');
-    };
-
-    /** Copy List (Ketura, 2026-11-04): the deck as a list, straight onto the clipboard */
-    ui.copy_list = function copy_list(event)
-    {
-        event.preventDefault();
-        var anchor = $(this).is(':visible') ? this : $('.rb-reader-buttons-narrow .dropdown-toggle')[0];
-        app.ui.copy_text(app.deck.get_export('list')).then(function () {
-            app.ui.toast(Translator.trans('decklist.reader.copied'), anchor);
-        });
     };
 
     /** A like or favourite button: pressed once the user has, its count from the server */

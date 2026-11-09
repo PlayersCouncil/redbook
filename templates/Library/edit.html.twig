@@ -108,12 +108,10 @@
                                         </div>
                                         <div class="rb-lib-thumb-panel" data-thumb-panel="cultures">
                                             {% import 'Decklist/macros.html.twig' as m %}
-                                            {% set late = ['gollum', 'men', 'orc', 'uruk_hai'] %}
                                             <div class="rb-lib-cultures" role="group" aria-label="{{ 'library.edit.thumbnail_mode.cultures' | trans }}">
-                                                {% for side in ['free_peoples', 'shadow'] %}
+                                                {% for side, sided in cultures | cultures_by_side %}
                                                     {% if not loop.first %}<span class="rb-culture-sep" aria-hidden="true"></span>{% endif %}
-                                                    {% set sided = cultures | filter(c => c.side == side) %}
-                                                    {% for culture in (sided | filter(c => c.code not in late)) | merge(sided | filter(c => c.code in late)) %}
+                                                    {% for culture in sided %}
                                                         <button type="button" class="rb-lib-culture" data-culture="{{ culture.code }}" data-name="{{ culture.name }}" data-side="{{ culture.side }}" aria-pressed="false" title="{{ culture.name }}">
                                                             {{ m.culture_icon(culture, null, '#111') }}<span class="rb-lib-culture-order"></span>
                                                         </button>

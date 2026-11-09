@@ -106,12 +106,10 @@
         <div class="rb-browse-cultures">
             <span class="rb-browse-label">{{ 'decklist.browse.cultures' | trans }}</span>
             {# Gollum ends the Free Peoples, and Men, Orc and Uruk-hai the Shadow, in black for
-               now (Ketura, 2026-11-06) #}
-            {% set late = ['gollum', 'men', 'orc', 'uruk_hai'] %}
-            {% for side in ['free_peoples', 'shadow'] %}
+               now (Ketura, 2026-11-06; the order is the cultures_by_side filter's, shared) #}
+            {% for side, sided in cultures | cultures_by_side %}
                 {% if not loop.first %}<span class="rb-culture-sep"></span>{% endif %}
-                {% set sided = cultures | filter(c => c.side == side) %}
-                {% for culture in (sided | filter(c => c.code not in late)) | merge(sided | filter(c => c.code in late)) %}
+                {% for culture in sided %}
                     <label class="rb-culture-pick" title="{{ culture.name }}">
                         <input type="checkbox" name="culture[]" value="{{ culture.code }}" data-autosubmit{% if culture.code in (f.culture ?? []) %} checked{% endif %}>
                         <span>{{ m.culture_icon(culture, null, '#111') }}</span>

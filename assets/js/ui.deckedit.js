@@ -475,24 +475,8 @@
         $('[aria-haspopup=menu]').attr('aria-expanded', 'false');
     }
 
-    /**
-     * Menus and popovers hang off their button against the window, not the pane
-     * they're in, so a scrolling pane can't cut them off (Ketura, 2026-11-03).
-     */
-    function float_below(button, popup, align_right)
-    {
-        var rect = $(button)[0].getBoundingClientRect(),
-            el = $(popup),
-            width = el.outerWidth(),
-            height = el.outerHeight(),
-            left = align_right ? rect.right - width : rect.left,
-            top = rect.bottom + 4;
-        left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
-        if(top + height > window.innerHeight - 8 && rect.top - 4 - height > 8) {
-            top = rect.top - 4 - height;   // no room below: open upwards
-        }
-        el.css({position: 'fixed', left: left + 'px', top: top + 'px', right: 'auto'});
-    }
+    /** Menus hang off their button against the window (app.ui.float_below, shared) */
+    var float_below = ui.float_below;
 
     function toggle_menu(button, menu)
     {

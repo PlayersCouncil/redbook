@@ -84,6 +84,7 @@ export function buildAppJs() {
       "assets/js/app.ui.js",
       "assets/js/app.splitter.js",
       "assets/js/app.thumbnail.js",
+      "assets/js/app.tag_input.js",
       "assets/js/app.library_picker.js",
     ],
     { base: "assets" },

@@ -1507,7 +1507,6 @@ library.view.decks: "{0} no decks|{1} 1 deck|]1,Inf[ %count% decks"
 library.view.updated: updated
 library.view.notes: Notes
 library.view.has_notes: Has notes
-library.view.newer: "A newer version is out: %version%"
 library.view.open: Open the decklist
 library.view.no_notes: No notes on this deck.
 library.view.previous: Previous

@@ -134,20 +134,6 @@
         location.href = Routing.generate('decks_diff', {deck1_uuid: ids[0], deck2_uuid: ids[1]});
     };
 
-    /** The selection's section: greyed out until a deck is ticked; Compare wants two */
-    ui.handle_deck_selection_change = function handle_deck_selection_change()
-    {
-        var $boxes = $('#decks').find('input[type=checkbox]'), $checked = $boxes.filter(':checked'), n = $checked.length;
-        var $section = $('#btn-group-selection').toggleClass('is-off', !n);
-        $section.find('.rb-selected-count').text(n ? '(' + n + ')' : '');
-        $section.find('button').each(function ()
-        {
-            var needs = $(this).data('needs');
-            $(this).prop('disabled', needs ? n !== needs : !n);
-        });
-        $('.rb-my-decks-table .toggle_all').prop('checked', $boxes.length > 0 && n === $boxes.length);
-    };
-
     /** Favourites out of the list (Ketura, 2026-11-07), then the list again */
     ui.unfavorite = function unfavorite(ids)
     {
@@ -206,26 +192,14 @@
     {
         ui.browse_setup();
         var results = $('#browse-results');
-        results.on('click', '.toggle_all', function ()
-        {
-            $('#decks input[type=checkbox]').prop('checked', this.checked);
-            ui.handle_deck_selection_change();
-        });
-        results.on('click', '#decks input[type=checkbox]', ui.handle_deck_selection_change);
-        // a click anywhere in the box's cell ticks it
-        results.on('click', 'td.rb-col-pick', function (event)
-        {
-            if(event.target === this) {
-                $(this).find('input').trigger('click');
-            }
-        });
+        // ticking rows and the With Selection section (shared: ui.browse_selection)
+        ui.handle_deck_selection_change = ui.browse_selection();
         results.on('click', 'button.btn-delete-deck', ui.confirm_delete);
         results.on('click', 'button.btn-unfavorite', function ()
         {
             ui.unfavorite([$(this).closest('tr').data('id')]);
         });
         $('#browse-side').on('click', '#btn-group-selection button[id]', ui.do_action_selection);
-        $(document).on('browse:loaded', ui.handle_deck_selection_change);
     };
 
     ui.on_data_loaded = function on_data_loaded()

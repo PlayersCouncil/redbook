@@ -208,13 +208,34 @@
         // the S sits between the culture icon and a companion's name; the other lines keep no
         // space for it (Ketura, 2026-11-08; it was a column)
         var start = options.numbers ? start_button(slot) : '';
-        return '<div class="rb-line' + classes(slot, problems) + '" data-key="' + slot.key + '" data-code="' + slot.card.code + '"' + row_hover(slot.card, slot) + '>'
+        var head = '<div class="rb-line' + classes(slot, problems) + '" data-key="' + slot.key + '" data-code="' + slot.card.code + '"' + row_hover(slot.card, slot) + '>';
+        if(readonly) {
+            return head + copy_text(qty_control(slot, options.numbers), (options.culture ? app.data.cardIconHtml(slot.card) : '') + start, slot) + '</div>';
+        }
+        return head
             + qty_control(slot, options.numbers)
             + (options.culture ? app.data.cardIconHtml(slot.card) : '')
             + start
             + name_html(slot.card, slot)
             + annotation_mark(slot.card)
             + '</div>';
+    }
+
+    /**
+     * A read-only line as text that copies straight into Gemp's import (Ketura, 2026-11-04;
+     * restored 2026-11-09): "2x Card" on one line. The parts are inline in one span, not
+     * flex items (each of which a copy puts on its own line); the icons, the S, the note mark
+     * and the PC and (any) marks are left out of a selection. An any-version line copies its
+     * stand-in's full name.
+     */
+    function copy_text(lead, marks, slot)
+    {
+        var card = slot.card, stand_in = slot.generic && slot.stand_in ? slot.stand_in : null;
+        return '<span class="rb-line-text">' + (lead ? lead + ' ' : '')
+            + (marks ? '<span class="rb-no-copy">' + marks + '</span>' : '')
+            + (stand_in ? '<span class="rb-no-copy-name">' + name_html(card, slot) + '</span><span class="rb-copy-only">' + _.escape(stand_in.label) + '</span>' : name_html(card, slot))
+            + annotation_mark(card)
+            + '</span>';
     }
 
     /** Four segments under a tile, one dark per copy, so counts compare at a glance (Ketura, 2026-11-04) */
@@ -352,8 +373,12 @@
                         + plus('site', t('deckbuilder.find_site', {number: row.n}), ' data-site="' + row.n + '"')
                         + '<span class="rb-choose">' + (readonly ? '&mdash;' : t('deckbuilder.choose_site', {number: row.n})) + '</span></div>';
                 }
-                return '<div class="rb-line' + classes(row.slot, problems) + '" data-key="' + row.slot.key + '" data-code="' + row.slot.card.code + '"' + row_hover(row.slot.card, row.slot) + '>'
-                    + '<span class="rb-site-n">' + row.n + '</span>' + x_or_trash(row.slot) + name_html(row.slot.card, row.slot) + '</div>';
+                var site_head = '<div class="rb-line' + classes(row.slot, problems) + '" data-key="' + row.slot.key + '" data-code="' + row.slot.card.code + '"' + row_hover(row.slot.card, row.slot) + '>';
+                // read-only: "1 Bag End", which Gemp takes as one copy
+                if(readonly) {
+                    return site_head + copy_text('<span class="rb-site-n">' + row.n + '</span>', '', row.slot) + '</div>';
+                }
+                return site_head + '<span class="rb-site-n">' + row.n + '</span>' + x_or_trash(row.slot) + name_html(row.slot.card, row.slot) + '</div>';
             }).join('') + (!rows.length ? '<div class="rb-empty">&mdash;</div>' : '') + '</div>';
         } else {
             html += '<div class="rb-thumbs rb-thumbs-sites">' + _.map(rows, function (row) {
@@ -560,10 +585,11 @@
     }
 
     /**
-     * A selection across the reader's deck copies as one line per card, "4x Card", the way
-     * Gemp's import reads them (Ketura, 2026-11-04). The page's own layout would put the count
-     * and the name on lines of their own. Headings are left out; a selection inside one line
-     * copies as it is.
+     * A selection across the deck copies as one line per card, "4x Card", the way Gemp's
+     * import reads them (Ketura, 2026-11-04; the deckbuilder too since 2026-11-09). Headings
+     * are left out; a selection inside one line copies as it is. A selection that starts
+     * outside the deck doesn't come here: the reader's lines are laid out to copy well as
+     * they are (copy_text).
      */
     function copy_lines(event)
     {
@@ -631,8 +657,9 @@
             editor.render();
         });
         $(window).on('resize', _.debounce(refit, 200));
+        // a selection across the deck copies as Gemp's lines, in the deckbuilder too (Ketura, 2026-11-09)
+        container.on('copy', copy_lines);
         if(readonly) {
-            container.on('copy', copy_lines);
             $(document).on('deck.changed', editor.render);
             return;
         }
