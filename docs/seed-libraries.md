@@ -25,11 +25,15 @@ Restore on the editor's History tab. Its likes, favourites and comments stay.
 
 ## Format
 
+The full schema, with every field's limits, is `_planning/schema/seed-library.schema.json`
+(and `10-seed-library-schema.md` beside it).
+
 ```json
 {
+  "schemaVersion": 1,
   "source": "gemp-starters",
   "owner": "Decipher",
-  "owner_name": "Decipher",
+  "ownerName": "Decipher",
   "libraries": [
     {
       "id": "fotr-starters",
@@ -39,7 +43,7 @@ Restore on the editor's History tab. Its likes, favourites and comments stay.
       "tags": ["starter-decks", "fotr"],
       "curator": "someusername",
       "decks": [
-        {"seed": {"source": "gemp", "id": "starter-gandalf"}, "annotation": "Markdown commentary on this deck."},
+        {"seed": {"source": "gemp", "sourceId": "starter-gandalf"}, "annotation": "Markdown commentary on this deck."},
         {"decklist": 1234}
       ]
     }
@@ -50,9 +54,9 @@ Restore on the editor's History tab. Its likes, favourites and comments stay.
 - `source`: up to 30 characters; names the manifest's family. `id`: up to 100, unique in it.
 - `owner` (optional): the username of the organization account that owns the libraries; the
   PC's (`APP_OFFICIAL_ACCOUNT`) when left out. It's made if it doesn't exist yet, shown as
-  `owner_name`. It must be an organization's account, not a person's (see below).
-- A deck is either a seeded decklist, by the `source` and `id` it was seeded with
-  (`PublishedDeckSource`), or any published decklist by its number. A deck not found, or
+  `ownerName`. It must be an organization's account, not a person's (see below).
+- A deck is either a seeded decklist, by its batch's `source` and its own `sourceId`, as the
+  seed deck batch gave them (`PublishedDeckSource`), or any published decklist by its number. A deck not found, or
   withdrawn, is left out and listed in the command's report; the rest still import.
 - The decks keep the manifest's order.
 - `curator` (optional): the username credited as "Curated by" on the library; the library

@@ -275,7 +275,7 @@ test('seeded libraries: official, public, and updated in place on a second impor
   const decklistUrl = await page.locator('.rb-lv-open').first().getAttribute('href') ?? '';
   const decklistId = Number(decklistUrl.match(/\/decklist\/view\/(\d+)/)![1]);
   const manifest = (title: string) => JSON.stringify({
-    source: 'e2e', owner: `E2EOrg${runId}`, owner_name: `E2E Org ${runId}`,
+    schemaVersion: 1, source: 'e2e', owner: `E2EOrg${runId}`, ownerName: `E2E Org ${runId}`,
     libraries: [{ id: `seeded-${runId}`, name: title, description: 'Seeded **for the test**.', tags: [`e2eseed${runId}`],
       decks: [{ decklist: decklistId, annotation: 'From the manifest.' }, { decklist: 999999999 }] }],
   });
@@ -296,7 +296,12 @@ test('seeded libraries: official, public, and updated in place on a second impor
   await expect(page.locator('.rb-reader-author')).toContainText(`E2E Org ${runId}`);
   await expect(page.locator('.rb-reader-author .rb-user-organization')).toBeVisible();
   // a person's account can't own them
-  expect(() => appConsole(['app:import:seed-libraries', '-'], JSON.stringify({ source: 'e2e', owner: loadUsers().author.username, libraries: [] }))).toThrow();
+  const refused = (m: object) => {
+    try { appConsole(['app:import:seed-libraries', '-'], JSON.stringify(m)); return ''; } catch (e) { return String((e as { stdout?: string }).stdout); }
+  };
+  expect(refused({ schemaVersion: 1, source: 'e2e', owner: loadUsers().author.username, libraries: [] })).toContain('person');
+  // nor is a manifest without its schema version read
+  expect(refused({ source: 'e2e', libraries: [] })).toContain('schemaVersion');
 });
 
 

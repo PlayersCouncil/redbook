@@ -21,6 +21,8 @@ use InvalidArgumentException;
  */
 class SeedLibraryImporter
 {
+    public const SCHEMA_VERSION = 1;
+
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly LibraryManager $libraries,
@@ -34,6 +36,11 @@ class SeedLibraryImporter
      */
     public function import(array $manifest, bool $dryRun = false): array
     {
+        // versioned like the seed deck batches, and named as they are (camelCase); the schema is
+        // _planning/schema/seed-library.schema.json (Ketura, 2026-11-09)
+        if (($manifest['schemaVersion'] ?? null) !== self::SCHEMA_VERSION) {
+            throw new InvalidArgumentException(sprintf('The manifest needs "schemaVersion": %d.', self::SCHEMA_VERSION));
+        }
         $source = trim((string) ($manifest['source'] ?? ''));
         if ($source === '' || strlen($source) > 30) {
             throw new InvalidArgumentException('The manifest needs a "source" (up to 30 characters).');
@@ -44,7 +51,7 @@ class SeedLibraryImporter
         try {
             $owner = $ownerName === ''
                 ? $this->organizations->official()
-                : $this->organizations->get($ownerName, trim((string) ($manifest['owner_name'] ?? '')) ?: $ownerName);
+                : $this->organizations->get($ownerName, trim((string) ($manifest['ownerName'] ?? '')) ?: $ownerName);
         } catch (\RuntimeException $e) {
             throw new InvalidArgumentException($e->getMessage());
         }
@@ -104,7 +111,10 @@ class SeedLibraryImporter
         return $report;
     }
 
-    /** A manifest's deck: {"decklist": id}, or {"seed": {"source": ..., "id": ...}} for a seeded one */
+    /**
+     * A manifest's deck: {"decklist": id}, or {"seed": {"source": ..., "sourceId": ...}} for a
+     * seeded one, by the batch's source and the deck's sourceId as its batch gave them
+     */
     private function decklist(mixed $deck): ?PublishedDeck
     {
         if (!is_array($deck)) {
@@ -113,7 +123,7 @@ class SeedLibraryImporter
         if (isset($deck['decklist'])) {
             $decklist = $this->em->getRepository(PublishedDeck::class)->find((int) $deck['decklist']);
         } elseif (is_array($deck['seed'] ?? null)) {
-            $from = $this->em->getRepository(PublishedDeckSource::class)->findOneBy(['source' => (string) ($deck['seed']['source'] ?? ''), 'sourceId' => (string) ($deck['seed']['id'] ?? '')]);
+            $from = $this->em->getRepository(PublishedDeckSource::class)->findOneBy(['source' => (string) ($deck['seed']['source'] ?? ''), 'sourceId' => (string) ($deck['seed']['sourceId'] ?? '')]);
             $decklist = $from?->getDecklist();
         } else {
             return null;
