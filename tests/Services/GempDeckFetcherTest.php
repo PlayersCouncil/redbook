@@ -48,9 +48,13 @@ class GempDeckFetcherTest extends TestCase
 
     public function testWikiImageCodes(): void
     {
-        $this->assertSame('9_33', GempDeckFetcher::wikiImageCode('09', 'S', '033'));
-        $this->assertSame('102_76', GempDeckFetcher::wikiImageCode('V2', 'S', '076'));
-        $this->assertSame('57_359', GempDeckFetcher::wikiImageCode('07', 'E', '359'));
+        $this->assertSame('9_33', GempDeckFetcher::wikiImageCode('09', '033', 0));
+        $this->assertSame('102_76', GempDeckFetcher::wikiImageCode('V2', '076', 0));
+        // errata by its revision, not its letter
+        $this->assertSame('57_359', GempDeckFetcher::wikiImageCode('07', '359', 1));
+        $this->assertSame('57_359', GempDeckFetcher::wikiImageCode('07', '359', 2));
+        // a V-set is updated in place
+        $this->assertSame('101_12', GempDeckFetcher::wikiImageCode('V1', '012', 3));
     }
 
     public function testSharedDeckPage(): void

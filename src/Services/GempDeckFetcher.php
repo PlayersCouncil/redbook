@@ -67,8 +67,8 @@ class GempDeckFetcher
         $html = preg_replace('#<(script|style)\b[^>]*>.*?</\1>#is', '', $html);
         // Gemp's card names: <span class="tooltip">Name<span><img src="…/LOTR-EN07E359.1_card.jpg"></span></span>
         $html = preg_replace_callback(
-            '#<span class="tooltip">([^<]*)<span>\s*<img[^>]*src="[^"]*/LOTR-EN(\d{2}|V\d)([SE])(\d{3})\.\d+_card\.[a-z]+"[^>]*>\s*</span>\s*</span>#i',
-            fn ($m) => trim($m[1]) . ' (' . self::wikiImageCode($m[2], $m[3], $m[4]) . ')',
+            '#<span class="tooltip">([^<]*)<span>\s*<img[^>]*src="[^"]*/LOTR-EN(\d{2}|V\d)[A-Z](\d{3})\.(\d+)_card\.[a-z]+"[^>]*>\s*</span>\s*</span>#i',
+            fn ($m) => trim($m[1]) . ' (' . self::wikiImageCode($m[2], $m[3], (int) $m[4]) . ')',
             $html,
         );
         $html = preg_replace('#<\s*(br|/p|/div|/li|/tr|/h\d|/dt|/dd)\b[^>]*>#i', "\n", $html);
@@ -78,13 +78,18 @@ class GempDeckFetcher
     }
 
     /**
-     * The card ID a wiki image names: LOTR-EN09S033 is 9_33, V2S076 is 102_76, and an
-     * E (PC errata) is in the errata set 50 above it, 07E359 being 57_359
+     * The card ID a wiki image names (Ketura, 2026-11-08): LOTR-EN09S033.0 is 9_33 and
+     * V2S076.0 is 102_76. A revision above .0 is an errata of some kind, in the errata set 50
+     * above (07E359.1 is 57_359); the letter before the number isn't relied on. V-sets have
+     * no errata sets, they're updated in place, so their revision doesn't change the ID.
+     * An ID Red Book doesn't have falls back to the card's name (DeckImportService).
      */
-    public static function wikiImageCode(string $set, string $kind, string $number): string
+    public static function wikiImageCode(string $set, string $number, int $revision = 0): string
     {
         $set = strtoupper($set);
-        $code = str_starts_with($set, 'V') ? 100 + (int) substr($set, 1) : (int) $set;
-        return ($code + (strtoupper($kind) === 'E' ? 50 : 0)) . '_' . (int) $number;
+        if (str_starts_with($set, 'V')) {
+            return (100 + (int) substr($set, 1)) . '_' . (int) $number;
+        }
+        return ((int) $set + ($revision > 0 ? 50 : 0)) . '_' . (int) $number;
     }
 }
