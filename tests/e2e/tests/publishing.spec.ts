@@ -41,11 +41,11 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   await expect(page.locator('#previous_version')).toHaveValue('');
   await expect(page.locator('#version-line')).toHaveText('A deck of its own: version 1.0 of a new line.');
   v1 = await publish(page, `${lineName} one`);
-  await expect(page.locator('.rb-reader-version')).toHaveText('1.0');
+  await expect(page.locator('.rb-reader-version')).toHaveText('v1.0');
   // the decklist's History tab: its one version, so far (Ketura, 2026-11-08)
   await page.click('a[href="#tab-pane-history"]');
   await expect(page.locator('.rb-dh-version')).toHaveCount(1);
-  await expect(page.locator('.rb-dh-version.is-current .rb-dh-number')).toHaveText('1.0');
+  await expect(page.locator('.rb-dh-version.is-current .rb-dh-number')).toHaveText('v1.0');
 
   // the deck's own page reads as the decklist's, less likes and comments, with what it was
   // published as under the commentary (Ketura, 2026-11-08)
@@ -126,7 +126,7 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   await expect(page.locator('#version-line')).toHaveText('Publishing version 2.0 of:');
   // the version it follows, as the derived-from pick shows: name, author, date, version
   await expect(page.locator('#version-card .rb-derived-name')).toHaveText(`${lineName} one`);
-  await expect(page.locator('#version-card .rb-derived-meta')).toContainText('1.0');
+  await expect(page.locator('#version-card .rb-derived-meta')).toContainText('v1.0');
   await page.selectOption('#previous_version', '');
   await expect(page.locator('#version-line')).toHaveText('A deck of its own: version 1.0 of a new line.');
   await page.selectOption('#previous_version', v1.id);
@@ -135,13 +135,13 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
 
   // each version is its own decklist; the menu lists the line, and the older one points on
   await page.locator('#dropdownVersions').click();
-  await expect(page.locator('#dropdownVersions')).toContainText('2.0');
-  await expect(page.locator('.rb-reader-versions .dropdown-menu a')).toHaveText([`2.0 · ${lineName} two`, `1.0 · ${lineName} one`]);
+  await expect(page.locator('#dropdownVersions')).toContainText('v2.0');
+  await expect(page.locator('.rb-reader-versions .dropdown-menu a')).toHaveText([`v2.0 · ${lineName} two`, `v1.0 · ${lineName} one`]);
   // the History tab: both, with what changed between them; the deck is 2.0 now
   await page.click('a[href="#tab-pane-history"]');
-  await expect(page.locator('.rb-dh-version .rb-dh-head .rb-dh-number')).toHaveText(['2.0', '1.0']);
+  await expect(page.locator('.rb-dh-version .rb-dh-head .rb-dh-number')).toHaveText(['v2.0', 'v1.0']);
   await page.goto(v1.url);
-  await expect(page.locator('.rb-newer-note')).toContainText('2.0');
+  await expect(page.locator('.rb-newer-note')).toContainText('v2.0');
 });
 
 test('the author undoes publishing, replaces the cards and publishes again', async ({ page, pageAs }) => {
@@ -162,7 +162,7 @@ test('the author undoes publishing, replaces the cards and publishes again', asy
   await expect(voter.locator('h1')).toHaveText('Decklist Withdrawn');
   await voter.goto(v1.url);
   await expect(voter.locator('.rb-newer-note')).toHaveCount(0);
-  await expect(voter.locator('.rb-reader-version')).toHaveText('1.0');
+  await expect(voter.locator('.rb-reader-version')).toHaveText('v1.0');
   await voter.goto(`/decklists?name=${encodeURIComponent(lineName)}`);
   await expect(voter.getByRole('link', { name: `${lineName} one` })).toBeVisible();
   await expect(voter.getByRole('link', { name: `${lineName} two` })).toHaveCount(0);
@@ -180,7 +180,7 @@ test('the author undoes publishing, replaces the cards and publishes again', asy
   await expect(page).toHaveURL(new RegExp(`/decklist/view/${v2.id}/`));
   expect((await voter.goto(v2.url))?.status()).toBe(200);
   await voter.goto(v1.url);
-  await expect(voter.locator('.rb-newer-note')).toContainText('2.0');
+  await expect(voter.locator('.rb-newer-note')).toContainText('v2.0');
 });
 
 test('after the grace period the cards are fixed', async ({ page }) => {
@@ -207,7 +207,7 @@ test('derived from: search by author and name, or paste an address', async ({ pa
   await expect(page.locator('.rb-derived-result')).toHaveCount(1);
   await result.click();
   await expect(page.locator('#derived-chosen')).toContainText(`${lineName} two`);
-  await expect(page.locator('#derived-chosen')).toContainText('2.0');
+  await expect(page.locator('#derived-chosen')).toContainText('v2.0');
   await expect(page.locator('#precedent')).toHaveValue(v2.id);
   await snap(page, 'derived-from picked');
   await page.click('.rb-form-actions button[form=decklist-form]:has-text("Save")');
@@ -290,7 +290,7 @@ test('editing a published decklist: patches, the deck, and its private revision'
   await page.click('.rb-form-actions button[form=decklist-form]:has-text("Save")');
   await expect(page).toHaveURL(new RegExp(`/decklist/view/${v2.id}/`));
   await page.click('a[href="#tab-pane-details"]');
-  await expect(page.locator('.rb-reader-dates dd').first()).toHaveText('2.0.1');
+  await expect(page.locator('.rb-reader-dates dd').first()).toHaveText('v2.0.1');
   await page.click('a[href="#tab-pane-history"]');
   const edits = page.locator('.rb-dh-version.is-current .rb-dh-edits li');
   await expect(edits).toHaveCount(1);
@@ -319,8 +319,8 @@ test('editing a published decklist: patches, the deck, and its private revision'
   await page.goto(`/decks?name=${encodeURIComponent(`${lineName} private`)}`);
   const row = page.locator('#decks tr').first();
   await expect(row.locator('.rb-col-visibility')).toContainText('Private');
-  await expect(row.locator('.rb-col-visibility')).toContainText('2.1 · changed');
-  await expect(row.locator('.rb-col-published')).toContainText('2.0');
+  await expect(row.locator('.rb-col-visibility')).toContainText('v2.1 · changed');
+  await expect(row.locator('.rb-col-published')).toContainText('v2.0');
 
   // another edit to the decklist asks whether the private 2.1 takes it too
   await page.goto(`/decklist/edit/${v2.id}`);
@@ -338,4 +338,40 @@ test('editing a published decklist: patches, the deck, and its private revision'
   await page.click('#tab-header-history');
   await expect(page.locator('.rb-history-edit').first()).toContainText("From the decklist's 2.0.2 edit");
   await expect(page.locator('#tab-pane-history .rb-history-saved').first()).toContainText('2.2');
+
+  // History's Revert puts the format back too (Ketura, 2026-11-08)
+  const format = await page.inputValue('#deck-format');
+  const other = await page.$$eval('#deck-format option', (options, f) => options.map(o => (o as HTMLOptionElement).value).find(v => v && v !== f), format);
+  await page.selectOption('#deck-format', other!);
+  await page.click('#btn-save');
+  await expect(page.locator('#save-status')).toContainText('Saved as version 2.3');
+  await page.click('#tab-header-history');
+  await page.locator('#tab-pane-history .rb-history-saved').nth(1).locator('a[role=button]').click();
+  await expect(page.locator('#deck-format')).toHaveValue(format);
+  await page.click('#btn-revert');
+
+  // the deck's page has a History tab like a decklist's, ending with where it came from
+  await page.goto(`/deck/view/${deckUuid}`);
+  await page.click('a[href="#tab-pane-history"]');
+  await expect(page.locator('.rb-dh-revision').first()).toContainText('v2.3');
+  await expect(page.locator('.rb-dh-published').first()).toContainText('v2.0');
+  await expect(page.locator('.rb-dh-origin')).toContainText('Deck imported from pasted text');
+  await expect(page.locator('.rb-dh-origin .rb-dh-number')).toHaveText('v0.1');
+
+  // deleting it says the decklists stay; the decklist then offers Recreate, which brings it back
+  await page.goto(`/deck/edit/${deckUuid}`);
+  await waitForCardData(page);
+  await page.click('#btn-more');
+  await page.click('#menu-more [data-action=delete]');
+  await expect(page.locator('#deleteModal .rb-delete-published')).toBeVisible();
+  await page.click('#deleteModal button[type=submit]');
+  await expect(page).toHaveURL(/\/decks/);
+  await page.goto(v2.url);
+  await expect(page.locator('.rb-reader-buttons-wide .decklist-recreate')).toBeVisible();
+  await expect(page.locator('.rb-reader-buttons-wide .rb-reader-clone')).toHaveCount(0);
+  await page.locator('.rb-reader-buttons-wide .decklist-recreate').click();
+  await expect(page).toHaveURL(new RegExp(`/deck/edit/${deckUuid}`));
+  await waitForCardData(page);
+  await page.click('#tab-header-history');
+  await expect(page.locator('#tab-pane-history')).toContainText('Recreated after it was deleted');
 });

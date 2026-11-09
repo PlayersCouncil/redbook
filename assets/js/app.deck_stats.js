@@ -393,6 +393,8 @@
      * thin for them goes without); pointing at a slice writes its culture's name above or
      * below the pie, with a line to a thin slice. A culture on both sides (Gollum) is in both.
      */
+    var pie_count = 0;
+
     function chart_cultures(draw)
     {
         var cultures = {};
@@ -447,17 +449,54 @@
                     point: {events: {mouseOver: show_name, mouseOut: hide_name}},
                     dataLabels: {enabled: true, useHTML: true, distance: -Math.round(size * 0.2), crop: false, overflow: 'none',
                         formatter: function () {
-                            if(thin(this.point)) {
-                                return null;
-                            }
-                            var code = this.point.code, file = code === 'uruk_hai' ? 'uruk' : code,
-                                icon = code === 'none' ? '' : '<span class="rb-pie-icon" style="--icon:url(/images/cultures/' + file + '.svg)"></span>';
-                            return '<span class="rb-pie-label" style="color:' + app.cultures.color(code, 'symbol') + '">' + icon + '<span class="rb-pie-count">' + this.y + '</span></span>';
+                            return thin(this.point) ? null : '<span class="rb-pie-label"><span class="rb-pie-count">' + this.y + '</span></span>';
                         }}};
+            },
+            /*
+             * Each slice's culture symbol, big (Ketura, 2026-11-08: five times what it was), in
+             * the symbol's colour, cut off at the slice's edges: drawn in SVG over the slices,
+             * under the counts, masked by the symbol and clipped to the slice
+             */
+            symbols = function (chart) {
+                var svg = 'http://www.w3.org/2000/svg',
+                    make = function (name, attrs, parent) {
+                        var el = document.createElementNS(svg, name);
+                        _.each(attrs, function (value, key) { el.setAttribute(key, value); });
+                        parent && parent.appendChild(el);
+                        return el;
+                    },
+                    defs = chart.renderer.defs.element,
+                    id = 'rb-pie-' + (++pie_count),
+                    icon = Math.min(150, Math.round(size * 0.6));
+                _.each(chart.series, function (series) {
+                    var layer = make('g', {'class': 'rb-pie-symbols', transform: 'translate(' + chart.plotLeft + ',' + chart.plotTop + ')', 'pointer-events': 'none'});
+                    series.group.element.parentNode.insertBefore(layer, series.group.element.nextSibling);
+                    _.each(series.points, function (point, i) {
+                        var code = point.code, args = point.shapeArgs;
+                        if(code === 'none' || !args || !point.graphic) {
+                            return;
+                        }
+                        var file = code === 'uruk_hai' ? 'uruk' : code,
+                            key = id + '-' + series.index + '-' + i,
+                            mid = (args.start + args.end) / 2,
+                            // towards the rim of a wide slice, nearer the middle of a thin one
+                            reach = args.r * 0.55,
+                            cx = args.x + Math.cos(mid) * reach,
+                            cy = args.y + Math.sin(mid) * reach,
+                            clip = make('clipPath', {id: key + '-clip'}, defs),
+                            mask = make('mask', {id: key + '-mask', maskUnits: 'userSpaceOnUse', x: cx - icon / 2, y: cy - icon / 2, width: icon, height: icon, style: 'mask-type:alpha'}, defs);
+                        make('path', {d: point.graphic.attr('d')}, clip);
+                        var image = make('image', {x: cx - icon / 2, y: cy - icon / 2, width: icon, height: icon, preserveAspectRatio: 'xMidYMid meet'}, mask);
+                        image.setAttributeNS('http://www.w3.org/1999/xlink', 'href', '/images/cultures/' + file + '.svg');
+                        image.setAttribute('href', '/images/cultures/' + file + '.svg');
+                        make('rect', {x: cx - icon / 2, y: cy - icon / 2, width: icon, height: icon, fill: app.cultures.color(code, 'symbol'),
+                            mask: 'url(#' + key + '-mask)', 'clip-path': 'url(#' + key + '-clip)', 'data-code': code}, layer);
+                    });
+                });
             };
         box.highcharts({
             chart: {type: 'pie', width: width, height: size + band * 2 + 4, backgroundColor: 'transparent', style: {fontFamily: 'inherit'}, spacing: [band, 0, band, 0],
-                events: {load: function () { $(this.container).on('mouseleave', hide_name); }}},
+                events: {load: function () { $(this.container).on('mouseleave', hide_name); symbols(this); }}},
             title: {text: null},
             credits: {enabled: false},
             legend: {enabled: false},

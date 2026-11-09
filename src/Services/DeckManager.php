@@ -210,6 +210,7 @@ class DeckManager
          * correction keeps the deck's number and says who made it.
          */
         $changed = [];
+        $summary = [];
         if (count($listings[0]) || count($listings[1])) {
             $changed[] = 'cards';
         }
@@ -219,6 +220,10 @@ class DeckManager
                 if ($value !== $before[$key]) {
                     $changed[] = $key;
                 }
+            }
+            // the format it changed from, so History's Revert can put it back (Ketura, 2026-11-08)
+            if ($after['format'] !== $before['format']) {
+                $summary['format'] = [$before['format'], $after['format']];
             }
         }
         if (!$changed) {
@@ -233,7 +238,7 @@ class DeckManager
         $change->setIsSaved(true);
         $change->setVersion($deck->getVersion());
         $change->setEditor($editor);
-        $change->setEditSummary(['changed' => $changed, 'synced' => false]);
+        $change->setEditSummary(['changed' => $changed, 'synced' => false] + $summary);
         $this->em->persist($change);
         return $change;
     }
@@ -282,6 +287,45 @@ class DeckManager
         $change->setEditSummary(['changed' => $changed, 'synced' => false, 'from' => $decklist->getFullVersion()]);
         $this->em->persist($change);
         return $change;
+    }
+
+    /**
+     * Something that happened to the deck, in its history without a new number (Ketura,
+     * 2026-11-08): brought back after it was deleted
+     */
+    public function recordEvent(Deck $deck, string $event): DeckRevision
+    {
+        $change = new DeckRevision();
+        $change->setDeck($deck);
+        $change->setVariation(json_encode([[], []]));
+        $change->setIsSaved(true);
+        $change->setVersion($deck->getVersion());
+        $change->setEditSummary(['changed' => [], 'synced' => false, 'event' => $event]);
+        $this->em->persist($change);
+        return $change;
+    }
+
+    /** A deck made again from a decklist whose deck is long gone, published as that version */
+    public function recreate(UserInterface $user, PublishedDeck $decklist): Deck
+    {
+        $deck = new Deck();
+        $deck->setUuid(\Ramsey\Uuid\Uuid::uuid4());
+        $deck->setOrigin(['type' => 'recreate', 'id' => $decklist->getId(), 'name' => $decklist->getName(), 'version' => $decklist->getVersionLabel()]);
+        $this->save($user, $deck, [
+            'name' => $decklist->getName(),
+            'description' => $decklist->getDescriptionMd(),
+            'tags' => $decklist->getTags(),
+            'content' => $decklist->getSlots()->getContent(),
+            'target_format' => $decklist->getTargetFormat(),
+            'effective_date' => $decklist->getEffectiveDate(),
+            'starting' => $decklist->getStarting(),
+            'starting_bid' => $decklist->getStartingBid(),
+            'starting_notes' => $decklist->getStartingNotes(),
+            'annotations' => $decklist->getAnnotations(),
+        ]);
+        $deck->setParent($decklist->getPrecedent());
+        $decklist->setParent($deck);
+        return $deck;
     }
 
     /** What a save can change besides the cards, to tell what it did */
@@ -357,10 +401,12 @@ class DeckManager
     }
 
     /** A new deck for the user, not yet saved */
-    public function create(UserInterface $user, string $name, string $format, array $content = []): Deck
+    /** @param array|null $origin how it came to be (Deck::getOrigin); a new deck by default */
+    public function create(UserInterface $user, string $name, string $format, array $content = [], ?array $origin = null): Deck
     {
         $deck = new Deck();
         $deck->setUuid(\Ramsey\Uuid\Uuid::uuid4());
+        $deck->setOrigin($origin ?? ['type' => 'new']);
         $this->save($user, $deck, ['name' => $name, 'target_format' => $format, 'content' => $content]);
         return $deck;
     }
@@ -371,6 +417,9 @@ class DeckManager
         $deck = new Deck();
         $deck->setUuid(\Ramsey\Uuid\Uuid::uuid4());
         $deck->setParentDeck($source);
+        $deck->setOrigin($source instanceof Deck
+            ? ['type' => 'clone', 'uuid' => (string) $source->getUuid(), 'name' => $source->getName()]
+            : ['type' => 'new']);
         $this->save($user, $deck, [
             'name' => $name ?? $source->getName() . ' (copy)',
             'description' => $source->getDescriptionMd(),

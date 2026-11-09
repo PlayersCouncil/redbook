@@ -16,6 +16,8 @@
                             <p>
                                 {{ 'decks.modals.delete.question' | trans({'%name%': '<b id="delete-deck-name"></b>'}) | raw }}
                             </p>
+                            {# a published deck's decklists stay (Ketura, 2026-11-08); shown for published decks #}
+                            <p class="alert alert-info rb-delete-published" hidden>{{ 'decks.modals.delete.published' | trans }}</p>
                             <div class="pull-right">
                                 <button type="submit"
                                         class="btn btn-danger">{{ 'decks.modals.delete.confirm' | trans }}</button>

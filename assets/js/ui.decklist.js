@@ -16,6 +16,7 @@
         {
             $('#delete-deck-name').text($(this).data('name'));
             $('#delete-deck-id').val($(this).data('id'));
+            $('#deleteModal .rb-delete-published').prop('hidden', !$(this).data('published'));
             $('#deleteModal').modal('show');
         });
         $('#social-like').on('click', ui.send_like);
@@ -216,6 +217,22 @@
                 });
         } else {
             $('.decklist-withdraw').remove();
+        }
+        // the author's deck gone: Recreate brings it back, in Clone's place (Ketura, 2026-11-08)
+        if(data.can_recreate && data.state_token) {
+            $('.rb-reader-clone, .rb-reader-clone-item').remove();
+            $('.decklist-recreate').prop('hidden', false);
+            $('.decklist-recreate-item').prop('hidden', false);
+            $('.decklist-recreate').off('click').on('click', function (event) {
+                event.preventDefault();
+                $.post($(this).data('url'), {_token: data.state_token}, function (response) {
+                    location.href = response.url;
+                }, 'json').fail(function () {
+                    alert(Translator.trans('decklist.recreate.failed'));
+                });
+            });
+        } else {
+            $('.decklist-recreate, .decklist-recreate-item').remove();
         }
         if(data.can_delete) {
             $('.decklist-delete').show();

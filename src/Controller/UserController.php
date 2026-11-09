@@ -217,6 +217,11 @@ class UserController extends AbstractController
                             $content['state_token'] = $tokens->getToken('decklist_state')->getValue();
                         }
                     }
+                    // the author's deck gone: Recreate in place of Clone (Ketura, 2026-11-08)
+                    $content['can_recreate'] = $content['is_author'] && $decklist->getParent() === null && !$decklist->isWithdrawn();
+                    if ($content['can_recreate'] && $jsonp === null && !isset($content['state_token'])) {
+                        $content['state_token'] = $tokens->getToken('decklist_state')->getValue();
+                    }
                     $content['can_delete'] = $this->isGranted('ROLE_ADMIN');
                 }
             }

@@ -18,12 +18,15 @@
         var deck_name = tr.find('.deck-name').text();
         $('#delete-deck-name').text(deck_name);
         $('#delete-deck-id').val(deck_id);
+        // its published decklists stay (Ketura, 2026-11-08)
+        $('#deleteModal .rb-delete-published').prop('hidden', !tr.data('published'));
         $('#deleteModal').modal('show');
     };
 
     ui.confirm_delete_all = function confirm_delete_all(ids)
     {
         $('#delete-deck-list-id').val(ids.join('-'));
+        $('#deleteListModal .rb-delete-published').prop('hidden', !_.some(ids, function (id) { return $('tr[data-id=' + id + ']').data('published'); }));
         $('#deleteListModal').modal('show');
     };
 

@@ -36,7 +36,8 @@
             _.each(snapshot.variation[1], function (qty, key) { list.push(card_link(key, qty, '&minus;')); });
             list = _.compact(list);
         } else {
-            list.push(t(page.imported_from_archive ? 'deckbuilder.history.imported' : 'decks.history.firstversion'));
+            // how the deck came to be (Ketura, 2026-11-08)
+            list.push(page.origin_html || t(page.imported_from_archive ? 'deckbuilder.history.imported' : 'decks.history.firstversion'));
         }
         /*
          * What else the save changed (Ketura, 2026-11-08); a historian's correction says who,
@@ -46,7 +47,10 @@
         if(edit_info) {
             var parts = _.map(_.without(edit_info.changed || [], 'cards'), function (part) { return t('deckbuilder.history.part.' + part); }),
                 what = parts.length ? _.escape(parts.join(', ')) : '';
-            if(snapshot.editor) {
+            if(edit_info.event) {
+                // something that happened to it: brought back after it was deleted (Ketura, 2026-11-08)
+                edit = '<div class="rb-history-edit"><span class="fas fa-trash-restore" aria-hidden="true"></span> ' + t('deckbuilder.history.event.' + edit_info.event) + '</div>';
+            } else if(snapshot.editor) {
                 edit = '<div class="rb-history-edit"><span class="fas fa-user-edit" aria-hidden="true"></span> '
                     + t('deckbuilder.history.edited_by', {name: _.escape(snapshot.editor)}) + (what ? ': ' + what : '')
                     + (edit_info.synced ? ' <span class="label label-success">' + t('deckbuilder.history.synced') + '</span>' : '')
@@ -123,6 +127,11 @@
     {
         var snapshot = snapshots[$(this).data('index')];
         if(snapshot && snapshot.content) {
+            // its format too, where the history knows it (Ketura, 2026-11-08)
+            if(snapshot.format !== undefined && snapshot.format !== app.deck.get_format_code()) {
+                app.deck.set_format_code(snapshot.format || '');
+                $('#deck-format').val(snapshot.format || '').trigger('rb:format');
+            }
             app.deck.set_content(snapshot.content);
         }
         return false;

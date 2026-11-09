@@ -1,0 +1,62 @@
+{#
+   A saved deck's History tab (Ketura, 2026-11-08; App\Services\DecklistHistory::buildDeck), as
+   its decklists' have one: newest first, its private revisions with what each changed, its
+   publications with their detail edits under them, and how it came to be.
+#}
+<div class="rb-decklist-history">
+    <p class="text-muted small">{{ 'deck.history.intro' | trans }}</p>
+    <ol class="rb-dh-list">
+        {% for row in deck_history %}
+            <li class="rb-dh-version rb-dh-{{ row.kind }}">
+                <div class="rb-dh-head">
+                    <span class="rb-dh-number">v{{ row.number }}</span>
+                    {% if row.kind == 'published' %}
+                        <span class="rb-dh-name"><span class="fas fa-globe-americas" aria-hidden="true"></span> {{ 'deckbuilder.history.published' | trans }}
+                            <a href="{{ path('decklist_detail', {decklist_id: row.decklist.id, decklist_name: row.decklist.nameCanonical | e('url')}) }}">{{ row.decklist.name }}</a></span>
+                    {% elseif row.kind == 'origin' %}
+                        <span class="rb-dh-name">{{ row.html | raw }}</span>
+                    {% else %}
+                        <span class="rb-dh-name rb-dh-private"><span class="fas fa-lock" aria-hidden="true"></span> {{ 'deck.history.revision' | trans }}</span>
+                    {% endif %}
+                    <time class="rb-dh-date" datetime="{{ row.date | date('c') }}">{{ row.date | date('Y-m-d') }}</time>
+                </div>
+                {% if row.kind == 'revision' %}
+                    {% if row.event %}
+                        <p class="rb-dh-cards">{{ ('deckbuilder.history.event.' ~ row.event) | trans }}</p>
+                    {% endif %}
+                    {% if row.parts %}
+                        <p class="rb-dh-cards">
+                            {%- if row.editor -%}{{ 'decklist.history.edited_by' | trans({'%name%': row.editor}) }}: {% elseif row.from %}{{ 'deckbuilder.history.from_decklist' | trans({'%version%': 'v' ~ row.from}) }}: {% else %}{{ 'deck.history.changed' | trans }} {% endif -%}
+                            {% for part in row.parts %}{{ ('deckbuilder.history.part.' ~ part) | trans }}{% if not loop.last %}, {% endif %}{% endfor %}
+                        </p>
+                    {% endif %}
+                    {% if row.added or row.removed %}
+                        <ul class="rb-dh-cards">
+                            {% for c in row.added %}
+                                <li class="is-added">+ {{ c.ring_bearer ? ('deck.ring_bearer' | trans) ~ ':' : c.qty }} <a href="{{ c.href }}" class="card-tip" data-code="{{ c.code }}">{{ c.label }}</a></li>
+                            {% endfor %}
+                            {% for c in row.removed %}
+                                <li class="is-removed">&minus; {{ c.ring_bearer ? ('deck.ring_bearer' | trans) ~ ':' : c.qty }} <a href="{{ c.href }}" class="card-tip" data-code="{{ c.code }}">{{ c.label }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    {% elseif not row.parts and not row.event %}
+                        <p class="rb-dh-cards text-muted">{{ 'deckbuilder.history.no_card_changes' | trans }}</p>
+                    {% endif %}
+                {% elseif row.kind == 'published' and row.edits %}
+                    <ul class="rb-dh-edits">
+                        {% for e in row.edits %}
+                            <li>
+                                <span class="rb-dh-number">v{{ e.version }}</span>
+                                <span class="rb-dh-what">
+                                    {{- e.editor ? 'decklist.history.edited_by' | trans({'%name%': e.editor}) : 'decklist.history.edited' | trans -}}
+                                    {%- if e.parts %}: {% for part in e.parts %}{{ ('deckbuilder.history.part.' ~ part) | trans }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}
+                                </span>
+                                <time class="rb-dh-date" datetime="{{ e.date | date('c') }}">{{ e.date | date('Y-m-d') }}</time>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ol>
+</div>

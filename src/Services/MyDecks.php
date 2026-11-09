@@ -55,7 +55,7 @@ class MyDecks
     /** @return DeckRow[] every deck of the user's, whatever the filters */
     public function deckRows(UserInterface $user): array
     {
-        $decks = $this->em->createQuery('SELECT d, s, c, cu FROM ' . Deck::class . ' d LEFT JOIN d.slots s LEFT JOIN s.card c LEFT JOIN c.culture cu WHERE d.user = :user')
+        $decks = $this->em->createQuery('SELECT d, s, c, cu FROM ' . Deck::class . ' d LEFT JOIN d.slots s LEFT JOIN s.card c LEFT JOIN c.culture cu WHERE d.user = :user AND d.dateDeleted IS NULL')
             ->setParameter('user', $user)
             ->getResult();
         if ($decks) {

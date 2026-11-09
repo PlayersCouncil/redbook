@@ -518,6 +518,7 @@
             case 'delete':
                 $('#delete-deck-id').val(app.deck.get_id());
                 $('#delete-deck-name').text(app.deck.get_name());
+                $('#deleteModal .rb-delete-published').prop('hidden', !page.published);
                 discard_draft();
                 $('#deleteModal').modal('show');
                 break;
@@ -574,7 +575,7 @@
         $('#deck-format').on('change', function () {
             app.deck.set_format_code($(this).val());
             app.deck.changed();
-        });
+        }).on('rb:format', update_format_buttons);
         $('textarea[name=description_]').on('input', function () {
             app.deck.set_description_md($(this).val());
             on_edit();

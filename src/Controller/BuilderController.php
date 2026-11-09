@@ -135,7 +135,9 @@ class BuilderController extends AbstractController
             $code = $format?->getCode()
                 ?? $guesser->guessContent($data['content'])?->getCode()
                 ?? (string) $deckManager->getDefaultFormat();
-            $last = $deckManager->create($user, $data['name'], $code, $data['content']);
+            // where it came from, for its history (Ketura, 2026-11-08)
+            $last = $deckManager->create($user, $data['name'], $code, $data['content'],
+                ['type' => 'import', 'source' => $uploadedFile !== null ? $uploadedFile->getClientOriginalName() : null]);
             foreach ($data['warnings'] as $warning) {
                 $this->addFlash('warning', $data['name'] . ': ' . $warning);
             }
@@ -192,7 +194,7 @@ class BuilderController extends AbstractController
         $deck = null;
         $sourceDeck = null;
         if ($id) {
-            $deck = $em->getRepository(Deck::class)->find($id);
+            $deck = $em->getRepository(Deck::class)->findOneBy(['id' => $id, 'dateDeleted' => null]);
             if (!$deck || !$this->canEdit($deck)) {
                 throw new AccessDeniedHttpException("You don't have access to this deck.");
             }
@@ -216,11 +218,14 @@ class BuilderController extends AbstractController
             $deck->setUuid(Uuid::uuid4());
             $parentId = (int) $request->get('parent_deck_id');
             if ($parentId) {
-                $parentDeck = $em->getRepository(Deck::class)->find($parentId);
+                $parentDeck = $em->getRepository(Deck::class)->findOneBy(['id' => $parentId, 'dateDeleted' => null]);
             }
             if ($parentDeck) {
                 $deck->setParentDeck($parentDeck);
             }
+            $deck->setOrigin($parentDeck
+                ? ['type' => 'clone', 'uuid' => (string) $parentDeck->getUuid(), 'name' => $parentDeck->getName()]
+                : ['type' => 'new']);
             $sourceDeck = null;
         }
 
@@ -303,7 +308,7 @@ class BuilderController extends AbstractController
     public function visibilityAction(Request $request): JsonResponse
     {
         $user = $this->requireUser();
-        $deck = $this->managerRegistry->getRepository(Deck::class)->find((int) $request->get('id'))
+        $deck = $this->managerRegistry->getRepository(Deck::class)->findOneBy(['id' => (int) $request->get('id'), 'dateDeleted' => null])
             ?? throw new NotFoundHttpException("This deck doesn't exist.");
         if ($user->getId() != $deck->getUser()->getId()) {
             throw new AccessDeniedHttpException("You don't have access to this deck.");
@@ -349,7 +354,7 @@ class BuilderController extends AbstractController
     public function submitHistoricAction(Request $request, PublishedDeckFactory $publishedDeckFactory): JsonResponse
     {
         $user = $this->requireUser();
-        $deck = $this->managerRegistry->getRepository(Deck::class)->find((int) $request->get('id'))
+        $deck = $this->managerRegistry->getRepository(Deck::class)->findOneBy(['id' => (int) $request->get('id'), 'dateDeleted' => null])
             ?? throw new NotFoundHttpException("This deck doesn't exist.");
         if (!$this->isOwner($deck)) {
             throw new AccessDeniedHttpException("You don't have access to this deck.");
@@ -453,7 +458,7 @@ class BuilderController extends AbstractController
     {
         $user = $this->requireUser();
         $em = $this->managerRegistry->getManager();
-        $deck = $em->getRepository(Deck::class)->find((int) $request->get('deck_id'));
+        $deck = $em->getRepository(Deck::class)->findOneBy(['id' => (int) $request->get('deck_id'), 'dateDeleted' => null]);
         if (!$deck) {
             return $this->redirectToRoute('decks_list');
         }
@@ -470,7 +475,7 @@ class BuilderController extends AbstractController
     public function downloadListAction(Request $request): Response
     {
         $user = $this->requireUser();
-        $decks = $this->managerRegistry->getRepository(Deck::class)->findBy(['id' => explode('-', (string) $request->get('ids'))]);
+        $decks = $this->managerRegistry->getRepository(Deck::class)->findBy(['id' => explode('-', (string) $request->get('ids')), 'dateDeleted' => null]);
         $exports = [];
         foreach ($decks as $deck) {
             if ($deck->getUser()->getId() === $user->getId()) {
@@ -486,7 +491,7 @@ class BuilderController extends AbstractController
         $user = $this->requireUser();
         $em = $this->managerRegistry->getManager();
         foreach (explode('-', (string) $request->get('ids')) as $id) {
-            $deck = $em->getRepository(Deck::class)->find((int) $id);
+            $deck = $em->getRepository(Deck::class)->findOneBy(['id' => (int) $id, 'dateDeleted' => null]);
             if ($deck && $user->getId() == $deck->getUser()->getId()) {
                 $this->removeDeck($deck);
             }
@@ -497,7 +502,7 @@ class BuilderController extends AbstractController
     }
 
     #[Route(path: '/deck/edit/{deck_uuid}', name: 'deck_edit', methods: ['GET'], requirements: ['deck_uuid' => self::UUID])]
-    public function editAction(string $deck_uuid, PublishedDeckFactory $publishedDeckFactory): Response
+    public function editAction(string $deck_uuid, PublishedDeckFactory $publishedDeckFactory, \App\Services\DeckOrigin $deckOrigin): Response
     {
         $this->requireUser();
         $deck = $this->findDeck($deck_uuid);
@@ -535,6 +540,8 @@ class BuilderController extends AbstractController
             'latest_publication' => $publishedDeckFactory->defaultPrevious($deck),
             'published_versions' => $published,
             'imported_from_archive' => $imported,
+            // how it came to be, the first line of its History (Ketura, 2026-11-08)
+            'origin_html' => $deckOrigin->describe($deck, $this->getUser() instanceof User ? $this->getUser() : null),
             'show_archive' => $showArchive,
             'submitted' => $this->archiveDecklist($deck) !== null,
             'pagetitle' => 'Deckbuilder',
@@ -552,7 +559,7 @@ class BuilderController extends AbstractController
      * A saved deck in the decklist reader (Ketura, 2026-11-08): what it was copied from, and
      * what it was published as, in place of a decklist's lineage; no comments
      */
-    public function viewAction(string $deck_uuid, \App\Services\ReaderNotes $readerNotes): Response
+    public function viewAction(string $deck_uuid, \App\Services\ReaderNotes $readerNotes, \App\Services\DecklistHistory $history): Response
     {
         $deck = $this->findViewableDeck($deck_uuid);
         $parent = $deck->getParent();
@@ -562,6 +569,8 @@ class BuilderController extends AbstractController
             'is_owner' => $this->isOwner($deck),
             'format' => $this->formats->findOneByCode($deck->getTargetFormat()),
             'reader' => $readerNotes->build($deck),
+            // its History tab, as a decklist's (Ketura, 2026-11-08)
+            'deck_history' => $history->buildDeck($deck, $this->getUser() instanceof User ? $this->getUser() : null),
             'precedent' => $parent instanceof PublishedDeck && !$parent->isWithdrawn() ? $parent : null,
             'successors' => array_values(array_filter($deck->getChildren()->toArray(), fn ($d) => $d instanceof PublishedDeck && !$d->isWithdrawn())),
         ]);
@@ -670,6 +679,7 @@ class BuilderController extends AbstractController
         }
         $deck = new Deck();
         $deck->setUuid(Uuid::uuid4());
+        $deck->setOrigin(['type' => 'decklist', 'id' => $decklist->getId(), 'name' => $decklist->getName(), 'version' => $decklist->getVersionLabel()]);
         $deckManager->save($user, $deck, [
             'name' => $decklist->getName(),
             'description' => $decklist->getDescriptionMd(),
@@ -688,7 +698,7 @@ class BuilderController extends AbstractController
     {
         $user = $this->requireUser();
         $em = $this->managerRegistry->getManager();
-        $deck = $em->getRepository(Deck::class)->find((int) $request->get('deck_id'))
+        $deck = $em->getRepository(Deck::class)->findOneBy(['id' => (int) $request->get('deck_id'), 'dateDeleted' => null])
             ?? throw new BadRequestHttpException('Cannot find deck');
         if ($user->getId() != $deck->getUser()->getId()) {
             throw new AccessDeniedHttpException("You don't have access to this deck.");
@@ -722,7 +732,7 @@ class BuilderController extends AbstractController
 
     private function findDeck(string $uuid): Deck
     {
-        return $this->managerRegistry->getRepository(Deck::class)->findOneBy(['uuid' => $uuid])
+        return $this->managerRegistry->getRepository(Deck::class)->findOneBy(['uuid' => $uuid, 'dateDeleted' => null])
             ?? throw new NotFoundHttpException("This deck doesn't exist.");
     }
 
@@ -824,10 +834,16 @@ class BuilderController extends AbstractController
         return $format !== null && $format->isSelectable() ? $format : null;
     }
 
+    /**
+     * Deleting a deck keeps it, out of sight (Ketura, 2026-11-08): its published decklists
+     * stay, and Recreate on one of them brings it back. A deck never published has nothing to
+     * come back from, and goes.
+     */
     private function removeDeck(Deck $deck): void
     {
-        foreach ($deck->getChildren() as $decklist) {
-            $decklist->setParent(null);
+        if (count($deck->getChildren())) {
+            $deck->setDateDeleted(new \DateTime());
+            return;
         }
         $this->managerRegistry->getManager()->remove($deck);
     }

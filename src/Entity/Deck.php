@@ -56,6 +56,20 @@ class Deck extends CommonDeck implements DeckInterface
     protected bool $shared = false;
 
     /**
+     * How the deck came to be (Ketura, 2026-11-08), for the first line of its history:
+     * {type: new|import|clone|decklist|archive|recreate|api, and what it came from}
+     */
+    #[ORM\Column(name: 'origin', type: 'json', nullable: true)]
+    protected ?array $origin = null;
+
+    /**
+     * Deleted by its owner (Ketura, 2026-11-08): kept, out of sight, so a published decklist
+     * can bring it back (Recreate)
+     */
+    #[ORM\Column(name: 'date_deleted', type: 'datetime', nullable: true)]
+    protected ?\DateTimeInterface $dateDeleted = null;
+
+    /**
      * Historical Deck Information (Ketura, 2026-11-02): null for an ordinary deck, else the
      * fields of a historic one (author, source, source_url, archive_url, event, placing,
      * players, date_used, date_posted, date_retrieved, format_as_written, notes). A stopgap
@@ -240,6 +254,31 @@ class Deck extends CommonDeck implements DeckInterface
     public function getDescriptionMd()
     {
         return $this->descriptionMd;
+    }
+
+    public function getOrigin(): ?array
+    {
+        return $this->origin;
+    }
+
+    public function setOrigin(?array $origin): void
+    {
+        $this->origin = $origin;
+    }
+
+    public function getDateDeleted(): ?\DateTimeInterface
+    {
+        return $this->dateDeleted;
+    }
+
+    public function setDateDeleted(?\DateTimeInterface $dateDeleted): void
+    {
+        $this->dateDeleted = $dateDeleted;
+    }
+
+    public function isDeleted(): bool
+    {
+        return $this->dateDeleted !== null;
     }
 
     public function isShared(): bool
@@ -536,6 +575,8 @@ class Deck extends CommonDeck implements DeckInterface
 
         // recreating the versions with the variation info, starting from $preversion
         $preversion = $cards;
+        // and the format each had, from the revisions that changed it (Ketura, 2026-11-08)
+        $preformat = $this->getTargetFormat();
 
         foreach ($savedChanges as $change) {
             $variation = json_decode($change->getVariation(), true);
@@ -545,12 +586,16 @@ class Deck extends CommonDeck implements DeckInterface
                 'is_saved' => $change->getIsSaved(),
                 'version' => $change->getVersion(),
                 'content' => $preversion,
+                'format' => $preformat,
                 'date_creation' => $change->getDateCreation()->format('c'),
             ];
             // a historian's edit says who, and what (Ketura, 2026-11-08)
             if ($change instanceof DeckRevision && $change->getEditSummary() !== null) {
                 $row['editor'] = $change->getEditor()?->getDisplayName();
                 $row['edit'] = $change->getEditSummary();
+                if (isset($row['edit']['format'][0])) {
+                    $preformat = $row['edit']['format'][0];
+                }
             }
             array_unshift($snapshots, $row);
 
@@ -573,12 +618,14 @@ class Deck extends CommonDeck implements DeckInterface
             ksort($preversion);
         }
 
-        // add last know version with empty diff
+        // the deck as it was made (Ketura, 2026-11-08: 0.1, the version a new deck starts at)
         $row = [
             'variation' => null,
             'is_saved' => true,
-            'version' => "0.0",
+            // an archive deck came in as 1.0
+            'version' => ($this->origin['type'] ?? ($this->user?->isHistoric() ? 'archive' : null)) === 'archive' ? '1.0' : '0.1',
             'content' => $preversion,
+            'format' => $preformat,
             'date_creation' => $this->getDateCreation()->format('c')
         ];
         array_unshift($snapshots, $row);

@@ -209,7 +209,7 @@
                                     <option value="{{ d.id }}" data-next="{{ line.next }}.0" data-name="{{ d.name }}"
                                             data-url="{{ path('decklist_detail', {decklist_id: d.id, decklist_name: d.nameCanonical|e('url')}) }}"
                                             data-author="{{ d.user.displayName }}" data-date="{{ d.dateCreation | date('Y-m-d') }}" data-version="{{ d.version }}" data-tags="{{ d.tags }}"
-                                            {%- if previous and previous.line.id == d.line.id %} selected{% endif %}>{{ d.name }} ({{ d.versionLabel }})</option>
+                                            {%- if previous and previous.line.id == d.line.id %} selected{% endif %}>{{ d.name }} (v{{ d.versionLabel }})</option>
                                 {% endfor %}
                             </select>
                             <p class="rb-version-line" id="version-line"

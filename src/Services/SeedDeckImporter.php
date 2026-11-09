@@ -394,6 +394,7 @@ class SeedDeckImporter
         if (!$private instanceof Deck) {
             $private = new Deck();
             $private->setUuid(Uuid::uuid4());
+            $private->setOrigin(['type' => 'archive']);
             $private->setMajorVersion(1);
             $private->setMinorVersion(0);
             $private->setDateCreation($decklist->getDateCreation());

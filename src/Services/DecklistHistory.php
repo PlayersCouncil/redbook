@@ -23,7 +23,72 @@ class DecklistHistory
         private readonly EntityManagerInterface $em,
         private readonly Diff $diff,
         private readonly UrlGeneratorInterface $router,
+        private readonly DeckOrigin $origin,
     ) {
+    }
+
+    /**
+     * A saved deck's History tab, as its decklists' (Ketura, 2026-11-08): newest first, its
+     * revisions with what each changed, its publications with their detail edits under
+     * them, and at the bottom how it came to be
+     *
+     * @return list<array{kind: string, number: string, date: \DateTimeInterface, added?: list<array>, removed?: list<array>, parts?: string[], note?: string, decklist?: PublishedDeck, edits?: list<array>, html?: string}>
+     */
+    public function buildDeck(Deck $deck, ?\App\Entity\User $viewer): array
+    {
+        $snapshots = $deck->getHistory();
+        $codes = [];
+        foreach ($snapshots as $snapshot) {
+            foreach ([0, 1] as $side) {
+                foreach (array_keys($snapshot['variation'][$side] ?? []) as $key) {
+                    $codes[DeckContent::parseKey((string) $key)[0]] = true;
+                }
+            }
+        }
+        $cards = [];
+        foreach ($codes ? $this->em->getRepository(Card::class)->findBy(['code' => array_keys($codes)]) : [] as $card) {
+            $cards[$card->getCode()] = $card;
+        }
+
+        $rows = [];
+        foreach ($snapshots as $snapshot) {
+            if (($snapshot['is_saved'] ?? true) === false) {
+                continue;
+            }
+            $date = new \DateTime($snapshot['date_creation']);
+            if ($snapshot['variation'] === null) {
+                $rows[] = ['kind' => 'origin', 'number' => $snapshot['version'], 'date' => $date, 'html' => $this->origin->describe($deck, $viewer)];
+                continue;
+            }
+            $edit = $snapshot['edit'] ?? [];
+            $changed = $edit['changed'] ?? null;
+            $rows[] = [
+                'kind' => 'revision',
+                'number' => (string) $snapshot['version'],
+                'date' => $date,
+                'added' => $changed === null || in_array('cards', $changed, true) ? $this->cardRows($snapshot['variation'][0] ?? [], $cards) : [],
+                'removed' => $changed === null || in_array('cards', $changed, true) ? $this->cardRows($snapshot['variation'][1] ?? [], $cards) : [],
+                'parts' => array_values(array_diff($changed ?? [], ['cards'])),
+                'editor' => $snapshot['editor'] ?? null,
+                'event' => $edit['event'] ?? null,
+                'from' => $edit['from'] ?? null,
+            ];
+        }
+        foreach ($deck->getChildren() as $decklist) {
+            if ($decklist->isWithdrawn()) {
+                continue;
+            }
+            $rows[] = [
+                'kind' => 'published',
+                'number' => $decklist->getVersionLabel(),
+                'date' => $decklist->getDatePublished() ?? $decklist->getDateCreation(),
+                'decklist' => $decklist,
+                'edits' => array_values(array_filter($this->edits($decklist), fn ($e) => $e['version'] !== null)),
+            ];
+        }
+        // newest first; the deck as it was made at the bottom
+        usort($rows, fn ($a, $b) => ($a['kind'] === 'origin') <=> ($b['kind'] === 'origin') ?: $b['date'] <=> $a['date']);
+        return $rows;
     }
 
     /**

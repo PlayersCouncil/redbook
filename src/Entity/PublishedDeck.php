@@ -893,9 +893,15 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     }
 
     /**
-     * @inheritdoc
+     * The deck it was published from; none once its owner deleted it (Ketura, 2026-11-08)
      */
     public function getParent()
+    {
+        return $this->parent instanceof Deck && $this->parent->isDeleted() ? null : $this->parent;
+    }
+
+    /** The deck it was published from, even deleted, which Recreate brings back */
+    public function getStoredParent(): ?Deck
     {
         return $this->parent;
     }

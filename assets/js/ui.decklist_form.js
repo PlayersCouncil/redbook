@@ -64,7 +64,7 @@
         var tags = _.filter(d.tags || [], _.identity);
         return (link === false ? '<span class="rb-derived-name">' + _.escape(d.name) + '</span>'
                 : '<a href="' + d.url + '" target="_blank" class="rb-derived-name">' + _.escape(d.name) + '</a>')
-            + '<span class="rb-derived-meta">' + _.escape(d.author) + ' &middot; ' + d.date + ' &middot; ' + d.version + '.0' + '</span>'
+            + '<span class="rb-derived-meta">' + _.escape(d.author) + ' &middot; ' + d.date + ' &middot; v' + d.version + '.0' + '</span>'
             + (tags.length ? '<span class="rb-derived-tags">' + _.map(tags, function (tag) { return '<span class="rb-tag-chip">' + _.escape(tag) + '</span>'; }).join('') + '</span>' : '');
     };
 

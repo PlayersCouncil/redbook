@@ -10,7 +10,7 @@
             {% set d = row.decklist %}
             <li class="rb-dh-version{% if row.current %} is-current{% endif %}">
                 <div class="rb-dh-head">
-                    <span class="rb-dh-number">{{ d.versionLabel }}</span>
+                    <span class="rb-dh-number">v{{ d.versionLabel }}</span>
                     {% if row.current %}
                         <span class="rb-dh-name">{{ d.name }}</span>
                         <span class="label label-default">{{ 'decklist.history.this' | trans }}</span>
@@ -37,7 +37,7 @@
                     <ul class="rb-dh-edits">
                         {% for e in row.edits %}
                             <li{% if e.correction %} class="is-correction"{% endif %}>
-                                <span class="rb-dh-number">{{ e.version ?? '' }}</span>
+                                <span class="rb-dh-number">{{ e.version ? 'v' ~ e.version : '' }}</span>
                                 <span class="rb-dh-what">
                                     {%- if e.correction -%}
                                         {{ 'decklist.history.corrected_by' | trans({'%name%': e.editor}) }}

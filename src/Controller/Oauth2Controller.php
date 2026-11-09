@@ -72,7 +72,7 @@ class Oauth2Controller extends AbstractController
         $response->headers->add(['Access-Control-Allow-Origin' => '*']);
 
         /* @var $decks DeckInterface[] */
-        $decks = $this->managerRegistry->getRepository(Deck::class)->findBy(['user' => $this->getUser()]);
+        $decks = $this->managerRegistry->getRepository(Deck::class)->findBy(['user' => $this->getUser(), 'dateDeleted' => null]);
 
         if (! empty($decks)) {
             $dateUpdates = array_map(function (DeckInterface $deck) {
@@ -109,7 +109,7 @@ class Oauth2Controller extends AbstractController
     public function loadDeckByUuidAction(Request $request, string $uuid): Response
     {
         /* @var DeckInterface $deck */
-        $deck = $this->managerRegistry->getRepository(Deck::class)->findOneBy(['uuid' => $uuid]);
+        $deck = $this->managerRegistry->getRepository(Deck::class)->findOneBy(['uuid' => $uuid, 'dateDeleted' => null]);
         if (!$deck) {
             throw $this->createNotFoundException("Deck not found.");
         }
@@ -152,7 +152,7 @@ class Oauth2Controller extends AbstractController
         $response->headers->add(['Access-Control-Allow-Origin' => '*']);
 
         /* @var DeckInterface $deck */
-        $deck = $this->managerRegistry->getRepository(Deck::class)->find($id);
+        $deck = $this->managerRegistry->getRepository(Deck::class)->findOneBy(['id' => $id, 'dateDeleted' => null]);
 
         if ($deck->getUser()->getId() !== $this->getUser()->getId()) {
             throw $this->createAccessDeniedException("Access denied to this object.");
@@ -194,9 +194,10 @@ class Oauth2Controller extends AbstractController
         if (!$id) {
             $deck = new Deck();
             $deck->setUuid(Uuid::uuid4());
+            $deck->setOrigin(['type' => 'api']);
             $this->managerRegistry->getManager()->persist($deck);
         } else {
-            $deck = $this->managerRegistry->getRepository(Deck::class)->find($id);
+            $deck = $this->managerRegistry->getRepository(Deck::class)->findOneBy(['id' => $id, 'dateDeleted' => null]);
             if ($deck->getUser()->getId() !== $this->getUser()->getId()) {
                 throw $this->createAccessDeniedException("Access denied to this object.");
             }
@@ -263,7 +264,7 @@ class Oauth2Controller extends AbstractController
     public function publishDeckAction($id, Request $request, PublishedDeckFactory $decklistFactory)
     {
         /* @var DeckInterface $deck */
-        $deck = $this->managerRegistry->getRepository(Deck::class)->find($id);
+        $deck = $this->managerRegistry->getRepository(Deck::class)->findOneBy(['id' => $id, 'dateDeleted' => null]);
         if ($this->getUser()->getId() !== $deck->getUser()->getId()) {
             throw $this->createAccessDeniedException("Access denied to this object.");
         }

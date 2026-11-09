@@ -39,7 +39,7 @@ class TagController extends AbstractController
 
         foreach ($list_id as $id) {
             /* @var DeckInterface $deck */
-            $deck = $em->getRepository(Deck::class)->find($id);
+            $deck = $em->getRepository(Deck::class)->findOneBy(['id' => $id, 'dateDeleted' => null]);
             if (!$deck) {
                 continue;
             }
@@ -86,7 +86,7 @@ class TagController extends AbstractController
 
         foreach ($list_id as $id) {
             /* @var DeckInterface $deck */
-            $deck = $em->getRepository(Deck::class)->find($id);
+            $deck = $em->getRepository(Deck::class)->findOneBy(['id' => $id, 'dateDeleted' => null]);
             if (!$deck) {
                 continue;
             }
@@ -121,7 +121,7 @@ class TagController extends AbstractController
 
         foreach ($list_id as $id) {
             /* @var DeckInterface $deck */
-            $deck = $em->getRepository(Deck::class)->find($id);
+            $deck = $em->getRepository(Deck::class)->findOneBy(['id' => $id, 'dateDeleted' => null]);
             if (!$deck) {
                 continue;
             }

@@ -428,7 +428,8 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
      */
     public function getDecks()
     {
-        return $this->decks;
+        // not the ones deleted, which are kept for Recreate (Ketura, 2026-11-08)
+        return $this->decks->filter(fn ($deck) => !$deck->isDeleted());
     }
 
     /**

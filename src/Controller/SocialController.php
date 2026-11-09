@@ -73,7 +73,7 @@ class SocialController extends AbstractController
         }
 
         $em = $this->managerRegistry->getManager();
-        $deck = $em->getRepository(Deck::class)->findOneBy(['uuid' => $deck_uuid]);
+        $deck = $em->getRepository(Deck::class)->findOneBy(['uuid' => $deck_uuid, 'dateDeleted' => null]);
         if (!$deck || $deck->getUser()->getId() != $user->getId()) {
             throw $this->createAccessDeniedException($translator->trans('decklist.publish.errors.unauthorized'));
         }
@@ -239,6 +239,35 @@ class SocialController extends AbstractController
         $this->addFlash('notice', $translator->trans('decklist.state.withdrawn'));
         $edit = $this->generateUrl('decklist_edit', ['decklist_id' => $decklist->getId()]);
         return $request->isXmlHttpRequest() ? new JsonResponse(['success' => true, 'url' => $edit]) : $this->redirect($edit);
+    }
+
+    /**
+     * The author's deck behind a decklist, deleted, back (Ketura, 2026-11-08): as it was, with
+     * its history, when it was kept; otherwise a deck made from the decklist, as that version.
+     */
+    #[Route(path: '/decklist/recreate/{decklist_id}', name: 'decklist_recreate', methods: ['POST'], requirements: ['decklist_id' => '\d+'])]
+    public function recreateAction(Request $request, TranslatorInterface $translator, PublishedDeckFactory $decklistFactory, \App\Services\DeckManager $deckManager, int $decklist_id): Response
+    {
+        $decklist = $this->editableDecklist($decklist_id, true);
+        $this->requireStateToken($request);
+        $user = $this->getUser();
+        if ($decklist->getParent() !== null) {
+            $deck = $decklist->getParent();
+        } elseif (count($user->getDecks()) >= $user->getMaxNbDecks()) {
+            $this->addFlash('error', $translator->trans('decks.save.outOfSlots'));
+            return $this->redirectToRoute('decks_list');
+        } elseif (($deck = $decklist->getStoredParent()) !== null) {
+            $deck->setDateDeleted(null);
+            $deckManager->recordEvent($deck, 'recreated');
+        } else {
+            $deck = $deckManager->recreate($user, $decklist);
+            $decklistFactory->numberDeck($decklist);
+        }
+        $this->managerRegistry->getManager()->flush();
+
+        $this->addFlash('notice', $translator->trans('decklist.recreate.done'));
+        $url = $this->generateUrl('deck_edit', ['deck_uuid' => $deck->getUuid()]);
+        return $request->isXmlHttpRequest() ? new JsonResponse(['success' => true, 'url' => $url]) : $this->redirect($url);
     }
 
     /** Publishing a withdrawn decklist again: public at its old address, with a fresh grace period */

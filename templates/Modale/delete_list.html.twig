@@ -16,6 +16,8 @@
                             <p>
                                 {{ 'decks.modals.deletelist.question' | trans }}
                             </p>
+                            {# a published deck's decklists stay (Ketura, 2026-11-08); shown for published decks #}
+                            <p class="alert alert-info rb-delete-published" hidden>{{ 'decks.modals.delete.published' | trans }}</p>
                             <div class="pull-right">
                                 <button type="submit"
                                         class="btn btn-danger">{{ 'decks.modals.deletelist.confirm' | trans }}</button>

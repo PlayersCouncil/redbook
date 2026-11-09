@@ -12,4 +12,4 @@
 <a href="#" title="Delete decklist" class="rb-btn rb-btn-small decklist-delete" style="display:none">
     <span class="fas fa-trash-alt text-danger" aria-hidden="true"></span> {{ 'forms.delete' | trans }}
 </a>
-{% include 'Decklist/reader-copy-buttons.html.twig' with {clone_url: path('deck_copy', {decklist_id: decklist.id}), download_url: path('decklist_download', {decklist_id: decklist.id, format: 'text'})} %}
+{% include 'Decklist/reader-copy-buttons.html.twig' with {clone_url: path('deck_copy', {decklist_id: decklist.id}), download_url: path('decklist_download', {decklist_id: decklist.id, format: 'text'}), recreate_url: path('decklist_recreate', {decklist_id: decklist.id})} %}

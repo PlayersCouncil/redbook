@@ -285,12 +285,12 @@ test("My Decks: the decklists page's filters, who can see each deck, and favouri
   await page.goto(`/decks?name=${encodeURIComponent(deckName)}`);
   const row = page.locator('#decks tr').filter({ hasText: deckName });
   await expect(row).toHaveCount(1);
-  await expect(page.locator('.rb-my-decks-table thead th')).toHaveText(['', '', 'Size', 'Deck', 'Format', 'Current', 'Published', 'Tags', 'Actions']);
+  await expect(page.locator('.rb-my-decks-table thead th')).toHaveText(['', '', 'Size', 'Deck', 'Format', 'Published', 'Current', 'Tags', 'Actions']);
   // who can see it as it stands, and what it was published as (Ketura, 2026-11-08); its tags,
   // which search when clicked
   await expect(row.locator('.rb-col-visibility')).toContainText('Private');
-  await expect(row.locator('.rb-col-visibility')).toContainText('Same as 1.0');
-  await expect(row.locator('.rb-col-published a')).toContainText('1.0');
+  await expect(row.locator('.rb-col-visibility')).toContainText('Same as v1.0');
+  await expect(row.locator('.rb-col-published a')).toContainText('v1.0');
   await expect(row.locator('.rb-row-tags')).toContainText('dwarves');
   await expect(row.locator('.rb-thumb-card img')).toHaveAttribute('alt', 'Gimli, Dwarf of Erebor');
   // a row opens the deckbuilder; Preview shows the deck

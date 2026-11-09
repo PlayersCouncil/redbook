@@ -116,7 +116,7 @@
                     <th class="rb-col-deck"><a href="{{ list_path('decks_list', query | merge({sort: 'name', page: null})) }}"{% if sorted == 'name' %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.deck' | trans }}</a></th>
                     <th class="rb-col-format">{{ 'decklist.browse.col.format' | trans }}</th>
                     {# the deck as it stands, and what it was published as, apart (Ketura, 2026-11-08) #}
-                    {% if tab == 'decks' %}<th class="rb-col-visibility">{{ 'decks.browse.col.current' | trans }}</th><th class="rb-col-published">{{ 'decks.browse.col.published' | trans }}</th>{% endif %}
+                    {% if tab == 'decks' %}<th class="rb-col-published">{{ 'decks.browse.col.published' | trans }}</th><th class="rb-col-visibility">{{ 'decks.browse.col.current' | trans }}</th>{% endif %}
                     <th class="rb-col-tags">{{ 'decklist.browse.col.tags' | trans }}</th>
                     <th class="rb-col-actions">{{ 'decks.browse.col.actions' | trans }}</th>
                 </tr>
@@ -131,7 +131,7 @@
                 {% else %}
                     {% set url = path('decklist_detail', {decklist_id: row.decklist.id, decklist_name: row.decklist.nameCanonical | e('url')}) %}
                 {% endif %}
-                <tr data-href="{{ url }}" class="rb-kind-{{ kind }} rb-row-{{ row.visibility }}{% if deck %} list-decks-deck{% endif %}" data-id="{{ deck ? deck.id : row.decklist.id }}"{% if deck %} data-uuid="{{ deck.uuid }}"{% endif %}>
+                <tr data-href="{{ url }}" class="rb-kind-{{ kind }} rb-row-{{ row.visibility }}{% if deck %} list-decks-deck{% endif %}" data-id="{{ deck ? deck.id : row.decklist.id }}"{% if deck %} data-uuid="{{ deck.uuid }}"{% if row.published %} data-published="1"{% endif %}{% endif %}>
                     <td class="rb-col-pick"><input type="checkbox" aria-label="{{ 'decks.browse.pick' | trans({'%name%': row.name}) }}"></td>
                     <td class="rb-col-thumb">{% include 'Decklist/thumbnail.html.twig' with {decklist: row.thumbnail} %}</td>
                     <td class="rb-col-size">
@@ -153,26 +153,26 @@
                         {% if deck %}<span class="rb-fmt-state">{% include 'Deck/completeness-label.html.twig' with {deck: deck} %}</span>{% endif %}
                     </td>
                     {% if tab == 'decks' %}
-                        <td class="rb-col-visibility">
-                            {% set icons = {private: 'fa-lock', hidden: 'fa-link'} %}
-                            <span class="rb-vis rb-vis-{{ row.current }}" title="{{ ('decks.browse.status.' ~ row.current) | trans }}"><span class="fas {{ icons[row.current] }} fa-fw" aria-hidden="true"></span> {{ ('decks.browse.show.' ~ row.current) | trans }}</span>
-                            <span class="rb-deck-current"{% if row.published and not row.sameAsPublished %} title="{{ 'decks.browse.revised_title' | trans({'%version%': deck.version, '%published%': row.published.versionLabel}) }}"{% endif %}>
-                                {%- if row.sameAsPublished -%}
-                                    {{ 'decks.browse.same_as' | trans({'%version%': row.published.versionLabel}) }}
-                                {%- elseif row.published -%}
-                                    {{ 'decks.browse.revised' | trans({'%version%': deck.version, '%published%': row.published.versionLabel}) }}
-                                {%- else -%}
-                                    {{ deck.version }}
-                                {%- endif -%}
-                            </span>
-                        </td>
                         <td class="rb-col-published">
                             {% if row.published %}
-                                <a href="{{ path('decklist_detail', {decklist_id: row.published.id, decklist_name: row.published.nameCanonical | e('url')}) }}" class="rb-vis rb-vis-published" title="{{ 'decks.browse.status.published' | trans }}"><span class="fas fa-globe-americas fa-fw" aria-hidden="true"></span> {{ row.published.versionLabel }}</a>
+                                <a href="{{ path('decklist_detail', {decklist_id: row.published.id, decklist_name: row.published.nameCanonical | e('url')}) }}" class="rb-vis rb-vis-published" title="{{ 'decks.browse.status.published' | trans }}"><span class="fas fa-globe-americas fa-fw" aria-hidden="true"></span> v{{ row.published.versionLabel }}</a>
                                 <time class="rb-deck-current" datetime="{{ (row.published.datePublished ?? row.published.dateCreation) | date('Y-m-d') }}" data-absolute>{{ (row.published.datePublished ?? row.published.dateCreation) | date('M j, Y') }}</time>
                             {% else %}
                                 <span class="rb-muted" aria-label="{{ 'decks.browse.not_published' | trans }}">—</span>
                             {% endif %}
+                        </td>
+                        <td class="rb-col-visibility">
+                            {% set icons = {private: 'fa-lock', hidden: 'fa-link'} %}
+                            <span class="rb-vis rb-vis-{{ row.current }}" title="{{ ('decks.browse.status.' ~ row.current) | trans }}"><span class="fas {{ icons[row.current] }} fa-fw" aria-hidden="true"></span> {{ ('decks.browse.show.' ~ row.current) | trans }}</span>
+                            <span class="rb-deck-current"{% if row.published and not row.sameAsPublished %} title="{{ 'decks.browse.revised_title' | trans({'%version%': 'v' ~ deck.version, '%published%': 'v' ~ row.published.versionLabel}) }}"{% endif %}>
+                                {%- if row.sameAsPublished -%}
+                                    {{ 'decks.browse.same_as' | trans({'%version%': 'v' ~ row.published.versionLabel}) }}
+                                {%- elseif row.published -%}
+                                    {{ 'decks.browse.revised' | trans({'%version%': 'v' ~ deck.version, '%published%': 'v' ~ row.published.versionLabel}) }}
+                                {%- else -%}
+                                    v{{ deck.version }}
+                                {%- endif -%}
+                            </span>
                         </td>
                     {% endif %}
                     <td class="rb-col-tags">

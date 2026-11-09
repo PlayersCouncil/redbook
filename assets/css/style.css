@@ -1913,7 +1913,7 @@ a.rb-vis-published:hover, a.rb-vis-published:focus { color: #1F4F28; background:
 }
 @media (max-width: 767px) {
     .rb-tab { font-size: calc(22px * var(--rb-text-scale)); padding: 4px 10px 6px; }
-    .rb-my-decks-table tr { grid-template-columns: auto auto auto minmax(0, 1fr); grid-template-areas: "pick thumb size fmt" "pick thumb deck deck" "pick thumb vis pub" "pick thumb tags tags" "pick thumb acts acts"; }
+    .rb-my-decks-table tr { grid-template-columns: auto auto auto minmax(0, 1fr); grid-template-areas: "pick thumb size fmt" "pick thumb deck deck" "pick thumb pub vis" "pick thumb tags tags" "pick thumb acts acts"; }
     .rb-my-decks-table td.rb-col-published { grid-area: pub; }
     .rb-my-decks-table td.rb-col-pick { grid-area: pick; width: auto; padding: 0; }
     .rb-my-decks-table td.rb-col-visibility { grid-area: vis; }
@@ -2290,7 +2290,8 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 #revision-prompt .modal-body p { font-size: calc(15px * var(--rb-text-scale)); }
 
 /* Publish, apart from who can see the deck as it stands */
-.rb-btn-publish:not([disabled]) { border-color: #2F6B3A; color: #2F6B3A; font-weight: 700; }
+.rb-btn-publish:not([disabled]) { border-color: #2F6B3A; background: #2F6B3A; color: #fff; font-weight: 700; }
+.rb-btn-publish:not([disabled]):hover, .rb-btn-publish:not([disabled]):focus { border-color: #245530; background: #245530; color: #fff; }
 .rb-btn-publish svg { vertical-align: -2px; }
 
 /* the deck History's revisions since the last publication, and the decklists' detail edits */
@@ -2318,3 +2319,4 @@ p.rb-dh-cards { margin-bottom: 0; }
 .rb-dh-edits .rb-dh-number { font-weight: 600; color: var(--rb-muted); }
 .rb-dh-edits .rb-dh-what { flex: 1 1 auto; min-width: 0; }
 .rb-dh-edits .is-correction .rb-dh-what { color: #5B4A2A; }
+.decklist-recreate[hidden], .decklist-recreate-item[hidden] { display: none !important; }
