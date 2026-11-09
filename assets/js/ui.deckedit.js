@@ -339,11 +339,35 @@
             .attr('title', same ? t('deckbuilder.publish.same_hint') : t('deckbuilder.publish.hint'));
     }
 
+    /**
+     * Publishing works on the saved deck, and only a legal deck or a fragment of one side is
+     * published (Ketura, 2026-11-08; decision 0025): the server says which, or why not
+     */
     function publish()
     {
-        // publishing works on the saved deck
-        var go = function () { window.location = page.publish_url; };
-        return dirty ? save(false, go) : go();
+        var button = $('#btn-publish'),
+            check = function () {
+                button.prop('disabled', true).addClass('is-checking');
+                $.ajax(Routing.generate('deck_publish_check', {deck_uuid: app.deck.get_uuid()}), {
+                    dataType: 'json',
+                    success: function (response) {
+                        if(response.ok) {
+                            window.location = page.publish_url;
+                            return;
+                        }
+                        $('#publish-gate-modal').remove();
+                        $(response.html).appendTo('body').modal('show');
+                    },
+                    error: function () {
+                        $('#save-status').text(t('deckbuilder.publish.check_failed')).attr('class', 'rb-save-status is-dirty');
+                    },
+                    complete: function () {
+                        button.removeClass('is-checking');
+                        show_publish();
+                    }
+                });
+            };
+        return dirty ? save(false, check) : check();
     }
 
     function set_visibility(choice)

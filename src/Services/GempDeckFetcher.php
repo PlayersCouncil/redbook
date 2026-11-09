@@ -12,6 +12,11 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
  * DeckImportService. Only Gemp's own hosts are fetched (the configured GEMP_URL's, and the
  * PC's lotrtcgpc.net), so the field can't be used to make Red Book fetch anything else. A page
  * comes back as its text, one line per block; a Gemp deck string in it is used as it is.
+ *
+ * Gemp's two deck pages, a shared deck (/share/deck?id=…) and a library deck
+ * (/gemp-lotr-server/deck/libraryHtml?deckName=…), are the same HTML: a card list whose
+ * names carry the wiki image of the exact printing. That image gives each line its card's
+ * ID ("Northern Ithilien (57_359)"), so the PC errata comes in as the errata.
  */
 class GempDeckFetcher
 {
@@ -60,9 +65,26 @@ class GempDeckFetcher
     public static function htmlToText(string $html): string
     {
         $html = preg_replace('#<(script|style)\b[^>]*>.*?</\1>#is', '', $html);
+        // Gemp's card names: <span class="tooltip">Name<span><img src="…/LOTR-EN07E359.1_card.jpg"></span></span>
+        $html = preg_replace_callback(
+            '#<span class="tooltip">([^<]*)<span>\s*<img[^>]*src="[^"]*/LOTR-EN(\d{2}|V\d)([SE])(\d{3})\.\d+_card\.[a-z]+"[^>]*>\s*</span>\s*</span>#i',
+            fn ($m) => trim($m[1]) . ' (' . self::wikiImageCode($m[2], $m[3], $m[4]) . ')',
+            $html,
+        );
         $html = preg_replace('#<\s*(br|/p|/div|/li|/tr|/h\d|/dt|/dd)\b[^>]*>#i', "\n", $html);
         $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
         $lines = array_filter(array_map('trim', preg_split('/\R/', $text)), 'strlen');
         return implode("\n", $lines);
+    }
+
+    /**
+     * The card ID a wiki image names: LOTR-EN09S033 is 9_33, V2S076 is 102_76, and an
+     * E (PC errata) is in the errata set 50 above it, 07E359 being 57_359
+     */
+    public static function wikiImageCode(string $set, string $kind, string $number): string
+    {
+        $set = strtoupper($set);
+        $code = str_starts_with($set, 'V') ? 100 + (int) substr($set, 1) : (int) $set;
+        return ($code + (strtoupper($kind) === 'E' ? 50 : 0)) . '_' . (int) $number;
     }
 }

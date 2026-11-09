@@ -196,7 +196,8 @@ class BuilderController extends AbstractController
                 ?? (string) $deckManager->getDefaultFormat();
             // the name given, for a single deck; where it came from, for its history (Ketura, 2026-11-08)
             $deckName = $name !== '' && count($parsed['decks']) === 1 ? $name : $data['name'];
-            $last = $deckManager->create($user, $deckName, $code, $data['content'], ['type' => 'import', 'source' => $source]);
+            // a Gemp deck's notes become the deck's
+            $last = $deckManager->create($user, $deckName, $code, $data['content'], ['type' => 'import', 'source' => $source], $data['description']);
             foreach ($data['warnings'] as $warning) {
                 $this->addFlash('warning', $deckName . ': ' . $warning);
             }

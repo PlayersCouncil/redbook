@@ -414,12 +414,12 @@ class DeckManager
 
     /** A new deck for the user, not yet saved */
     /** @param array|null $origin how it came to be (Deck::getOrigin); a new deck by default */
-    public function create(UserInterface $user, string $name, string $format, array $content = [], ?array $origin = null): Deck
+    public function create(UserInterface $user, string $name, string $format, array $content = [], ?array $origin = null, string $description = ''): Deck
     {
         $deck = new Deck();
         $deck->setUuid(\Ramsey\Uuid\Uuid::uuid4());
         $deck->setOrigin($origin ?? ['type' => 'new']);
-        $this->save($user, $deck, ['name' => $name, 'target_format' => $format, 'content' => $content]);
+        $this->save($user, $deck, ['name' => $name, 'target_format' => $format, 'content' => $content] + ($description !== '' ? ['description' => $description] : []));
         return $deck;
     }
 

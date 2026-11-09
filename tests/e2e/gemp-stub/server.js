@@ -5,6 +5,8 @@
 //   GET  /gemp-lotr-server/hall/formats/json  recorded from test.lotrtcgpc.net
 //   POST /gemp-lotr-server/deck/statsJson     rule-of-thumb validation (below)
 //   POST /gemp-lotr-server/deck/convertJson   Decipher -> PC errata from recorded/errata-map.json
+//   GET  /share/deck                          a shared deck's page, recorded from play.lotrtcgpc.net
+//   GET  /gemp-lotr-server/deck/libraryHtml   a library deck's page, recorded from play.lotrtcgpc.net
 //
 // statsJson checks only what the tests rely on, with Gemp's own wording: a
 // Ring-bearer and Ring, the minimum draw deck size, equal Free Peoples and
@@ -117,6 +119,11 @@ http.createServer((req, res) => {
     else if (url === '/deck/statsJson' && req.method === 'POST') result = await stats(form);
     else if (url === '/deck/convertJson' && req.method === 'POST') result = convert(form);
     else if (url === '/health') result = [200, { ok: true }];
+    else if ((url === '/share/deck' || url === '/deck/libraryHtml') && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=UTF-8' });
+      res.end(fs.readFileSync(path.join(__dirname, 'recorded', url === '/share/deck' ? 'share-deck.html' : 'library-deck.html')));
+      return;
+    }
     else result = [404, { error: 'not in the stub' }];
     res.writeHead(result[0], { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(result[1]));

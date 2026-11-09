@@ -16,6 +16,7 @@ use App\Entity\PublishedDeckRevision;
 use App\Repository\FormatRepository;
 use App\Entity\User;
 use App\Services\PublishedDeckFactory;
+use App\Services\PublishGate;
 use App\Services\PublishedDeckManager;
 use App\Services\Texts;
 use DateTime;
@@ -80,8 +81,15 @@ class SocialController extends AbstractController
 
         $decklist = $decklistFactory->createDecklistFromDeck($deck, $deck->getName(), $deck->getDescriptionMd());
         $repo = $em->getRepository(PublishedDeck::class);
+        // only a legal deck, or a fragment of one side, is published (Ketura, 2026-11-08;
+        // decision 0025), on Gemp's fresh answer: the page says why not and can't be sent
+        $gate = PublishGate::verdict($decklist->getValidation(), $deck->getTargetFormat());
 
         if ($request->isMethod('POST')) {
+            if (!$gate['ok']) {
+                $this->addFlash('error', $translator->trans('decklist.publish.gate.blocked'));
+                return $this->redirectToRoute('deck_publish_form', ['deck_uuid' => $deck->getUuid()]);
+            }
             // the line it continues is the deck's own (createDecklistFromDeck): a deck deleted
             // and brought back with Recreate keeps its line (Ketura, 2026-11-08)
             $this->applyDecklistForm($decklist, $request, FormMode::Create, $texts);
@@ -125,6 +133,28 @@ class SocialController extends AbstractController
             'previous' => $decklistFactory->defaultPrevious($deck),
             // shown under the title (Ketura, 2026-11-07)
             'duplicate_warning' => $warning,
+            'gate' => $gate,
+        ]);
+    }
+
+    /**
+     * The deckbuilder's Publish button asks first (Ketura, 2026-11-08; decision 0025): ok, or
+     * the popup saying why the saved deck can't be published
+     */
+    #[Route(path: '/deck/publish/{deck_uuid}/check', name: 'deck_publish_check', methods: ['GET'], requirements: ['deck_uuid' => '[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}'])]
+    public function publishCheckAction(TranslatorInterface $translator, \App\Services\DeckValidator $validator, string $deck_uuid): JsonResponse
+    {
+        $user = $this->getUser();
+        $deck = $user ? $this->managerRegistry->getRepository(Deck::class)->findOneBy(['uuid' => $deck_uuid, 'dateDeleted' => null]) : null;
+        if (!$deck || $deck->getUser()->getId() != $user->getId()) {
+            throw $this->createAccessDeniedException($translator->trans('decklist.publish.errors.unauthorized'));
+        }
+        $format = $deck->getTargetFormat() ?: null;
+        $gate = PublishGate::verdict($format ? $validator->validateSlots($deck->getSlots(), $format) : null, $format);
+        return new JsonResponse([
+            'ok' => $gate['ok'],
+            'kind' => $gate['kind'],
+            'html' => $gate['ok'] ? null : $this->renderView('Decklist/publish-gate.html.twig', ['gate' => $gate, 'back' => null]),
         ]);
     }
 
@@ -261,12 +291,19 @@ class SocialController extends AbstractController
 
     /** Publishing a withdrawn decklist again: public at its old address, with a fresh grace period */
     #[Route(path: '/decklist/republish/{decklist_id}', name: 'decklist_republish', methods: ['POST'], requirements: ['decklist_id' => '\d+'])]
-    public function republishAction(Request $request, TranslatorInterface $translator, int $decklist_id): Response
+    public function republishAction(Request $request, TranslatorInterface $translator, \App\Services\DeckValidator $validator, int $decklist_id): Response
     {
         $decklist = $this->editableDecklist($decklist_id, true);
         $this->requireStateToken($request);
         if (!$decklist->isWithdrawn()) {
             throw new BadRequestHttpException('This decklist is already public.');
+        }
+        // publishing again is publishing (decision 0025): checked afresh, the cards may have been replaced
+        $gate = PublishGate::verdict($validator->validateDeck($decklist), $decklist->getTargetFormat());
+        if (!$gate['ok']) {
+            $this->managerRegistry->getManager()->flush();
+            $this->addFlash('error', $translator->trans('decklist.publish.gate.republish_blocked', ['%problems%' => implode(' · ', $gate['problems'])]));
+            return $this->redirectToRoute('decklist_edit', ['decklist_id' => $decklist->getId()]);
         }
         $decklist->setWithdrawn(false);
         $decklist->setDatePublished(new DateTime());
@@ -394,6 +431,7 @@ class SocialController extends AbstractController
             'source_deck' => null,
             'private_revision' => null,
             'duplicate_warning' => null,
+            'gate' => null,
         ]);
     }
 

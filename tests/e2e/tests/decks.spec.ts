@@ -415,4 +415,26 @@ test('New Deck: Fellowship Block first, imports on the same page, the button say
   await page.fill('#gemp_url', 'https://example.com/deck');
   await button.click();
   await expect(page.locator('.alert')).toContainText("Couldn't import from Gemp: not a Gemp address.");
+
+  // Gemp's shared-deck page (the stub serves one recorded from play.lotrtcgpc.net): its name,
+  // its notes, and each card as the printing its image shows, the PC errata included
+  await page.goto('/deck/new');
+  await page.fill('#gemp_url', 'http://gemp-stub:8080/share/deck?id=a2V0dXJhfEdob3N0cyduJ0dvYmxpbnM%3D');
+  await expect(button).toHaveText('Import Deck');
+  await button.click();
+  await expect(page).toHaveURL(/\/deck\/edit\//);
+  await waitForCardData(page);
+  await expect(page.locator('#deck-name')).toHaveValue("Ghosts'n'Goblins");
+  await expect(page.locator('.rb-draw-total')).toContainText('76');
+  await expect(page.locator('#deck [data-code="57_359"]').first()).toBeVisible();
+  await expect(page.locator('#deck [data-code="102_76"]').first()).toBeVisible();
+  // and a library deck's page, named as given
+  await page.goto('/deck/new');
+  await page.fill('#name', `E2E Gemp library ${runId}`);
+  await page.fill('#gemp_url', 'http://gemp-stub:8080/gemp-lotr-server/deck/libraryHtml?deckName=01%20FOTR%20Aragorn%20Starter%20Deck');
+  await button.click();
+  await expect(page).toHaveURL(/\/deck\/edit\//);
+  await waitForCardData(page);
+  await expect(page.locator('#deck-name')).toHaveValue(`E2E Gemp library ${runId}`);
+  await expect(page.locator('.rb-draw-total')).toContainText('60');
 });

@@ -377,3 +377,53 @@ test('editing a published decklist: patches, the deck, and its private revision'
   await page.click('#tab-header-history');
   await expect(page.locator('#tab-pane-history')).toContainText('Recreated after it was deleted');
 });
+
+test('only a legal deck, or a fragment of one side, can be published', async ({ page }) => {
+  // Ketura, 2026-11-08 (decision 0025)
+  const [, gemp] = fs.readFileSync(path.join(__dirname, '..', 'fixtures', 'fellowship-gemp.txt'), 'utf8').trim().split('\n');
+  const [rb, ring, sites, draw] = gemp.split('|');
+  const cards = draw.split(',');
+  const importDeck = async (name: string, deck: string) => {
+    await page.goto('/deck/new');
+    await page.fill('#content', `${name}\n${deck}`);
+    await page.click('#new-deck-submit');
+    await expect(page).toHaveURL(/\/deck\/edit\//);
+    await waitForCardData(page);
+    return page.url().match(/\/deck\/edit\/([0-9a-f-]{36})/)![1];
+  };
+
+  // a whole deck a Free Peoples card short: Publish says why, and stays
+  const short = await importDeck(`E2E short ${runId}`, [rb, ring, sites, cards.slice(1).join(',')].join('|'));
+  await page.click('#btn-publish');
+  const gate = page.locator('#publish-gate-modal');
+  await expect(gate).toBeVisible();
+  await expect(gate).toContainText('Your deck is not legal for the Fellowship Block format for the following reasons:');
+  await expect(gate.locator('.rb-validation-list li')).toContainText([
+    'Deck contains below minimum number of cards: 59<60.',
+    'Deck contains different number of Shadow and Free peoples cards.',
+  ]);
+  await expect(gate).toContainText('You may only publish legal decks.');
+  await expect(gate.locator('strong')).toHaveText('deck fragment');
+  await gate.locator('.modal-footer button').click();
+  await expect(gate).toBeHidden();
+  await expect(page).toHaveURL(new RegExp(`/deck/edit/${short}`));
+
+  // the publish page by its address: the same popup, back to the deckbuilder, and no sending it
+  await page.goto(`/deck/publish/${short}`);
+  await expect(page.locator('#publish-gate-modal')).toBeVisible();
+  await expect(page.locator('#decklist-submit')).toBeDisabled();
+  await page.click('#publish-gate-back');
+  await expect(page).toHaveURL(new RegExp(`/deck/edit/${short}`));
+
+  // one side only, but 29 cards: not a fragment
+  await importDeck(`E2E small half ${runId}`, [rb, ring, sites, cards.slice(0, 29).join(',')].join('|'));
+  await page.click('#btn-publish');
+  await expect(page.locator('#publish-gate-modal')).toBeVisible();
+
+  // 30 Free Peoples cards and no Shadow: a fragment, published
+  await importDeck(`E2E fragment ${runId}`, [rb, ring, sites, cards.slice(0, 30).join(',')].join('|'));
+  await page.click('#btn-publish');
+  await expect(page).toHaveURL(/\/deck\/publish\//);
+  await expect(page.locator('#publish-gate-modal')).toHaveCount(0);
+  await publish(page, `E2E fragment ${runId}`);
+});

@@ -2375,3 +2375,6 @@ p.rb-dh-cards { margin-bottom: 0; }
 .rb-new-import legend { width: auto; margin: 0; padding: 0 6px; border: 0; font-size: calc(15px * var(--rb-text-scale)); font-weight: 700; }
 .rb-new-blank { margin: 4px 0 10px; color: var(--rb-muted); font-style: italic; }
 .rb-new-private { margin: 14px 0 10px; color: var(--rb-muted); }
+/* the publish gate's popup shows the whole Gemp box (Ketura, 2026-11-08) */
+.rb-publish-gate .rb-validation { margin: 10px 0 14px; }
+.rb-publish-gate .rb-validation-list { max-height: 240px; }

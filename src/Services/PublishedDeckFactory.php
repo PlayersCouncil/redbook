@@ -12,9 +12,8 @@ use DateTime;
 use DateTimeInterface;
 
 /**
- * Publishing a deck as a decklist. Publishing is never blocked by validation
- * (decision 0023): the decklist keeps a fresh validation snapshot and shows its
- * problems.
+ * Publishing a deck as a decklist. The decklist keeps a fresh validation snapshot; whether
+ * it may be published at all is PublishGate's (decision 0025: legal decks and fragments).
  */
 class PublishedDeckFactory
 {

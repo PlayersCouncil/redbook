@@ -29,6 +29,7 @@ class DeckImportService
         'ring' => DeckContent::ROLE_RING, 'the one ring' => DeckContent::ROLE_RING,
         'sites' => DeckContent::ROLE_SITE, 'adventure deck' => DeckContent::ROLE_SITE, 'adventure path' => DeckContent::ROLE_SITE,
         'draw deck' => DeckContent::ROLE_DRAW, 'free peoples' => DeckContent::ROLE_DRAW, 'shadow' => DeckContent::ROLE_DRAW,
+        'free peoples draw deck' => DeckContent::ROLE_DRAW, 'shadow draw deck' => DeckContent::ROLE_DRAW,
         'map' => DeckContent::ROLE_MAP,
     ];
 
@@ -98,8 +99,20 @@ class DeckImportService
 
         $role = null;
         $named = false;
+        $notes = false;
         foreach ($lines as $line) {
-            if (preg_match('/^(format|version|tags):/i', $line)) {
+            if (preg_match('/^(format|version|tags|author):/i', $line)) {
+                continue;
+            }
+            // Gemp's deck page ends with its notes, "null" when there are none
+            if (preg_match('/^#*\s*notes:?$/i', $line)) {
+                $notes = true;
+                continue;
+            }
+            if ($notes) {
+                if (strtolower($line) !== 'null') {
+                    $deck['description'] .= ($deck['description'] === '' ? '' : "\n") . $line;
+                }
                 continue;
             }
             $heading = $this->heading($line);

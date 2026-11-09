@@ -1,0 +1,41 @@
+{#
+   Why a deck can't be published (Ketura, 2026-11-08; decision 0025): only legal decks, or a
+   fragment of one side. The deckbuilder shows it when Publish is clicked (OK closes it); the
+   publish page shows it on arrival, with its submit button disabled (Return to Deck Edit).
+   Variables: gate (PublishGate::verdict), back (the deckbuilder's address, or null)
+#}
+<div class="modal fade rb-publish-gate" id="publish-gate-modal" tabindex="-1" role="dialog" aria-labelledby="publish-gate-title">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="{{ 'forms.cancel' | trans }}"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="publish-gate-title">{{ 'decklist.publish.gate.title' | trans }}</h4>
+            </div>
+            <div class="modal-body">
+                {% if gate.reason == 'illegal' %}
+                    <p>{{ 'decklist.publish.gate.illegal' | trans({'%format%': gate.format}) }}</p>
+                    {# the deckbuilder's red Gemp box #}
+                    <div class="rb-validation is-bad" id="publish-gate-problems">
+                        <div class="rb-validation-head">{{ 'deckbuilder.validation.problems' | trans({'%count%': gate.problems|length, '%format%': gate.format}) }}</div>
+                        <ul class="rb-validation-list">{% for problem in gate.problems %}<li>{{ problem }}</li>{% endfor %}</ul>
+                    </div>
+                    <p>{{ 'decklist.publish.gate.only_legal' | trans }}</p>
+                    <ul>
+                        <li>{{ 'decklist.publish.gate.change_format' | trans }}</li>
+                        <li>{{ 'decklist.publish.gate.fix' | trans }}</li>
+                    </ul>
+                    <p>{{ 'decklist.publish.gate.fragment' | trans | raw }}</p>
+                {% else %}
+                    <p>{{ ('decklist.publish.gate.' ~ gate.reason) | trans }}</p>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                {% if back %}
+                    <a href="{{ back }}" class="btn btn-primary" id="publish-gate-back">{{ 'decklist.publish.gate.back' | trans }}</a>
+                {% else %}
+                    <button type="button" class="btn btn-primary" data-dismiss="modal">{{ 'decklist.publish.gate.ok' | trans }}</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>

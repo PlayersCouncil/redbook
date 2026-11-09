@@ -9,6 +9,9 @@
     <script src="{{ asset('js/ui.decklist_form.js') }}"></script>
     <script type="text/javascript">
       app.deck.init({{ decklist|json_encode|raw }});
+      {% if gate is not null and not gate.ok %}
+      $(function () { $('#publish-gate-modal').modal('show'); });
+      {% endif %}
     </script>
 {% endblock %}
 
@@ -227,7 +230,8 @@
                     </div>
                 </form>
                 <div class="rb-form-actions">
-                    <button type="submit" class="btn btn-success" form="decklist-form">{{ (mode == 'create' ? 'forms.publish' : 'forms.save') | trans }}</button>
+                    {% set blocked = gate is not null and not gate.ok %}
+                    <button type="submit" class="btn btn-success" form="decklist-form" id="decklist-submit"{% if blocked %} disabled title="{{ 'decklist.publish.gate.blocked' | trans }}"{% endif %}>{{ (mode == 'create' ? 'forms.publish' : 'forms.save') | trans }}</button>
                     <a href="{{ cancel }}" class="btn btn-default">{{ 'forms.cancel' | trans }}</a>
                 </div>
             </div>
@@ -237,6 +241,10 @@
        Saving a changed decklist whose deck has a private revision asks whether that revision
        takes the changes too (Ketura, 2026-11-08); ui.decklist_form shows it
     #}
+    {# a deck that can't be published: why, shown on arrival (Ketura, 2026-11-08; decision 0025) #}
+    {% if gate is not null and not gate.ok %}
+        {% include 'Decklist/publish-gate.html.twig' with {gate: gate, back: cancel} %}
+    {% endif %}
     {% if private_revision %}
         <div class="modal fade" id="apply-to-deck-modal" tabindex="-1" role="dialog" aria-labelledby="apply-to-deck-title">
             <div class="modal-dialog" role="document">
