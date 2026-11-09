@@ -12,10 +12,22 @@ body { height: 100vh; height: 100dvh; display: flex; flex-direction: column; ove
     #wrapper, #wrapper.rb-fill { display: block; overflow: visible; }
 }
 
+/* the brand's corner (Ketura, 2026-11-09): a darker block from the window's edge, the shade a
+   section takes on hover, so the logo has its own space; on the wide bar only, where it is
+   the first thing */
+@media (min-width: 1100px) {
+    .rb-topbar .rb-brand { align-self: stretch; margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); margin-right: 10px;
+        padding: 0 18px 0 max(16px, env(safe-area-inset-left, 0px)); background: rgba(0, 0, 0, .14); }
+}
+/* the wordmark sits centred on the book mark (its capitals' height, not the line's, is what
+   the eye centres) */
+.rb-brand-word { padding-top: 0; }
+
 /* the top bar's menus open on paper, below the bar */
 .rb-topbar .dropdown { position: relative; }
 .rb-topbar .dropdown-menu { margin-top: 0; }
-.rb-nav > li > a.is-soon { cursor: default; }
+.rb-nav > li > a.is-soon, .rb-lang[disabled] { cursor: default; opacity: .5; }
+.rb-lang[disabled]:hover { background: none; }
 .rb-nav > li > a.is-soon:hover { color: var(--rb-on-leather-2); background: none; }
 .rb-nav .caret { margin-left: 2px; color: var(--rb-gilt); }
 #login > a.disabled { pointer-events: none; }
@@ -29,8 +41,9 @@ body { height: 100vh; height: 100dvh; display: flex; flex-direction: column; ove
     body.rb-menu-open .rb-topbar .rb-nav-primary .dropdown-menu { position: static; float: none; margin: 0 0 6px; box-shadow: none; }
 }
 
-/* the footer: the links, then the disclaimer */
-.rb-footer { flex: 1 1 auto; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 18px; }
-.rb-footer-links { display: flex; flex-wrap: wrap; gap: 0 14px; }
+/* the footer: the links, then the disclaimer, centred (Ketura, 2026-11-09) */
+.rb-foot .rb-foot-inner { justify-content: center; }
+.rb-footer { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 2px 18px; text-align: center; }
+.rb-footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 14px; }
 .rb-footer-links a { white-space: nowrap; }
-.rb-footer-disclaimer { flex: 1 1 420px; margin: 0; }
+.rb-footer-disclaimer { margin: 0; }

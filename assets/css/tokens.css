@@ -193,10 +193,15 @@ html.pc-dark {
     /* text on a filled tag or button of a status colour (danger, success, the inks): white on
        light, the page on dark, where those fills are light */
     --rb-on-fill:        #FFFFFF;
+    /* the gilt foil of the title and wordmark, top to bottom. Ketura (2026-11-09): softer than
+       the design's; the three darker stops are 15% nearer the brightest (were #E3C277, #A47A33,
+       #D9B66A), the two brightest unchanged */
+    --rb-foil: linear-gradient(180deg, #FBEBB8 0%, #E7C881 38%, #B18B47 52%, #DEBE76 70%, #F3DDA2 100%);
 }
 html.pc-dark {
-    --rb-highlight:      #D9B66A;
-    --rb-highlight-ink:  #241D12;
+    /* the same gold as in the light theme (Ketura, 2026-11-09): the starting S and its pills */
+    --rb-highlight:      #E8B931;
+    --rb-highlight-ink:  #231E19;
     --rb-divide:         #5F4F41;
     --rb-on-fill:        #1F1A15;
 }

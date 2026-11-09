@@ -55,7 +55,7 @@ html.rb-onepage .rb-main { flex: 1 1 auto; min-height: 0; overflow: hidden; disp
 .rb-brand-word { font: 700 21px/1 var(--rb-font-title); letter-spacing: -.01em; padding-top: 2px;
     font-kerning: none; font-variant-ligatures: none; font-feature-settings: "kern" 0, "liga" 0, "dlig" 0;
     color: transparent; -webkit-background-clip: text; background-clip: text;
-    background-image: linear-gradient(180deg, #FBEBB8 0%, #E3C277 38%, #A47A33 52%, #D9B66A 70%, #F3DDA2 100%);
+    background-image: var(--rb-foil);
     filter: drop-shadow(0 -1px 0 rgba(0,0,0,.5)); }
 .rb-brand-word .rb-cap { font-size: 1.45em; }
 .rb-brand:hover .rb-brand-word { filter: drop-shadow(0 -1px 0 rgba(0,0,0,.5)) brightness(1.12); }

@@ -55,17 +55,13 @@
         <button type="button" data-theme-set="dark" title="{{ 'nav.theme.dark' | trans }}"><span class="fas fa-moon"></span></button>
     </div>
 {% endmacro %}
+{# the language menu, switched off for now (Ketura, 2026-11-09): the translations aren't
+   ready; it shows greyed, like the sections not built yet. To switch it back on, the menu is
+   in git history (2140de9d) #}
 {% macro language_menu(route, params, align_right) %}
-    <div class="dropdown rb-lang-menu">
-        <button type="button" class="rb-lang dropdown-toggle" data-toggle="dropdown" aria-expanded="false" title="{{ 'nav.language' | trans }}">
-            <span class="fas fa-globe"></span>{{ app.request.locale | default(default_locale) | upper }}
-        </button>
-        <ul class="dropdown-menu{% if align_right %} dropdown-menu-right{% endif %}">
-            {% for supported_locale in supported_locales %}
-                <li><a href="{{ path(route, params|merge({'_locale': supported_locale})) }}"><span lang="{{ supported_locale }}" class="lang-sm lang-lbl lang-lbl-full"></span></a></li>
-            {% endfor %}
-        </ul>
-    </div>
+    <button type="button" class="rb-lang" disabled title="{{ 'nav.language' | trans }} ({{ 'nav.notyet' | trans }})">
+        <span class="fas fa-globe"></span>{{ app.request.locale | default(default_locale) | upper }}
+    </button>
 {% endmacro %}
 {% import _self as shell %}
 {% set _canonical = app.request.attributes.get('_canonical_route')|default(_route) %}

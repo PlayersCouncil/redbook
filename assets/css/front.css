@@ -19,14 +19,14 @@
 .rb-frame-the { padding: 0 12px; font: 700 26px/1 var(--rb-font-title); letter-spacing: .14em; margin-right: -.14em;
     font-kerning: none; font-variant-ligatures: none; font-feature-settings: "kern" 0, "liga" 0, "dlig" 0;
     color: transparent; -webkit-background-clip: text; background-clip: text;
-    background-image: linear-gradient(180deg, #FBEBB8 0%, #E3C277 38%, #A47A33 52%, #D9B66A 70%, #F3DDA2 100%);
+    background-image: var(--rb-foil);
     filter: drop-shadow(0 -1px 0 rgba(0,0,0,.55)) drop-shadow(0 1px 0 rgba(255,236,190,.22)); }
 /* Cover title: Cinzel Decorative in gilt foil, kerning off (its H-E and O-O pairs collide otherwise),
    with R and B enlarged to read as capitals and capital O glyphs. Markup: <span class="rb-cap">R</span>ed <span class="rb-cap">b</span>OOk */
 .rb-cover h1 { font: 700 78px/1.05 var(--rb-font-title); letter-spacing: -.01em; white-space: nowrap;
     font-kerning: none; font-variant-ligatures: none; font-feature-settings: "kern" 0, "liga" 0, "dlig" 0;
     color: transparent; -webkit-background-clip: text; background-clip: text;
-    background-image: linear-gradient(180deg, #FBEBB8 0%, #E3C277 38%, #A47A33 52%, #D9B66A 70%, #F3DDA2 100%);
+    background-image: var(--rb-foil);
     filter: drop-shadow(0 -1px 0 rgba(0,0,0,.55)) drop-shadow(0 1px 0 rgba(255,236,190,.22)); }
 .rb-cover h1 .rb-cap { font-size: 1.45em; }
 /* Bookplate: a paper label pasted into the leather */
