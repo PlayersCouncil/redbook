@@ -47,6 +47,13 @@
    centred in it. The windows, as fractions of the card: character x .11-.895 y .14-.565;
    modifier x .22-.92 y .11-.485; site (landscape) x .10-.89 y .20-.74. The tile is 260:231. */
 .rb-thumb-card[class*="rb-thumb-tpl-"] img { position: absolute; max-width: none; height: auto; object-fit: fill; }
+/* the card's shape before its picture arrives (Ketura, 2026-11-09): a lazy image not yet
+   loaded is 0px tall, so a strong framing (Boromir, Defender of Minas Tirith, at top -896%)
+   put it hundreds of pixels outside its tile, where a browser that clips by the tile never
+   saw it near the screen and never loaded it. With the card's proportions it covers the tile
+   from the start; once loaded, the picture's own proportions take over */
+.rb-thumb-card[class*="rb-thumb-tpl-"] img { aspect-ratio: auto 357 / 497; }
+.rb-thumb-tpl-site img { aspect-ratio: auto 496 / 357; }
 .rb-thumb-tpl-character img { width: 150.2%; left: -25.48%; top: -32.95%; }
 .rb-thumb-tpl-modifier img { width: 170.2%; left: -47%; top: -29.3%; }
 .rb-thumb-tpl-site img { width: 228.6%; left: -63.2%; top: -37%; }
