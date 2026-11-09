@@ -131,8 +131,9 @@
 .rb-col-size { white-space: nowrap; }
 .rb-col-score { white-space: nowrap; font-size: 15px; }
 .rb-col-score .rb-comments { display: block; margin: 2px 0 0; font-size: 12px; }
-.rb-score.is-zero { color: var(--rb-ink-3); font-weight: 400; }
-.rb-score.is-fiery { color: var(--rb-fire); }
+.rb-score.is-zero { color: var(--rb-ink-3); font-weight: 400; opacity: .6; }
+.rb-score.is-zero .rb-ri { filter: grayscale(1); }
+.rb-score.is-fiery { color: var(--rb-ink); }
 .rb-size { display: inline-flex; align-items: baseline; justify-content: flex-start; min-width: 0; padding: 2px 6px; border-radius: 5px; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 14px; }
 .rb-size-fp { color: var(--rb-fp); min-width: 2ch; text-align: right; }
 .rb-size-sh { color: var(--rb-shadow); min-width: 2ch; text-align: left; }
@@ -151,9 +152,9 @@
 .rb-decks:not(.rb-my-decks-table) .rb-row-tags { flex-wrap: wrap; row-gap: 3px; }
 .rb-row-tags { display: flex; flex-wrap: wrap; gap: 3px; }
 .rb-row-tags .rb-tag-chip { padding: 1px 8px; font-size: 12px; white-space: nowrap; }
-.rb-archive-mark { margin-left: 4px; padding: 0 5px; border-radius: 3px; background: var(--rb-sunk); font-size: 11px; font-weight: 600; }
-.rb-score { color: var(--rb-link); font-weight: 700; }
-.rb-comments { margin-left: 8px; color: var(--rb-success); }
+.rb-score { display: inline-flex; align-items: center; gap: 3px; color: var(--rb-ink-2); font-weight: 700; font-variant-numeric: tabular-nums; }
+.rb-comments { margin-left: 8px; color: var(--rb-ink-2); }
+.rb-comments .fa-comment { color: var(--rb-ink-3); }
 
 /* a phone: each deck a block of three lines (format, size and year; the name; cultures and rating) */
 @media (max-width: 767px) {
@@ -220,16 +221,10 @@
 /* the decks */
 .rb-my-decks-table td.rb-col-pick, .rb-my-decks-table th.rb-col-pick { width: 28px; padding: 6px 2px 6px 4px; cursor: default; }
 .rb-col-pick input { margin: 0; width: 16px; height: 16px; cursor: pointer; vertical-align: middle; }
-.rb-fmt-state { display: block; margin-top: 3px; }
-.rb-fmt-state .label { font-size: 70%; }
 .rb-col-visibility { white-space: nowrap; }
 /* "Fellowship Block" on one line (Ketura, 2026-11-07) */
 .rb-my-decks-table .rb-fmt { white-space: nowrap; }
-.rb-vis { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px 2px 6px; border-radius: 12px; font-size: 13px; font-weight: 700; color: var(--rb-ink-2); background: var(--rb-sunk); }
-.rb-vis-hidden { color: var(--rb-ink-2); background: var(--rb-primary-soft); }
-.rb-vis-published { color: var(--rb-success); background: var(--rb-success-soft); }
 .rb-col-published { white-space: nowrap; }
-a.rb-vis-published:hover, a.rb-vis-published:focus { color: var(--rb-success); background: color-mix(in srgb, var(--rb-success) 18%, var(--rb-success-soft)); text-decoration: none; }
 /* under the pill: the deck's own number, or how it stands to what was published (Ketura, 2026-11-08) */
 .rb-deck-current { display: block; margin-top: 3px; color: var(--rb-ink-2); font-size: 12px; font-weight: 600; white-space: nowrap; }
 .rb-my-decks-table td, .rb-my-decks-table th { padding-left: 6px; padding-right: 6px; }

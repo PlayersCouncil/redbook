@@ -101,9 +101,9 @@ div.tags span.tag:not(:first-child)::before {
 }
 
 .social-icons>*{margin-left:5px}
-.social-icon-like{color:var(--rb-link)}
+.social-icon-like{color:var(--rb-cheers)}
 .social-icon-fire{color:var(--rb-fire)}
-.social-icon-favorite{color:var(--rb-crown-2)}
+.social-icon-favorite{color:var(--rb-fav)}
 .social-icon-comment{color:var(--rb-success)}
 .social-icon-version{color:var(--rb-link)}
 

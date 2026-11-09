@@ -75,8 +75,8 @@
             + '<span class="fas fa-share" aria-hidden="true"></span> ' + t('deckbuilder.history.published') + ' <a href="' + p.url + '">' + _.escape(p.name) + '</a>'
             + (p.review === 'unverified' ? ' <span class="label label-warning">' + t('decklist.review.unverified') + '</span>' : '')
             + '<span class="rb-history-social">'
-            + '<span title="' + t('deckbuilder.history.likes') + '"><span class="fas fa-heart social-icon-like"></span> ' + (p.likes || 0) + '</span>'
-            + '<span title="' + t('deckbuilder.history.favorites') + '"><span class="fas fa-star social-icon-favorite"></span> ' + (p.favorites || 0) + '</span>'
+            + '<span title="' + t('deckbuilder.history.likes') + '"><svg class="rb-ri" aria-hidden="true"><use href="#ri-cheers"/></svg> ' + (p.likes || 0) + '</span>'
+            + '<span title="' + t('deckbuilder.history.favorites') + '"><svg class="rb-ri" aria-hidden="true"><use href="#ri-fav"/></svg> ' + (p.favorites || 0) + '</span>'
             + '<span title="' + t('deckbuilder.history.comments') + '"><span class="fas fa-comment social-icon-comment"></span> ' + (p.comments || 0) + '</span>'
             + '</span></td><td></td></tr>';
     }

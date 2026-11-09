@@ -44,7 +44,7 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   // one form for publishing and editing (Ketura, 2026-11-06), laid out as the deckbuilder
   // (2026-11-07): the deck on the left with its format, the form as a tab on the right
   await expect(page.locator('.rb-publish-title')).toHaveText('Publish Deck');
-  await expect(page.locator('.rb-publish-format')).toHaveText('Fellowship Block');
+  await expect(page.locator('.rb-publish-facts .rb-format')).toHaveText('Fellowship Block');
   await expect(page.locator('#deck.rb-readonly')).toContainText('Gimli');
   await expect(page.locator('#release-note')).toContainText('three days');
   // the deck's notes came with it, in the Notes tab's own editor

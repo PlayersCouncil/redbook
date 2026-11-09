@@ -20,7 +20,6 @@
 /* the decklist form, laid out as the deckbuilder (Ketura, 2026-11-07): the deck on the left,
    the form scrolling on the right with the notes at their natural height */
 .rb-publish-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.rb-publish-format { font-weight: 700; font-size: 16px; }
 .rb-publish-info .deck-validation .alert { margin-bottom: 4px; }
 .rb-publish-info .deck-validation p { margin: 0; }
 /* the right side (Ketura, 2026-11-07): a large title, the notice and deck name fixed at the

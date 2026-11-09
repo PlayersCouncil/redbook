@@ -41,6 +41,7 @@
     {% block stylesheets %}{% endblock %}
 </head>
 <body>
+{% include '_reactions.svg.twig' %}
 {# The page is the size of the window (Ketura, 2026-11-03): the top bar and footer stay
    put and the content between scrolls, or, on pages like the deckbuilder that set
    wrapper_class to rb-fill, fills the space and lets its own panes scroll.

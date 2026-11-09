@@ -54,13 +54,7 @@
 .rb-deck { border-top: 1px solid var(--rb-line); padding: 10px 2px 12px 0; }
 
 /* ---- shared controls ---- */
-.rb-btn { height: 34px; padding: 0 12px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-control); color: var(--rb-ink); font-size: 14px; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
-.rb-btn:hover:not([disabled]) { background: var(--rb-page); }
-.rb-btn[disabled] { color: var(--rb-ink-3); cursor: default; }
-.rb-btn-primary { border: 0; background: var(--rb-primary); color: var(--rb-primary-ink); font-weight: 700; padding: 0 18px; }
-.rb-btn-primary:hover:not([disabled]) { background: var(--rb-primary-hover); }
-.rb-btn-primary[disabled] { background: var(--rb-ink-3); color: var(--rb-on-fill); }
-.rb-btn-small { height: 28px; font-size: 13px; padding: 0 8px; }
+/* .rb-btn, .rb-btn-primary and .rb-btn-small are the theme's buttons (theme.css section 8) */
 .rb-field { display: flex; flex-direction: column; gap: 2px; margin: 0; font-weight: normal; min-width: 0; }
 .rb-field > span { font-size: 12px; font-weight: 600; color: var(--rb-ink-2); }
 .rb-field input, .rb-field select, .rb-field textarea, .rb-stat input, .rb-stat select, .rb-search input {
@@ -140,7 +134,6 @@
 .rb-review-raw { margin: 8px 0 0; max-height: 260px; overflow: auto; font-size: 12px; white-space: pre-wrap; background: var(--rb-leaf); }
 
 /* historic accounts and unverified archive decks, site-wide */
-.rb-user-historic { margin-left: 4px; font-size: 10px; font-weight: 600; vertical-align: middle; background: var(--rb-ink-3); letter-spacing: .02em; }
 .rb-unverified-badge { margin-left: 6px; font-size: 10px; font-weight: 600; vertical-align: middle; }
 
 /* ---- the deck ("green") ---- */
@@ -466,7 +459,6 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 .rb-starting-fields { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 4px; }
 .rb-starting-bid { width: 120px; height: 28px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 13px; }
 .rb-notes .rb-btn.rb-start-pick { width: 28px; height: 28px; padding: 0; justify-content: center; font-size: 18px; font-weight: 700; line-height: 1; }
-.rb-notes .rb-btn.rb-start-pick[aria-pressed=true] { background: var(--rb-primary); border-color: transparent; color: var(--rb-primary-ink); }
 .rb-starting-pill { display: inline-flex; align-items: center; gap: 2px; padding: 1px 9px 1px 4px; border-radius: 12px; background: var(--rb-highlight); }
 .rb-starting-pill .rb-starting-card { padding: 0; background: none; }
 .rb-starting-remove { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--rb-warning); font-size: 15px; line-height: 1; cursor: pointer; }
@@ -474,7 +466,6 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 #deck.rb-picking-start .rb-pick-off { opacity: .3; filter: grayscale(1); cursor: not-allowed; }
 #deck.rb-picking-start .rb-pick-off, #deck.rb-picking-start .rb-pick-off:hover { outline: none; }
 .rb-annot-pick { margin-left: auto; }
-.rb-notes .rb-btn.rb-annot-pick[aria-pressed=true] { background: var(--rb-primary); border-color: transparent; color: var(--rb-primary-ink); }
 .rb-annot-add { position: relative; flex: 0 1 260px; }
 /* picking a card to annotate: the deck's cards light up under the pointer */
 /* picking (Ketura, 2026-11-07): every card that can be picked outlined, gold under the pointer */
@@ -590,8 +581,6 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 #revision-prompt .modal-body p { font-size: 15px; }
 
 /* Publish, apart from who can see the deck as it stands */
-.rb-btn-publish:not([disabled]) { border-color: var(--rb-success); background: var(--rb-success); color: var(--rb-on-fill); font-weight: 700; }
-.rb-btn-publish:not([disabled]):hover, .rb-btn-publish:not([disabled]):focus { border-color: var(--rb-success); background: var(--rb-success); color: var(--rb-on-fill); }
 .rb-btn-publish svg { vertical-align: -2px; }
 
 /* the deck History's revisions since the last publication, and the decklists' detail edits */

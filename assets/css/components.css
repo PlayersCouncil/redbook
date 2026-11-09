@@ -317,3 +317,17 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 .rb-ld-count { flex: 0 0 auto; color: var(--rb-ink-2); font-size: 12px; }
 .rb-ld-in { flex: 0 0 auto; color: var(--rb-success); font-size: 12px; font-weight: 700; }
 .rb-ld-none { padding: 10px 4px; margin: 0; color: var(--rb-ink-2); }
+
+/* Publish is green (Ketura, 2026-11-09: the switch from blue to green is deliberate): the
+   deckbuilder's Publish once the deck can be, and the publish and republish buttons */
+.btn.btn-publish, .rb-btn-publish:not([disabled]) { border-color: var(--rb-success); background: var(--rb-success); color: var(--rb-on-fill); font-weight: 700; }
+.btn.btn-publish:hover, .btn.btn-publish:focus, .rb-btn-publish:not([disabled]):hover, .rb-btn-publish:not([disabled]):focus {
+    border-color: var(--rb-success); background: color-mix(in srgb, var(--rb-success) 85%, var(--rb-ink)); color: var(--rb-on-fill); }
+
+/* the tag families (theme.css section 13; Tags/tags.html.twig): in a table's format column
+   the pill keeps to one line; a status beside a name sits a little smaller */
+.rb-col-format .rb-format { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.rb-fmt-state { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
+.rb-user-historic, .rb-deck-by .rb-status, .rb-fmt-state .rb-status { height: 19px; padding: 0 6px; font-size: 11.5px; margin-left: 4px; }
+.rb-fmt-state .rb-status { margin-left: 0; }
+a.rb-status:hover { text-decoration: none; filter: brightness(.95); }

@@ -29,6 +29,7 @@
    changes only while the decklist is withdrawn: content_editable says so.
 #}
 {% block body %}
+    {% import 'Tags/tags.html.twig' as tags %}
     {% set is_author = app.user and app.user.id == decklist.user.id %}
     <div class="main white container rb-builder rb-publish">
         {% include 'alerts.html.twig' %}
@@ -37,7 +38,7 @@
             <div class="col-md-6 rb-col-left">
                 <section class="rb-info rb-publish-info" aria-label="{{ 'decklist.form.deck_label' | trans }}">
                     <div class="rb-publish-facts">
-                        {% if format %}<span class="rb-publish-format">{{ format.name }}</span>{% endif %}
+                        {{ tags.format(format, false) }}
                         {% include 'Deck/completeness-label.html.twig' with {deck: decklist} %}
                     </div>
                     {# the pill says it's legal; problems get the whole list #}
@@ -82,7 +83,7 @@
                                         {% endif %}
                                         <form class="rb-inline-form" method="post" action="{{ path('decklist_republish', {decklist_id: decklist.id}) }}">
                                             <input type="hidden" name="_token" value="{{ csrf_token('decklist_state') }}">
-                                            <button type="submit" class="btn btn-success btn-sm">{{ 'decklist.state.republish' | trans }}</button>
+                                            <button type="submit" class="btn btn-publish btn-sm">{{ 'decklist.state.republish' | trans }}</button>
                                         </form>
                                     </div>
                                 {% endif %}
@@ -204,7 +205,7 @@
                 </form>
                 <div class="rb-form-actions">
                     {% set blocked = gate is not null and not gate.ok %}
-                    <button type="submit" class="btn btn-success" form="decklist-form" id="decklist-submit"{% if blocked %} disabled title="{{ 'decklist.publish.gate.blocked' | trans }}"{% endif %}>{{ (mode == 'create' ? 'forms.publish' : 'forms.save') | trans }}</button>
+                    <button type="submit" class="btn btn-publish" form="decklist-form" id="decklist-submit"{% if blocked %} disabled title="{{ 'decklist.publish.gate.blocked' | trans }}"{% endif %}>{{ (mode == 'create' ? 'forms.publish' : 'forms.save') | trans }}</button>
                     <a href="{{ cancel }}" class="btn btn-default">{{ 'forms.cancel' | trans }}</a>
                 </div>
             </div>

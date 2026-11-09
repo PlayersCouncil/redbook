@@ -116,24 +116,26 @@ html.rb-onepage .rb-main { flex: 1 1 auto; min-height: 0; overflow: hidden; disp
 .rb-callout--danger > :first-child { color: var(--rb-danger); }
 
 /* ---------- 8. Buttons ---------- */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: var(--rb-control-h); padding: 0 14px; border-radius: var(--rb-radius);
+/* .rb-btn is the deckbuilder's name for the same button (Ketura, 2026-11-09: one look for both):
+   .rb-btn is .btn-default, .rb-btn-primary .btn-primary, .rb-btn-small .btn-sm */
+.btn, .rb-btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: var(--rb-control-h); padding: 0 14px; border-radius: var(--rb-radius);
     font: 600 15px/1 var(--rb-font-ui); white-space: nowrap; cursor: pointer; border: 1px solid transparent; text-decoration: none !important;
     transition: background-color .12s, border-color .12s, color .12s; box-shadow: none; }
-.btn:focus-visible { outline: 2px solid var(--rb-focus); outline-offset: 2px; }
-.btn[disabled], .btn.disabled { opacity: .45; cursor: not-allowed; }
-.btn i, .btn svg { font-size: .92em; }
-.btn-sm { height: var(--rb-control-h-sm); padding: 0 10px; font-size: 14px; }
+.btn:focus-visible, .rb-btn:focus-visible { outline: 2px solid var(--rb-focus); outline-offset: 2px; }
+.btn[disabled], .btn.disabled, .rb-btn[disabled] { opacity: .45; cursor: not-allowed; }
+.btn i, .btn svg, .rb-btn i, .rb-btn svg { font-size: .92em; }
+.btn-sm, .rb-btn-small { height: var(--rb-control-h-sm); padding: 0 10px; font-size: 14px; }
 .btn-lg { height: var(--rb-control-h-lg); padding: 0 20px; font-size: 17px; }
 .btn-icon { width: var(--rb-control-h); padding: 0; }
 .btn-sm.btn-icon { width: var(--rb-control-h-sm); }
 
 /* Primary: iron-gall blue. One per region. .btn-success maps here so the old green buttons fall in line. */
-.btn-primary, .btn-success { background: var(--rb-primary); border-color: var(--rb-primary); color: var(--rb-primary-ink); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
-.btn-primary:hover, .btn-success:hover, .btn-primary:focus, .btn-success:focus { background: var(--rb-primary-hover); border-color: var(--rb-primary-hover); color: var(--rb-primary-ink); }
-.btn-primary:active, .btn-success:active { box-shadow: inset 0 2px 3px rgba(0,0,0,.25); }
+.btn-primary, .btn-success, .rb-btn-primary { background: var(--rb-primary); border-color: var(--rb-primary); color: var(--rb-primary-ink); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+.btn-primary:hover, .btn-success:hover, .btn-primary:focus, .btn-success:focus, .rb-btn-primary:hover:not([disabled]), .rb-btn-primary:focus { background: var(--rb-primary-hover); border-color: var(--rb-primary-hover); color: var(--rb-primary-ink); }
+.btn-primary:active, .btn-success:active, .rb-btn-primary:active { box-shadow: inset 0 2px 3px rgba(0,0,0,.25); }
 
-.btn-default { background: var(--rb-control); border-color: var(--rb-control-edge); color: var(--rb-ink); }
-.btn-default:hover, .btn-default:focus { background: var(--rb-control-hover); border-color: var(--rb-control-edge); color: var(--rb-ink); }
+.btn-default, .rb-btn:not(.rb-btn-primary) { background: var(--rb-control); border-color: var(--rb-control-edge); color: var(--rb-ink); }
+.btn-default:hover, .btn-default:focus, .rb-btn:not(.rb-btn-primary):hover:not([disabled]), .rb-btn:not(.rb-btn-primary):focus { background: var(--rb-control-hover); border-color: var(--rb-control-edge); color: var(--rb-ink); }
 
 .btn-quiet, .btn-link { background: transparent; border-color: transparent; color: var(--rb-ink-2); }
 .btn-quiet:hover, .btn-link:hover { background: var(--rb-hover); color: var(--rb-ink); }
@@ -149,8 +151,8 @@ html.pc-dark .btn-danger:hover, html.pc-dark .btn-danger:focus, html.pc-dark .bt
 .btn-group > .btn:first-child { border-radius: var(--rb-radius) 0 0 var(--rb-radius); }
 .btn-group > .btn:last-child { border-radius: 0 var(--rb-radius) var(--rb-radius) 0; }
 .btn-group > .btn + .btn { margin-left: -1px; }
-.btn.active, .btn[aria-pressed="true"] { background: var(--rb-selected); border-color: var(--rb-selected-edge); color: var(--rb-selected-ink); position: relative; z-index: 1; box-shadow: none; }
-html.pc-dark .btn.active, html.pc-dark .btn[aria-pressed="true"] { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rb-selected-edge) 35%, transparent); }
+.btn.active, .btn[aria-pressed="true"], .rb-btn.active, .rb-btn[aria-pressed="true"] { background: var(--rb-selected); border-color: var(--rb-selected-edge); color: var(--rb-selected-ink); position: relative; z-index: 1; box-shadow: none; }
+html.pc-dark .btn.active, html.pc-dark .btn[aria-pressed="true"], html.pc-dark .rb-btn.active, html.pc-dark .rb-btn[aria-pressed="true"] { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rb-selected-edge) 35%, transparent); }
 .btn-fp.active, .btn-fp[aria-pressed="true"] { background: var(--rb-fp-solid); border-color: var(--rb-fp-solid); color: #231E19; box-shadow: none !important; }
 .btn-shadow.active, .btn-shadow[aria-pressed="true"] { background: var(--rb-shadow-solid); border-color: var(--rb-shadow-solid); color: #fff; box-shadow: none !important; }
 .btn-fp:not(.active) { color: var(--rb-fp); }

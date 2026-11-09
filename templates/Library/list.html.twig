@@ -131,6 +131,7 @@
 {% endblock %}
 
 {% block browse_results %}
+{% import 'Tags/tags.html.twig' as tags %}
 {% set f = filters %}
 {% set query = app.request.query.all %}
 {% set sorted = f.sort ?? 'new' %}
@@ -195,8 +196,7 @@
                     </td>
                     <td class="rb-col-count"><span class="rb-library-count">{{ library.entries | length }}</span></td>
                     <td class="rb-col-visibility">
-                        {% set icons = {private: 'fa-lock', hidden: 'fa-link', public: 'fa-globe-americas'} %}
-                        <span class="rb-vis rb-vis-{{ library.visibility == 'public' ? 'published' : library.visibility }}"><span class="fas {{ icons[library.visibility] }} fa-fw" aria-hidden="true"></span> {{ ('library.visibility.' ~ library.visibility) | trans }}</span>
+                        {{ tags.visibility(library.visibility, ('library.visibility.' ~ library.visibility) | trans) }}
                     </td>
                     <td class="rb-col-tags">
                         <span class="rb-row-tags tags">{% for tag in library.tagList %}<button type="button" class="rb-tag-chip rb-tag-link{% if tag in (f.tags ?? []) %} is-on{% endif %}" data-tag="{{ tag }}" title="{{ 'decklist.browse.tag_search' | trans }}">{{ tag }}</button>{% endfor %}</span>

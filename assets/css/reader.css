@@ -33,26 +33,18 @@
 }
 /* like, favourite, comment: buttons, the icon filled and the button tinted once you have (Ketura, 2026-11-04) */
 .rb-social { display: flex; gap: 8px; }
-.rb-social-btn { font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border: 1px solid var(--rb-line-strong); border-radius: 8px;
-    background: var(--rb-control); color: var(--rb-ink); font-size: 15px; font-weight: 600; line-height: 1; cursor: pointer; }
-.rb-social-btn .fa-thumbs-up, .rb-social-btn .fa-bookmark, .rb-social-btn .fa-comment { font-size: 24px; }
+.rb-social-btn { height: 40px; gap: 8px; padding: 0 12px; }
+.rb-social-btn .rb-ri { width: 22px; height: 22px; }
+.rb-social-btn .fa-comment { font-size: 20px; color: var(--rb-ink-3); }
 a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-ink); text-decoration: none; }
-.rb-social-btn:hover:not([disabled]) { border-color: var(--rb-ink-3); background: var(--rb-page); }
-.rb-social-btn.is-like .far, .rb-social-btn.is-like .fas { color: var(--rb-link); }
-.rb-social-btn.is-favorite .far, .rb-social-btn.is-favorite .fas { color: var(--rb-crown-2); }
-.rb-social-btn.is-comment .far, .rb-social-btn.is-comment .fas { color: var(--rb-success); }
-.rb-social-btn.is-like.is-on { border-color: var(--rb-primary); background: var(--rb-primary-soft); }
-.rb-social-btn.is-favorite.is-on { border-color: var(--rb-crown-2); background: var(--rb-warning-soft); }
-.rb-social-btn.is-comment.is-on { border-color: var(--rb-success); background: var(--rb-success-soft); }
+.rb-social-btn.is-comment.is-on .fa-comment { color: var(--rb-success); }
 .rb-social-btn[disabled] { cursor: default; opacity: .6; }
 /* the fire: its slot left of Like always kept; tucked, it waits behind Like and slides out
    to the left once you've liked the deck (Ketura, 2026-11-04) */
 .rb-fire-slot { display: inline-flex; }
 .rb-social-btn.is-like { position: relative; z-index: 1; }
 .rb-social-btn.is-fire { position: relative; z-index: 0; transition: transform .4s ease, opacity .3s ease, visibility 0s linear 0s; }
-.rb-social-btn.is-fire .fa-fire { font-size: 24px; color: var(--rb-fire); }
-.rb-social-btn.is-fire[disabled] .fa-fire { color: var(--rb-ink-3); }
-.rb-social-btn.is-fire.is-on { border-color: var(--rb-fire); background: var(--rb-danger-soft); }
+.rb-social-btn.is-fire[disabled] .rb-ri { filter: grayscale(1); }
 .rb-social-btn.is-fire[disabled] { opacity: .75; }
 .rb-social-btn.is-fire.is-tucked { transform: translateX(calc(100% + 8px)); opacity: 0; visibility: hidden; pointer-events: none;
     transition: transform .4s ease, opacity .3s ease, visibility 0s linear .4s; }

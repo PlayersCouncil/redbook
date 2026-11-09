@@ -1,3 +1,4 @@
+{% import 'Tags/tags.html.twig' as tags %}
 {% import "macros.html.twig" as macros %}
 {#
    The reader (Ketura, 2026-11-04): a deck laid out to be taken in at a glance, for a published
@@ -25,7 +26,7 @@
                     <a class="btn btn-xs btn-default" href="{{ path('decklist_edit', {decklist_id: subject.id}) }}">{{ 'forms.edit' | trans }}</a>
                     <form class="rb-inline-form" method="post" action="{{ path('decklist_republish', {decklist_id: subject.id}) }}">
                         <input type="hidden" name="_token" value="{{ csrf_token('decklist_state') }}">
-                        <button type="submit" class="btn btn-xs btn-success">{{ 'decklist.state.republish' | trans }}</button>
+                        <button type="submit" class="btn btn-xs btn-publish">{{ 'decklist.state.republish' | trans }}</button>
                     </form>
                 </div>
             {% endif %}
@@ -79,13 +80,13 @@
             {% if app.user and subject.user.historic and not app.user.historic %}
                 <a href="{{ path('historic_claim_form', {user_id: subject.user.id}) }}" class="rb-btn rb-btn-small">{{ 'claim.button' | trans }}</a>
             {% endif %}
-            {% if format %}<a href="{{ path('format', {code: format.code}) }}">{{ format.name }}</a>{% endif %}
+            {{ tags.format(format) }}
             {# the dates are on the Details tab (Ketura, 2026-11-08) #}
             {# who can see the deck as it stands, and whether it's been published, apart (Ketura, 2026-11-08) #}
             {% if is_deck %}
                 {% set visibility = subject.shared ? 'hidden' : 'private' %}
-                <span class="rb-vis rb-vis-{{ visibility }}" title="{{ ('decks.browse.status.' ~ visibility) | trans }}">{{ ('decks.browse.show.' ~ visibility) | trans }}</span>
-                {% if successors | length %}<span class="rb-vis rb-vis-published" title="{{ 'decks.browse.status.published' | trans }}">{{ 'decks.browse.show.published' | trans }}</span>{% endif %}
+                {{ tags.visibility(visibility, ('decks.browse.show.' ~ visibility) | trans, ('decks.browse.status.' ~ visibility) | trans) }}
+                {% if successors | length %}{{ tags.visibility('published', 'decks.browse.show.published' | trans, 'decks.browse.status.published' | trans) }}{% endif %}
             {% endif %}
             {% include 'Deck/completeness-label.html.twig' with {deck: subject} %}
             {# the draw deck's size, which the deck's own heading no longer gives (Ketura, 2026-11-08) #}

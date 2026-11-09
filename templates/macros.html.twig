@@ -11,8 +11,8 @@
         <td class="decklist-name">
             <a href="{{ path('decklist_detail', { 'decklist_id': decklist.id, 'decklist_name': decklist.nameCanonical|e('url') }) }}">{{ decklist.name }}</a>
         </td>
-        <td><span class="fas fa-heart social-icon-like"></span> {{ decklist.nbVotes }}</td>
-        <td><span class="fas fa-star social-icon-favorite"></span> {{ decklist.nbFavorites }}</td>
+        <td><svg class="rb-ri" aria-hidden="true"><use href="#ri-cheers"/></svg> {{ decklist.nbVotes }}</td>
+        <td><svg class="rb-ri" aria-hidden="true"><use href="#ri-fav"/></svg> {{ decklist.nbFavorites }}</td>
         <td><span class="fas fa-comment social-icon-comment"></span> {{ decklist.nbComments }}</td>
         <td><span class="fas fa-code-branch social-icon-version"></span> v{{ decklist.versionLabel }}</td>
     </tr>
@@ -20,7 +20,7 @@
 
 {% macro username(user) %}
     <a href="{{ path('user_profile_public', {user_id:user.id,user_name:user.username|e('url')}) }}"
-       class="username fg-{{ user.color }}">{{ user.displayName }}</a>{% if user.historic %}<span class="label label-default rb-user-historic" title="{{ 'user.historic.badge_title' | trans }}">{{ 'user.historic.badge' | trans }}</span>{% endif %}
+       class="username fg-{{ user.color }}">{{ user.displayName }}</a>{% import 'Tags/tags.html.twig' as tags %}{{ tags.historic(user) }}
     {% if user.role('ROLE_ADMIN') %}
         <span class="fas fa-user-tie admin" title="Administrator"></span>
     {% endif %}
@@ -29,7 +29,7 @@
 
 {% macro username_colorless(user) %}
     <a href="{{ path('user_profile_public', {user_id:user.id,user_name:user.username|e('url')}) }}"
-       class="username">{{ user.displayName }}</a>{% if user.historic %}<span class="label label-default rb-user-historic" title="{{ 'user.historic.badge_title' | trans }}">{{ 'user.historic.badge' | trans }}</span>{% endif %}
+       class="username">{{ user.displayName }}</a>{% import 'Tags/tags.html.twig' as tags %}{{ tags.historic(user) }}
     {% if user.role('ROLE_ADMIN') %}
         <span class="fas fa-user-tie admin" title="Administrator"></span>
     {% endif %}
@@ -40,17 +40,17 @@
     <span class="social-icons">
     <span class="social-icon-like" data-toggle="tooltip" data-placement="bottom"
           title="{{ 'decklist.view.social.like' | trans }}">
-        <span class="fas fa-thumbs-up"></span> <span class="num">{{ decklist.nbVotes }}</span>
+        <svg class="rb-ri" aria-hidden="true"><use href="#ri-cheers"/></svg> <span class="num">{{ decklist.nbVotes }}</span>
     </span>
     {# the reader's icons (Ketura, 2026-11-04), and its fires when it has any #}
     {% if decklist.nbFires is defined and decklist.nbFires %}
     <span class="social-icon-fire" data-toggle="tooltip" data-placement="bottom" title="{{ 'decklist.view.social.fire' | trans }}">
-        <span class="fas fa-fire"></span> <span class="num">{{ decklist.nbFires }}</span>
+        <svg class="rb-ri" aria-hidden="true"><use href="#ri-fire"/></svg> <span class="num">{{ decklist.nbFires }}</span>
     </span>
     {% endif %}
     <span class="social-icon-favorite" data-toggle="tooltip" data-placement="bottom"
           title="{{ 'decklist.view.social.favorite' | trans }}">
-        <span class="fas fa-bookmark"></span> <span class="num">{{ decklist.nbFavorites }}</span>
+        <svg class="rb-ri" aria-hidden="true"><use href="#ri-fav"/></svg> <span class="num">{{ decklist.nbFavorites }}</span>
     </span>
     <span class="social-icon-comment" data-toggle="tooltip"
           data-placement="bottom" title="{{ 'decklist.view.social.comment' | trans }}">

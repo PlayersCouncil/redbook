@@ -88,6 +88,7 @@
 {% endblock %}
 
 {% block browse_results %}
+{% import 'Tags/tags.html.twig' as tags %}
 {% import 'Decklist/macros.html.twig' as m %}
 {% set f = filters %}
 {% set query = app.request.query.all %}
@@ -150,21 +151,20 @@
                         </span>
                     </td>
                     <td class="rb-col-format">
-                        <span class="rb-fmt">{{ format_names[row.format] ?? (row.format ?: '—') }}</span>
+                        {% if row.format %}{{ tags.format(format_names[row.format] ?? row.format, false) }}{% else %}<span class="rb-fmt">—</span>{% endif %}
                         {% if deck %}<span class="rb-fmt-state">{% include 'Deck/completeness-label.html.twig' with {deck: deck} %}</span>{% endif %}
                     </td>
                     {% if tab == 'decks' %}
                         <td class="rb-col-published">
                             {% if row.published %}
-                                <a href="{{ path('decklist_detail', {decklist_id: row.published.id, decklist_name: row.published.nameCanonical | e('url')}) }}" class="rb-vis rb-vis-published" title="{{ 'decks.browse.status.published' | trans }}"><span class="fas fa-globe-americas fa-fw" aria-hidden="true"></span> v{{ row.published.versionLabel }}</a>
+                                {{ tags.visibility('published', 'v' ~ row.published.versionLabel, 'decks.browse.status.published' | trans, path('decklist_detail', {decklist_id: row.published.id, decklist_name: row.published.nameCanonical | e('url')})) }}
                                 <time class="rb-deck-current" datetime="{{ (row.published.datePublished ?? row.published.dateCreation) | date('Y-m-d') }}" data-absolute>{{ (row.published.datePublished ?? row.published.dateCreation) | date('M j, Y') }}</time>
                             {% else %}
                                 <span class="rb-muted" aria-label="{{ 'decks.browse.not_published' | trans }}">—</span>
                             {% endif %}
                         </td>
                         <td class="rb-col-visibility">
-                            {% set icons = {private: 'fa-lock', hidden: 'fa-link'} %}
-                            <span class="rb-vis rb-vis-{{ row.current }}" title="{{ ('decks.browse.status.' ~ row.current) | trans }}"><span class="fas {{ icons[row.current] }} fa-fw" aria-hidden="true"></span> {{ ('decks.browse.show.' ~ row.current) | trans }}</span>
+                            {{ tags.visibility(row.current, ('decks.browse.show.' ~ row.current) | trans, ('decks.browse.status.' ~ row.current) | trans) }}
                             <span class="rb-deck-current"{% if row.published and not row.sameAsPublished %} title="{{ 'decks.browse.revised_title' | trans({'%version%': 'v' ~ deck.version, '%published%': 'v' ~ row.published.versionLabel}) }}"{% endif %}>
                                 {%- if row.sameAsPublished -%}
                                     {{ 'decks.browse.same_as' | trans({'%version%': 'v' ~ row.published.versionLabel}) }}

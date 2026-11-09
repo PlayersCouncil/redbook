@@ -1,0 +1,52 @@
+{# The design's tag families (Ketura, 2026-11-09), one place for each:
+   - format: filled blue, one per deck; a link to the format's page unless link is false
+   - status: a fact the site knows (legal, problems, one side, private, published, archive):
+     outlined, always with an icon; variant success, danger, warning, fp or sh, or none
+   - tag: what people applied, filled neutral (the tag inputs and lists draw their own)
+   Usage: {% import 'Tags/tags.html.twig' as tags %} {{ tags.format(format) }} #}
+
+{% macro format(format, link = true) %}
+    {%- if format -%}
+        {%- if link and format.code is defined -%}
+            <a class="rb-format" href="{{ path('format', {code: format.code}) }}">{{ format.name }}</a>
+        {%- else -%}
+            <span class="rb-format">{{ format.name ?? format }}</span>
+        {%- endif -%}
+    {%- endif -%}
+{% endmacro %}
+
+{# a status; extra classes are hooks for scripts and tests #}
+{% macro status(variant, icon, label, title = null, href = null, extra = '') %}
+    {%- set tag = href ? 'a' : 'span' -%}
+    <{{ tag }} class="rb-status{% if variant %} rb-status--{{ variant }}{% endif %}{% if extra %} {{ extra }}{% endif %}"
+        {%- if href %} href="{{ href }}"{% endif %}{% if title %} title="{{ title }}"{% endif %}><span class="fas {{ icon }}" aria-hidden="true"></span>{{ label }}</{{ tag }}>
+{%- endmacro %}
+
+{# who can see a deck or library: private, hidden (anyone with the link), published or public #}
+{% macro visibility(state, label, title = null, href = null) %}
+    {%- import _self as tags -%}
+    {%- set look = {private: [null, 'fa-lock'], hidden: [null, 'fa-link'], published: ['success', 'fa-globe-americas'], public: ['success', 'fa-globe-americas']}[state] ?? [null, 'fa-eye'] -%}
+    {{- tags.status(look[0], look[1], label, title, href, 'rb-vis rb-vis-' ~ state) -}}
+{%- endmacro %}
+
+{# a deck's validation (decision 0023): its half, if it is one, then complete, incomplete or
+   not yet validated #}
+{% macro completeness(deck) %}
+    {%- import _self as tags -%}
+    {%- if deck.half is defined and deck.half -%}
+        {{ tags.status(deck.half == 'free_peoples' ? 'fp' : 'sh', 'fa-adjust', ('deck.half.' ~ deck.half) | trans, null, null, 'deck-half') }}
+    {% endif -%}
+    {%- if deck.completeness == 'complete' -%}
+        {{ tags.status('success', 'fa-check', 'deck.completeness.complete' | trans, 'deck.completeness.complete_hint' | trans, null, 'deck-completeness') }}
+    {%- elseif deck.completeness == 'incomplete' -%}
+        {{ tags.status('warning', 'fa-exclamation-triangle', 'deck.completeness.incomplete' | trans, (deck.validation.relevantProblems ?? []) | join("\n"), null, 'deck-completeness') }}
+    {%- else -%}
+        {{ tags.status(null, 'fa-question-circle', 'deck.completeness.unvalidated' | trans, null, null, 'deck-completeness') }}
+    {%- endif -%}
+{%- endmacro %}
+
+{# an account brought in from the archives #}
+{% macro historic(user, label = 'user.historic.badge') %}
+    {%- import _self as tags -%}
+    {%- if user.historic -%}{{ tags.status(null, 'fa-archive', label | trans, 'user.historic.badge_title' | trans, null, 'rb-user-historic') }}{%- endif -%}
+{%- endmacro %}
