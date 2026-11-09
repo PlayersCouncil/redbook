@@ -40,6 +40,24 @@
             }
             params.push(encodeURIComponent(field.name) + '=' + encodeURIComponent(field.value));
         });
+        /*
+         * Tags Excluded (Ketura, 2026-11-08): at its default (Retired, Shireposting) it isn't
+         * sent; emptied, it's sent empty, so the list leaves nothing out
+         */
+        var xfield = form.find('[data-tag-field][data-default]');
+        if(xfield.length) {
+            var name = xfield.data('tag-field') + '[]',
+                chosen = xfield.find('input[type=hidden]').map(function () { return this.value; }).get(),
+                fold = function (list) { return _.map(list, function (t) { return t.toLowerCase(); }).sort().join(','); };
+            params = _.reject(params, function (p) { return p.indexOf(encodeURIComponent(name) + '=') === 0; });
+            if(fold(chosen) !== fold(String(xfield.data('default')).split(','))) {
+                if(chosen.length) {
+                    _.each(chosen, function (t) { params.push(encodeURIComponent(name) + '=' + encodeURIComponent(t)); });
+                } else {
+                    params.push(encodeURIComponent(name) + '=');
+                }
+            }
+        }
         return params.length ? '?' + params.join('&') : '';
     }
 
@@ -119,39 +137,47 @@
     }
 
     /**
-     * A tag to search for (Ketura, 2026-11-06): typed into the Tags field, or clicked on a
-     * deck's row; a chip carrying the hidden tags[] input
+     * A tag to search for (Ketura, 2026-11-06): typed into a Tags field, or clicked on a
+     * deck's row; a chip carrying the hidden input. Two fields (2026-11-08): Tags Included
+     * (tags[]) and Tags Excluded (xtags[]).
      */
-    function add_tag(tag)
+    function tag_field(name)
     {
+        return form.find('[data-tag-field="' + (name || 'tags') + '"]');
+    }
+
+    function add_tag(tag, name)
+    {
+        var field = tag_field(name), input_name = (name || 'tags') + '[]';
         tag = $.trim(String(tag)).replace(/\s+/g, '');
-        if(!tag || form.find('input[name="tags[]"]').filter(function () { return this.value === tag; }).length) {
+        if(!tag || !field.length || field.find('input[type=hidden]').filter(function () { return this.value === tag; }).length) {
             return false;
         }
-        $('<span class="rb-card-pick rb-tag-pick"><input type="hidden" name="tags[]"><button type="button">&times;</button></span>')
-            .find('input').val(tag).end()
+        $('<span class="rb-card-pick rb-tag-pick"><input type="hidden"><button type="button">&times;</button></span>')
+            .find('input').attr('name', input_name).val(tag).end()
             .prepend(document.createTextNode(tag))
             .find('button').attr('aria-label', Translator.trans('decklist.browse.remove')).end()
-            .insertBefore('#browse-tag');
+            .insertBefore(field.find('.rb-tag-input'));
         return true;
     }
 
     /*
-     * The Tags drawer (Ketura, 2026-11-07), as the deckbuilder's Notes tab has: clicking the
-     * field pulls out the tags there are, filtered as you type, without the ones picked. Each
-     * page says where its list comes from (#browse-tags data-tags-url).
+     * The Tags drawer (Ketura, 2026-11-07), as the deckbuilder's Notes tab has: clicking a
+     * field pulls out the tags there are, filtered as you type, without the ones picked in
+     * either field. Each page says where its list comes from (data-tags-url).
      */
     var tag_lists = {};
 
-    function show_tag_drawer()
+    function show_tag_drawer(field)
     {
-        var input = $('#browse-tag'), box = $('#browse-tag-suggest'), url = $('#browse-tags').data('tags-url');
+        field = $(field);
+        var input = field.find('.rb-tag-input'), box = field.find('.rb-tag-suggest'), url = form.find('[data-tags-url]').first().data('tags-url');
         if(!url || !box.length || !input.is(':focus')) {
             return;
         }
         if(tag_lists[url] === undefined) {
             tag_lists[url] = null;
-            $.getJSON(url).done(function (rows) { tag_lists[url] = rows || []; show_tag_drawer(); })
+            $.getJSON(url).done(function (rows) { tag_lists[url] = rows || []; show_tag_drawer(field); })
                 .fail(function () { tag_lists[url] = []; });
             return;
         }
@@ -159,7 +185,7 @@
             return;
         }
         var typed = $.trim(input.val() || '').toLowerCase(),
-            have = form.find('input[name="tags[]"]').map(function () { return this.value; }).get(),
+            have = form.find('[data-tag-field] input[type=hidden]').map(function () { return this.value; }).get(),
             rows = _.filter(tag_lists[url], function (row) {
                 return have.indexOf(row.tag) === -1 && (!typed || row.tag.toLowerCase().indexOf(typed) !== -1);
             }).slice(0, 12);
@@ -171,10 +197,10 @@
         input.attr('aria-expanded', rows.length ? 'true' : 'false');
     }
 
-    function hide_tag_drawer()
+    function hide_tag_drawer(field)
     {
-        $('#browse-tag-suggest').prop('hidden', true);
-        $('#browse-tag').attr('aria-expanded', 'false');
+        $(field).find('.rb-tag-suggest').prop('hidden', true);
+        $(field).find('.rb-tag-input').attr('aria-expanded', 'false');
     }
 
     function setup_card_picker()
@@ -261,48 +287,54 @@
             var open = form.toggleClass('is-open').hasClass('is-open');
             $(this).attr('aria-expanded', open ? 'true' : 'false');
         });
-        $('#browse-fields').on('click', '#browse-cards, #browse-tags', function (event)
+        $('#browse-fields').on('click', '#browse-cards, .rb-tag-picks', function (event)
         {
             if(event.target === this) {
                 $(this).find('input[type=text]').trigger('focus');
             }
         });
-        // Enter in the Tags field adds the tag rather than submitting what's typed
-        $('#browse-fields').on('keydown', '#browse-tag', function (event)
+        // Enter in a Tags field adds the tag rather than submitting what's typed
+        $('#browse-fields').on('keydown', '.rb-tag-input', function (event)
         {
+            var field = $(this).closest('[data-tag-field]');
             if(event.key === 'Enter') {
                 event.preventDefault();
-                var added = add_tag(this.value);
+                var added = add_tag(this.value, field.data('tag-field'));
                 this.value = '';
                 if(added) {
                     apply();
                 }
-                show_tag_drawer();
+                show_tag_drawer(field);
             } else if(event.key === 'Escape') {
-                hide_tag_drawer();
+                hide_tag_drawer(field);
             }
         });
         // the drawer: open while the field has the focus; picking a tag keeps the focus there
-        $('#browse-fields').on('focus click input', '#browse-tag', show_tag_drawer);
-        $('#browse-fields').on('blur', '#browse-tag', function ()
+        $('#browse-fields').on('focus click input', '.rb-tag-input', function ()
         {
+            show_tag_drawer($(this).closest('[data-tag-field]'));
+        });
+        $('#browse-fields').on('blur', '.rb-tag-input', function ()
+        {
+            var input = $(this), field = input.closest('[data-tag-field]');
             setTimeout(function () {
-                if(!$('#browse-tag').is(':focus')) {
-                    hide_tag_drawer();
+                if(!input.is(':focus')) {
+                    hide_tag_drawer(field);
                 }
             }, 120);
         });
-        $('#browse-fields').on('mousedown', '#browse-tag-suggest button', function (event)
+        $('#browse-fields').on('mousedown', '.rb-tag-suggest button', function (event)
         {
             event.preventDefault();
         });
-        $('#browse-fields').on('click', '#browse-tag-suggest button', function ()
+        $('#browse-fields').on('click', '.rb-tag-suggest button', function ()
         {
-            $('#browse-tag').val('');
-            if(add_tag($(this).data('pick-tag'))) {
+            var field = $(this).closest('[data-tag-field]');
+            field.find('.rb-tag-input').val('');
+            if(add_tag($(this).data('pick-tag'), field.data('tag-field'))) {
                 apply();
             }
-            show_tag_drawer();
+            show_tag_drawer(field);
         });
         $('#browse-results').on('click', '.rb-tag-link', function (event)
         {

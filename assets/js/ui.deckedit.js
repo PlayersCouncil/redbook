@@ -362,13 +362,14 @@
     /* ---- a deck as it was published (Ketura, 2026-11-08) ---- */
 
     /*
-     * Greyed until a revision begins: the New Revision button, or any change asks first.
-     * Looking around (the tabs, the view options, the filters, Preview, exports) doesn't.
+     * Greyed, its changes held off, until New Revision starts its next private revision,
+     * X.1, at once. Looking around (the tabs but Build, the view options, Preview, exports)
+     * still works; a change attempted shows the banner again.
      */
     var locked = false,
-        pending_target = null,
         EDITS = '#deck-info input, #deck-info select, #deck-info textarea, #deck-info button, #deck [data-qty], #deck [data-start], #deck [data-find], '
-            + '#pool [data-add], #pool [data-rb], #tab-pane-infos input, #tab-pane-infos textarea, #tab-pane-infos select, #tab-pane-infos button, '
+            + '#deck-toolbar .rb-any-pick, #pool [data-add], #pool [data-rb], a[href="#tab-pane-build"], '
+            + '#tab-pane-infos input, #tab-pane-infos textarea, #tab-pane-infos select, #tab-pane-infos button, '
             + '#tab-pane-history a[role=button], #tab-pane-archive button, #tab-pane-archive input, #tab-pane-archive select, #tab-pane-archive textarea',
         NOT_EDITS = '#btn-preview, #btn-more, #btn-visibility, #btn-publish, .rb-menu, .rb-menu *';
 
@@ -380,21 +381,18 @@
 
     function guard(event)
     {
-        if(!locked) {
-            return;
-        }
-        var target = edit_target(event.target);
-        if(!target) {
+        if(!locked || !edit_target(event.target)) {
             return;
         }
         event.preventDefault();
         event.stopImmediatePropagation();
+        if(event.type === 'focusin') {
+            $(event.target).trigger('blur');
+        }
         if(event.type === 'click' || event.type === 'focusin') {
-            pending_target = target[0];
-            if(event.type === 'focusin') {
-                target.trigger('blur');
-            }
-            $('#revision-prompt').modal('show');
+            var banner = $('#revision-banner').removeClass('is-pulse');
+            void banner[0].offsetWidth;
+            banner.addClass('is-pulse');
         }
     }
 
@@ -403,6 +401,31 @@
         locked = false;
         $('.rb-builder').removeClass('is-locked');
         $('#revision-banner').remove();
+    }
+
+    function start_revision()
+    {
+        var button = $('#btn-new-revision').prop('disabled', true);
+        $.ajax(Routing.generate('deck_revision_start'), {
+            type: 'POST',
+            data: {id: app.deck.get_id()},
+            dataType: 'json',
+            success: function (response) {
+                page.unrevised = null;
+                saved_version = response.version;
+                unlock();
+                status_note = t('deckbuilder.revision.started', {version: response.version});
+                update_status();
+                if(response.history && app.deck_history) {
+                    app.deck_history.init(response.history);
+                    app.deck_history.setup('#history');
+                    app.deck_history.render();
+                }
+            },
+            error: function () {
+                button.prop('disabled', false);
+            }
+        });
     }
 
     function setup_lock()
@@ -417,19 +440,7 @@
         _.each(['mousedown', 'click', 'focusin', 'keydown'], function (type) {
             document.addEventListener(type, guard, true);
         });
-        $('#btn-new-revision').on('click', function () {
-            pending_target = null;
-            $('#revision-prompt').modal('show');
-        });
-        $('#revision-begin').on('click', function () {
-            var target = pending_target;
-            unlock();
-            $('#revision-prompt').modal('hide');
-            // carry on with what was asked for
-            if(target) {
-                $(target).is('input, textarea, select') ? $(target).trigger('focus') : target.click();
-            }
-        });
+        $('#btn-new-revision').on('click', start_revision);
     }
 
     /* ---- menus ---- */

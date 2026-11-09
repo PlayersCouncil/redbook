@@ -579,17 +579,17 @@ decklist.form.title.edit: Editar Detalles de la Lista
 decklist.form.format_from_deck: "El formato del propio mazo, fijo una vez publicado. Para cambiarlo, cambia antes el mazo en el constructor."
 decklist.form.version_new: "Un mazo propio: la versión 1.0 de una línea nueva."
 decklist.form.version_of: "Publicando la <b>versión %version%</b> de:"
-decklist.form.version_is: "<b>Versión %version%</b>, después de:"
+decklist.form.version_is: "Versión %version%"
 decklist.form.version_first: "<b>Versión %version%</b>: la primera de su línea."
 decklist.form.previous: Nueva Versión De
 decklist.form.previous_none: "Ninguna: una lista propia"
 decklist.form.previous_hint: "Elige una de tus listas publicadas para publicar esta como su siguiente versión, o ninguna para empezar una nueva."
 decklist.form.format_with_cards: "El formato del mazo, que viene con sus cartas. Para cambiarlo, deshaz la publicación y reemplaza las cartas."
 decklist.form.derived: Derivada De
-decklist.form.derived_clear: Quitar
+decklist.form.derived_clear: "Quitar"
 decklist.form.derived_author: Autor
 decklist.form.derived_name: "Nombre del mazo, o su id o dirección"
-decklist.form.derived_hint: "Una lista en la que se basa esta. Tus propias versiones anteriores van en Nueva Versión De."
+decklist.form.derived_hint: "Listas en las que se basa esta: el origen de un clon y cualquier otra que la haya influido. Busca de nuevo para añadir otra."
 decklist.form.derived_none: Ninguna lista pública coincide.
 decklist.view.newer: "Hay una versión más reciente de este mazo: %link%."
 decklist.state.withdraw: Deshacer Publicación
@@ -711,13 +711,8 @@ deckbuilder.info.preview: "Vista Previa"
 deckbuilder.info.preview_hint: "El mazo tal como lo ven los demás"
 
 # Revisiones y versiones (Ketura, 2026-11-08)
-deckbuilder.revision.banner: "Este es el mazo tal como se publicó, %version%. Los cambios empiezan una revisión privada."
+deckbuilder.revision.banner: "Este es el mazo tal como se publicó, %version%. Se puede empezar una nueva revisión privada para preparar la próxima versión del mazo."
 deckbuilder.revision.new: "Nueva Revisión"
-deckbuilder.revision.title: "Este Mazo Está Publicado"
-deckbuilder.revision.text: "Se publicó como %decklist%. Los cambios nuevos van a una revisión privada, %next%, que nadie más ve hasta que la publiques."
-deckbuilder.revision.question: "¿Empezar una nueva revisión privada?"
-deckbuilder.revision.fix_hint: "Hasta el %date%, también puedes <a href=\"%url%\">retirar la lista publicada</a> para corregirla."
-deckbuilder.revision.begin: "Empezar la Revisión %version%"
 deckbuilder.publish.first: "Publicar"
 deckbuilder.publish.version: "Publicar %version%"
 deckbuilder.publish.published_as: "Publicado como %version%"
@@ -775,6 +770,12 @@ deckbuilder.any.site: "Cualquier sitio"
 deckbuilder.any.mark: "(cualquiera)"
 deckbuilder.any.hint: "Sirve cualquier versión de esta carta"
 deckbuilder.any.button: "Cualquier Versión"
-deckbuilder.any.button_hint: "Luego elige una carta del mazo: servirá cualquier versión. Elige una carta genérica para volver a esa carta."
+deckbuilder.any.button_hint: "Indica que sirve cualquier versión de esta carta (p. ej. 'Cualquier Frodo')"
 deckbuilder.any.none_in_format: "Ninguna otra versión de %card% es legal en %format%."
 deckbuilder.any.none: "%card% no tiene otra versión."
+# (Ketura, 2026-11-08)
+deckbuilder.revision.started: "Revisión privada %version% empezada"
+deckbuilder.history.event.revision: "Revisión privada empezada"
+decklist.browse.tags_in: "Etiquetas Incluidas"
+decklist.browse.tags_out: "Etiquetas Excluidas"
+decklist.form.version_will_be: "Se publicará como la versión %version%"

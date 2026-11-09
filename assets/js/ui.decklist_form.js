@@ -14,7 +14,6 @@
     {
         ui.setup_thumbnail_picker();
         ui.setup_thumbnail_crop();
-        ui.setup_version_line();
         ui.setup_derived_picker();
         ui.setup_splitter();
         ui.setup_apply_prompt();
@@ -455,38 +454,13 @@
     {
         var side = $('.rb-publish-side'), row = side.parent();
         ui.splitter('#publish-splitter', {
-            key: 'rb-publish-width',
+            key: 'rb-publish-width-2',
             min: 420,
             max: function () { return row.width() - 360; },
             current: function () { return side.outerWidth(); },
             direction: -1,
             set: function (w) { side.css('flex-basis', w === null ? '' : w + 'px'); }
         });
-    };
-
-    /**
-     * Publishing: "Publishing version 2 of X" while a line is picked, "a new decklist" when
-     * it's cleared (Ketura, 2026-11-07)
-     */
-    ui.setup_version_line = function setup_version_line()
-    {
-        var line = $('#version-line'), select = $('#previous_version');
-        if(!select.length) {
-            return;
-        }
-        select.on('change', function () {
-            var option = select.find('option:selected');
-            if(option.val()) {
-                line.html(line.data('of').replace('__V__', option.data('next')));
-                $('#version-card').prop('hidden', false).html(ui.deck_ref({
-                    name: option.data('name'), url: option.data('url'), author: option.data('author'), date: option.data('date'),
-                    version: option.data('version'), tags: (option.data('tags') + '').split(' ')
-                }));
-            } else {
-                line.html(line.data('new'));
-                $('#version-card').prop('hidden', true).empty();
-            }
-        }).trigger('change');
     };
 
     /**
@@ -504,11 +478,21 @@
         {
             return ui.deck_ref(d);
         }
+        // several picks (Ketura, 2026-11-08): each a card with Remove; the hidden field lists their ids
+        function sync()
+        {
+            $('#precedents').val($('#derived-chosen .rb-derived-pick').map(function () { return $(this).data('id'); }).get().join(','));
+        }
         function choose(d)
         {
-            $('#precedent').val(d.id);
-            $('#derived-chosen').prop('hidden', false).find('.rb-derived-card').html(card(d));
-            $('#derived-search').prop('hidden', true);
+            if(!$('#derived-chosen .rb-derived-pick[data-id="' + d.id + '"]').length) {
+                $('<div class="rb-derived-pick">').attr('data-id', d.id)
+                    .append($('<div class="rb-derived-card">').html(card(d)))
+                    .append($('<button type="button" class="btn btn-link btn-sm rb-derived-remove">').text(Translator.trans('decklist.form.derived_clear')))
+                    .appendTo('#derived-chosen');
+                sync();
+            }
+            $('#derived-author, #derived-name').val('');
             results.prop('hidden', true).empty();
         }
         function search()
@@ -548,10 +532,9 @@
             clearTimeout(timer);
             timer = setTimeout(search, 250);
         });
-        $('#derived-clear').on('click', function () {
-            $('#precedent').val('');
-            $('#derived-chosen').prop('hidden', true);
-            $('#derived-search').prop('hidden', false);
+        $('#derived-chosen').on('click', '.rb-derived-remove', function () {
+            $(this).closest('.rb-derived-pick').remove();
+            sync();
             $('#derived-name').focus();
         });
     };

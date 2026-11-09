@@ -82,8 +82,13 @@ class SeedDeckImporter
         if (!str_starts_with($field, DeckContent::ANY_PREFIX)) {
             return $field;
         }
-        return $this->versions->byTitle(substr($field, strlen(DeckContent::ANY_PREFIX)));
+        $code = $this->versions->byTitle(substr($field, strlen(DeckContent::ANY_PREFIX)));
+        // as the deck's content keeps it, once the format is known
+        return $code !== null ? ($this->anyChosen[$code] ?? $code) : null;
     }
+
+    /** @var array<string, string> an "any:" card's first pick => the version kept for the deck's format */
+    private array $anyChosen = [];
 
     /**
      * @return array{created: int, updated: int, skipped: int, kept: int, guessed: int, flagged: int, accounts: int, problems: string[]}
@@ -224,6 +229,23 @@ class SeedDeckImporter
                 ]);
             }
         }
+
+        // an "any:" card kept as its lowest non-zero set's version legal in the format (Ketura, 2026-11-08)
+        $formatEntity = $format ? $this->em->getRepository(Format::class)->findOneBy(['code' => $format]) : null;
+        $this->anyChosen = [];
+        $remapped = [];
+        foreach ($content as $key => $quantity) {
+            [$code, $isRingBearer, $generic] = DeckContent::parseKey((string) $key);
+            if ($generic) {
+                $chosen = $this->versions->exemplar($code, $formatEntity);
+                $this->anyChosen[$code] = $chosen;
+                $code = $chosen;
+                $this->card($code);
+            }
+            $key = DeckContent::key($code, $isRingBearer ? DeckContent::ROLE_RING_BEARER : DeckContent::ROLE_DRAW, $generic);
+            $remapped[$key] = ($remapped[$key] ?? 0) + $quantity;
+        }
+        $content = $remapped;
 
         $name = mb_substr(trim((string) $deck['title']) ?: 'Untitled', 0, 60);
         $description = self::toMarkdown((string) ($deck['description'] ?? ''), $deck['descriptionFormat'] ?? 'text');

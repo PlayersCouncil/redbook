@@ -46,7 +46,7 @@
                     {# the deck as published, greyed until a revision begins (Ketura, 2026-11-08) #}
                     <div class="rb-revision-banner" id="revision-banner">
                         <span class="fas fa-lock" aria-hidden="true"></span>
-                        <span>{{ 'deckbuilder.revision.banner' | trans({'%version%': unrevised.versionLabel}) }}</span>
+                        <span>{{ 'deckbuilder.revision.banner' | trans({'%version%': 'v' ~ unrevised.versionLabel}) }}</span>
                         <button type="button" class="rb-btn rb-btn-primary rb-btn-small" id="btn-new-revision"><span class="fas fa-code-branch" aria-hidden="true"></span> {{ 'deckbuilder.revision.new' | trans }}</button>
                     </div>
                 {% endif %}
@@ -154,34 +154,6 @@
         </div>
     </div>
 
-    {#
-       Asked at the first change to a deck as it was published (Ketura, 2026-11-08): the change
-       starts its next private revision; the published decklist stays as it is
-    #}
-    {% if unrevised %}
-        {% set link %}<a href="{{ path('decklist_detail', {decklist_id: unrevised.id, decklist_name: unrevised.nameCanonical | e('url')}) }}">{{ unrevised.name }} {{ unrevised.versionLabel }}</a>{% endset %}
-        <div class="modal fade" id="revision-prompt" tabindex="-1" role="dialog" aria-labelledby="revision-prompt-title">
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <button type="button" class="close" data-dismiss="modal" aria-label="{{ 'forms.cancel' | trans }}"><span aria-hidden="true">&times;</span></button>
-                        <h4 class="modal-title" id="revision-prompt-title">{{ 'deckbuilder.revision.title' | trans }}</h4>
-                    </div>
-                    <div class="modal-body">
-                        <p>{{ 'deckbuilder.revision.text' | trans({'%decklist%': link, '%next%': deck.majorVersion ~ '.1'}) | raw }}</p>
-                        <p><strong>{{ 'deckbuilder.revision.question' | trans }}</strong></p>
-                        {% if unrevised.canWithdraw %}
-                            <p class="small text-muted">{{ 'deckbuilder.revision.fix_hint' | trans({'%date%': unrevised.graceEnds | date('Y-m-d H:i'), '%url%': path('decklist_edit', {decklist_id: unrevised.id})}) | raw }}</p>
-                        {% endif %}
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">{{ 'forms.cancel' | trans }}</button>
-                        <button type="button" class="btn btn-primary" id="revision-begin"><span class="fas fa-code-branch" aria-hidden="true"></span> {{ 'deckbuilder.revision.begin' | trans({'%version%': deck.majorVersion ~ '.1'}) }}</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    {% endif %}
 
     {% include 'Modale/export.html.twig' %}
     {% include 'Modale/delete.html.twig' %}

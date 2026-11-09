@@ -103,7 +103,8 @@ class MyDecks
         $from = !empty($filters['from']) ? new \DateTimeImmutable($filters['from']) : null;
         $to = !empty($filters['to']) ? (new \DateTimeImmutable($filters['to']))->modify('+1 day') : null;
 
-        $rows = array_values(array_filter($rows, function (DeckRow $row) use ($filters, $favorites, $show, $like, $cardKeys, $from, $to) {
+        $excluded = PublishedDeckManager::excludedTags($filters);
+        $rows = array_values(array_filter($rows, function (DeckRow $row) use ($filters, $favorites, $show, $like, $cardKeys, $from, $to, $excluded) {
             $cultures = array_map(fn ($c) => $c['culture']->getCode(), $row->cultures);
             return ($favorites ? $row->visibility === 'favorite' : in_array($row->visibility, $show, true))
                 && (empty($filters['name']) || $like($filters['name'], [$row->name]))
@@ -112,6 +113,8 @@ class MyDecks
                 && !array_diff_key($cardKeys, $row->cardKeys)
                 && !array_diff($filters['culture'] ?? [], $cultures)
                 && !array_diff($filters['tags'] ?? [], $row->tags)
+                // tags left out, Retired and Shireposting by default (Ketura, 2026-11-08)
+                && !array_intersect(array_map('mb_strtolower', $excluded), array_map('mb_strtolower', $row->tags))
                 && (empty($filters['kind']) || in_array($row->getKind(), $filters['kind'], true))
                 && (!$from || $row->date >= $from)
                 && (!$to || $row->date < $to);

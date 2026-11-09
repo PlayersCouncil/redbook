@@ -102,6 +102,8 @@
                     {% endif %}
                     <div class="form-group">
                         <label for="name">{{ 'decklist.form.name' | trans }}</label>
+                        {# its version, between the heading and the name (Ketura, 2026-11-08): the one publishing makes, or the one it is #}
+                        <p class="rb-form-version" id="version-line">{{ (mode == 'create' ? 'decklist.form.version_will_be' : 'decklist.form.version_is') | trans({'%version%': 'v' ~ decklist.fullVersion}) | raw }}</p>
                         <input type="text" class="form-control" name="name" id="name" form="decklist-form" maxlength="60" value="{{ decklist.name }}">
                     </div>
                 </div>
@@ -197,50 +199,24 @@
                     {# the deckbuilder's Notes tab, the same component #}
                     {% include 'Deck/notes-editor.html.twig' with {notes_tags: decklist.tags, notes_description: decklist.descriptionMd} %}
 
-                    {# its line of versions (Ketura, 2026-11-07): chosen when publishing, fixed after;
-                       the version it follows shows as the derived-from pick does #}
-                    <div class="form-group rb-version-pick">
-                        {% if mode == 'create' %}
-                            <label for="previous_version">{{ 'decklist.form.previous' | trans }}</label>
-                            <select class="form-control" name="previous_version" id="previous_version">
-                                <option value="">{{ 'decklist.form.previous_none' | trans }}</option>
-                                {% for line in lines %}
-                                    {% set d = line.decklist %}
-                                    <option value="{{ d.id }}" data-next="{{ line.next }}.0" data-name="{{ d.name }}"
-                                            data-url="{{ path('decklist_detail', {decklist_id: d.id, decklist_name: d.nameCanonical|e('url')}) }}"
-                                            data-author="{{ d.user.displayName }}" data-date="{{ d.dateCreation | date('Y-m-d') }}" data-version="{{ d.version }}" data-tags="{{ d.tags }}"
-                                            {%- if previous and previous.line.id == d.line.id %} selected{% endif %}>{{ d.name }} (v{{ d.versionLabel }})</option>
-                                {% endfor %}
-                            </select>
-                            <p class="rb-version-line" id="version-line"
-                               data-new="{{ 'decklist.form.version_new' | trans }}"
-                               data-of="{{ 'decklist.form.version_of' | trans({'%version%': '__V__'}) }}"></p>
-                            <div class="rb-derived-card" id="version-card" hidden></div>
-                            <span class="help-block small">{{ 'decklist.form.previous_hint' | trans }}</span>
-                        {% else %}
-                            <label>{{ 'decklist.form.version' | trans }}</label>
-                            {% if previous %}
-                                <p class="rb-version-line" id="version-line">{{ 'decklist.form.version_is' | trans({'%version%': decklist.fullVersion}) | raw }}</p>
-                                <div class="rb-derived-card">{% include 'Decklist/deck-ref.html.twig' with {d: previous} %}</div>
-                            {% else %}
-                                <p class="rb-version-line" id="version-line">{{ 'decklist.form.version_first' | trans({'%version%': decklist.fullVersion}) | raw }}</p>
-                            {% endif %}
-                        {% endif %}
-                    </div>
-
                     {#
-                       Derived from (Ketura, 2026-11-07): search by author and deck name, or paste
-                       a decklist's id or address; the pick shows as a card to check it's the right one.
+                       Derived from (Ketura, 2026-11-07; several since 2026-11-08): search by author
+                       and deck name, or paste a decklist's id or address; each pick shows as a card
+                       to check it's the right one, with Remove.
                     #}
-                    {% set derived = decklist.precedent and not decklist.precedent.withdrawn ? decklist.precedent : null %}
+                    {% set derived_list = decklist.precedents | filter(d => not d.withdrawn) %}
                     <div class="form-group rb-derived" data-lookup="{{ path('decklist_lookup') }}" data-except="{{ decklist.id }}">
                         <label for="derived-name">{{ 'decklist.form.derived' | trans }}</label>
-                        <input type="hidden" name="precedent" id="precedent" value="{{ derived ? derived.id : '' }}">
-                        <div class="rb-derived-chosen" id="derived-chosen"{% if not derived %} hidden{% endif %}>
-                            <div class="rb-derived-card">{% if derived %}{% include 'Decklist/deck-ref.html.twig' with {d: derived} %}{% endif %}</div>
-                            <button type="button" class="btn btn-link btn-sm" id="derived-clear">{{ 'decklist.form.derived_clear' | trans }}</button>
+                        <input type="hidden" name="precedents" id="precedents" value="{{ derived_list | map(d => d.id) | join(',') }}">
+                        <div class="rb-derived-chosen" id="derived-chosen">
+                            {% for d in derived_list %}
+                                <div class="rb-derived-pick" data-id="{{ d.id }}">
+                                    <div class="rb-derived-card">{% include 'Decklist/deck-ref.html.twig' with {d: d} %}</div>
+                                    <button type="button" class="btn btn-link btn-sm rb-derived-remove">{{ 'decklist.form.derived_clear' | trans }}</button>
+                                </div>
+                            {% endfor %}
                         </div>
-                        <div class="rb-derived-search" id="derived-search"{% if derived %} hidden{% endif %}>
+                        <div class="rb-derived-search" id="derived-search">
                             <div class="row">
                                 <div class="col-sm-5"><input type="text" class="form-control" id="derived-author" autocomplete="off" placeholder="{{ 'decklist.form.derived_author' | trans }}"></div>
                                 <div class="col-sm-7"><input type="text" class="form-control" id="derived-name" autocomplete="off" placeholder="{{ 'decklist.form.derived_name' | trans }}"></div>

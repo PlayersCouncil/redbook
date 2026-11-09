@@ -320,6 +320,27 @@ class BuilderController extends AbstractController
     }
 
     /**
+     * New Revision on a deck as it was published (Ketura, 2026-11-08): its next private
+     * revision, X.1, starts at once, in its history; the deckbuilder unlocks
+     */
+    #[Route(path: '/deck/revision', name: 'deck_revision_start', methods: ['POST'])]
+    public function revisionStartAction(Request $request, PublishedDeckFactory $publishedDeckFactory, DeckManager $deckManager): JsonResponse
+    {
+        $user = $this->requireUser();
+        $deck = $this->managerRegistry->getRepository(Deck::class)->findOneBy(['id' => (int) $request->get('id'), 'dateDeleted' => null])
+            ?? throw new NotFoundHttpException("This deck doesn't exist.");
+        if ($user->getId() != $deck->getUser()->getId()) {
+            throw new AccessDeniedHttpException("You don't have access to this deck.");
+        }
+        if ($publishedDeckFactory->isUnrevised($deck) !== null) {
+            $deckManager->recordEvent($deck, 'revision', true);
+            $this->managerRegistry->getManager()->flush();
+            $this->managerRegistry->getManager()->refresh($deck);
+        }
+        return new JsonResponse(['success' => true, 'version' => $deck->getVersion(), 'history' => $deck->getHistory()]);
+    }
+
+    /**
      * The tags on the user's own decks, with how many decks carry each, for the Notes
      * tab's suggestions (Ketura, 2026-11-03). Only the user's own: other people's
      * private tags aren't theirs to see.
@@ -681,13 +702,18 @@ class BuilderController extends AbstractController
         $deck = new Deck();
         $deck->setUuid(Uuid::uuid4());
         $deck->setOrigin(['type' => 'decklist', 'id' => $decklist->getId(), 'name' => $decklist->getName(), 'version' => $decklist->getVersionLabel()]);
+        // the bid and starting setup carry over; the notes and card annotations are the
+        // author's own (Ketura, 2026-11-08)
         $deckManager->save($user, $deck, [
             'name' => $decklist->getName(),
-            'description' => $decklist->getDescriptionMd(),
+            'description' => '',
             'content' => $decklist->getSlots()->getContent(),
             'target_format' => $decklist->getTargetFormat(),
             'effective_date' => $decklist->getEffectiveDate(),
             'decklist_id' => $decklist->getId(),
+            'starting' => $decklist->getStarting(),
+            'starting_bid' => $decklist->getStartingBid(),
+            'starting_notes' => $decklist->getStartingNotes(),
         ]);
         $this->managerRegistry->getManager()->flush();
         return $this->redirectToRoute('deck_edit', ['deck_uuid' => $deck->getUuid()]);

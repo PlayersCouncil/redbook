@@ -44,7 +44,8 @@
     function ensure_overlay()
     {
         if(!overlay) {
-            overlay = $('<div class="rb-hover" aria-hidden="true"><img alt=""></div>').appendTo('body');
+            // the second picture is a generic card's other half (Ketura, 2026-11-08)
+            overlay = $('<div class="rb-hover" aria-hidden="true"><img alt=""><img class="rb-hover-half" alt=""></div>').appendTo('body');
             overlay.find('img').on('load', function () { $(this).addClass('is-loaded'); });
         }
         return overlay;
@@ -93,7 +94,24 @@
             target = target_rect(rect, landscape),
             // moving from one card to the next: no grow, just the new card in place
             grow = !switching && $(element).is('[data-hover-grow]'),
-            img = overlay.find('img');
+            img = overlay.find('img').first(),
+            // any version (Ketura, 2026-11-08): split down the middle between two versions, as its tile is
+            split = String($(element).data('hover-split') || '').split(','),
+            other = split.length === 2 && app.data.cards ? app.data.cards.findById(split[1]) : null,
+            first = split.length === 2 && app.data.cards ? app.data.cards.findById(split[0]) : null,
+            half = overlay.find('.rb-hover-half');
+        if(first && other && first.image_url && other.image_url) {
+            image = first.image_url;
+            if(half.attr('src') !== other.image_url) {
+                half.removeClass('is-loaded').attr('src', other.image_url);
+            }
+            if(half[0].complete && half[0].naturalWidth) {
+                half.addClass('is-loaded');
+            }
+            overlay.addClass('is-split');
+        } else {
+            overlay.removeClass('is-split');
+        }
         if(img.attr('src') !== image) {
             // black until the new image arrives, never the previous card
             img.removeClass('is-loaded').attr('src', image);

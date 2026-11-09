@@ -40,12 +40,8 @@ class DeleteDecklistCommand extends Command
         $decklist_id = $input->getArgument('decklist_id');
         $decklist = $this->entityManager->getRepository(PublishedDeck::class)->find($decklist_id);
 
-        $successors = $this->entityManager->getRepository(PublishedDeck::class)->findBy(array(
-                'precedent' => $decklist
-        ));
-        foreach ($successors as $successor) {
-            /* @var PublishedDeckInterface $successor */
-            $successor->setPrecedent(null);
+        foreach ($decklist->getSuccessors() as $successor) {
+            $successor->setPrecedents(array_filter($successor->getPrecedents(), fn ($p) => $p !== $decklist));
         }
 
         $children = $this->entityManager->getRepository(Deck::class)->findBy(array(

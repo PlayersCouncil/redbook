@@ -34,8 +34,12 @@ class ReaderNotes
         $annotations = $decklist->getAnnotations();
         $cards = $this->cards(array_merge($starting, array_column($annotations, 'code')));
         $inDeck = [];
+        $generic = [];
         foreach ($decklist->getSlots() as $slot) {
             $inDeck[$slot->getCard()->getCode()] = true;
+            if ($slot->isGeneric()) {
+                $generic[$slot->getCard()->getCode()] = true;
+            }
         }
 
         $view = [
@@ -45,7 +49,10 @@ class ReaderNotes
         ];
         foreach ($starting as $code) {
             if (isset($cards[$code])) {
-                $view['starting'][] = $this->card($cards[$code]);
+                // a companion any version will do for reads as in the list: "Legolas (any)" (Ketura, 2026-11-08)
+                $view['starting'][] = isset($generic[$code])
+                    ? ['label' => CardVersions::genericLabel($cards[$code]), 'generic' => true] + $this->card($cards[$code])
+                    : $this->card($cards[$code]);
                 $view['twilight'] += (int) $cards[$code]->getTwilight();
             }
         }

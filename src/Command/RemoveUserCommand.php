@@ -67,11 +67,8 @@ class RemoveUserCommand extends Command
         $output->writeln('Deleting ' . count($decklists) . ' decklists.');
 
         foreach ($decklists as $decklist) {
-            $successors = $this->entityManager->getRepository(PublishedDeck::class)->findBy([
-                'precedent' => $decklist
-            ]);
-            foreach ($successors as $successor) {
-                $successor->setPrecedent(null);
+            foreach ($decklist->getSuccessors() as $successor) {
+                $successor->setPrecedents(array_filter($successor->getPrecedents(), fn ($p) => $p !== $decklist));
             }
 
             $children = $this->entityManager->getRepository(Deck::class)->findBy([ 'parent' => $decklist ]);

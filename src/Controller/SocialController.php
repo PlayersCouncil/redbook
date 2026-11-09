@@ -82,12 +82,8 @@ class SocialController extends AbstractController
         $repo = $em->getRepository(PublishedDeck::class);
 
         if ($request->isMethod('POST')) {
-            // the line it continues: one of the author's own decklists, or a new line
-            $previous = $repo->find((int) $request->request->get('previous_version'));
-            if ($previous && $previous->getUser()->getId() !== $user->getId()) {
-                $previous = null;
-            }
-            $decklistFactory->continueLine($decklist, $previous);
+            // the line it continues is the deck's own (createDecklistFromDeck): a deck deleted
+            // and brought back with Recreate keeps its line (Ketura, 2026-11-08)
             $this->applyDecklistForm($decklist, $request, FormMode::Create, $texts);
             $em->persist($decklist);
             $em->flush();
@@ -123,16 +119,9 @@ class SocialController extends AbstractController
             }
         }
 
-        // what a new version can follow: the latest of each of the author's lines
-        $lines = [];
-        foreach ($repo->findLatestOfLines($user) as $latest) {
-            $lines[] = ['decklist' => $latest, 'next' => $latest->getVersion() + 1];
-        }
-
         return $this->renderDecklistForm(FormMode::Create, $decklist, $formats, $translator, [
             'action' => $this->generateUrl('deck_publish_form', ['deck_uuid' => $deck->getUuid()]),
             'cancel' => $this->generateUrl('deck_edit', ['deck_uuid' => $deck->getUuid()]),
-            'lines' => $lines,
             'previous' => $decklistFactory->defaultPrevious($deck),
             // shown under the title (Ketura, 2026-11-07)
             'duplicate_warning' => $warning,
@@ -456,14 +445,19 @@ class SocialController extends AbstractController
         }
 
         // derived from: a public decklist, by id or address, never the decklist itself
-        $precedent = trim((string) $form->get('precedent'));
-        if (!preg_match('/^\d+$/', $precedent)) {
-            $precedent = preg_match('#/decklist/view/(\d+)#', $precedent, $matches) ? $matches[1] : null;
+        // derived from: several decklists, by id or address (Ketura, 2026-11-08), none withdrawn
+        $ids = [];
+        foreach (preg_split('/[\s,]+/', trim((string) $form->get('precedents', $form->get('precedent', '')))) as $ref) {
+            if (preg_match('/^\d+$/', $ref) || preg_match('#/decklist/view/(\d+)#', $ref, $matches)) {
+                $id = (int) ($matches[1] ?? $ref);
+                if ($id !== $decklist->getId()) {
+                    $ids[$id] = true;
+                }
+            }
+            unset($matches);
         }
-        $precedent = ($precedent && (int) $precedent !== $decklist->getId())
-            ? $em->getRepository(PublishedDeck::class)->find($precedent)
-            : null;
-        $decklist->setPrecedent($precedent && !$precedent->isWithdrawn() ? $precedent : null);
+        $precedents = $ids ? $em->getRepository(PublishedDeck::class)->findBy(['id' => array_keys($ids)]) : [];
+        $decklist->setPrecedents(array_values(array_filter($precedents, fn (PublishedDeck $p) => !$p->isWithdrawn())));
 
         $decklist->setThumbnailCard($this->thumbnailFrom($request, $decklist));
         if ($request->request->has('thumbnail_crop')) {
@@ -496,8 +490,12 @@ class SocialController extends AbstractController
         foreach ($decklist->getChildren() as $children_deck) {
             $children_deck->setParent($precedent);
         }
+        // what followed it follows what it followed (Ketura, 2026-11-08: several)
         foreach ($decklist->getSuccessors() as $successor_decklist) {
-            $successor_decklist->setPrecedent($precedent);
+            $successor_decklist->setPrecedents(array_merge(
+                array_filter($successor_decklist->getPrecedents(), fn ($p) => $p !== $decklist),
+                $decklist->getPrecedents()
+            ));
         }
 
         $em->remove($decklist);
@@ -633,6 +631,8 @@ class SocialController extends AbstractController
                 'newer' => $decklistRepo->findNewerVersion($decklist),
                 // what it came from and led to, leaving out withdrawn decklists
                 'precedent' => $precedent && !$precedent->isWithdrawn() ? $precedent : null,
+                // all it was derived from (Ketura, 2026-11-08)
+                'precedents' => array_values(array_filter($decklist->getPrecedents(), fn (PublishedDeck $d) => !$d->isWithdrawn())),
                 'successors' => array_filter($decklist->getSuccessors()->toArray(), fn (PublishedDeck $d) => !$d->isWithdrawn()),
                 'format' => $formats->findOneByCode($decklist->getTargetFormat()),
                 'reader' => $readerNotes->build($decklist),

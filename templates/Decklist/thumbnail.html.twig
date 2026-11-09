@@ -10,7 +10,7 @@
     {# just the card's picture (Ketura, 2026-11-07), framed by its template: characters, sites,
        and everything else (the ring included), unless the author framed it themselves #}
     {% set crop = decklist.thumbnailCropFor(card) %}
-    <span class="rb-thumb rb-thumb-card rb-thumb-tpl-{{ card.thumbnailTemplate }}" data-hover-code="{{ card.code }}"><img src="{{ card.imageUrl }}" alt="{{ card.fullName }}" loading="lazy"{% if crop %} style="width: {{ crop.w }}%; left: {{ crop.l }}%; top: {{ crop.t }}%"{% endif %}></span>
+    <span class="rb-thumb rb-thumb-card rb-thumb-tpl-{{ card.thumbnailTemplate }}"><img src="{{ card.imageUrl }}" alt="{{ card.fullName }}" loading="lazy"{% if crop %} style="width: {{ crop.w }}%; left: {{ crop.l }}%; top: {{ crop.t }}%"{% endif %}></span>
 {% else %}
     {% set parts = decklist.thumbnailCultures %}
     <span class="rb-thumb rb-thumb-cultures" role="img" aria-label="{{ parts | map(p => p.name) | join(' / ') }}">

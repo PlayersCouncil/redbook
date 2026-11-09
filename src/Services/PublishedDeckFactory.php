@@ -227,6 +227,12 @@ class PublishedDeckFactory
         // versions now, in its line (Ketura, 2026-11-07)
         if ($deck->getParent()) {
             $decklist->setPrecedent($deck->getParent());
+        } elseif ($deck instanceof Deck && $deck->getParentDeck() instanceof Deck) {
+            // a clone of another deck: that deck's latest publication, the natural first pick (Ketura, 2026-11-08)
+            $source = $this->defaultPrevious($deck->getParentDeck());
+            if ($source !== null && !$source->isWithdrawn()) {
+                $decklist->setPrecedent($source);
+            }
         }
         $decklist->setParent($deck);
         // the deck becomes X.0 with it (numberDeck)

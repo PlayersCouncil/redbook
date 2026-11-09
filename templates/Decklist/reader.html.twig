@@ -188,7 +188,7 @@
                         {% if reader.starting %}
                             <p class="rb-starting-list">
                                 <span class="rb-starting-label">{{ 'deckbuilder.notes.starting_fellowship' | trans }}</span>
-                                {% for card in reader.starting %}<a href="{{ card.href }}" class="rb-starting-card card-tip" data-code="{{ card.code }}">{{ card.label }}</a>{% endfor %}
+                                {% for card in reader.starting %}<a href="{{ card.href }}" class="rb-starting-card card-tip" data-code="{{ card.code }}"{% if card.generic ?? false %} data-generic="1"{% endif %}>{{ card.label }}</a>{% endfor %}
                                 <span class="rb-starting-cost">{{ 'deckbuilder.notes.starting_twilight' | trans({'%cost%': reader.twilight}) }}</span>
                             </p>
                         {% endif %}
@@ -220,7 +220,7 @@
                     {# where it came from and what it led to (Ketura, 2026-11-08): one line with the counts,
                        opening to the tables; a click on either table's heading closes them again #}
                     {% set after_title = is_deck ? 'decks.published.title' : 'decklist.view.inspire.title' %}
-                    {% set before_count = precedent ? 1 : 0 %}
+                    {% set before_count = precedents is defined ? precedents | length : (precedent ? 1 : 0) %}
                     <div class="rb-reader-tree is-collapsed" id="reader-tree">
                         <button type="button" class="rb-tree-summary" aria-expanded="false" aria-controls="reader-tree-tables">
                             <span class="rb-tree-part"><span class="fas fa-backward" aria-hidden="true"></span> {{ 'decklist.view.derived.title' | trans }}:

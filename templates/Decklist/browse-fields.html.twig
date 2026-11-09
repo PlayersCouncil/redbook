@@ -43,16 +43,24 @@
                (Ketura, 2026-11-06/07); a deck has them all. The drawer offers the public
                decklists' tags, and on My Decks your decks' first. #}
             {% set tags_url = my_decks and (f.tab ?? 'decks') == 'decks' ? path('deck_tags') : path('decklist_tags') %}
-            <div class="rb-field rb-field-tags">
-                <label for="browse-tag">{{ 'decklist.browse.tags' | trans }}</label>
-                <div class="rb-card-picks form-control input-sm" id="browse-tags" data-tags-url="{{ tags_url }}">
-                    {% for tag in f.tags ?? [] %}
-                        <span class="rb-card-pick rb-tag-pick"><input type="hidden" name="tags[]" value="{{ tag }}">{{ tag }}<button type="button" aria-label="{{ 'decklist.browse.remove' | trans }}">&times;</button></span>
-                    {% endfor %}
-                    <input type="text" id="browse-tag" autocomplete="off" placeholder="{{ 'decklist.browse.tags_hint' | trans }}" role="combobox" aria-expanded="false" aria-controls="browse-tag-suggest">
+            {#
+               Tags Included and Tags Excluded (Ketura, 2026-11-08); Excluded starts with Retired
+               and Shireposting (PublishedDeckManager::DEFAULT_EXCLUDED_TAGS), and a list leaves
+               them out unless they're taken off
+            #}
+            {% set xtags = f.xtags is defined ? f.xtags | filter(t => t) : ['Retired', 'Shireposting'] %}
+            {% for field in [{name: 'tags', label: 'decklist.browse.tags_in', tags: f.tags ?? [], id: 'browse-tag'}, {name: 'xtags', label: 'decklist.browse.tags_out', tags: xtags, id: 'browse-xtag'}] %}
+                <div class="rb-field rb-field-tags" data-tag-field="{{ field.name }}"{% if field.name == 'xtags' %} data-default="Retired,Shireposting"{% endif %}>
+                    <label for="{{ field.id }}">{{ field.label | trans }}</label>
+                    <div class="rb-card-picks rb-tag-picks form-control input-sm"{% if loop.first %} id="browse-tags"{% endif %} data-tags-url="{{ tags_url }}">
+                        {% for tag in field.tags %}
+                            <span class="rb-card-pick rb-tag-pick"><input type="hidden" name="{{ field.name }}[]" value="{{ tag }}">{{ tag }}<button type="button" aria-label="{{ 'decklist.browse.remove' | trans }}">&times;</button></span>
+                        {% endfor %}
+                        <input type="text" id="{{ field.id }}" class="rb-tag-input" autocomplete="off" placeholder="{{ 'decklist.browse.tags_hint' | trans }}" role="combobox" aria-expanded="false" aria-controls="{{ field.id }}-suggest">
+                    </div>
+                    <div class="rb-tag-suggest" id="{{ field.id }}-suggest" role="listbox" hidden></div>
                 </div>
-                <div class="rb-tag-suggest" id="browse-tag-suggest" role="listbox" hidden></div>
-            </div>
+            {% endfor %}
         </div>
 
         <div class="rb-browse-filters">

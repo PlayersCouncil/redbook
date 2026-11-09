@@ -1,4 +1,4 @@
-/* global app, _ */
+/* global app, _, Translator */
 /**
  * A card's versions in the browser (Ketura, 2026-11-08), as App\Services\CardVersions has them
  * on the server, for cards a deck takes any version of ("any Frodo", "Legolas (any)"):
@@ -106,7 +106,9 @@
         if(legal(card, format)) {
             return card;
         }
-        return _.find(versions.members(card), function (member) { return legal(member, format); }) || card;
+        // the lowest non-zero set first: set 0 is promos from many formats (Ketura, 2026-11-08)
+        var members = _.sortBy(versions.members(card), function (member) { return member.pack_code === '0' ? 1 : 0; });
+        return _.find(members, function (member) { return legal(member, format); }) || card;
     };
 
     /** "Legolas (any)", "Any site 3", "Any site" */

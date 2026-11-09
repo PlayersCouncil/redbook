@@ -1206,17 +1206,17 @@ decklist.form.title.edit: Edit Decklist Details
 decklist.form.format_from_deck: "The deck's own format, fixed once published. To change it, change the deck in the deckbuilder first."
 decklist.form.version_new: "A deck of its own: version 1.0 of a new line."
 decklist.form.version_of: "Publishing <b>version %version%</b> of:"
-decklist.form.version_is: "<b>Version %version%</b>, following:"
+decklist.form.version_is: "Version %version%"
 decklist.form.version_first: "<b>Version %version%</b>: the first of its line."
 decklist.form.previous: New Version Of
 decklist.form.previous_none: "None: a decklist of its own"
 decklist.form.previous_hint: "Pick one of your published decklists to post this as its next version, or none to start a new one."
 decklist.form.format_with_cards: "The deck's format, which comes with its cards. To change it, undo publishing and replace the cards."
 decklist.form.derived: Derived From
-decklist.form.derived_clear: Clear
+decklist.form.derived_clear: "Remove"
 decklist.form.derived_author: Author
 decklist.form.derived_name: "Deck name, or its id or address"
-decklist.form.derived_hint: "A decklist this one builds on. Your own earlier versions go in New Version Of instead."
+decklist.form.derived_hint: "Decklists this one builds on: a clone's source, and any others that shaped it. Search again to add another."
 decklist.form.derived_none: No public decklists match.
 decklist.view.newer: "There's a newer version of this deck: %link%."
 decklist.state.withdraw: Undo Publish
@@ -1328,13 +1328,8 @@ deckbuilder.info.preview_hint: "The deck as others see it"
 
 # Revisions and versions (Ketura, 2026-11-08): a deck published as 2.0, its private revisions
 # 2.1, 2.2; its decklist's detail edits 2.0.1
-deckbuilder.revision.banner: "This is the deck as published, %version%. Changes start a private revision."
+deckbuilder.revision.banner: "This is the deck as published, %version%. A new private revision can be started to prepare the next deck version."
 deckbuilder.revision.new: "New Revision"
-deckbuilder.revision.title: "This Deck Is Published"
-deckbuilder.revision.text: "It was published as %decklist%. New changes go into a private revision, %next%, which nobody else sees until you publish it."
-deckbuilder.revision.question: "Begin a new private revision?"
-deckbuilder.revision.fix_hint: "Until %date%, you can also <a href=\"%url%\">withdraw the published decklist</a> to fix it instead."
-deckbuilder.revision.begin: "Begin Revision %version%"
 deckbuilder.publish.first: "Publish"
 deckbuilder.publish.version: "Publish %version%"
 deckbuilder.publish.published_as: "Published as %version%"
@@ -1392,6 +1387,12 @@ deckbuilder.any.site: "Any site"
 deckbuilder.any.mark: "(any)"
 deckbuilder.any.hint: "Any version of this card will do"
 deckbuilder.any.button: "Any Version"
-deckbuilder.any.button_hint: "Then pick a card in the deck: any version of it will do. Pick a generic card to make it that card again."
+deckbuilder.any.button_hint: "Indicate that any version of this card will do (e.g. 'Any Frodo')"
 deckbuilder.any.none_in_format: "No other version of %card% is legal in %format%."
 deckbuilder.any.none: "%card% has no other version."
+# (Ketura, 2026-11-08)
+deckbuilder.revision.started: "Private revision %version% started"
+deckbuilder.history.event.revision: "Private revision started"
+decklist.browse.tags_in: "Tags Included"
+decklist.browse.tags_out: "Tags Excluded"
+decklist.form.version_will_be: "Publishing as version %version%"

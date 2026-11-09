@@ -239,7 +239,7 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     /**
      * @var Collection
      */
-    #[ORM\OneToMany(targetEntity: PublishedDeck::class, mappedBy: 'precedent')]
+    #[ORM\ManyToMany(targetEntity: PublishedDeck::class, mappedBy: 'precedents')]
     #[ORM\OrderBy(['dateCreation' => 'ASC'])]
     protected $successors;
 
@@ -280,9 +280,16 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     /**
      * @var PublishedDeckInterface
      */
-    #[ORM\ManyToOne(targetEntity: PublishedDeck::class, inversedBy: 'successors')]
-    #[ORM\JoinColumn(name: 'precedent_published_deck_id', referencedColumnName: 'id')]
-    protected $precedent;
+    /**
+     * The decks it was derived from (Ketura, 2026-11-08: several, where the author knows of a
+     * handful that shaped it; it was one)
+     */
+    #[ORM\ManyToMany(targetEntity: PublishedDeck::class, inversedBy: 'successors')]
+    #[ORM\JoinTable(name: 'published_deck_precedent')]
+    #[ORM\JoinColumn(name: 'published_deck_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\InverseJoinColumn(name: 'precedent_id', referencedColumnName: 'id', onDelete: 'CASCADE')]
+    #[ORM\OrderBy(['dateCreation' => 'ASC'])]
+    protected Collection $precedents;
 
     /**
      * @var TournamentInterface
@@ -318,6 +325,7 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
         $this->slots = new ArrayCollection();
         $this->comments = new ArrayCollection();
         $this->successors = new ArrayCollection();
+        $this->precedents = new ArrayCollection();
         $this->children = new ArrayCollection();
         $this->favorites = new ArrayCollection();
         $this->votes = new ArrayCollection();
@@ -911,15 +919,30 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
      */
     public function setPrecedent(?PublishedDeckInterface $precedent = null)
     {
-        $this->precedent = $precedent;
+        $this->setPrecedents($precedent ? [$precedent] : []);
     }
 
-    /**
-     * @inheritdoc
-     */
+    /** The first deck it was derived from */
     public function getPrecedent()
     {
-        return $this->precedent;
+        return $this->precedents->first() ?: null;
+    }
+
+    /** @return PublishedDeck[] the decks it was derived from */
+    public function getPrecedents(): array
+    {
+        return $this->precedents->toArray();
+    }
+
+    /** @param PublishedDeck[] $precedents */
+    public function setPrecedents(array $precedents): void
+    {
+        $this->precedents->clear();
+        foreach ($precedents as $precedent) {
+            if ($precedent !== $this && !$this->precedents->contains($precedent)) {
+                $this->precedents->add($precedent);
+            }
+        }
     }
 
     /**

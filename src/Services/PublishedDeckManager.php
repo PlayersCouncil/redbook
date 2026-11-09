@@ -66,6 +66,18 @@ class PublishedDeckManager
     /** The deck searches' page size unless one is picked (Ketura, 2026-11-07) */
     public const DEFAULT_LIMIT = 10;
 
+    /** Tags left out of the lists unless asked for (Ketura, 2026-11-08) */
+    public const DEFAULT_EXCLUDED_TAGS = ['Retired', 'Shireposting'];
+
+    /**
+     * The tags a list leaves out: the filter's own, or the default ones when the filter says
+     * nothing. "xtags" in the filters is set only when it differs from the default; [''] is none.
+     */
+    public static function excludedTags(array $filters): array
+    {
+        return isset($filters['xtags']) ? array_values(array_filter($filters['xtags'], 'strlen')) : self::DEFAULT_EXCLUDED_TAGS;
+    }
+
     /** Which decks a list shows by what they hold: whole decks, and fragments of either side */
     public const KINDS = ['whole', CardEntity::SIDE_FREE_PEOPLES, CardEntity::SIDE_SHADOW];
 
@@ -105,6 +117,20 @@ class PublishedDeckManager
             return $day && $day->format('Y-m-d') === $value ? $value : null;
         };
 
+        $tags = fn (string $key) => array_values(array_unique(array_filter(array_map(
+            fn ($t) => mb_substr(preg_replace('/\s+/u', '', strip_tags((string) $t)), 0, 60),
+            (array) ($all[$key] ?? [])
+        ))));
+        $xtags = null;
+        if (array_key_exists('xtags', $all)) {
+            $chosen = $tags('xtags');
+            $same = array_map('mb_strtolower', $chosen);
+            sort($same);
+            $default = array_map('mb_strtolower', self::DEFAULT_EXCLUDED_TAGS);
+            sort($default);
+            $xtags = $same === $default ? null : ($chosen ?: ['']);
+        }
+
         $kind = array_values(array_intersect(self::KINDS, $codes('kind')));
         if (count($kind) === count(self::KINDS)) {
             $kind = [];
@@ -125,10 +151,9 @@ class PublishedDeckManager
             'played' => (bool) $query->get('played'),
             'mine' => (bool) $query->get('mine'),
             'favorites' => (bool) $query->get('favorites'),
-            'tags' => array_values(array_unique(array_filter(array_map(
-                fn ($t) => mb_substr(preg_replace('/\s+/u', '', strip_tags((string) $t)), 0, 60),
-                (array) ($all['tags'] ?? [])
-            )))),
+            'tags' => $tags('tags'),
+            // left out (Ketura, 2026-11-08): kept only when not the default; [''] for none
+            'xtags' => $xtags,
             'sort' => in_array($sort, self::SORTS, true) && $sort !== self::SORTS[0] ? $sort : null,
             'limit' => in_array((int) $query->get('limit'), self::LIMITS, true) && (int) $query->get('limit') !== self::DEFAULT_LIMIT ? (int) $query->get('limit') : null,
         ]);
@@ -173,6 +198,10 @@ class PublishedDeckManager
                 . " OR (s$i.generic = true AND c$i.code IN (:members$i))))")
                 ->setParameter("card$i", $code)
                 ->setParameter("members$i", $members);
+        }
+        // tags left out: Retired and Shireposting unless asked otherwise (Ketura, 2026-11-08)
+        foreach (self::excludedTags($filters) as $i => $tag) {
+            $qb->andWhere("(d.tags IS NULL OR CONCAT(' ', d.tags, ' ') NOT LIKE :xtag$i)")->setParameter("xtag$i", '% ' . addcslashes($tag, '%_') . ' %');
         }
         // the decklist's own tags, separated by spaces (Ketura, 2026-11-07)
         if (!empty($filters['tags'])) {

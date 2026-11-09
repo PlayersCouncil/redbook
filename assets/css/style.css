@@ -2094,7 +2094,8 @@ body.rb-crop-open { overflow: hidden; }
    top, the buttons at the bottom, the rest scrolling between; at least a third of the width,
    ahead of the deck, the reverse of the deckbuilder */
 @media (min-width: 992px) {
-    .rb-publish .rb-col-right { flex: 0 0 max(36%, 680px); width: auto; }
+    /* half and half by default (Ketura, 2026-11-08) */
+    .rb-publish .rb-col-right { flex: 0 0 calc(50% - 9px); width: auto; }
     .rb-publish .rb-col-left { flex: 1 1 0; width: auto; }
     .rb-publish-side { display: flex; flex-direction: column; min-height: 0; }
     .rb-publish-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
@@ -2338,3 +2339,22 @@ p.rb-dh-cards { margin-bottom: 0; }
 .is-picking-any .rb-line[data-key], .is-picking-any .rb-tile[data-key] { cursor: crosshair; }
 .is-picking-any .rb-line[data-key]:hover, .is-picking-any .rb-tile[data-key]:hover { outline: 2px solid #2F6B3A; outline-offset: 1px; }
 @container deck (max-width: 520px) { .rb-any-word { display: none; } }
+
+/* a deck as published (Ketura, 2026-11-08): Build is closed until New Revision; a change
+   attempted shows the banner again */
+.rb-builder.is-locked a[href="#tab-pane-build"] { opacity: .45; cursor: not-allowed; }
+.rb-builder.is-locked .rb-col-left :is(button, input, select, textarea, a[role=button]):not(#btn-preview):not(#btn-more):not(#btn-visibility):not(#btn-publish):not(.rb-opt):not([data-collapse]):not(.rb-menu *) { cursor: not-allowed; }
+@keyframes rb-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(212, 160, 23, 0); } 30% { box-shadow: 0 0 0 5px rgba(212, 160, 23, .75); } }
+.rb-revision-banner.is-pulse { animation: rb-pulse .7s ease-out 1; }
+
+/* a generic card's hover, split between two versions as its tile is (Ketura, 2026-11-08) */
+.rb-hover .rb-hover-half { display: none; }
+.rb-hover.is-split img:first-child { clip-path: inset(0 50% 0 0); }
+.rb-hover.is-split .rb-hover-half { display: block; position: absolute; inset: 0; clip-path: inset(0 0 0 50%); }
+.rb-hover.is-split::after { content: ''; position: absolute; top: 0; bottom: 0; left: calc(50% - 1px); width: 2px; background: #fff; box-shadow: 0 0 4px rgba(0, 0, 0, .6); }
+/* the decklist form's version, under the Deck Name heading (Ketura, 2026-11-08) */
+.rb-form-version { margin: -2px 0 6px; color: var(--rb-muted); font-weight: 600; font-size: calc(13px * var(--rb-text-scale)); }
+/* derived from: several picks, each a card with Remove (Ketura, 2026-11-08) */
+.rb-derived-chosen:not(:empty) { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.rb-derived-pick { display: flex; align-items: center; gap: 6px; }
+.rb-derived-pick .rb-derived-card { flex: 1 1 auto; min-width: 0; }

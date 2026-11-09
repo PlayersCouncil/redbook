@@ -171,7 +171,7 @@ test('the author edits the decklist from its page; nobody else gets Edit', async
   await expect(page.locator('#annot-list textarea[data-annotation="1_12"]')).toHaveValue('The only companion.');
   await expect(page.locator('#decklist-state')).toHaveAttribute('data-state', 'grace');
   await expect(page.locator('#effective_date')).toBeDisabled();
-  await expect(page.locator('#version-line')).toContainText('Version 1.0');
+  await expect(page.locator('#version-line')).toContainText('Version v1.0');
   await expect(page.locator('.rb-form-actions a')).toHaveAttribute('href', new URL(decklistUrl).pathname);
   await page.fill('#description', 'Published by the **smoke test**, then edited. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');
   await page.click('.rb-form-actions button[form=decklist-form]:has-text("Save")');
@@ -360,7 +360,7 @@ test('the decklists page filters by card, kind and culture', async ({ page }) =>
   // a card picked from the suggestions is searched for straight away
   await page.locator('#browse-card').fill('Gimli, Dwarf of Er');
   await Promise.all([page.waitForURL(/cards/), page.locator('.tt-suggestion').first().click()]);
-  await expect(page.locator('.rb-card-pick')).toContainText('Gimli, Dwarf of Erebor');
+  await expect(page.locator('#browse-cards .rb-card-pick')).toContainText('Gimli, Dwarf of Erebor');
   await expect(page.getByRole('link', { name: decklistName })).toBeVisible();
   // fragments only: a whole deck drops out, the results swapped in without loading the page
   await page.evaluate(() => { (window as any).samePage = true; });
@@ -429,4 +429,20 @@ test('the public API serves the decklist', async ({ request }) => {
   expect(decklist.slots['rb:1_290']).toBe(1);
   expect(decklist.target_format).toBe('fotr_block');
   expect(decklist.completeness).toBe('complete');
+});
+
+test('tags excluded: Retired and Shireposting by default, taken off to show them', async ({ page }) => {
+  await page.goto('/decklists');
+  const excluded = page.locator('[data-tag-field=xtags] .rb-tag-pick');
+  await expect(excluded).toHaveText([/Retired/, /Shireposting/]);
+  // at the default nothing is sent
+  expect(page.url()).not.toContain('xtags');
+  await Promise.all([page.waitForURL(/xtags/), excluded.first().locator('button').click()]);
+  await expect(page.locator('[data-tag-field=xtags] .rb-tag-pick')).toHaveText([/Shireposting/]);
+  await Promise.all([page.waitForURL(/xtags%5B%5D=$|xtags\[\]=$/), page.locator('[data-tag-field=xtags] .rb-tag-pick button').click()]);
+  await page.reload();
+  await expect(page.locator('[data-tag-field=xtags] .rb-tag-pick')).toHaveCount(0);
+  // Reset brings the default back
+  await page.goto('/decklists');
+  await expect(excluded).toHaveCount(2);
 });

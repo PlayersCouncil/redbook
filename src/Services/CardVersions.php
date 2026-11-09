@@ -67,11 +67,29 @@ class CardVersions
         return $card ? $this->groups[$card['group']] : [];
     }
 
-    /** The first printing of a title, as the archive names "any:" cards (any:Frodo) */
-    public function byTitle(string $title): ?string
+    /**
+     * The version a title's "any:" card is kept as (any:Frodo): its earliest printing outside
+     * set 0, a grab-bag of promos across many formats (Ketura, 2026-11-08), legal in the format
+     * when one is given
+     */
+    public function byTitle(string $title, ?Format $format = null): ?string
     {
         $this->load();
-        return $this->groups['title|' . self::fold($title)][0] ?? null;
+        $first = $this->groups['title|' . self::fold($title)][0] ?? null;
+        return $first === null ? null : $this->exemplar($first, $format);
+    }
+
+    /** The lowest non-zero set's version legal in the format, else outside set 0, else the card itself */
+    public function exemplar(string $code, ?Format $format): string
+    {
+        $members = $this->members($code);
+        $outside = array_values(array_filter($members, fn ($m) => ($this->cards[$m]['set'] ?? '0') !== '0'));
+        foreach ($outside as $member) {
+            if ($this->isLegal($member, $format)) {
+                return $member;
+            }
+        }
+        return $outside[0] ?? $code;
     }
 
     /** Whether a card can be made generic in the format: some other version of it is legal there */
@@ -102,7 +120,10 @@ class CardVersions
         if ($this->isLegal($code, $format)) {
             return $code;
         }
-        foreach ($this->members($code) as $member) {
+        // the lowest non-zero set first: set 0 is promos from many formats
+        $members = $this->members($code);
+        usort($members, fn ($a, $b) => (($this->cards[$a]['set'] ?? '0') === '0') <=> (($this->cards[$b]['set'] ?? '0') === '0'));
+        foreach ($members as $member) {
             if ($this->isLegal($member, $format)) {
                 return $member;
             }

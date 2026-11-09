@@ -68,7 +68,7 @@ class PublishedDeckRevision
             'starting' => json_encode(array_values($decklist->getStarting())),
             'starting_notes' => (string) $decklist->getStartingNotes(),
             'annotations' => json_encode($decklist->getAnnotations() ?: null),
-            'precedent' => (string) $decklist->getPrecedent()?->getId(),
+            'precedent' => implode(',', array_map(fn ($p) => $p->getId(), $decklist->getPrecedents())),
             'thumbnail' => json_encode([$decklist->getThumbnailCard()?->getCode(), $decklist->getThumbnailCrop()]),
         ];
     }

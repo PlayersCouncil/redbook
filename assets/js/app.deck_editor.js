@@ -163,6 +163,17 @@
             + '" aria-label="' + label + '" title="' + t('deckbuilder.starting_title') + '">S</button>';
     }
 
+    /** A generic card's hover shows the same two versions as its tile (Ketura, 2026-11-08) */
+    function split_attr(slot)
+    {
+        if(!slot || !slot.generic) {
+            return '';
+        }
+        var pair = app.card_versions.pair(slot.card, app.deck.get_format());
+        return ' data-hover-split="' + pair[0].code + ',' + pair[1].code + '"';
+    }
+    editor.split_attr = split_attr;
+
     function name_html(card, slot)
     {
         // any version (Ketura, 2026-11-08): "Legolas (any)", "Any site 3", the title only
@@ -170,7 +181,7 @@
             var any = card.type_code === 'site'
                 ? _.escape(slot.label)
                 : (card.is_unique ? '&bull;' : '') + _.escape(card.name) + ' <span class="rb-any">' + _.escape(t('deckbuilder.any.mark')) + '</span>';
-            return '<a class="rb-name card card-tip is-generic" href="' + card.url + '" data-code="' + card.code + '" title="' + _.escape(t('deckbuilder.any.hint')) + '">' + any + '</a>';
+            return '<a class="rb-name card card-tip is-generic" href="' + card.url + '" data-code="' + card.code + '"' + split_attr(slot) + ' title="' + _.escape(t('deckbuilder.any.hint')) + '">' + any + '</a>';
         }
         return '<a class="rb-name card card-tip" href="' + card.url + '" data-code="' + card.code + '">'
             + (card.is_unique ? '&bull;' : '') + _.escape(card.name)
@@ -180,9 +191,9 @@
     }
 
     /** In the reader the whole row previews its card (Ketura, 2026-11-04); the deckbuilder's rows are full of buttons */
-    function row_hover(card)
+    function row_hover(card, slot)
     {
-        return readonly ? ' data-hover-code="' + card.code + '"' : '';
+        return readonly ? ' data-hover-code="' + card.code + '"' + split_attr(slot) : '';
     }
 
     function classes(slot, problems)
@@ -197,7 +208,7 @@
         // the S sits between the culture icon and a companion's name; the other lines keep no
         // space for it (Ketura, 2026-11-08; it was a column)
         var start = options.numbers ? start_button(slot) : '';
-        return '<div class="rb-line' + classes(slot, problems) + '" data-key="' + slot.key + '" data-code="' + slot.card.code + '"' + row_hover(slot.card) + '>'
+        return '<div class="rb-line' + classes(slot, problems) + '" data-key="' + slot.key + '" data-code="' + slot.card.code + '"' + row_hover(slot.card, slot) + '>'
             + qty_control(slot, options.numbers)
             + (options.culture ? app.data.cardIconHtml(slot.card) : '')
             + start
@@ -239,7 +250,7 @@
         options = options || {};
         var card = slot.card;
         return '<div class="rb-tile' + classes(slot, problems) + (options.overlay ? ' rb-tile-overlay' : '') + '" data-key="' + slot.key + '" data-code="' + card.code + '">'
-            + '<div class="rb-tile-img" data-hover-code="' + card.code + '" data-hover-grow="1">'
+            + '<div class="rb-tile-img" data-hover-code="' + card.code + '" data-hover-grow="1"' + split_attr(slot) + '>'
             + tile_image(slot)
             + (options.number ? '<span class="rb-site-num">' + options.number + '</span>' : '')
             + (options.numbers && !readonly ? start_button(slot) : '')
@@ -341,7 +352,7 @@
                         + plus('site', t('deckbuilder.find_site', {number: row.n}), ' data-site="' + row.n + '"')
                         + '<span class="rb-choose">' + (readonly ? '&mdash;' : t('deckbuilder.choose_site', {number: row.n})) + '</span></div>';
                 }
-                return '<div class="rb-line' + classes(row.slot, problems) + '" data-key="' + row.slot.key + '" data-code="' + row.slot.card.code + '"' + row_hover(row.slot.card) + '>'
+                return '<div class="rb-line' + classes(row.slot, problems) + '" data-key="' + row.slot.key + '" data-code="' + row.slot.card.code + '"' + row_hover(row.slot.card, row.slot) + '>'
                     + '<span class="rb-site-n">' + row.n + '</span>' + x_or_trash(row.slot) + name_html(row.slot.card, row.slot) + '</div>';
             }).join('') + (!rows.length ? '<div class="rb-empty">&mdash;</div>' : '') + '</div>';
         } else {

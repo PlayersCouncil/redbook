@@ -290,11 +290,15 @@ class DeckManager
     }
 
     /**
-     * Something that happened to the deck, in its history without a new number (Ketura,
-     * 2026-11-08): brought back after it was deleted
+     * Something that happened to the deck, in its history (Ketura, 2026-11-08): brought back
+     * after it was deleted, without a new number; a private revision begun, with one
      */
-    public function recordEvent(Deck $deck, string $event): DeckRevision
+    public function recordEvent(Deck $deck, string $event, bool $newRevision = false): DeckRevision
     {
+        // a new private revision of a published deck: X.1 (Ketura, 2026-11-08)
+        if ($newRevision) {
+            $deck->setMinorVersion($deck->getMinorVersion() + 1);
+        }
         $change = new DeckRevision();
         $change->setDeck($deck);
         $change->setVariation(json_encode([[], []]));
@@ -424,7 +428,9 @@ class DeckManager
             : ['type' => 'new']);
         $this->save($user, $deck, [
             'name' => $name ?? $source->getName() . ' (copy)',
-            'description' => $source->getDescriptionMd(),
+            // a clone starts its own notes and card annotations; the bid and starting setup
+            // carry over (Ketura, 2026-11-08)
+            'description' => '',
             'tags' => $source->getTags(),
             'content' => $source->getSlots()->getContent(),
             'target_format' => $source->getTargetFormat(),
@@ -432,7 +438,7 @@ class DeckManager
             'starting' => $source instanceof Deck || $source instanceof \App\Entity\PublishedDeck ? $source->getStarting() : [],
             'starting_bid' => $source instanceof Deck || $source instanceof \App\Entity\PublishedDeck ? $source->getStartingBid() : null,
             'starting_notes' => $source instanceof Deck || $source instanceof \App\Entity\PublishedDeck ? $source->getStartingNotes() : null,
-            'annotations' => $source instanceof Deck || $source instanceof \App\Entity\PublishedDeck ? $source->getAnnotations() : [],
+            'annotations' => [],
         ]);
         return $deck;
     }

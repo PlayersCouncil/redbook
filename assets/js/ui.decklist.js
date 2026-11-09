@@ -9,6 +9,16 @@
      */
     ui.setup_event_handlers = function setup_event_handlers()
     {
+        // the starting fellowship's generic companions hover split, as their tiles (Ketura, 2026-11-08)
+        $(document).on('deck.rendered', function () {
+            $('.rb-starting-card[data-generic]').each(function () {
+                var card = app.data.cards && app.data.cards.findById($(this).data('code') + '');
+                if(card) {
+                    var pair = app.card_versions.pair(card, app.deck.get_format());
+                    $(this).attr('data-hover-split', pair[0].code + ',' + pair[1].code);
+                }
+            });
+        });
 
         $('.decklist-delete').on('click', ui.delete_form);
         // a saved deck's Delete (Ketura, 2026-11-08): the deck list's confirmation

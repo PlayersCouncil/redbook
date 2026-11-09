@@ -113,11 +113,16 @@
             list.html('<span class="rb-hint">' + t('deckbuilder.notes.starting_none') + '</span>');
             return;
         }
-        var cards = _.compact(_.map(codes, function (code) { return app.data.cards.findById(code); }));
+        var cards = _.compact(_.map(codes, function (code) { return app.data.cards.findById(code); })),
+            content = app.deck.get_content ? app.deck.get_content() : {};
         list.html(_.map(cards, function (card) {
+            // a companion any version will do for reads as in the list, its hover split (Ketura, 2026-11-08)
+            var generic = !!content['any:' + card.code],
+                label = generic ? app.card_versions.label(card) : card.label,
+                split = generic && app.deck_editor.split_attr ? app.deck_editor.split_attr({generic: true, card: card}) : '';
             return '<span class="rb-starting-pill"><button type="button" class="rb-starting-remove" data-unstart="' + card.code + '" aria-label="'
-                + t('deckbuilder.notes.start_remove', {card: _.escape(card.label)}) + '">&times;</button>'
-                + '<a href="' + card.url + '" class="rb-starting-card card-tip" data-code="' + card.code + '">' + _.escape(card.label) + '</a></span>';
+                + t('deckbuilder.notes.start_remove', {card: _.escape(label)}) + '">&times;</button>'
+                + '<a href="' + card.url + '" class="rb-starting-card card-tip" data-code="' + card.code + '"' + split + '>' + _.escape(label) + '</a></span>';
         }).join(''));
     }
 
