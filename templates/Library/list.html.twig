@@ -6,7 +6,8 @@
     Libraries, New Library and what can be done to the ones ticked on the right.
 
     Variables: rows (Library[]), total, filters (LibraryManager::getFilters), pager,
-    list_route (my_libraries or libraries_list), mine, owner
+    list_route (my_libraries, libraries_list or libraries_user), list_kind (official or user
+    on the public lists), mine, owner
     Its blocks browse_top, browse_fields, browse_results and browse_side are also sent alone
     as the filters change (ui.decklist_search.js).
 #}
@@ -24,10 +25,21 @@
 <div class="main white container rb-browse rb-libraries{% if mine %} rb-my-decks rb-my-libraries{% endif %}">
     <div class="rb-browse-alerts">{% include 'alerts.html.twig' %}</div>
 
-    <div class="rb-browse-title">
-        <h1>{{ mine ? ('nav.mylibraries' | trans) : ('library.list.title' | trans) }}</h1>
-        {% if not mine %}<p class="rb-browse-intro">{{ 'library.list.intro' | trans | raw }}</p>{% endif %}
-    </div>
+    {% if mine %}
+        <div class="rb-browse-title"><h1>{{ 'nav.mylibraries' | trans }}</h1></div>
+    {% else %}
+        {# Libraries, the PC's official ones, and User Libraries, everyone else's (Ketura,
+           2026-11-09): tabs, as My Decks and My Favorites; each its own page, the filters kept #}
+        {% set query = app.request.query.all | filter((v, k) => k != 'page') %}
+        <div class="rb-browse-title rb-library-tabs">
+            <nav class="rb-tab-row" aria-label="{{ 'library.list.tabs' | trans }}">
+                {% for kind, route in {official: 'libraries_list', user: 'libraries_user'} %}
+                    <a href="{{ list_path(route, query) }}" class="rb-tab{{ list_kind == kind ? ' is-active' }}"{% if list_kind == kind %} aria-current="page"{% endif %}>{{ (kind == 'official' ? 'library.list.title' : 'library.list.user_title') | trans }}</a>
+                {% endfor %}
+            </nav>
+            <p class="rb-browse-intro">{{ 'library.list.intro' | trans | raw }} {{ ('library.list.intro_' ~ list_kind) | trans }}</p>
+        </div>
+    {% endif %}
 
     <form method="get" action="{{ path(list_route) }}" class="rb-browse-pane" id="browse-form">
         <div class="rb-browse-top" id="browse-top">{{ block('browse_top') }}</div>
@@ -117,11 +129,6 @@
                         {% endfor %}
                     </div>
                 </div>
-            {% else %}
-                <label class="rb-field rb-field-official">
-                    <span>{{ 'library.browse.official' | trans }}</span>
-                    <span class="rb-check"><input type="checkbox" name="official" value="1" data-autosubmit{% if f.official ?? false %} checked{% endif %}> {{ 'library.browse.official_only' | trans }}</span>
-                </label>
             {% endif %}
         </div>
 

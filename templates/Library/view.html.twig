@@ -46,7 +46,7 @@
                     <span class="rb-reader-version">{{ 'library.view.decks' | trans({'%count%': entries | length}) }}</span>
                     {% if library.tagList %}
                         <ul class="rb-reader-tags" aria-label="{{ 'decklist.reader.tags' | trans }}">
-                            {% for tag in library.tagList %}<li><a class="rb-tag-chip" href="{{ list_path('libraries_list', {tags: [tag]}) }}">{{ tag }}</a></li>{% endfor %}
+                            {% for tag in library.tagList %}<li><a class="rb-tag-chip" href="{{ list_path(library.official ? 'libraries_list' : 'libraries_user', {tags: [tag]}) }}">{{ tag }}</a></li>{% endfor %}
                         </ul>
                     {% endif %}
                 </div>

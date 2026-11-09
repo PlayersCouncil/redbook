@@ -166,3 +166,7 @@ div.rb-browse-title h1 { margin: 0; font: inherit; letter-spacing: inherit; colo
 .rb-lv-notes-head .rb-lv-section-head { margin: 0; }
 .rb-lv-notes-head .rb-lv-nav { margin-top: 0; }
 .rb-lv-tools { margin-left: 4px; }
+/* Libraries and User Libraries, as tabs that fit the filters' column on one line */
+.rb-library-tabs .rb-tab { font-size: 1.5rem; white-space: nowrap; padding-left: 12px; padding-right: 12px; }
+.rb-library-tabs .rb-tab-row { flex-wrap: nowrap; }
+.rb-library-tabs .rb-browse-intro { margin-top: 8px; }

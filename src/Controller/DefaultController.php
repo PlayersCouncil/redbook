@@ -28,6 +28,7 @@ class DefaultController extends AbstractController
      * @param string $publisherName
      * @param PublishedDeckManager $decklistManager
      * @param FormatRepository $formats
+     * @param TranslatorInterface $translator
      * @return Response
      * @throws Exception
      */
@@ -38,6 +39,7 @@ class DefaultController extends AbstractController
         string $publisherName,
         PublishedDeckManager $decklistManager,
         FormatRepository $formats,
+        TranslatorInterface $translator,
     ) {
         $response = new Response();
         $response->setPublic();
@@ -53,10 +55,9 @@ class DefaultController extends AbstractController
         return $this->render(
             'Default/index.html.twig',
             [
-                'pagetitle' => "{$gameName} Deckbuilder",
-                'pagedescription' => "Build your deck for {$gameName}."
-                    . " Browse the cards and the decklists submitted by the community."
-                    . " Publish your own decks and get feedback.",
+                // the site's own title: Red Book, a LOTR-TCG Deck Repository (Ketura, 2026-11-09)
+                'pagetitle' => null,
+                'pagedescription' => $translator->trans('site.description'),
                 'popular_decklists' => $popular,
                 'recent_decklists' => $recent,
                 'banner_alerts' => $alerts,

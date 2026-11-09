@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\Request;
  */
 class LibraryManager
 {
-    public const SORTS = ['new', 'old', 'name', 'size'];
+    public const SORTS = ['new', 'old', 'popular', 'name', 'size'];
     public const LIMITS = [10, 30, 50, 80, 100];
     public const SHOWS = [Library::PRIVATE, Library::HIDDEN, Library::PUBLIC];
 
@@ -245,7 +245,6 @@ class LibraryManager
             'xtags' => $tags('xtags'),
             'from' => $date('from'),
             'to' => $date('to'),
-            'official' => (bool) $request->query->get('official'),
             'show' => count($show) === count(self::SHOWS) ? [] : $show,
             'sort' => in_array($sort, self::SORTS, true) && $sort !== 'new' ? $sort : null,
             'limit' => in_array($limit, self::LIMITS, true) && $limit !== PublishedDeckManager::DEFAULT_LIMIT ? $limit : null,

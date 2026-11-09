@@ -655,6 +655,8 @@ formats:
     restricted_names: Restricted by name
 
 # ---- Red Book (LOTR) additions. Flat dotted keys extend the sections above. ----
+site.title: "Red Book, a LOTR-TCG Deck Repository"
+site.description: "Decks for the Lord of the Rings Trading Card Game: build your own, browse and study the community's, and read the libraries that gather them."
 site.name: Red Book
 deck:
   draw_deck: Draw deck
@@ -1442,6 +1444,10 @@ library.view.social.own: "You made this library"
 library.view.back_to_top: "Back to Top"
 library.view.contents: "Decks"
 library.view.login_to_comment: "Log in to comment"
+library.list.user_title: "User Libraries"
+library.list.tabs: "Libraries"
+library.list.intro_official: "The Players Council's own: starter decks, events and other official collections."
+library.list.intro_user: "Made and shared by players."
 library.list.title: Libraries
 library.list.intro: "A <strong>Deck Library</strong> is a collection of decks curated by a user with optional commentary, for teaching or reference."
 library.deleted: "{1} The library was deleted.|]1,Inf[ %count% libraries were deleted."

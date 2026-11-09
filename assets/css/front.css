@@ -21,7 +21,6 @@
 .rb-bookplate .rb-deck-name { font-size: 1.4375rem; }
 .rb-bookplate-facts { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin: 5px 0 6px; }
 .rb-bookplate p { margin: 0; font: 1.03125rem/1.4 var(--rb-font-prose); color: var(--rb-ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.rb-bookplate-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 8px; margin-top: 4px; border-top: 1px dashed var(--rb-line-strong); }
 
 .rb-feeds { display: grid; grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(0, 1fr)); gap: 14px; height: 100%; }
 .rb-feeds > .rb-panel { display: flex; flex-direction: column; min-height: 0; }
@@ -91,3 +90,23 @@
 .rb-deckrow .rb-deckrow-line.is-split { flex-wrap: nowrap; }
 .rb-deckrow .rb-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rb-deckrow .rb-votes { flex: none; gap: 8px; }
+
+/* Deck of the Day as a plate sized to what it holds (Ketura, 2026-11-09), centred in the cover
+   beside the title: the thumbnail, then its heading and date (twice the size they were), the
+   name, and one line of facts with the counts */
+.rb-bookplate { align-self: center; justify-self: center; width: fit-content; max-width: 100%; padding: 10px 16px 10px 10px; align-items: center; }
+.rb-bookplate > :first-child { grid-row: auto; }
+.rb-bookplate-eyebrow { justify-content: flex-start; gap: 2px 16px; }
+.rb-bookplate-eyebrow b { font-size: 2.125rem; line-height: 1.1; }
+.rb-bookplate-date { font: 1.625rem/1.1 var(--rb-font-display); color: var(--rb-ink-2); }
+.rb-bookplate-facts { margin: 4px 0 0; }
+.rb-bookplate-facts .rb-votes { margin-left: 4px; }
+
+/* a tile that is one link (Ketura, 2026-11-09): its main link stretched over the whole of it */
+.rb-stretch { position: relative; cursor: pointer; transition: background-color .12s, box-shadow .12s; }
+.rb-stretch-link::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+.rb-feed > li.rb-stretch:hover .rb-deck-name { color: var(--rb-link-hover); text-decoration: underline; }
+.rb-bookplate.rb-stretch:hover { box-shadow: 0 0 0 1px rgba(0,0,0,.35), 0 0 0 4px var(--rb-gilt), 0 8px 22px rgba(0,0,0,.45); }
+.rb-bookplate.rb-stretch:hover .rb-deck-name { text-decoration: underline; }
+.rb-stretch:focus-within { outline: 2px solid var(--rb-focus); outline-offset: -2px; }
+.rb-stretch-link:focus { outline: none; }

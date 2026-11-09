@@ -11,11 +11,12 @@
 {% macro deck_row(decklist, format_names) %}
     {% import 'Tags/tags.html.twig' as tags %}
     {% set url = path('decklist_detail', {decklist_id: decklist.id, decklist_name: decklist.nameCanonical}) %}
-    <li><div class="rb-deckrow">
-        <a href="{{ url }}" tabindex="-1" aria-hidden="true">{% include 'Decklist/thumbnail.html.twig' with {decklist: decklist} %}</a>
+    {# the whole tile is the link (Ketura, 2026-11-09): its name stretched over it #}
+    <li class="rb-stretch"><div class="rb-deckrow">
+        {% include 'Decklist/thumbnail.html.twig' with {decklist: decklist} %}
         {# the name on two lines (kept for it), then two lines (Ketura, 2026-11-09): who and when
            with the size, the format with the counts #}
-        <a class="rb-deck-name" href="{{ url }}">{{ decklist.name }}</a>
+        <a class="rb-deck-name rb-stretch-link" href="{{ url }}">{{ decklist.name }}</a>
         <div class="rb-deckrow-line is-split">
             <span class="rb-meta">{{ decklist.user.displayName }} · <time datetime="{{ decklist.dateCreation | date('c') }}">{{ decklist.dateCreation | date('M j, Y') }}</time></span>
             <span class="rb-size" title="{{ 'decklist.browse.col.size' | trans }}"><span class="rb-fp">{{ decklist.nbFreePeoples ?: '–' }}</span><span class="sep">/</span><span class="rb-sh">{{ decklist.nbShadow ?: '–' }}</span></span>
@@ -38,21 +39,18 @@
             </div>
             {% if dotd %}
                 {% set url = path('decklist_detail', {decklist_id: dotd.id, decklist_name: dotd.nameCanonical}) %}
-                <article class="rb-bookplate" aria-labelledby="dotd-name">
-                    <a href="{{ url }}" tabindex="-1" aria-hidden="true">{% include 'Decklist/thumbnail.html.twig' with {decklist: dotd} %}</a>
+                {# the whole plate is the link (Ketura, 2026-11-09): its name stretched over it #}
+                <article class="rb-bookplate rb-stretch" aria-labelledby="dotd-name">
+                    {% include 'Decklist/thumbnail.html.twig' with {decklist: dotd} %}
                     <div class="rb-bookplate-main">
-                        <div class="rb-bookplate-eyebrow"><b>{{ 'home.dotd' | trans }}</b><span class="rb-meta">{{ 'now' | date('l, F j') }}</span></div>
-                        <a id="dotd-name" class="rb-deck-name" href="{{ url }}">{{ dotd.name }}</a>
+                        <div class="rb-bookplate-eyebrow"><b>{{ 'home.dotd' | trans }}</b><span class="rb-bookplate-date">{{ 'now' | date('l, F j') }}</span></div>
+                        <a id="dotd-name" class="rb-deck-name rb-stretch-link" href="{{ url }}">{{ dotd.name }}</a>
                         <div class="rb-bookplate-facts">
                             {% if dotd.targetFormat %}{{ tags.format(format_names[dotd.targetFormat] ?? dotd.targetFormat, false) }}{% endif %}
                             <span class="rb-size" title="{{ 'decklist.browse.col.size' | trans }}"><span class="rb-fp">{{ dotd.nbFreePeoples ?: '–' }}</span><span class="sep">/</span><span class="rb-sh">{{ dotd.nbShadow ?: '–' }}</span></span>
                             <span class="rb-meta">{{ dotd.user.displayName }}</span>
+                            {% include 'Social/counts.html.twig' with {subject: dotd} %}
                         </div>
-                    </div>
-                    <div class="rb-bookplate-actions">
-                        <a class="btn btn-primary btn-sm" href="{{ url }}"><span class="fas fa-book-open"></span>{{ 'home.read_deck' | trans }}</a>
-                        <span style="flex: 1"></span>
-                        {% include 'Social/counts.html.twig' with {subject: dotd} %}
                     </div>
                 </article>
             {% endif %}

@@ -15,7 +15,7 @@ body { height: 100vh; height: 100dvh; display: flex; flex-direction: column; ove
 /* the brand's corner (Ketura, 2026-11-09): a darker block from the window's edge, the shade a
    section takes on hover, so the logo has its own space; on the wide bar only, where it is
    the first thing */
-@media (min-width: 1100px) {
+@media (min-width: 75.625em) {
     .rb-topbar .rb-brand { align-self: stretch; margin-left: calc(-1 * max(16px, env(safe-area-inset-left, 0px))); margin-right: 10px;
         padding: 0 18px 0 max(16px, env(safe-area-inset-left, 0px)); background: rgba(0, 0, 0, .14); }
 }
@@ -33,7 +33,7 @@ body { height: 100vh; height: 100dvh; display: flex; flex-direction: column; ove
 @media (max-width: 767px) {
     body.rb-menu-open .rb-topbar .rb-nav-phone-tools { display: flex; align-items: center; gap: 8px; padding: 8px max(20px, env(safe-area-inset-left, 0px)) 0; }
 }
-@media (max-width: 1099px) {
+@media (max-width: 75.6188em) {
     /* the folded sections: their menus open in place */
     body.rb-menu-open .rb-topbar .rb-nav-primary .dropdown-menu { position: static; float: none; margin: 0 0 6px; box-shadow: none; }
 }

@@ -67,8 +67,11 @@ class LibraryRepository extends EntityRepository
         if (!empty($filters['to'])) {
             $qb->andWhere('l.dateUpdate < :to')->setParameter('to', (new \DateTime($filters['to']))->modify('+1 day'));
         }
-        if (!empty($filters['official'])) {
+        // Libraries are the PC's, official; User Libraries everyone else's (Ketura, 2026-11-09)
+        if (($filters['kind'] ?? null) === 'official') {
             $qb->andWhere('l.official = true');
+        } elseif (($filters['kind'] ?? null) === 'user') {
+            $qb->andWhere('l.official = false');
         }
     }
 

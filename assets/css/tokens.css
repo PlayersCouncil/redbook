@@ -188,7 +188,7 @@ html.pc-dark {
 /* ---------- 1a. The text size (Ketura, 2026-11-09) ----------
    Every text size on the site is in rem, so this factor scales all text together (the root's
    font size is the browser's own setting times it; bootstrap.css). 1 is the design's sizes. */
-:root { --rb-type: 1; }
+:root { --rb-type: 1.1; }   /* Ketura, 2026-11-09: 1.1; the top bar's breakpoints follow it (theme.css section 19) */
 
 /* ---------- 1c. Red Book's own tokens, beside the theme's (Ketura, 2026-11-09) ---------- */
 :root {

@@ -283,15 +283,18 @@ a.rb-page:hover, a.rb-page:focus { background: var(--rb-primary-soft); border-co
 a.rb-deck-name:hover { color: var(--rb-link); text-decoration: none; }
 
 /* ---------- 19. Responsive ---------- */
+/* The top bar's breakpoints are in em, so they follow the text (Ketura, 2026-11-09): the
+   design's widths (1400, 1200, 1100px) times --rb-type (1.1), over 16; recompute them when
+   --rb-type changes. In em they also follow the browser's own font size setting. */
 @media (pointer: coarse) {
     :root { --rb-control-h: 40px; --rb-control-h-sm: 36px; }
     .rb-page { min-width: 40px; height: 40px; }
     .rb-splitter { display: none; }
 }
-@media (max-width: 1399px) { .rb-nav > li > a .rb-nav-label { display: none; } .rb-nav > li > a { padding: 0 9px; } }
+@media (max-width: 96.2438em) { .rb-nav > li > a .rb-nav-label { display: none; } .rb-nav > li > a { padding: 0 9px; } }
 /* the front page's responsive rules are in front.css, after its own */
-@media (max-width: 1199px) { .rb-brand > .rb-wordmark { display: none; } .rb-brand { margin-right: 6px; } }
-@media (max-width: 1099px) {
+@media (max-width: 82.4938em) { .rb-brand > .rb-wordmark { display: none; } .rb-brand { margin-right: 6px; } }
+@media (max-width: 75.6188em) {
     .rb-topbar .rb-nav-primary { display: none; }
     .rb-brand > .rb-wordmark { display: block; }
     .rb-burger { display: grid; place-items: center; }

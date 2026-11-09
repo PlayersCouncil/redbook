@@ -22,6 +22,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity(repositoryClass: \App\Repository\LibraryRepository::class)]
 #[ORM\Table(name: 'library')]
 #[ORM\Index(name: 'library_visibility_idx', columns: ['visibility', 'date_update'])]
+#[ORM\UniqueConstraint(name: 'library_seed_idx', columns: ['seed_source', 'seed_id'])]
 class Library implements \App\Classes\ThumbnailSubject
 {
     public const PRIVATE = 'private';
@@ -89,6 +90,17 @@ class Library implements \App\Classes\ThumbnailSubject
 
     #[ORM\Column(name: 'official', type: 'boolean', options: ['default' => false])]
     protected bool $official = false;
+
+    /**
+     * Where a seeded library came from (Ketura, 2026-11-09; app:import:seed-libraries): the
+     * manifest's source and the library's id in it, so a re-import updates it in place.
+     * Null for a library someone made.
+     */
+    #[ORM\Column(name: 'seed_source', type: 'string', length: 30, nullable: true)]
+    protected ?string $seedSource = null;
+
+    #[ORM\Column(name: 'seed_id', type: 'string', length: 100, nullable: true)]
+    protected ?string $seedId = null;
 
     #[ORM\Column(name: 'date_creation', type: 'datetime')]
     protected DateTimeInterface $dateCreation;
@@ -248,6 +260,10 @@ class Library implements \App\Classes\ThumbnailSubject
     public function setVisibility(string $visibility): void { $this->visibility = in_array($visibility, self::VISIBILITIES, true) ? $visibility : self::PRIVATE; }
     public function isPublic(): bool { return $this->visibility === self::PUBLIC; }
     public function isOfficial(): bool { return $this->official; }
+    public function getSeedSource(): ?string { return $this->seedSource; }
+    public function getSeedId(): ?string { return $this->seedId; }
+    public function setSeed(?string $source, ?string $id): void { $this->seedSource = $source; $this->seedId = $id; }
+    public function isSeeded(): bool { return $this->seedSource !== null; }
     public function setOfficial(bool $official): void { $this->official = $official; }
     public function getDateCreation(): DateTimeInterface { return $this->dateCreation; }
     public function getDateUpdate(): DateTimeInterface { return $this->dateUpdate; }

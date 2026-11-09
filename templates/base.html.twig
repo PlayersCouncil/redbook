@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="{{ app.request.locale }}">
 <head>
-    <title>{{ pagetitle|default('Deckbuilder') }} &middot; {{ 'site.name' | trans }}</title>
+    {# a page's own title, then the site's; the front page is the site's full title (Ketura, 2026-11-09) #}
+    <title>{% if pagetitle is defined and pagetitle %}{{ pagetitle }} &middot; {{ 'site.name' | trans }}{% else %}{{ 'site.title' | trans }}{% endif %}</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% if not allow_search_engine_tracking %}
@@ -66,7 +67,7 @@
 {% set _canonical = app.request.attributes.get('_canonical_route')|default(_route) %}
 {% set _section = {
     decklists_list: 'decklists', decklist_detail: 'decklists', decklist_edit: 'decklists',
-    libraries_list: 'libraries', library_view: 'libraries', library_tags: 'libraries',
+    libraries_list: 'libraries', libraries_user: 'libraries', library_view: 'libraries', library_tags: 'libraries',
     decks_list: 'mydecks', deck_edit: 'mydecks', deck_view: 'mydecks', deck_publish_form: 'mydecks', deck_buildform: 'mydecks',
     my_libraries: 'mylibraries', library_new: 'mylibraries', library_edit: 'mylibraries', library_view_private: 'mylibraries',
 }[_canonical]|default('') %}

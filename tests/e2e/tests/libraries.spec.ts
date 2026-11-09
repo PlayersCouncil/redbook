@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { Page } from '@playwright/test';
 import { test, expect, runId, waitForCardData } from '../helpers/test';
-import { storageFor } from '../helpers/users';
+import { storageFor, loadUsers } from '../helpers/users';
+import { appConsole } from '../helpers/console';
 
 // Libraries (Ketura, 2026-11-08): collections of published decklists with the curator's
 // notes on each. Made on My Libraries, filled from the editor's Build tab or from Add to
@@ -133,8 +134,13 @@ test('private until made public; then listed, and read one deck at a time', asyn
   publicUrl = await page.locator('#save-status a').getAttribute('href') ?? '';
   expect(publicUrl).toMatch(/\/library\/view\/\d+\//);
 
-  // Libraries lists it, found by its tag
+  // User Libraries lists it, found by its tag; Libraries, the PC's official ones, doesn't
+  // (Ketura, 2026-11-09)
   await voter.goto(`/libraries?tags[]=e2etag${runId}`);
+  await expect(voter.locator('.rb-library-tabs .rb-tab.is-active')).toHaveText('Libraries');
+  await expect(voter.locator('.rb-lib-cards .rb-deck-name')).toHaveCount(0);
+  await voter.locator('.rb-library-tabs .rb-tab', { hasText: 'User Libraries' }).click();
+  await expect(voter).toHaveURL(/\/libraries\/user\?/);
   // as cards, two to a row (Ketura, 2026-11-08)
   await expect(voter.locator('.rb-lib-cards .rb-deck-name')).toHaveText(name);
   await expect(voter.locator('.rb-lib-cards .rb-thumb-part')).toHaveCount(2);
@@ -192,7 +198,7 @@ test('private until made public; then listed, and read one deck at a time', asyn
   await voter.reload();
   await expect(like).toHaveAttribute('aria-pressed', 'true');
   await expect(voter.locator('#library-comments .comment-text')).toHaveCount(1);
-  await voter.goto(`/libraries?tags[]=e2etag${runId}`);
+  await voter.goto(`/libraries/user?tags[]=e2etag${runId}`);
   await expect(voter.locator('.rb-lib-cards .rb-votes .v-cheers')).toHaveText('1');
   await expect(voter.locator('.rb-lib-cards .rb-lib-card-description')).toContainText('testing');
   // its curator can't like their own
@@ -229,6 +235,31 @@ test('Add to Library from the decklists page: to a library, or a new one made in
   await page.goto(editUrl);
   await waitForCardData(page);
   await expect(page.locator('#library-entries .rb-lib-entry')).toHaveCount(2);
+});
+
+
+test('seeded libraries: official, public, and updated in place on a second import', async ({ page }) => {
+  // a decklist this run published, from the public library's view
+  await page.goto(publicUrl);
+  const decklistUrl = await page.locator('.rb-lv-open').first().getAttribute('href') ?? '';
+  const decklistId = Number(decklistUrl.match(/\/decklist\/view\/(\d+)/)![1]);
+  const manifest = (title: string) => JSON.stringify({
+    source: 'e2e', owner: loadUsers().author.username,
+    libraries: [{ id: `seeded-${runId}`, name: title, description: 'Seeded **for the test**.', tags: [`e2eseed${runId}`],
+      decks: [{ decklist: decklistId, annotation: 'From the manifest.' }, { decklist: 999999999 }] }],
+  });
+  const first = appConsole(['app:import:seed-libraries', '-'], manifest(`E2E seeded ${runId}`));
+  expect(first).toContain('1 created');
+  expect(first).toContain('1 decks not found');
+  // listed under Libraries, the PC's, marked as official
+  await page.goto(`/libraries?tags[]=e2eseed${runId}`);
+  await expect(page.locator('.rb-lib-cards .rb-deck-name')).toHaveText(`E2E seeded ${runId}`);
+  await expect(page.locator('.rb-lib-cards .rb-official-mark')).toBeVisible();
+  await expect(page.locator('.rb-lib-cards .rb-library-count')).toHaveText('1');
+  // the same manifest again updates it, rather than making another
+  expect(appConsole(['app:import:seed-libraries', '-'], manifest(`E2E seeded again ${runId}`))).toContain('1 updated');
+  await page.goto(`/libraries?tags[]=e2eseed${runId}`);
+  await expect(page.locator('.rb-lib-cards .rb-deck-name')).toHaveText(`E2E seeded again ${runId}`);
 });
 
 async function importDeck(page: Page, deckName: string): Promise<string> {

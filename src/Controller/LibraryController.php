@@ -92,32 +92,49 @@ class LibraryController extends AbstractController
         ]);
     }
 
-    /** The public libraries, with the same search */
+    /**
+     * The public libraries, with the same search (Ketura, 2026-11-09): Libraries, the PC's
+     * official ones (seeded, or made official), and User Libraries, everyone else's, as tabs
+     */
     #[Route(path: '/libraries', name: 'libraries_list', methods: ['GET'])]
     public function publicListAction(Request $request, PublishedDeckManager $pager, TranslatorInterface $translator): Response
     {
+        return $this->publicList($request, $pager, $translator, 'official');
+    }
+
+    #[Route(path: '/libraries/user', name: 'libraries_user', methods: ['GET'])]
+    public function userListAction(Request $request, PublishedDeckManager $pager, TranslatorInterface $translator): Response
+    {
+        return $this->publicList($request, $pager, $translator, 'user');
+    }
+
+    private function publicList(Request $request, PublishedDeckManager $pager, TranslatorInterface $translator, string $kind): Response
+    {
         $response = $this->listResponse($request, $pager, null, [
-            'pagetitle' => $translator->trans('library.list.title'),
-            'list_route' => 'libraries_list',
+            'pagetitle' => $translator->trans($kind === 'official' ? 'library.list.title' : 'library.list.user_title'),
+            'list_route' => $kind === 'official' ? 'libraries_list' : 'libraries_user',
+            'list_kind' => $kind,
             'mine' => false,
-        ]);
+        ], $kind);
         $response->setPublic();
         $response->setMaxAge(60);
         return $response;
     }
 
-    private function listResponse(Request $request, PublishedDeckManager $pager, ?User $owner, array $params): Response
+    private function listResponse(Request $request, PublishedDeckManager $pager, ?User $owner, array $params, ?string $kind = null): Response
     {
         $filters = $this->libraries->getFilters($request, $owner !== null);
+        $query = $filters + ($kind ? ['kind' => $kind] : []);
         $limit = $filters['limit'] ?? PublishedDeckManager::DEFAULT_LIMIT;
         $page = max(1, (int) $request->query->get('page', 1));
-        [$rows, $total] = $this->repo()->browse($filters, $owner, $page, $limit);
+        [$rows, $total] = $this->repo()->browse($query, $owner, $page, $limit);
         $pager->setLimit($limit);
         $pager->setPage($page);
         $pager->setMaxCount($total);
         $params += [
             'rows' => $rows,
             'total' => $total,
+            'list_kind' => $params['list_kind'] ?? null,
             'filters' => $filters,
             'pager' => $pager->getPager(9),
             'owner' => $owner,
