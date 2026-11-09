@@ -1,0 +1,95 @@
+{% extends 'base.html.twig' %}
+{#
+   A library as others see it (Ketura, 2026-11-08): its name large, the description under it,
+   its notes and tags, then its decklists, one row each. A row opens to the deck on the left
+   and the curator's commentary on the right, one at a time, with Previous and Next; the deck
+   is fetched as it opens and drawn as the decklist reader draws it.
+   Variables: library, entries (LibraryEntry[], those this viewer sees), entry_data (what the
+   rows show of each decklist, in the same order), can_edit, private_view
+#}
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('js/app.deck_editor.js') }}"></script>
+    <script src="{{ asset('js/ui.library_view.js') }}"></script>
+{% endblock %}
+
+{% block body %}
+    <div class="main white container rb-library-view">
+        {% include 'alerts.html.twig' %}
+        {% if library.visibility != 'public' %}
+            <div class="alert alert-info rb-library-visibility-note">
+                <span class="fas {{ library.visibility == 'private' ? 'fa-lock' : 'fa-link' }}" aria-hidden="true"></span>
+                {{ ('library.view.note_' ~ library.visibility) | trans }}
+            </div>
+        {% endif %}
+        <header class="rb-library-header">
+            <div class="rb-library-title-row">
+                <h1 class="rb-library-title">{{ library.name }}</h1>
+                {% if can_edit %}<a href="{{ path('library_edit', {library_uuid: library.uuid}) }}" class="rb-btn" id="btn-edit-library"><span class="fas fa-pencil-alt" aria-hidden="true"></span> {{ 'library.view.edit' | trans }}</a>{% endif %}
+            </div>
+            <p class="rb-library-byline">
+                {% if library.official %}<span class="rb-official-mark" title="{{ 'library.official_title' | trans }}">{{ 'library.official' | trans }}</span>{% endif %}
+                {{ 'library.view.by' | trans({'%name%': library.user.displayName}) }}
+                <span class="rb-deck-dot" aria-hidden="true">•</span> {{ 'library.view.decks' | trans({'%count%': entries | length}) }}
+                <span class="rb-deck-dot" aria-hidden="true">•</span> {{ 'library.view.updated' | trans }} <time datetime="{{ library.dateUpdate | date('Y-m-d') }}" data-absolute>{{ library.dateUpdate | date('M j, Y') }}</time>
+            </p>
+            {% if library.descriptionHtml %}<div class="rb-library-description">{{ library.descriptionHtml | raw }}</div>{% endif %}
+            {% if library.tagList %}
+                <div class="rb-row-tags rb-library-tags">{% for tag in library.tagList %}<a class="rb-tag-chip" href="{{ list_path('libraries_list', {tags: [tag]}) }}">{{ tag }}</a>{% endfor %}</div>
+            {% endif %}
+            {% if library.notesHtml %}
+                <section class="rb-library-notes" aria-labelledby="library-notes-title">
+                    <h2 id="library-notes-title">{{ 'library.view.notes' | trans }}</h2>
+                    <div class="rb-library-notes-body">{{ library.notesHtml | raw }}</div>
+                </section>
+            {% endif %}
+        </header>
+
+        {% if entries %}
+            <ol class="rb-library-list" id="library-list">
+                {% for entry in entries %}
+                    {% set d = entry_data[loop.index0] %}
+                    <li class="rb-lv-entry rb-kind-{{ d.kind }}{% if not entry.available %} is-gone{% endif %}" id="deck-{{ loop.index }}" data-entry="{{ entry.id }}" data-url="{{ path('library_entry_deck', {entry_id: entry.id}) }}">
+                        <button type="button" class="rb-lv-head" aria-expanded="false" aria-controls="deck-{{ loop.index }}-body">
+                            <span class="rb-lv-num">{{ loop.index }}</span>
+                            <span class="rb-lv-thumb">{{ d.thumb | raw }}</span>
+                            <span class="rb-lv-meta">
+                                <span class="rb-deck-name">{{ d.name }}</span>
+                                <span class="rb-deck-by">{{ d.author }} <span class="rb-deck-dot" aria-hidden="true">•</span> {{ d.version }} <span class="rb-deck-dot" aria-hidden="true">•</span> {{ d.format ?: '—' }}</span>
+                            </span>
+                            <span class="rb-size"><span class="rb-size-fp{% if not d.fp %} is-none{% endif %}">{{ d.fp ?: '–' }}</span><span class="rb-size-slash">/</span><span class="rb-size-sh{% if not d.shadow %} is-none{% endif %}">{{ d.shadow ?: '–' }}</span></span>
+                            {% if entry.annotationHtml %}<span class="rb-lv-has-notes" title="{{ 'library.view.has_notes' | trans }}"><span class="fas fa-comment-alt" aria-hidden="true"></span></span>{% endif %}
+                            <span class="rb-lv-chevron fas fa-chevron-down" aria-hidden="true"></span>
+                        </button>
+                        <div class="rb-lv-body" id="deck-{{ loop.index }}-body" hidden>
+                            <div class="rb-lv-flags">
+                                {% if not entry.available %}<span class="rb-lib-flag is-gone">{{ 'library.edit.withdrawn' | trans }}</span>{% endif %}
+                                {% if d.grace_until %}<span class="rb-lib-flag is-volatile" title="{{ 'library.edit.volatile_title' | trans }}">{{ 'library.edit.volatile' | trans({'%date%': d.grace_until}) }}</span>{% endif %}
+                                {% if d.newer %}<a class="rb-lib-flag is-newer" href="{{ d.newer.url }}">{{ 'library.view.newer' | trans({'%version%': d.newer.version}) }}</a>{% endif %}
+                                <a class="rb-lv-open" href="{{ d.url }}">{{ 'library.view.open' | trans }} <span class="fas fa-external-link-alt" aria-hidden="true"></span></a>
+                            </div>
+                            <div class="rb-lv-columns">
+                                <div class="rb-lv-deck"></div>
+                                <div class="rb-lv-notes">
+                                    {% if entry.annotationHtml %}{{ entry.annotationHtml | raw }}{% else %}<p class="rb-muted">{{ 'library.view.no_notes' | trans }}</p>{% endif %}
+                                </div>
+                            </div>
+                            <div class="rb-lv-nav">
+                                <button type="button" class="rb-btn" data-step="-1"{% if loop.first %} disabled{% endif %}><span class="fas fa-chevron-left" aria-hidden="true"></span> {{ 'library.view.previous' | trans }}</button>
+                                <button type="button" class="rb-btn" data-step="1"{% if loop.last %} disabled{% endif %}>{{ 'library.view.next' | trans }} <span class="fas fa-chevron-right" aria-hidden="true"></span></button>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ol>
+        {% else %}
+            <p class="rb-results-none">{{ 'library.view.empty' | trans }}</p>
+        {% endif %}
+
+        {# the one deck view, moved into whichever row is open #}
+        <div class="rb-lv-deck-home" hidden>
+            <div class="rb-deck-toolbar rb-reader-deck-opts" id="deck-toolbar"></div>
+            <div class="rb-deck rb-readonly" id="deck"></div>
+        </div>
+    </div>
+{% endblock %}

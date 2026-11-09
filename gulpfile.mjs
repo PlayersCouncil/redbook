@@ -83,6 +83,7 @@ export function buildAppJs() {
       "assets/js/app.deck_charts.js",
       "assets/js/app.ui.js",
       "assets/js/app.splitter.js",
+      "assets/js/app.library_picker.js",
     ],
     { base: "assets" },
   )
@@ -110,6 +111,9 @@ export function copyPageSpecificJs() {
       "assets/js/ui.decklist_form.js",
       "assets/js/ui.decklist.js",
       "assets/js/ui.decklist_search.js",
+      "assets/js/ui.libraries.js",
+      "assets/js/ui.library_edit.js",
+      "assets/js/ui.library_view.js",
       "assets/js/panels.js",
     ],
     { base: "assets" },

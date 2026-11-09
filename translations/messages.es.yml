@@ -810,3 +810,115 @@ decklist.publish.gate.ok: Aceptar
 decklist.publish.gate.back: Volver a editar el mazo
 decklist.publish.gate.blocked: "Este mazo no se puede publicar tal como está. Solo se pueden publicar mazos legales y fragmentos de mazo."
 decklist.publish.gate.republish_blocked: "No se puede volver a publicar tal como está: solo se pueden publicar mazos legales y fragmentos de mazo. %problems%"
+
+# Libraries (Ketura, 2026-11-08)
+library.list.title: Biblioteca de mazos
+library.deleted: "{1} Se borró la biblioteca.|]1,Inf[ Se borraron %count% bibliotecas."
+library.official: PC
+library.official_title: "Una biblioteca del Players Council"
+library.new.title: Nueva biblioteca
+library.new.intro: "Una biblioteca reúne mazos publicados que van juntos, como los mazos de un evento o los mazos de inicio, con tus notas sobre cada uno."
+library.new.name: Nombre
+library.new.name_hint: "Top 8 del Mundial 2004, Todos los mazos de inicio, …"
+library.new.description: Descripción
+library.new.description_hint: "Una o dos frases sobre qué contiene la biblioteca y por qué."
+library.new.private_note: "Las bibliotecas son privadas hasta que las haces públicas. Una oculta se puede compartir con su enlace."
+library.new.create: Crear biblioteca
+library.edit.title: "Editando %name%"
+library.edit.info: Información de la biblioteca
+library.edit.name: Nombre de la biblioteca
+library.edit.preview_hint: "La biblioteca como la ven los demás"
+library.edit.col_deck: Mazo
+library.edit.col_notes: Tus notas sobre él
+library.edit.decks: Los mazos de la biblioteca
+library.edit.empty: "Aún no hay mazos. Búscalos en la pestaña Construir, o añádelos desde cualquier lista de mazos con Añadir a biblioteca."
+library.edit.description: Descripción
+library.edit.description_hint: "Se muestra bajo el nombre de la biblioteca."
+library.edit.notes: Notas
+library.edit.notes_hint: "Notas generales sobre la biblioteca en conjunto."
+library.edit.add: "+ Añadir"
+library.edit.added: Añadido
+library.edit.withdrawn: "Retirado por su autor: oculto a los lectores de la biblioteca hasta que se vuelva a publicar."
+library.edit.volatile: "Recién publicado: el autor aún puede retirarlo hasta %date%."
+library.edit.volatile_title: "Durante tres días tras publicarlo, el autor puede retirar un mazo para corregirlo."
+library.edit.newer: "Hay una versión más reciente: %version%"
+library.edit.drag: Arrastrar para mover
+library.edit.up: Subir
+library.edit.down: Bajar
+library.edit.remove: "Quitar %name% de la biblioteca"
+library.edit.remove_hint: "Marcarlo para quitarlo"
+library.edit.trash: Quitarlo ya
+library.edit.keep: Conservar
+library.edit.annotation_title: "Notas sobre %name%"
+library.edit.annotation_hint: "Por qué está este mazo aquí, qué fijarse en él…"
+library.edit.unsaved: Cambios sin guardar
+library.edit.saved: Guardado
+library.edit.publish: Hacer pública
+library.edit.publish_hint: "Mostrarla en la Biblioteca de mazos para todos"
+library.edit.is_public: Pública
+library.edit.is_public_hint: "Aparece en la Biblioteca de mazos. Hazla privada u oculta desde el menú de al lado."
+library.edit.now_public: "Pública en <a href=\"%url%\">%url%</a>"
+library.edit.leave: "¿Salir sin guardar los cambios de la biblioteca?"
+library.visibility.label: Quién puede verla
+library.visibility.private: Privada
+library.visibility.hidden: Compartida por enlace
+library.visibility.public: Pública
+library.visibility.private_hint: Solo tú
+library.visibility.hidden_hint: "Cualquiera con el enlace; no aparece en las listas"
+library.browse.name: Nombre de la biblioteca
+library.browse.official: Players Council
+library.browse.official_only: "Solo bibliotecas del PC"
+library.browse.count: "{0} Ninguna biblioteca coincide|{1} 1 biblioteca|]1,Inf[ %n% bibliotecas"
+library.browse.sorts.new: Cambiadas recientemente
+library.browse.sorts.old: Cambiadas hace más tiempo
+library.browse.sorts.name: Nombre
+library.browse.sorts.size: Más mazos
+library.browse.col.library: Biblioteca
+library.browse.col.decks: Mazos
+library.browse.col.visibility: Quién puede verla
+library.browse.do.edit: Editar
+library.browse.do.delete: Borrar
+library.browse.none_mine: "Aún no tienes bibliotecas. Empieza una con Nueva biblioteca, o con Añadir a biblioteca en cualquier lista de mazos."
+library.browse.none: Ninguna biblioteca coincide.
+library.browse.selection_none: Marca bibliotecas para actuar sobre ellas.
+library.browse.delete_selected: Borrar
+library.delete.title: Borrar biblioteca
+library.delete.note: "Los mazos en sí no se tocan."
+library.delete.one: "¿Borrar la biblioteca %name%?"
+library.delete.several: "¿Borrar estas %count% bibliotecas?"
+library.delete.failed: "No se pudieron borrar las bibliotecas. Recarga la página e inténtalo de nuevo."
+library.view.note_private: "Solo tú puedes ver esta biblioteca."
+library.view.note_hidden: "Esta biblioteca se comparte por enlace: cualquiera con la dirección puede verla, pero no aparece en las listas."
+library.view.edit: Editar biblioteca
+library.view.by: "Una biblioteca de %name%"
+library.view.decks: "{0} sin mazos|{1} 1 mazo|]1,Inf[ %count% mazos"
+library.view.updated: actualizada
+library.view.notes: Notas
+library.view.has_notes: Tiene notas
+library.view.newer: "Hay una versión más reciente: %version%"
+library.view.open: Abrir la lista del mazo
+library.view.no_notes: No hay notas sobre este mazo.
+library.view.previous: Anterior
+library.view.next: Siguiente
+library.view.empty: Esta biblioteca aún no tiene mazos.
+library.view.deck_failed: "No se pudo cargar el mazo."
+library.add.button: Añadir a biblioteca
+library.add.unpublished: "Publica el mazo para añadirlo a una biblioteca"
+library.add.selected: Añadir a biblioteca
+library.add.none_published: "Ninguno de los mazos marcados está publicado. Solo los mazos publicados van en bibliotecas."
+library.add.added: "{1} Añadido a %name%.|]1,Inf[ %count% mazos añadidos a %name%."
+library.add.nothing: "Ya está en %name%."
+library.picker.title: Añadir a biblioteca
+library.picker.title_several: "Añadir %count% mazos a una biblioteca"
+library.picker.search: Buscar en tus bibliotecas
+library.picker.new: Añadir nueva biblioteca
+library.picker.new_name: El nombre de la nueva biblioteca
+library.picker.create: Crear y añadir
+library.picker.none: "Aún no tienes bibliotecas."
+library.picker.none_found: Ninguna biblioteca con ese nombre.
+library.picker.count: "{0} vacía|{1} 1 mazo|]1,Inf[ %count% mazos"
+library.picker.in: Añadido
+library.picker.login: "<a href=\"%url%\">Inicia sesión</a> para guardar mazos en bibliotecas."
+library.picker.failed: "Algo salió mal. Inténtalo de nuevo."
+library.picker.open: Abrirla
+decklist.browse.failed: "La búsqueda no se completó. Inténtalo de nuevo."

@@ -79,10 +79,13 @@ class GempDeckFetcher
 
     /**
      * The card ID a wiki image names (Ketura, 2026-11-08): LOTR-EN09S033.0 is 9_33 and
-     * V2S076.0 is 102_76. A revision above .0 is an errata of some kind, in the errata set 50
-     * above (07E359.1 is 57_359); the letter before the number isn't relied on. V-sets have
-     * no errata sets, they're updated in place, so their revision doesn't change the ID.
-     * An ID Red Book doesn't have falls back to the card's name (DeckImportService).
+     * V2S076.0 is 102_76. The number after the dot is the revision: .0 the original printing,
+     * .1 the first revision, and so on. Not every revision is a PC errata (Decipher issued
+     * some), but for a deck on Gemp it's the likely one, so a revision above .0 is tried as
+     * the errata set 50 above (07E359.1 is 57_359); the letter before the number isn't relied
+     * on. V-sets have no errata sets, they're updated in place, so their revision doesn't
+     * change the ID. An ID Red Book doesn't have falls back to the card's name
+     * (DeckImportService), which picks the Decipher card.
      */
     public static function wikiImageCode(string $set, string $number, int $revision = 0): string
     {

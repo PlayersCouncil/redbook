@@ -1,0 +1,111 @@
+{% extends 'base.html.twig' %}
+{#
+   The library editor (Ketura, 2026-11-08), laid out as the deckbuilder: on the left the
+   library's name, Save, who can see it, Publish and Preview, then its decklists, each with
+   the curator's commentary beside it (rearranged with the arrows or by dragging; X then the
+   bin takes one out). On the right the Build tab, the decklists search with an Add button on
+   each, and the Notes tab: tags, the description and general notes.
+   Variables: library, entries (LibraryController::entryData), is_owner; and the Build tab's
+#}
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('js/app.md_editor.js') }}"></script>
+    <script src="{{ asset('js/ui.decklist_search.js') }}"></script>
+    <script src="{{ asset('js/ui.library_edit.js') }}"></script>
+    <script type="text/javascript">
+      app.library_page = {{ {
+          uuid: library.uuid,
+          token: csrf_token('library'),
+          entries: entries,
+          visibility: library.visibility,
+          is_owner: is_owner,
+          save_url: path('library_save', {library_uuid: library.uuid}),
+          visibility_url: path('library_visibility', {library_uuid: library.uuid}),
+          tags_url: path('library_tags', {mine: 1})
+      }|json_encode|raw }};
+    </script>
+{% endblock %}
+
+{% block wrapper_class %}rb-fill{% endblock %}
+
+{% block body %}
+    <div class="main white container rb-builder rb-library-editor" id="library-editor">
+        {% include 'alerts.html.twig' %}
+        <div class="row rb-builder-row">
+            <div class="col-md-6 rb-col-left">
+                <section class="rb-info" aria-label="{{ 'library.edit.info' | trans }}">
+                    <div class="rb-title-row">
+                        <label class="rb-field rb-name-field">
+                            <span>{{ 'library.edit.name' | trans }}</span>
+                            <input type="text" id="library-name" value="{{ library.name }}" maxlength="255" autocomplete="off">
+                        </label>
+                    </div>
+                    <div class="rb-actions">
+                        <button type="button" class="rb-btn rb-btn-primary" id="btn-save">{{ 'deckbuilder.info.save' | trans }}</button>
+                        <button type="button" class="rb-btn" id="btn-revert">{{ 'deckbuilder.info.revert' | trans }}</button>
+                        {% if is_owner %}
+                            {# private, or shared by link; Publish makes it public (Ketura, 2026-11-08) #}
+                            <div class="rb-menu-wrap">
+                                <button type="button" class="rb-btn" id="btn-visibility" aria-haspopup="menu" aria-expanded="false"></button>
+                                <div class="rb-menu" id="menu-visibility" role="menu" hidden>
+                                    <button type="button" role="menuitemradio" data-visibility="private"><strong>{{ 'library.visibility.private' | trans }}</strong><span>{{ 'library.visibility.private_hint' | trans }}</span></button>
+                                    <button type="button" role="menuitemradio" data-visibility="hidden"><strong>{{ 'library.visibility.hidden' | trans }}</strong><span>{{ 'library.visibility.hidden_hint' | trans }}</span></button>
+                                </div>
+                            </div>
+                            <button type="button" class="rb-btn rb-btn-publish" id="btn-publish"></button>
+                        {% endif %}
+                        <a href="{{ path('library_view_private', {library_uuid: library.uuid}) }}" class="rb-btn" id="btn-preview" title="{{ 'library.edit.preview_hint' | trans }}"><span class="fas fa-eye" aria-hidden="true"></span> {{ 'deckbuilder.info.preview' | trans }}</a>
+                        <span class="rb-save-status" id="save-status" aria-live="polite"></span>
+                    </div>
+                </section>
+
+                <div class="rb-library-head" aria-hidden="true">
+                    <span>{{ 'library.edit.col_deck' | trans }}</span><span>{{ 'library.edit.col_notes' | trans }}</span>
+                </div>
+                <section class="rb-library-entries" id="library-entries" aria-label="{{ 'library.edit.decks' | trans }}"></section>
+                <p class="rb-library-empty" id="library-empty" hidden>{{ 'library.edit.empty' | trans }}</p>
+            </div>
+
+            <div class="rb-builder-splitter" id="builder-splitter" role="separator" aria-orientation="vertical" title="{{ 'decklist.form.resize' | trans }}"></div>
+
+            <div class="col-md-6 rb-col-right">
+                <ul class="nav nav-tabs rb-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#tab-pane-build" aria-controls="tab-pane-build" role="tab" data-toggle="tab">{{ 'decks.edit.tabs.build' | trans }}</a></li>
+                    <li role="presentation"><a href="#tab-pane-infos" aria-controls="tab-pane-infos" role="tab" data-toggle="tab">{{ 'decks.edit.tabs.notes' | trans }}</a></li>
+                </ul>
+                <div class="tab-content rb-tab-content">
+                    <div role="tabpanel" class="tab-pane active rb-scroll-pane rb-browse rb-library-build-pane" id="tab-pane-build">
+                        {% include 'Library/build.html.twig' %}
+                    </div>
+                    <div role="tabpanel" class="tab-pane rb-scroll-pane" id="tab-pane-infos">
+                        <div class="rb-notes" id="library-notes">
+                            <div class="rb-notes-tags">
+                                <label for="tag-entry">{{ 'decks.edit.notes.tags.label' | trans }}</label>
+                                <div class="rb-tag-input" id="tag-input">
+                                    <input type="hidden" id="library-tags" value="{{ library.tags }}">
+                                    <div class="rb-tag-entry">
+                                        <input type="text" id="tag-entry" autocomplete="off" placeholder="{{ 'deckbuilder.notes.tag_placeholder' | trans }}" aria-label="{{ 'deckbuilder.notes.tag_add' | trans }}">
+                                        <div class="rb-tag-suggest" role="listbox" hidden></div>
+                                    </div>
+                                    <div class="rb-tag-chips" aria-live="polite"></div>
+                                </div>
+                            </div>
+                            <section class="rb-notes-section" aria-labelledby="desc-title">
+                                <div class="rb-notes-head"><h3 id="desc-title">{{ 'library.edit.description' | trans }}</h3></div>
+                                <div class="rb-md-editor">
+                                    <textarea id="library-description" rows="5" data-md-title="{{ 'library.edit.description' | trans }}" placeholder="{{ 'library.edit.description_hint' | trans }}">{{ library.descriptionMd }}</textarea>
+                                </div>
+                            </section>
+                            <section class="rb-notes-section" aria-labelledby="notes-title">
+                                <div class="rb-notes-head"><h3 id="notes-title">{{ 'library.edit.notes' | trans }}</h3></div>
+                                <div class="rb-md-editor">
+                                    <textarea id="library-notes-text" rows="12" data-md-title="{{ 'library.edit.notes' | trans }}" placeholder="{{ 'library.edit.notes_hint' | trans }}">{{ library.notesMd }}</textarea>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

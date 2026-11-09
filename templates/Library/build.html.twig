@@ -1,0 +1,63 @@
+{#
+   A library's Build tab (Ketura, 2026-11-08): the decklists page's search, whose results each
+   have an Add button. Rendered whole inside the editor; its blocks are also sent alone as the
+   filters change (LibraryController::searchAction, ui.decklist_search.js, without history).
+   Variables: library, decklists, entry_data (by decklist id, what the editor shows of each),
+   total, filters, formats, format_names, cultures, cards, pager
+#}
+<form method="get" action="{{ path('library_search', {library_uuid: library.uuid}) }}" class="rb-browse-pane rb-library-search" id="browse-form" data-no-history>
+    <div class="rb-browse-top" id="browse-top">{% block browse_top %}
+{% set active = filters | filter((v, k) => k not in ['sort', 'limit']) | length %}
+        <button type="button" class="rb-filters-toggle" aria-expanded="false" aria-controls="browse-form">
+            <span class="fas fa-sliders-h"></span> {{ 'decklist.browse.filters' | trans }}{% if active %} <span class="rb-more-count">{{ active }}</span>{% endif %}
+        </button>
+    {% endblock %}</div>
+    <div class="rb-browse-fields" id="browse-fields">{% block browse_fields %}
+        {% include 'Decklist/browse-fields.html.twig' with {list_route: 'library_search', list_params: {library_uuid: library.uuid}} %}
+    {% endblock %}</div>
+</form>
+<div class="rb-browse-results rb-library-results" id="browse-results">{% block browse_results %}
+{% set f = filters %}
+        <div class="rb-results-head">
+            <span class="rb-results-count">{{ 'decklist.browse.count' | trans({'%count%': total, '%n%': total | number_format}) }}</span>
+            <label class="rb-results-sort">
+                <span>{{ 'decklist.browse.sort' | trans }}</span>
+                <select name="sort" form="browse-form" class="form-control input-sm" data-autosubmit data-default="new">
+                    {% for sort in ['new', 'old', 'rated', 'name', 'comments'] %}
+                        <option value="{{ sort }}"{% if (f.sort ?? 'new') == sort %} selected{% endif %}>{{ ('decklist.browse.sorts.' ~ sort) | trans }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </div>
+        {% if total %}
+        <table class="rb-decks rb-library-build">
+            <tbody>
+            {% for decklist in decklists %}
+                {% set kind = decklist.kind %}
+                <tr class="rb-kind-{{ kind }}" data-decklist="{{ decklist.id }}" data-entry="{{ entry_data[decklist.id] | json_encode | e('html_attr') }}">
+                    <td class="rb-col-thumb">{% include 'Decklist/thumbnail.html.twig' %}</td>
+                    <td class="rb-col-deck">
+                        <a href="{{ entry_data[decklist.id].url }}" class="rb-deck-name" target="_blank" rel="noopener">{{ decklist.name }}</a>
+                        <span class="rb-deck-by">
+                            {{ decklist.user.displayName }} <span class="rb-deck-dot" aria-hidden="true">•</span> v{{ decklist.versionLabel }}
+                            <span class="rb-deck-dot" aria-hidden="true">•</span> {{ format_names[decklist.targetFormat] ?? (decklist.targetFormat ?: '—') }}
+                        </span>
+                    </td>
+                    <td class="rb-col-size">
+                        <span class="rb-size"><span class="rb-size-fp{% if not decklist.nbFreePeoples %} is-none{% endif %}">{{ decklist.nbFreePeoples ?: '–' }}</span><span class="rb-size-slash">/</span><span class="rb-size-sh{% if not decklist.nbShadow %} is-none{% endif %}">{{ decklist.nbShadow ?: '–' }}</span></span>
+                    </td>
+                    <td class="rb-col-add">
+                        <button type="button" class="rb-btn rb-btn-small rb-library-add" data-add>{{ 'library.edit.add' | trans }}</button>
+                        <span class="rb-library-added" hidden><span class="fas fa-check" aria-hidden="true"></span> {{ 'library.edit.added' | trans }}</span>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+            <p class="rb-results-none">{{ 'decklist.browse.none' | trans }}</p>
+        {% endif %}
+        <div class="rb-results-foot">
+            {% include 'Decklist/pager.html.twig' with {pager_action: path('library_search', {library_uuid: library.uuid})} %}
+        </div>
+{% endblock %}</div>

@@ -8,7 +8,8 @@
  */
 (function ui_decklist_search(ui, $)
 {
-    var form, dataReady = false, request = null;
+    // history: the list's address follows its filters; a library's Build tab doesn't (Ketura, 2026-11-08)
+    var form, dataReady = false, request = null, history = true;
 
     /**
      * The form's query, without the empty fields and the defaults, so addresses stay short: a
@@ -98,14 +99,19 @@
                 $('#browse-' + part).html(html);
             });
             $(document).trigger('browse:loaded');
-            if(options.push) {
+            if(options.push && history) {
                 window.history.pushState({browse: true}, '', url);
             }
         });
         request.fail(function (xhr, status)
         {
             if(status !== 'abort') {
-                window.location = url;
+                // a page of its own goes to the address; a tab within a page can't
+                if(history) {
+                    window.location = url;
+                } else {
+                    results.html('<p class="rb-results-none">' + _.escape(Translator.trans('decklist.browse.failed')) + '</p>');
+                }
             }
         });
         request.always(function (data, status)
@@ -239,12 +245,15 @@
         if(!form.length) {
             return;
         }
-        window.history.replaceState({browse: true}, '', window.location.href);
+        history = !form.is('[data-no-history]');
+        if(history) {
+            window.history.replaceState({browse: true}, '', window.location.href);
+        }
 
         // the filters pane resizes against the results, each page keeping its width
         // (Ketura, 2026-11-07); a side pane beside them (My Decks' actions) keeps its own
         var page = $('.rb-browse'), splitter = $('#browse-splitter');
-        ui.splitter(splitter, {
+        splitter.length && ui.splitter(splitter, {
             key: splitter.data('key'),
             min: 340,
             max: function () {
@@ -382,7 +391,7 @@
         // Back and Forward: the list for that address, fields and all
         $(window).on('popstate', function (event)
         {
-            if(event.originalEvent.state && event.originalEvent.state.browse) {
+            if(history && event.originalEvent.state && event.originalEvent.state.browse) {
                 load(window.location.href, {push: false, fields: true});
             }
         });

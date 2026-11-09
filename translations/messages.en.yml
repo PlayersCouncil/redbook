@@ -1426,3 +1426,115 @@ decklist.publish.gate.ok: OK
 decklist.publish.gate.back: Return to Deck Edit
 decklist.publish.gate.blocked: "This deck can't be published as it stands. Only legal decks and deck fragments can be."
 decklist.publish.gate.republish_blocked: "It can't be published again as it stands: only legal decks and deck fragments can be. %problems%"
+
+# Libraries (Ketura, 2026-11-08)
+library.list.title: Deck Library
+library.deleted: "{1} The library was deleted.|]1,Inf[ %count% libraries were deleted."
+library.official: PC
+library.official_title: "A Players Council library"
+library.new.title: New Library
+library.new.intro: "A Library collects published decks that belong together, such as an event's decks or a set of starter decks, with your notes on each."
+library.new.name: Name
+library.new.name_hint: "Worlds 2004 top 8, All Starter Decks, …"
+library.new.description: Description
+library.new.description_hint: "A sentence or two on what the library holds and why."
+library.new.private_note: "Libraries are private until you make them public. You can share a hidden one by its link."
+library.new.create: Create Library
+library.edit.title: "Editing %name%"
+library.edit.info: Library information
+library.edit.name: Library Name
+library.edit.preview_hint: "The library as others see it"
+library.edit.col_deck: Deck
+library.edit.col_notes: Your Notes on It
+library.edit.decks: The library's decks
+library.edit.empty: "No decks yet. Find them in the Build tab, or add them from any list of decks with Add to Library."
+library.edit.description: Description
+library.edit.description_hint: "Shown under the library's name."
+library.edit.notes: Notes
+library.edit.notes_hint: "General notes on the library as a whole."
+library.edit.add: "+ Add"
+library.edit.added: Added
+library.edit.withdrawn: "Withdrawn by its author: hidden from the library's readers until it's published again."
+library.edit.volatile: "Just published: the author can still withdraw it until %date%."
+library.edit.volatile_title: "For three days after publishing, an author can take a deck down to fix it."
+library.edit.newer: "A newer version is out: %version%"
+library.edit.drag: Drag to move
+library.edit.up: Move up
+library.edit.down: Move down
+library.edit.remove: "Remove %name% from the library"
+library.edit.remove_hint: "Mark it for removal"
+library.edit.trash: Remove it now
+library.edit.keep: Keep
+library.edit.annotation_title: "Notes on %name%"
+library.edit.annotation_hint: "Why this deck is here, what to notice about it…"
+library.edit.unsaved: Unsaved changes
+library.edit.saved: Saved
+library.edit.publish: Make Public
+library.edit.publish_hint: "List it in the Deck Library for everyone"
+library.edit.is_public: Public
+library.edit.is_public_hint: "Listed in the Deck Library. Make it private or hidden from the menu beside this."
+library.edit.now_public: "Public at <a href=\"%url%\">%url%</a>"
+library.edit.leave: "Leave without saving your changes to the library?"
+library.visibility.label: Who can see it
+library.visibility.private: Private
+library.visibility.hidden: Shared by Link
+library.visibility.public: Public
+library.visibility.private_hint: Only you
+library.visibility.hidden_hint: "Anyone with the link; not listed"
+library.browse.name: Library name
+library.browse.official: Players Council
+library.browse.official_only: "PC libraries only"
+library.browse.count: "{0} No libraries match|{1} 1 library|]1,Inf[ %n% libraries"
+library.browse.sorts.new: Recently changed
+library.browse.sorts.old: Least recently changed
+library.browse.sorts.name: Name
+library.browse.sorts.size: Most decks
+library.browse.col.library: Library
+library.browse.col.decks: Decks
+library.browse.col.visibility: Who Can See It
+library.browse.do.edit: Edit
+library.browse.do.delete: Delete
+library.browse.none_mine: "No libraries yet. Start one with New Library, or with Add to Library on any list of decks."
+library.browse.none: No libraries match.
+library.browse.selection_none: Tick libraries to act on them.
+library.browse.delete_selected: Delete
+library.delete.title: Delete Library
+library.delete.note: "The decks themselves aren't touched."
+library.delete.one: "Delete the library %name%?"
+library.delete.several: "Delete these %count% libraries?"
+library.delete.failed: "The libraries couldn't be deleted. Reload the page and try again."
+library.view.note_private: "Only you can see this library."
+library.view.note_hidden: "This library is shared by link: anyone with the address can see it, but it isn't listed."
+library.view.edit: Edit Library
+library.view.by: "A library by %name%"
+library.view.decks: "{0} no decks|{1} 1 deck|]1,Inf[ %count% decks"
+library.view.updated: updated
+library.view.notes: Notes
+library.view.has_notes: Has notes
+library.view.newer: "A newer version is out: %version%"
+library.view.open: Open the decklist
+library.view.no_notes: No notes on this deck.
+library.view.previous: Previous
+library.view.next: Next
+library.view.empty: This library has no decks yet.
+library.view.deck_failed: "The deck couldn't be loaded."
+library.add.button: Add to Library
+library.add.unpublished: "Publish the deck to add it to a library"
+library.add.selected: Add to Library
+library.add.none_published: "None of the decks ticked is published. Only published decks go in libraries."
+library.add.added: "{1} Added to %name%.|]1,Inf[ %count% decks added to %name%."
+library.add.nothing: "Already in %name%."
+library.picker.title: Add to Library
+library.picker.title_several: "Add %count% decks to a library"
+library.picker.search: Search your libraries
+library.picker.new: Add New Library
+library.picker.new_name: The new library's name
+library.picker.create: Create and Add
+library.picker.none: "You have no libraries yet."
+library.picker.none_found: No library by that name.
+library.picker.count: "{0} empty|{1} 1 deck|]1,Inf[ %count% decks"
+library.picker.in: Added
+library.picker.login: "<a href=\"%url%\">Log in</a> to keep decks in libraries."
+library.picker.failed: "Something went wrong. Try again."
+library.picker.open: Open it
+decklist.browse.failed: "The search didn't go through. Try again."

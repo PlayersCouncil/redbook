@@ -15,7 +15,9 @@ security:
     role_hierarchy:
         # Historians check and correct archive decks (Ketura, 2026-11-02)
         ROLE_HISTORIAN:   ROLE_USER
-        ROLE_ADMIN:       [ROLE_USER, ROLE_HISTORIAN]
+        # Librarians look after public libraries (Ketura, 2026-11-08)
+        ROLE_LIBRARIAN:   ROLE_USER
+        ROLE_ADMIN:       [ROLE_USER, ROLE_HISTORIAN, ROLE_LIBRARIAN]
         ROLE_SUPER_ADMIN: ROLE_ADMIN
 
     providers:

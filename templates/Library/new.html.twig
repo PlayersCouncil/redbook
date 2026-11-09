@@ -1,0 +1,30 @@
+{#
+   New Library (Ketura, 2026-11-08): a name and a short description for now. decklists: the
+   ids of decklists picked on the way in, from Add to Library's + Add New Library.
+#}
+{% extends 'base.html.twig' %}
+{% block body %}
+    <div class="main white container">
+        {% include 'alerts.html.twig' %}
+        <div class="row">
+            <div class="col-md-8 col-md-offset-2 rb-new-deck rb-new-library">
+                <h1>{{ 'library.new.title' | trans }}</h1>
+                <p class="rb-new-library-intro">{{ 'library.new.intro' | trans }}</p>
+                <form method="POST" action="{{ path('library_new') }}" id="new-library-form">
+                    <input type="hidden" name="_token" value="{{ csrf_token('library') }}">
+                    <input type="hidden" name="decklists" value="{{ decklists }}">
+                    <div class="form-group">
+                        <label for="name">{{ 'library.new.name' | trans }}</label>
+                        <input type="text" class="form-control" id="name" name="name" maxlength="255" required autofocus placeholder="{{ 'library.new.name_hint' | trans }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="description">{{ 'library.new.description' | trans }}</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" placeholder="{{ 'library.new.description_hint' | trans }}"></textarea>
+                    </div>
+                    <p class="rb-new-private">{{ 'library.new.private_note' | trans }}</p>
+                    <button type="submit" class="btn btn-success btn-lg" id="new-library-submit">{{ 'library.new.create' | trans }}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

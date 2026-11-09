@@ -131,7 +131,8 @@
                 {% else %}
                     {% set url = path('decklist_detail', {decklist_id: row.decklist.id, decklist_name: row.decklist.nameCanonical | e('url')}) %}
                 {% endif %}
-                <tr data-href="{{ url }}" class="rb-kind-{{ kind }} rb-row-{{ row.visibility }}{% if deck %} list-decks-deck{% endif %}" data-id="{{ deck ? deck.id : row.decklist.id }}"{% if deck %} data-uuid="{{ deck.uuid }}"{% if row.published %} data-published="1"{% endif %}{% endif %}>
+                {% set library_id = deck ? (row.published ? row.published.id : null) : row.decklist.id %}
+                <tr data-href="{{ url }}" class="rb-kind-{{ kind }} rb-row-{{ row.visibility }}{% if deck %} list-decks-deck{% endif %}" data-id="{{ deck ? deck.id : row.decklist.id }}"{% if library_id %} data-library-id="{{ library_id }}"{% endif %}{% if deck %} data-uuid="{{ deck.uuid }}"{% if row.published %} data-published="1"{% endif %}{% endif %}>
                     <td class="rb-col-pick"><input type="checkbox" aria-label="{{ 'decks.browse.pick' | trans({'%name%': row.name}) }}"></td>
                     <td class="rb-col-thumb">{% include 'Decklist/thumbnail.html.twig' with {decklist: row.thumbnail} %}</td>
                     <td class="rb-col-size">
@@ -179,6 +180,12 @@
                         <span class="rb-row-tags tags">{% for tag in row.tags %}<button type="button" class="rb-tag-chip rb-tag-link{% if tag in (f.tags ?? []) %} is-on{% endif %}" data-tag="{{ tag }}" title="{{ 'decklist.browse.tag_search' | trans }}">{{ tag }}</button>{% endfor %}</span>
                     </td>
                     <td class="rb-col-actions">
+                        {# into a library: its latest publication; a deck never published can't go (Ketura, 2026-11-08) #}
+                        {% if library_id %}
+                            <button type="button" class="rb-icon-btn" data-library-add="{{ library_id }}" data-tip="{{ 'library.add.button' | trans }}" aria-label="{{ 'library.add.button' | trans }}" aria-haspopup="dialog"><span class="fas fa-folder-plus fa-fw"></span></button>
+                        {% else %}
+                            <span class="rb-icon-btn is-disabled" data-tip="{{ 'library.add.unpublished' | trans }}" aria-disabled="true"><span class="fas fa-folder-plus fa-fw"></span></span>
+                        {% endif %}
                         {% if deck %}
                             <a href="{{ path('deck_view', {deck_uuid: deck.uuid}) }}" class="rb-icon-btn" data-tip="{{ 'decks.browse.do.preview' | trans }}" aria-label="{{ 'decks.browse.do.preview' | trans }}"><span class="fas fa-eye fa-fw"></span></a>
                             {# nothing new to publish while it's as published (Ketura, 2026-11-08) #}
@@ -232,6 +239,7 @@
         <h2 class="rb-side-title">{{ 'decks.browse.side.selection' | trans }} <span class="rb-selected-count"></span></h2>
         <p class="rb-side-hint">{{ 'decks.browse.side.selection_none' | trans }}</p>
         {% if tab == 'decks' %}
+            <button type="button" class="btn btn-default rb-side-btn" id="btn-library-add-selected" disabled aria-haspopup="dialog"><span class="fas fa-folder-plus fa-fw"></span> {{ 'library.add.selected' | trans }}</button>
             <button type="button" class="btn btn-default rb-side-btn" id="btn-download-selected" disabled><span class="fas fa-file-download fa-fw"></span> {{ 'decks.browse.side.download' | trans }}</button>
             <button type="button" class="btn btn-default rb-side-btn" id="btn-compare" data-needs="2" disabled><span class="fas fa-exchange-alt fa-fw"></span> {{ 'decks.browse.side.compare' | trans }}</button>
             <button type="button" class="btn btn-default rb-side-btn" id="btn-tag-add" disabled><span class="fas fa-tag fa-fw"></span> {{ 'decks.browse.side.tag_add' | trans }}</button>
@@ -239,6 +247,7 @@
             <button type="button" class="btn btn-default rb-side-btn" id="btn-tag-remove-all" disabled><span class="fas fa-tags fa-fw"></span> {{ 'decks.browse.side.tag_clear' | trans }}</button>
             <button type="button" class="btn btn-default rb-side-btn rb-side-danger" id="btn-delete-selected" disabled><span class="fas fa-trash-alt fa-fw"></span> {{ 'decks.browse.side.delete' | trans }}</button>
         {% else %}
+            <button type="button" class="btn btn-default rb-side-btn" id="btn-library-add-selected" disabled aria-haspopup="dialog"><span class="fas fa-folder-plus fa-fw"></span> {{ 'library.add.selected' | trans }}</button>
             <button type="button" class="btn btn-default rb-side-btn rb-side-danger" id="btn-unfavorite-selected" disabled><span class="fas fa-heart-broken fa-fw"></span> {{ 'decks.browse.side.unfavorite' | trans }}</button>
         {% endif %}
     </section>

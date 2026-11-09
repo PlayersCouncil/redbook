@@ -84,6 +84,7 @@
                     <th class="rb-col-deck"><a href="{{ list_path('decklists_list', query | merge({sort: 'name', page: null})) }}"{% if sorted == 'name' %} class="is-sorted"{% endif %}>{{ 'decklist.browse.col.deck' | trans }}</a></th>
                     <th class="rb-col-format">{{ 'decklist.browse.col.format' | trans }}</th>
                     <th class="rb-col-tags">{{ 'decklist.browse.col.tags' | trans }}</th>
+                    <th class="rb-col-actions">{{ 'decks.browse.col.actions' | trans }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -115,6 +116,10 @@
                     </td>
                     <td class="rb-col-tags">
                         {% if tags %}<span class="rb-row-tags">{% for tag in tags %}<button type="button" class="rb-tag-chip rb-tag-link{% if tag in (f.tags ?? []) %} is-on{% endif %}" data-tag="{{ tag }}" title="{{ 'decklist.browse.tag_search' | trans }}">{{ tag }}</button>{% endfor %}</span>{% endif %}
+                    </td>
+                    {# Add to Library (Ketura, 2026-11-08): the drawer asks who's looking, so the page stays cacheable #}
+                    <td class="rb-col-actions">
+                        <button type="button" class="rb-icon-btn" data-library-add="{{ decklist.id }}" data-tip="{{ 'library.add.button' | trans }}" aria-label="{{ 'library.add.button' | trans }}" aria-haspopup="dialog"><span class="fas fa-folder-plus fa-fw"></span></button>
                     </td>
                 </tr>
             {% endfor %}

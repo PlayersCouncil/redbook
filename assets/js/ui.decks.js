@@ -189,6 +189,15 @@
             case 'btn-unfavorite-selected':
                 ui.unfavorite(ids);
                 break;
+            case 'btn-library-add-selected':
+                // the published ones: a deck never published has no decklist to add (Ketura, 2026-11-08)
+                var decklists = $checked.map(function (index, elt) { return $(elt).closest('tr').data('library-id'); }).get();
+                if(!decklists.length) {
+                    app.ui.insert_alert_message('warning', Translator.trans('library.add.none_published'));
+                } else {
+                    app.library_picker.open(this, decklists);
+                }
+                break;
         }
         return false;
     };

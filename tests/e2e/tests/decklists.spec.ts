@@ -264,8 +264,8 @@ test('the decklist shows up in search and in the favourites list', async ({ page
   await expect(row.locator('.rb-col-format')).toHaveText('Fellowship Block');
   await expect(row.locator('.rb-size')).toHaveText('30/30');
   // the columns in Ketura's order, and the upload date beside the author as written
-  // (the cultures gave their room to the tags, Ketura 2026-11-07)
-  await expect(page.locator('.rb-decks thead th')).toHaveText(['', 'Score', 'Size', 'Deck', 'Format', 'Tags']);
+  // (the cultures gave their room to the tags, Ketura 2026-11-07; Actions for Add to Library, 2026-11-08)
+  await expect(page.locator('.rb-decks thead th')).toHaveText(['', 'Score', 'Size', 'Deck', 'Format', 'Tags', 'Actions']);
   await expect(row.locator('.rb-deck-by time')).toHaveText(/^[A-Z][a-z]{2} \d{1,2}, \d{4}$/);
   await expect(row.locator('.rb-row-tags')).toContainText('dwarves');
   await expect(row.locator('.rb-thumb-card img')).toHaveAttribute('alt', 'Gimli, Dwarf of Erebor');
