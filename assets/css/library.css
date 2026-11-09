@@ -2,25 +2,25 @@
 
 /* ---- Libraries (Ketura, 2026-11-08) ---- */
 .rb-library-table .rb-col-count { width: 64px; font-weight: 700; color: var(--rb-ink); }
-.rb-thumb-empty { display: inline-flex; align-items: center; justify-content: center; background: var(--rb-soft); color: var(--rb-muted); font-size: 22px; }
-.rb-official-mark { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 4px; background: #2F4A6B; color: #fff; font-size: calc(11px * var(--rb-text-scale)); font-weight: 700; letter-spacing: .04em; vertical-align: 2px; }
+.rb-thumb-empty { display: inline-flex; align-items: center; justify-content: center; background: var(--rb-page); color: var(--rb-ink-2); font-size: 22px; }
+.rb-official-mark { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 4px; background: var(--rb-primary); color: var(--rb-primary-ink); font-size: 11px; font-weight: 700; letter-spacing: .04em; vertical-align: 2px; }
 .rb-libraries:not(.rb-my-decks) > .rb-browse-title { margin-bottom: 10px; }
 .rb-field-official .rb-check { display: inline-flex; align-items: center; gap: 6px; font-weight: 400; }
-.rb-new-library-intro { color: var(--rb-muted); margin-bottom: 18px; }
+.rb-new-library-intro { color: var(--rb-ink-2); margin-bottom: 18px; }
 
 /* the editor: the library's decks, each with its notes beside it */
-.rb-library-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; padding: 8px 4px 4px; border-bottom: 2px solid var(--rb-line-strong); font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; }
+.rb-library-head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; padding: 8px 4px 4px; border-bottom: 2px solid var(--rb-line-strong); font-size: 12px; font-weight: 700; color: var(--rb-ink-2); letter-spacing: .03em; }
 .rb-library-entries { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 0 2px 20px 0; }
-.rb-library-empty { padding: 18px 4px; color: var(--rb-muted); }
+.rb-library-empty { padding: 18px 4px; color: var(--rb-ink-2); }
 .rb-lib-entry { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; padding: 10px 4px; border-bottom: 1px solid var(--rb-line); transition: background-color .6s; }
-.rb-lib-entry.is-new { background: #FFF6D6; }
+.rb-lib-entry.is-new { background: var(--rb-warning-soft); }
 .rb-lib-entry.is-dragging { opacity: .45; }
 .rb-lib-deck { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
 .rb-lib-controls { display: flex; flex-direction: column; gap: 1px; flex: 0 0 auto; }
-.rb-lib-controls button { width: 24px; height: 22px; padding: 0; border: 1px solid transparent; border-radius: 4px; background: none; color: var(--rb-muted); font-size: 11px; }
+.rb-lib-controls button { width: 24px; height: 22px; padding: 0; border: 1px solid transparent; border-radius: 4px; background: none; color: var(--rb-ink-2); font-size: 11px; }
 .rb-lib-controls button:hover, .rb-lib-controls button:focus { border-color: var(--rb-line-strong); color: var(--rb-ink); }
 .rb-lib-drag { cursor: grab; }
-.rb-lib-num { flex: 0 0 22px; padding-top: 2px; font-weight: 700; color: var(--rb-muted); text-align: right; }
+.rb-lib-num { flex: 0 0 22px; padding-top: 2px; font-weight: 700; color: var(--rb-ink-2); text-align: right; }
 .rb-lib-thumb .rb-thumb { width: 84px; }
 .rb-lib-meta { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
 .rb-lib-meta .rb-deck-name { font-weight: 700; }
@@ -29,13 +29,13 @@
 .rb-lib-entry.is-pending .rb-lib-thumb, .rb-lib-entry.is-pending .rb-lib-meta, .rb-lib-entry.is-pending .rb-lib-notes { opacity: .4; }
 .rb-lib-entry.is-pending .rb-deck-name { text-decoration: line-through; }
 .rb-lib-notes textarea { width: 100%; min-height: 84px; }
-.rb-lib-flag { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: calc(12px * var(--rb-text-scale)); line-height: 1.5; }
-.rb-lib-flag.is-volatile { background: #FBF4E4; color: #6A4A10; border: 1px solid #E2C78F; }
-.rb-lib-flag.is-newer { background: #E3E9EF; color: #2F4A6B; }
-.rb-lib-flag.is-gone { background: #FBEDEB; color: #8E1C12; border: 1px solid #E3A49C; }
+.rb-lib-flag { display: inline-block; padding: 1px 7px; border-radius: 4px; font-size: 12px; line-height: 1.5; }
+.rb-lib-flag.is-volatile { background: var(--rb-warning-soft); color: var(--rb-warning); border: 1px solid var(--rb-warning-edge); }
+.rb-lib-flag.is-newer { background: var(--rb-primary-soft); color: var(--rb-link); }
+.rb-lib-flag.is-gone { background: var(--rb-danger-soft); color: var(--rb-danger); border: 1px solid var(--rb-danger-edge); }
 .rb-library-build-pane .rb-browse-pane { margin-bottom: 10px; }
 .rb-library-build td.rb-col-add { width: 90px; text-align: right; white-space: nowrap; }
-.rb-library-added { color: var(--rb-good); font-weight: 700; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-library-added { color: var(--rb-success); font-weight: 700; font-size: 13px; }
 @media (max-width: 991px) {
     .rb-lib-entry, .rb-library-head { grid-template-columns: 1fr; }
     .rb-library-head span + span { display: none; }
@@ -43,37 +43,37 @@
 
 /* the view, headed as the decklist reader (Ketura, 2026-11-08): the whole width, one row per
    deck, one open at a time, the deck on white and the commentary on the page's tint */
-.rb-library-view { --rb-divide: #A89C83; width: 100%; padding-bottom: 30px; }
+.rb-library-view { width: 100%; padding-bottom: 30px; }
 .rb-lv-header-thumb .rb-thumb { width: 72px; }
-.rb-library-title { margin: 0; font-size: calc(26px * (1 + (var(--rb-text-scale) - 1) * 0.67)); font-weight: 700; line-height: 1.2; }
-.rb-lv-intro { padding: 14px 28px 16px; border-bottom: 2px solid var(--rb-divide); background: #F6F3EC; }
-.rb-lv-intro .rb-reader-text { font-size: calc(17.5px * (1 + (var(--rb-text-scale) - 1) * 0.95)); }
+.rb-library-title { margin: 0; font-size: 26px; font-weight: 700; line-height: 1.2; }
+.rb-lv-intro { padding: 14px 28px 16px; border-bottom: 2px solid var(--rb-divide); background: var(--rb-page); }
+.rb-lv-intro .rb-reader-text { font-size: 17.5px; }
 .rb-lv-intro.has-both { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 28px; }
 .rb-lv-intro.has-both .rb-lv-general-notes { padding-left: 28px; border-left: 2px solid var(--rb-divide); }
-.rb-lv-section-head { margin: 0 0 6px; font-size: calc(19px * (1 + (var(--rb-text-scale) - 1) * 0.9)); font-weight: 700; color: var(--rb-ink); }
+.rb-lv-section-head { margin: 0 0 6px; font-size: 19px; font-weight: 700; color: var(--rb-ink); }
 .rb-lv-description > :last-child, .rb-library-notes-body > :last-child { margin-bottom: 0; }
 .rb-library-list { list-style: none; margin: 0; padding: 0; }
 .rb-lv-entry { border-bottom: 1px solid var(--rb-line); scroll-margin-top: 60px; }
-.rb-lv-head { display: flex; align-items: center; gap: 14px; width: 100%; padding: 6px 18px 6px 10px; border: 0; background: #fff; text-align: left; color: var(--rb-ink); }
-.rb-lv-head:hover { background: var(--rb-soft); }
-.rb-lv-entry.is-open > .rb-lv-head { background: var(--rb-ink); color: #fff; }
+.rb-lv-head { display: flex; align-items: center; gap: 14px; width: 100%; padding: 6px 18px 6px 10px; border: 0; background: var(--rb-leaf); text-align: left; color: var(--rb-ink); }
+.rb-lv-head:hover { background: var(--rb-page); }
+.rb-lv-entry.is-open > .rb-lv-head { background: var(--rb-selected); color: var(--rb-selected-ink); }
 .rb-lv-entry.is-open > .rb-lv-head .rb-deck-name, .rb-lv-entry.is-open > .rb-lv-head .rb-deck-by, .rb-lv-entry.is-open > .rb-lv-head .rb-lv-num,
-.rb-lv-entry.is-open > .rb-lv-head .rb-lv-chevron, .rb-lv-entry.is-open > .rb-lv-head .rb-lv-has-notes { color: #fff; }
-.rb-lv-num { flex: 0 0 30px; font-weight: 700; color: var(--rb-muted); text-align: right; font-variant-numeric: tabular-nums; }
+.rb-lv-entry.is-open > .rb-lv-head .rb-lv-chevron, .rb-lv-entry.is-open > .rb-lv-head .rb-lv-has-notes { color: var(--rb-selected-ink); }
+.rb-lv-num { flex: 0 0 30px; font-weight: 700; color: var(--rb-ink-2); text-align: right; font-variant-numeric: tabular-nums; }
 .rb-lv-thumb .rb-thumb { width: 64px; }
 .rb-lv-meta { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
 .rb-lv-meta .rb-deck-name { font-weight: 700; color: var(--rb-ink); }
-.rb-lv-has-notes { color: var(--rb-muted); }
-.rb-lv-chevron { color: var(--rb-muted); transition: transform .15s; }
+.rb-lv-has-notes { color: var(--rb-ink-2); }
+.rb-lv-chevron { color: var(--rb-ink-2); transition: transform .15s; }
 .rb-lv-entry.is-open .rb-lv-chevron { transform: rotate(180deg); }
 .rb-lv-entry.is-gone > .rb-lv-head { opacity: .55; }
 .rb-lv-body:not([hidden]) { display: grid; grid-template-columns: minmax(0, 1fr) var(--rb-desc-width, 40%); border-top: 2px solid var(--rb-divide); }
-.rb-lv-deck { min-width: 0; background: #fff; }
+.rb-lv-deck { min-width: 0; background: var(--rb-leaf); }
 .rb-lv-flags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 14px 0; }
-.rb-lv-open { margin-left: auto; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-lv-open { margin-left: auto; font-size: 13px; }
 .rb-lv-deck .rb-deck { border-top: 0; padding: 2px 14px 14px; max-height: 78vh; overflow-y: auto; scrollbar-gutter: stable; }
-.rb-lv-notes { display: flex; flex-direction: column; padding: 12px 28px 16px; border-left: 2px solid var(--rb-divide); background: #F6F3EC; }
-.rb-lv-notes .rb-reader-text { flex: 1 1 auto; font-size: calc(17.5px * (1 + (var(--rb-text-scale) - 1) * 0.95)); }
+.rb-lv-notes { display: flex; flex-direction: column; padding: 12px 28px 16px; border-left: 2px solid var(--rb-divide); background: var(--rb-page); }
+.rb-lv-notes .rb-reader-text { flex: 1 1 auto; font-size: 17.5px; }
 .rb-lv-nav { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
 .rb-lv-empty { padding: 20px 28px; }
 @media (max-width: 991px) {
@@ -83,8 +83,8 @@
     .rb-lv-intro, .rb-lv-notes { padding-left: 16px; padding-right: 16px; }
 }
 .rb-library-drawer [hidden] { display: none !important; }
-.rb-lib-meta .rb-deck-name, .rb-library-build .rb-deck-name, .rb-lv-meta .rb-deck-name { font-size: calc(17px * var(--rb-text-scale)); line-height: 1.25; }
-.rb-library-build .rb-deck-by, .rb-lib-meta .rb-deck-by { font-size: calc(13px * var(--rb-text-scale)); }
+.rb-lib-meta .rb-deck-name, .rb-library-build .rb-deck-name, .rb-lv-meta .rb-deck-name { font-size: 17px; line-height: 1.25; }
+.rb-library-build .rb-deck-by, .rb-lib-meta .rb-deck-by { font-size: 13px; }
 .rb-library-build .rb-thumb { width: 72px; }
 /* My Libraries' table keeps to its content rather than the whole width (Ketura, 2026-11-08) */
 .rb-my-decks-table.rb-library-table { width: auto; min-width: min(100%, 720px); }
@@ -92,21 +92,21 @@
 .rb-library-table .rb-col-tags { width: auto; min-width: 140px; }
 /* the public list: cards, two to a row where there's room */
 .rb-lib-cards { list-style: none; margin: 0; padding: 4px 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); gap: 10px 14px; align-content: start; }
-.rb-lib-card { display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 8px; border: 1px solid var(--rb-line); border-radius: 8px; background: #fff; cursor: pointer; }
-.rb-lib-card:hover { border-color: var(--rb-line-strong); background: var(--rb-soft); }
+.rb-lib-card { display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 8px; border: 1px solid var(--rb-line); border-radius: 8px; background: var(--rb-leaf); cursor: pointer; }
+.rb-lib-card:hover { border-color: var(--rb-line-strong); background: var(--rb-page); }
 .rb-lib-card-thumb .rb-thumb { width: 84px; }
 .rb-lib-card-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
-.rb-lib-card-body .rb-deck-name { font-size: calc(18px * var(--rb-text-scale)); font-weight: 700; line-height: 1.25; }
+.rb-lib-card-body .rb-deck-name { font-size: 18px; font-weight: 700; line-height: 1.25; }
 .rb-lib-card-body .rb-row-tags { flex-wrap: wrap; row-gap: 3px; }
-.rb-lib-card-count { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; color: var(--rb-muted); font-size: calc(12px * var(--rb-text-scale)); text-transform: uppercase; letter-spacing: .03em; }
-.rb-lib-card-count strong { font-size: calc(22px * var(--rb-text-scale)); color: var(--rb-ink); line-height: 1.1; }
+.rb-lib-card-count { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; color: var(--rb-ink-2); font-size: 12px; letter-spacing: .03em; }
+.rb-lib-card-count strong { font-size: 22px; color: var(--rb-ink); line-height: 1.1; }
 .rb-library-build-pane > .rb-browse-pane, .rb-library-build-pane > .rb-browse-results { flex: 0 0 auto; overflow: visible; max-height: none; }
 .rb-lib-thumb-row { display: flex; align-items: center; gap: 14px; }
 .rb-lib-thumb-preview .rb-thumb { width: 96px; }
 .rb-lib-thumb-pick { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
 .rb-lib-thumb-pick .twitter-typeahead { width: 100%; }
-.rb-lib-thumb-name { font-size: calc(13px * var(--rb-text-scale)); color: var(--rb-muted); }
-#btn-visibility .fa-globe-americas { color: #2F6B3A; }
+.rb-lib-thumb-name { font-size: 13px; color: var(--rb-ink-2); }
+#btn-visibility .fa-globe-americas { color: var(--rb-success); }
 .rb-lib-thumb-row { align-items: flex-start; }
 .rb-lib-thumb-row .rb-thumb-preview { flex: 0 0 auto; }
 .rb-lib-thumb-modes { align-self: flex-start; }
@@ -114,9 +114,9 @@
 .rb-lib-thumb-panel[hidden] { display: none; }
 .rb-lib-cultures { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
 .rb-lib-cultures .rb-culture-sep { width: 1px; height: 26px; margin: 0 4px; background: var(--rb-line-strong); }
-.rb-lib-culture { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; }
-.rb-lib-culture:hover { background: var(--rb-soft); }
-.rb-lib-culture[aria-pressed=true] { border: 2px solid #D4A017; background: #FBF2D9; }
+.rb-lib-culture { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; padding: 0; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-leaf); }
+.rb-lib-culture:hover { background: var(--rb-page); }
+.rb-lib-culture[aria-pressed=true] { border: 2px solid var(--rb-highlight); background: var(--rb-warning-soft); }
 .rb-lib-culture .culture-icon { width: 24px; height: 24px; }
 .rb-lib-culture-order:empty { display: none; }
 .rb-line-text .rb-pc, .rb-line-text .rb-annot-mark { margin-left: 6px; }

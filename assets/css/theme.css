@@ -1,0 +1,332 @@
+/* The theme (Ketura, 2026-11-09; _planning/redbook-design, theme/rb-theme.css): base, the
+   leather chrome, panels, buttons, forms, menus, tabs, the tag families, reactions, panes,
+   the pager, tables; keyed to Bootstrap 3's class names. Its tokens are in tokens.css and its
+   front page in front.css. Culture glyphs (.rb-cg) are left out: the site keeps its own. */
+
+/* ---------- 2. Base + one-page shell ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { background: var(--rb-desk); }
+body { margin: 0; color: var(--rb-ink); font: 16px/1.5 var(--rb-font-ui); -webkit-font-smoothing: antialiased; }
+a { color: var(--rb-link); text-decoration: none; }
+a:hover { color: var(--rb-link-hover); text-decoration: underline; text-underline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--rb-focus); outline-offset: 2px; }
+::selection { background: var(--rb-fp-soft); color: var(--rb-ink); }
+h1, h2, h3, h4 { font-family: var(--rb-font-prose); font-weight: 600; color: var(--rb-ink); line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: 34px; } h2 { font-size: 26px; } h3 { font-size: 21px; }
+h4 { font-size: 17px; font-family: var(--rb-font-ui); font-weight: 700; }
+.rb-prose { font-family: var(--rb-font-prose); font-size: 19px; line-height: 1.55; max-width: 68ch; }
+.rb-prose p { margin: 0 0 .8em; }
+.rb-meta { font-size: 13.5px; color: var(--rb-ink-2); }
+.rb-meta, .rb-num, table { font-variant-numeric: tabular-nums; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* One-page shell: header and footer always on screen, the middle is fixed,
+   and only the regions marked .rb-scroll scroll. Phones fall back to a
+   normally scrolling page (see section 19). */
+html.rb-onepage, html.rb-onepage body { height: 100%; }
+html.rb-onepage body { display: flex; flex-direction: column; overflow: hidden; }
+html.rb-onepage .rb-main { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
+.rb-grow { flex: 1 1 auto; min-height: 0; }
+.rb-scroll { overflow: auto; min-height: 0; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--rb-line-strong) transparent; }
+.rb-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.rb-col > .rb-scroll { flex: 1 1 auto; }
+
+/* ---------- 3. Leather ---------- */
+.rb-leather {
+    background-color: var(--rb-leather);
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeDiffuseLighting lighting-color='%23fff' surfaceScale='1.6'%3E%3CfeDistantLight azimuth='225' elevation='50'/%3E%3C/feDiffuseLighting%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='.6' intercept='.46'/%3E%3CfeFuncG type='linear' slope='.6' intercept='.46'/%3E%3CfeFuncB type='linear' slope='.6' intercept='.46'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E"),
+        radial-gradient(120% 150% at 32% 0%, color-mix(in srgb, var(--rb-leather-hi) 85%, transparent) 0%, transparent 60%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='2400' height='520'%3E%3Cfilter id='m'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.004 .012' numOctaves='3' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .08  0 0 0 0 .01  0 0 0 0 0  0 0 0 -1.4 .74'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23m)'/%3E%3C/svg%3E"),
+        linear-gradient(180deg, transparent 50%, color-mix(in srgb, var(--rb-leather-lo) 80%, transparent) 100%);
+    background-blend-mode: multiply, normal, multiply, normal;
+    background-size: 220px 220px, 100% 100%, 2400px 520px, 100% 100%;
+    color: var(--rb-on-leather);
+}
+.rb-tooled-bottom { box-shadow: inset 0 -1px 0 rgba(0,0,0,.35), 0 1px 0 var(--rb-gilt-lo), 0 4px 0 var(--rb-gilt-lo); position: relative; z-index: 3; }
+.rb-tooled-top    { box-shadow: inset 0 1px 0 rgba(0,0,0,.35), 0 -1px 0 var(--rb-gilt-lo), 0 -4px 0 var(--rb-gilt-lo); }
+.rb-hinge         { box-shadow: inset 0 -1px 0 rgba(0,0,0,.4), 0 1px 0 rgba(255,220,170,.10); position: relative; z-index: 4; }
+
+/* ---------- 4. Top bar ---------- */
+.rb-topbar { flex: none; border: 0; border-radius: 0; margin: 0; min-height: var(--rb-bar-h); }
+.rb-topbar .rb-bar-inner { display: flex; align-items: center; gap: 4px; min-height: var(--rb-bar-h);
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.rb-brand { display: flex; align-items: center; gap: 10px; margin-right: 14px; text-decoration: none !important; white-space: nowrap; }
+.rb-brand-word { font: 700 21px/1 var(--rb-font-title); letter-spacing: -.01em; padding-top: 2px;
+    font-kerning: none; font-variant-ligatures: none; font-feature-settings: "kern" 0, "liga" 0, "dlig" 0;
+    color: transparent; -webkit-background-clip: text; background-clip: text;
+    background-image: linear-gradient(180deg, #FBEBB8 0%, #E3C277 38%, #A47A33 52%, #D9B66A 70%, #F3DDA2 100%);
+    filter: drop-shadow(0 -1px 0 rgba(0,0,0,.5)); }
+.rb-brand-word .rb-cap { font-size: 1.45em; }
+.rb-brand:hover .rb-brand-word { filter: drop-shadow(0 -1px 0 rgba(0,0,0,.5)) brightness(1.12); }
+.rb-brand svg { color: var(--rb-gilt); }
+.rb-brand svg { width: 26px; height: 30px; flex: none; filter: drop-shadow(0 1px 0 rgba(0,0,0,.45)); }
+.rb-nav { display: flex; align-items: stretch; gap: 2px; list-style: none; margin: 0; padding: 0; min-width: 0; }
+.rb-nav a { display: flex; align-items: center; gap: 7px; height: var(--rb-bar-h); padding: 0 11px; color: var(--rb-on-leather); font: 600 15px/1 var(--rb-font-ui);
+    text-decoration: none !important; white-space: nowrap; position: relative; }
+.rb-nav a > i, .rb-nav a > svg { color: var(--rb-gilt); opacity: .85; font-size: 14px; }
+.rb-nav a:hover { color: var(--rb-gilt-hi); background: rgba(0,0,0,.14); }
+.rb-nav a.active { color: var(--rb-gilt-hi); }
+.rb-nav a.active::after { content: ""; position: absolute; left: 11px; right: 11px; bottom: 9px; border-top: 3px double var(--rb-gilt); }
+.rb-nav a.is-soon { color: var(--rb-on-leather-2); font-weight: 400; }
+.rb-nav-spacer { flex: 1; }
+.rb-bar-tools { display: flex; align-items: center; gap: 8px; }
+.rb-theme-switch { display: inline-flex; border: 1px solid rgba(243,221,162,.35); border-radius: var(--rb-radius); overflow: hidden; background: rgba(0,0,0,.18); }
+.rb-theme-switch button { width: 30px; height: 28px; border: 0; background: none; color: var(--rb-on-leather-2); cursor: pointer; font-size: 13px; display: grid; place-items: center; }
+.rb-theme-switch button + button { border-left: 1px solid rgba(243,221,162,.2); }
+.rb-theme-switch button:hover { color: var(--rb-gilt-hi); }
+.rb-theme-switch button[aria-pressed="true"] { background: var(--rb-gilt); color: #3A1009; }
+.rb-lang { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px; border: 1px solid rgba(243,221,162,.35); border-radius: var(--rb-radius);
+    background: rgba(0,0,0,.18); color: var(--rb-on-leather); font: 600 13px var(--rb-font-ui); cursor: pointer; }
+.rb-burger { display: none; width: 40px; height: 40px; border: 1px solid rgba(243,221,162,.35); border-radius: var(--rb-radius); background: rgba(0,0,0,.18); color: var(--rb-gilt); font-size: 18px; }
+
+/* ---------- 5. Footer ---------- */
+.rb-foot { flex: none; font: 13px/1.4 var(--rb-font-ui); color: var(--rb-on-leather-2); }
+.rb-foot .rb-foot-inner { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: center; justify-content: space-between; padding-block: 7px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.rb-foot a { color: var(--rb-on-leather); }
+.rb-foot a:hover { color: var(--rb-gilt-hi); }
+.rb-foot nav { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+
+/* ---------- 6. Main region ---------- */
+.rb-main { padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* ---------- 7. Panels and callouts ---------- */
+.rb-panel, .panel { background: var(--rb-page); border: 1px solid var(--rb-line); border-radius: var(--rb-radius-panel); box-shadow: none; margin: 0; }
+.rb-panel--leaf { background: var(--rb-leaf); box-shadow: var(--rb-shadow-1); }
+.rb-panel--sunk, .well { background: var(--rb-sunk); border: 1px solid var(--rb-line); border-radius: var(--rb-radius-panel); box-shadow: none; }
+.rb-panel--note { background: var(--rb-note); border: 1px solid color-mix(in srgb, var(--rb-gilt-lo) 40%, transparent); }
+.rb-panel-head, .panel-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 11px 14px 9px; border-bottom: 1px solid var(--rb-line);
+    background: transparent; color: var(--rb-ink); border-radius: var(--rb-radius-panel) var(--rb-radius-panel) 0 0; flex: none; }
+.rb-panel-head h2 { font: 21px/1.1 var(--rb-font-display); letter-spacing: .02em; }
+.rb-panel-head .rb-more { font: 600 13.5px var(--rb-font-ui); white-space: nowrap; }
+.rb-panel-body, .panel-body { padding: 14px 16px; }
+.rb-panel-foot { flex: none; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 8px 14px; border-top: 1px solid var(--rb-line);
+    background: var(--rb-sunk); border-radius: 0 0 var(--rb-radius-panel) var(--rb-radius-panel); font-size: 14px; }
+
+.rb-callout, .alert { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border-radius: var(--rb-radius); border: 1px solid; font-size: 15px; color: var(--rb-ink); }
+.rb-callout > i, .rb-callout > svg, .alert > i { margin-top: 3px; flex: none; }
+.rb-callout--info,    .alert-info    { background: var(--rb-info-soft);    border-color: var(--rb-info-edge); }
+.rb-callout--success, .alert-success { background: var(--rb-success-soft); border-color: var(--rb-success-edge); }
+.rb-callout--warning, .alert-warning { background: var(--rb-warning-soft); border-color: var(--rb-warning-edge); }
+.rb-callout--danger,  .alert-danger  { background: var(--rb-danger-soft);  border-color: var(--rb-danger-edge); }
+.rb-callout--info > :first-child { color: var(--rb-info); }
+.rb-callout--success > :first-child { color: var(--rb-success); }
+.rb-callout--warning > :first-child { color: var(--rb-warning); }
+.rb-callout--danger > :first-child { color: var(--rb-danger); }
+
+/* ---------- 8. Buttons ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: var(--rb-control-h); padding: 0 14px; border-radius: var(--rb-radius);
+    font: 600 15px/1 var(--rb-font-ui); white-space: nowrap; cursor: pointer; border: 1px solid transparent; text-decoration: none !important;
+    transition: background-color .12s, border-color .12s, color .12s; box-shadow: none; }
+.btn:focus-visible { outline: 2px solid var(--rb-focus); outline-offset: 2px; }
+.btn[disabled], .btn.disabled { opacity: .45; cursor: not-allowed; }
+.btn i, .btn svg { font-size: .92em; }
+.btn-sm { height: var(--rb-control-h-sm); padding: 0 10px; font-size: 14px; }
+.btn-lg { height: var(--rb-control-h-lg); padding: 0 20px; font-size: 17px; }
+.btn-icon { width: var(--rb-control-h); padding: 0; }
+.btn-sm.btn-icon { width: var(--rb-control-h-sm); }
+
+/* Primary: iron-gall blue. One per region. .btn-success maps here so the old green buttons fall in line. */
+.btn-primary, .btn-success { background: var(--rb-primary); border-color: var(--rb-primary); color: var(--rb-primary-ink); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
+.btn-primary:hover, .btn-success:hover, .btn-primary:focus, .btn-success:focus { background: var(--rb-primary-hover); border-color: var(--rb-primary-hover); color: var(--rb-primary-ink); }
+.btn-primary:active, .btn-success:active { box-shadow: inset 0 2px 3px rgba(0,0,0,.25); }
+
+.btn-default { background: var(--rb-control); border-color: var(--rb-control-edge); color: var(--rb-ink); }
+.btn-default:hover, .btn-default:focus { background: var(--rb-control-hover); border-color: var(--rb-control-edge); color: var(--rb-ink); }
+
+.btn-quiet, .btn-link { background: transparent; border-color: transparent; color: var(--rb-ink-2); }
+.btn-quiet:hover, .btn-link:hover { background: var(--rb-hover); color: var(--rb-ink); }
+
+/* Danger: red outline + icon; filled only on hover or in a confirm step */
+.btn-danger { background: transparent; border-color: var(--rb-danger-edge); color: var(--rb-danger); }
+.btn-danger:hover, .btn-danger:focus, .btn-danger.btn-confirm { background: var(--rb-danger); border-color: var(--rb-danger); color: #fff; }
+html.pc-dark .btn-danger:hover, html.pc-dark .btn-danger:focus, html.pc-dark .btn-danger.btn-confirm { color: #2A0F0D; }
+
+/* Toggles / segments: selected = ink (light) or gilt-rimmed gold (dark) */
+.btn-group { display: inline-flex; }
+.btn-group > .btn { border-radius: 0; }
+.btn-group > .btn:first-child { border-radius: var(--rb-radius) 0 0 var(--rb-radius); }
+.btn-group > .btn:last-child { border-radius: 0 var(--rb-radius) var(--rb-radius) 0; }
+.btn-group > .btn + .btn { margin-left: -1px; }
+.btn.active, .btn[aria-pressed="true"] { background: var(--rb-selected); border-color: var(--rb-selected-edge); color: var(--rb-selected-ink); position: relative; z-index: 1; box-shadow: none; }
+html.pc-dark .btn.active, html.pc-dark .btn[aria-pressed="true"] { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rb-selected-edge) 35%, transparent); }
+.btn-fp.active, .btn-fp[aria-pressed="true"] { background: var(--rb-fp-solid); border-color: var(--rb-fp-solid); color: #231E19; box-shadow: none !important; }
+.btn-shadow.active, .btn-shadow[aria-pressed="true"] { background: var(--rb-shadow-solid); border-color: var(--rb-shadow-solid); color: #fff; box-shadow: none !important; }
+.btn-fp:not(.active) { color: var(--rb-fp); }
+.btn-shadow:not(.active) { color: var(--rb-shadow); }
+
+/* ---------- 10. Forms ---------- */
+.rb-label, .control-label { display: block; margin: 0 0 5px; font: 600 14px/1.2 var(--rb-font-ui); color: var(--rb-ink); }
+.rb-help, .help-block { margin-top: 5px; font-size: 13.5px; color: var(--rb-ink-2); }
+.form-control { display: block; width: 100%; min-width: 0; height: var(--rb-control-h); padding: 0 10px; font: 15px/1.2 var(--rb-font-ui); color: var(--rb-ink); background: var(--rb-leaf);
+    border: 1px solid var(--rb-line-strong); border-radius: var(--rb-radius); box-shadow: inset 0 1px 2px rgba(50,30,15,.06); transition: border-color .12s, box-shadow .12s; }
+textarea.form-control { height: auto; min-height: 96px; padding: 8px 10px; line-height: 1.45; resize: vertical; }
+.form-control::placeholder { color: var(--rb-ink-3); }
+.form-control:hover { border-color: var(--rb-ink-3); }
+.form-control:focus { outline: none; border-color: var(--rb-focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rb-focus) 28%, transparent); }
+.form-control[disabled], .form-control[readonly] { background: var(--rb-sunk); color: var(--rb-ink-2); }
+.has-error .form-control { border-color: var(--rb-danger); }
+.has-error .help-block { color: var(--rb-danger); }
+select.form-control { appearance: none; padding-right: 30px; cursor: pointer;
+    background-image: linear-gradient(45deg, transparent 50%, var(--rb-ink-2) 50%), linear-gradient(135deg, var(--rb-ink-2) 50%, transparent 50%);
+    background-position: calc(100% - 15px) 52%, calc(100% - 10px) 52%; background-size: 5px 5px; background-repeat: no-repeat; }
+.rb-search { position: relative; display: block; }
+.rb-search > i, .rb-search > svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--rb-ink-3); font-size: 14px; pointer-events: none; }
+.rb-search .form-control { padding-left: 32px; }
+.rb-check { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; cursor: pointer; }
+.rb-check input { width: 16px; height: 16px; accent-color: var(--rb-primary); }
+
+/* ---------- 11. Dropdown menus ---------- */
+.dropdown-menu { min-width: 200px; padding: 4px; margin-top: 4px; background: var(--rb-leaf); border: 1px solid var(--rb-line-strong); border-radius: var(--rb-radius-panel);
+    box-shadow: var(--rb-shadow-2); font: 15px var(--rb-font-ui); list-style: none; }
+.dropdown-menu > li > a, .dropdown-menu .rb-menu-item { display: flex; align-items: center; gap: 9px; padding: 7px 10px; border-radius: var(--rb-radius); color: var(--rb-ink); text-decoration: none; white-space: nowrap; }
+.dropdown-menu > li > a:hover, .dropdown-menu .rb-menu-item:hover { background: var(--rb-sunk); color: var(--rb-ink); text-decoration: none; }
+.dropdown-menu > li > a > :first-child { width: 16px; text-align: center; color: var(--rb-ink-2); }
+.dropdown-menu .rb-menu-item.is-current { font-weight: 600; }
+.dropdown-menu .rb-check-mark { margin-left: auto; color: var(--rb-ink); }
+.dropdown-menu .divider { height: 1px; margin: 4px 2px; background: var(--rb-line); }
+.dropdown-header { padding: 6px 10px 3px; font: 600 12.5px var(--rb-font-ui); color: var(--rb-ink-3); }
+.dropdown-menu .rb-danger-item, .dropdown-menu .rb-danger-item > :first-child { color: var(--rb-danger) !important; }
+
+/* ---------- 12. Tabs: the mark is the selection colour ---------- */
+.nav-tabs, .rb-tabs { display: flex; gap: 2px; list-style: none; margin: 0; padding: 0 6px; border-bottom: 1px solid var(--rb-line); overflow-x: auto; scrollbar-width: none; flex: none; }
+.nav-tabs > li > a, .rb-tabs > button, .rb-tabs > a { display: flex; align-items: center; gap: 6px; padding: 9px 10px 8px; margin-bottom: -1px; border: 0; border-bottom: 3px solid transparent;
+    background: none; color: var(--rb-ink-2); font: 600 14.5px/1 var(--rb-font-ui); white-space: nowrap; cursor: pointer; border-radius: 0; text-decoration: none; }
+.nav-tabs > li > a:hover, .rb-tabs > button:hover, .rb-tabs > a:hover { color: var(--rb-ink); background: var(--rb-hover); text-decoration: none; }
+.nav-tabs > li.active > a, .rb-tabs > [aria-selected="true"] { color: var(--rb-ink); border-bottom-color: var(--rb-mark); background: none; }
+.rb-tabs .rb-count { font-weight: 400; color: var(--rb-ink-3); font-size: 13px; }
+
+/* ---------- 13. Tag families ----------
+   Order on any deck: format, then status, then tags. Never rotated, never uppercase. */
+.rb-format, .rb-status, .rb-tag { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: var(--rb-radius);
+    font: 600 12.5px/1 var(--rb-font-ui); white-space: nowrap; border: 1px solid transparent; vertical-align: middle; }
+/* 1. Format: filled blue. Exactly one per deck, always first. */
+.rb-format { background: var(--rb-info-soft); color: var(--rb-info); border-color: var(--rb-info-edge); font-weight: 700; }
+/* 2. Status: a fact the system knows (Archive, Legal, Private, Fragment, Draft). Outlined, with an icon. */
+.rb-status { background: transparent; color: var(--rb-ink-2); border-color: var(--rb-line-strong); }
+.rb-status > :first-child { font-size: 11px; }
+.rb-status--success { color: var(--rb-success); border-color: var(--rb-success-edge); background: var(--rb-success-soft); }
+.rb-status--danger  { color: var(--rb-danger);  border-color: var(--rb-danger-edge);  background: var(--rb-danger-soft); }
+.rb-status--warning { color: var(--rb-warning); border-color: var(--rb-warning-edge); background: var(--rb-warning-soft); }
+.rb-status--fp { color: var(--rb-fp); border-color: color-mix(in srgb, var(--rb-fp-solid) 70%, transparent); }
+.rb-status--sh { color: var(--rb-shadow); border-color: color-mix(in srgb, var(--rb-shadow-solid) 60%, transparent); }
+/* 3. Tag: something people applied (Expanded, Shireposting). Filled neutral, no icon. */
+.rb-tag { background: var(--rb-sunk); color: var(--rb-ink-2); border-color: var(--rb-line); font-weight: 600; }
+a.rb-tag:hover { color: var(--rb-ink); border-color: var(--rb-line-strong); text-decoration: none; }
+.rb-tag button, .rb-format button, .rb-status button { border: 0; background: none; padding: 0 0 0 2px; margin-right: -2px; color: inherit; opacity: .6; cursor: pointer; font-size: 14px; line-height: 1; }
+.rb-tag button:hover, .rb-format button:hover, .rb-status button:hover { opacity: 1; }
+.rb-more-tags { font: 600 12.5px var(--rb-font-ui); color: var(--rb-ink-3); }
+/* 4. Kicker: the category line above a post title. Coloured text with an icon, no box. */
+.rb-kicker { display: inline-flex; align-items: center; gap: 5px; font: 700 12.5px/1 var(--rb-font-ui); color: var(--rb-ink-2); }
+.rb-kicker--news { color: var(--rb-info); }
+.rb-kicker--report { color: var(--rb-warning); }
+.rb-kicker--analysis { color: var(--rb-success); }
+
+/* Free Peoples / Shadow text */
+.rb-fp { color: var(--rb-fp); }
+.rb-sh { color: var(--rb-shadow); }
+.rb-size { font: 700 15px/1 var(--rb-font-ui); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rb-size .sep { color: var(--rb-ink-3); font-weight: 400; margin: 0 1px; }
+.rb-size .none { color: var(--rb-ink-3); font-weight: 400; }
+.rb-section-fp { color: var(--rb-fp); border-bottom: 2px solid var(--rb-fp-solid); }
+.rb-section-sh { color: var(--rb-shadow); border-bottom: 2px solid var(--rb-shadow-solid); }
+
+/* ---------- 14. Reactions ---------- */
+.rb-ri { width: 1.15em; height: 1.15em; flex: none; vertical-align: -.2em; overflow: visible; }
+.rb-votes { display: inline-flex; align-items: center; gap: 11px; font: 600 14px/1 var(--rb-font-ui); color: var(--rb-ink-2); font-variant-numeric: tabular-nums; }
+.rb-votes > span { display: inline-flex; align-items: center; gap: 4px; }
+.rb-votes .is-zero { opacity: .5; }
+.rb-votes .is-zero .rb-ri { filter: grayscale(1); }
+.rb-votes .v-comments > :first-child { color: var(--rb-ink-3); }
+.rb-react { display: inline-flex; align-items: center; gap: 6px; height: var(--rb-control-h); padding: 0 11px; border: 1px solid var(--rb-control-edge); border-radius: var(--rb-radius);
+    background: var(--rb-control); color: var(--rb-ink); font: 600 15px/1 var(--rb-font-ui); cursor: pointer; font-variant-numeric: tabular-nums; }
+.rb-react:hover { background: var(--rb-control-hover); }
+.rb-react .rb-ri { width: 18px; height: 18px; }
+.rb-react[aria-pressed="true"].r-cheers { border-color: var(--rb-cheers); background: color-mix(in srgb, var(--rb-cheers) 15%, var(--rb-leaf)); }
+.rb-react[aria-pressed="true"].r-fire   { border-color: var(--rb-fire);   background: color-mix(in srgb, var(--rb-fire) 13%, var(--rb-leaf)); }
+.rb-react[aria-pressed="true"].r-crown  { border-color: var(--rb-crown);  background: color-mix(in srgb, var(--rb-crown) 16%, var(--rb-leaf)); }
+.rb-react[aria-pressed="true"].r-fav    { border-color: var(--rb-fav);    background: color-mix(in srgb, var(--rb-fav) 12%, var(--rb-leaf)); }
+
+/* ---------- 15. Resizable panes ---------- */
+.rb-split { display: flex; min-height: 0; }
+.rb-split > .rb-pane { min-width: 0; }
+.rb-splitter { flex: none; width: 9px; margin: 0 -2px; position: relative; cursor: col-resize; z-index: 2; touch-action: none; }
+.rb-splitter::before { content: ""; position: absolute; top: 0; bottom: 0; left: 4px; width: 1px; background: var(--rb-line-strong); }
+.rb-splitter::after { content: ""; position: absolute; top: 50%; left: 2px; width: 5px; height: 28px; margin-top: -14px; background: radial-gradient(circle, var(--rb-ink-3) 1px, transparent 1.6px) 0 0 / 5px 7px; opacity: .8; }
+.rb-splitter:hover::before, .rb-splitter.is-dragging::before { left: 3px; width: 3px; background: var(--rb-primary); }
+.rb-splitter:hover::after, .rb-splitter.is-dragging::after { opacity: 0; }
+.rb-splitter:focus-visible { outline: none; }
+.rb-splitter:focus-visible::before { left: 3px; width: 3px; background: var(--rb-focus); }
+
+/* ---------- 16. Pager (matches templates/Decklist/pager.html.twig) ----------
+   First, previous, nine pages, next, last, then a page-number jump. */
+.rb-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 4px; }
+.rb-page { min-width: 32px; height: 32px; padding: 0 8px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--rb-control-edge);
+    border-radius: var(--rb-radius); background: var(--rb-control); color: var(--rb-link); font: 600 14px/1 var(--rb-font-ui); font-variant-numeric: tabular-nums; text-decoration: none !important; }
+a.rb-page:hover, a.rb-page:focus { background: var(--rb-primary-soft); border-color: var(--rb-info-edge); }
+.rb-page.is-current { background: var(--rb-selected); border-color: var(--rb-selected-edge); color: var(--rb-selected-ink); }
+.rb-page-step { color: var(--rb-ink-2); font-size: 11px; }
+.rb-page.is-disabled { color: var(--rb-ink-3); border-color: var(--rb-line); background: transparent; opacity: .6; }
+.rb-page-jump { display: inline-flex; gap: 4px; margin: 0 0 0 8px; }
+.rb-page-jump input { width: 84px; height: 32px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: var(--rb-radius); background: var(--rb-leaf); color: var(--rb-ink);
+    font: 14px var(--rb-font-ui); -moz-appearance: textfield; appearance: textfield; }
+.rb-page-jump input::-webkit-inner-spin-button, .rb-page-jump input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.rb-page-jump input:focus { outline: none; border-color: var(--rb-focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rb-focus) 28%, transparent); }
+.rb-page-jump button { height: 32px; padding: 0 12px; border: 1px solid var(--rb-control-edge); border-radius: var(--rb-radius); background: var(--rb-control); color: var(--rb-ink); font: 600 14px var(--rb-font-ui); cursor: pointer; }
+.rb-page-jump button:hover { background: var(--rb-control-hover); }
+
+/* ---------- 17. Tables, thumbnails, deck rows ---------- */
+.rb-table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.rb-table th { position: sticky; top: 0; background: var(--rb-sunk); color: var(--rb-ink-2); font: 600 13px var(--rb-font-ui); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--rb-line-strong); z-index: 1; }
+.rb-table td { padding: 9px 10px; border-bottom: 1px solid var(--rb-line); vertical-align: middle; }
+.rb-table tbody tr:hover { background: var(--rb-hover); }
+    background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--c, #888) 70%, #fff) 0%, var(--c, #888) 75%); box-shadow: inset 0 0 0 1px rgba(0,0,0,.18); }
+.rb-deck-name { font: 600 19px/1.2 var(--rb-font-prose); color: var(--rb-ink); text-decoration: none; }
+a.rb-deck-name:hover { color: var(--rb-link); text-decoration: none; }
+
+/* ---------- 19. Responsive ---------- */
+@media (pointer: coarse) {
+    :root { --rb-control-h: 40px; --rb-control-h-sm: 36px; }
+    .rb-page { min-width: 40px; height: 40px; }
+    .rb-splitter { display: none; }
+}
+@media (max-width: 1399px) { .rb-nav a .rb-nav-label { display: none; } .rb-nav a { padding: 0 9px; } }
+@media (max-width: 1199px) {
+    .rb-feeds { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+    .rb-cover-inner { grid-template-columns: 1fr; gap: 14px; }
+    .rb-cover-frame { padding: 20px 24px 10px; }
+    .rb-cover h1 { font-size: 60px; }
+}
+@media (max-width: 1199px) { .rb-brand > span { display: none; } .rb-brand { margin-right: 6px; } }
+@media (max-width: 1099px) {
+    .rb-topbar .rb-nav-primary { display: none; }
+    .rb-brand > span { display: inline; }
+    .rb-burger { display: grid; place-items: center; }
+    body.rb-menu-open .rb-topbar { position: relative; z-index: 30; }
+    body.rb-menu-open .rb-topbar .rb-nav-primary { display: flex; flex-direction: column; position: absolute; top: 100%; left: 0; right: 0; padding: 6px 0 10px;
+        background: var(--rb-leather-lo); box-shadow: var(--rb-shadow-2); border-top: 1px solid rgba(243,221,162,.25); }
+    body.rb-menu-open .rb-topbar .rb-nav-primary a { height: 46px; padding: 0 max(20px, env(safe-area-inset-left, 0px)); }
+    body.rb-menu-open .rb-topbar .rb-nav-primary a.active::after { display: none; }
+    .rb-bar-tools .rb-nav .rb-nav-label { display: none; }
+}
+/* Phones and small tablets: the one-page shell lets go and the page scrolls. */
+@media (max-width: 767px) {
+    html.rb-onepage, html.rb-onepage body { height: auto; }
+    html.rb-onepage body { overflow: visible; }
+    html.rb-onepage .rb-main { overflow: visible; }
+    .rb-scroll { overflow: visible; }
+    .rb-feeds { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; height: auto; }
+    .rb-cover h1 { font-size: 40px; }
+    .rb-frame-the { font-size: 18px; }
+    .rb-frame-top { top: -16px; height: 26px; }
+    .rb-bookplate { grid-template-columns: 1fr; }
+    .rb-bookplate > :first-child { display: none; }
+    .rb-bar-tools .rb-theme-switch, .rb-bar-tools .rb-lang { display: none; }
+    .rb-split { flex-direction: column; }
+    .rb-splitter { display: none; }
+    .rb-page-jump { display: none; }
+    .rb-prose { font-size: 18px; }
+    h1 { font-size: 28px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

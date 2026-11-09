@@ -6,21 +6,21 @@
 .rb-state p { margin-bottom: 8px; }
 .rb-state p:last-child { margin-bottom: 0; }
 .rb-state-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-.alert-default { background: #f5f5f5; border-color: #ddd; color: #555; }
+.alert-default { background: var(--rb-page); border-color: var(--rb-line); color: var(--rb-ink-2); }
 .rb-derived-chosen { display: flex; align-items: center; gap: 8px; }
 .rb-derived-chosen[hidden], .rb-derived-search[hidden], .rb-derived-results[hidden] { display: none; }
-.rb-derived-card { flex: 1; border: 1px solid #ddd; border-radius: 4px; padding: 8px 12px; background: #fafafa; }
+.rb-derived-card { flex: 1; border: 1px solid var(--rb-line); border-radius: 4px; padding: 8px 12px; background: var(--rb-page); }
 .rb-derived-name { font-weight: bold; margin-right: 8px; }
-.rb-derived-meta { color: #777; font-size: .9em; }
+.rb-derived-meta { color: var(--rb-ink-3); font-size: .9em; }
 .rb-derived-results { margin: 6px 0 0; max-height: 260px; overflow-y: auto; }
 .rb-derived-result { text-align: left; }
-.rb-reader-version { font-size: .85em; color: #777; margin-left: 6px; }
+.rb-reader-version { font-size: .85em; color: var(--rb-ink-3); margin-left: 6px; }
 .rb-withdrawn-note form, .rb-withdrawn-note .btn { margin-left: 6px; }
 
 /* the decklist form, laid out as the deckbuilder (Ketura, 2026-11-07): the deck on the left,
    the form scrolling on the right with the notes at their natural height */
 .rb-publish-facts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.rb-publish-format { font-weight: 700; font-size: calc(16px * var(--rb-text-scale)); }
+.rb-publish-format { font-weight: 700; font-size: 16px; }
 .rb-publish-info .deck-validation .alert { margin-bottom: 4px; }
 .rb-publish-info .deck-validation p { margin: 0; }
 /* the right side (Ketura, 2026-11-07): a large title, the notice and deck name fixed at the
@@ -35,7 +35,7 @@
     /* the line between deck and form, dragged to resize them (Ketura, 2026-11-07) */
     .rb-publish-splitter { flex: 0 0 9px; margin: 0 4px; cursor: col-resize; position: relative; }
     .rb-publish-splitter::before { content: ""; position: absolute; top: 0; bottom: 0; left: 4px; width: 1px; background: var(--rb-line-strong); }
-    .rb-publish-splitter:hover::before, body.rb-resizing .rb-publish-splitter::before { left: 3px; width: 3px; background: #D4A017; }
+    .rb-publish-splitter:hover::before, body.rb-resizing .rb-publish-splitter::before { left: 3px; width: 3px; background: var(--rb-highlight); }
     body.rb-resizing { cursor: col-resize; user-select: none; }
 }
 @media (max-width: 991px) { .rb-publish-splitter { display: none; } }
@@ -58,7 +58,7 @@
 .rb-publish .rb-release-date input { max-width: 220px; }
 
 /* the decklist form's version, under the Deck Name heading (Ketura, 2026-11-08) */
-.rb-form-version { margin: -2px 0 6px; color: var(--rb-muted); font-weight: 600; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-form-version { margin: -2px 0 6px; color: var(--rb-ink-2); font-weight: 600; font-size: 13px; }
 /* derived from: several picks, each a card with Remove (Ketura, 2026-11-08) */
 .rb-derived-chosen:not(:empty) { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
 .rb-derived-pick { display: flex; align-items: center; gap: 6px; }

@@ -1,18 +1,8 @@
 /* From ThronesDB, still in use: the card pages, search, reviews, profiles and the like */
 
-/* The site's text size (Ketura, 2026-11-06): every font size here and in bootstrap.css is a
-   multiple of this, so one number sets them all. Text of 16px and under grows by all of it,
-   larger titles by less (down to a fifth of it from 40px up), and form controls' heights
-   follow their text. */
-:root { --rb-text-scale: 1.3; }
-
-/* fonts */
-
-body {
-}
 
 .card-content {
-    font: calc(16px * var(--rb-text-scale))/calc(20px * var(--rb-text-scale)) 'Crimson Text', serif;
+    font: 16px/20px 'Crimson Text', serif;
 }
 .card-content abbr[title] {
     border-bottom: none;
@@ -31,7 +21,7 @@ body {
     font-weight: 700;
 }
 .card-preview {
-    color: red;
+    color: var(--rb-danger);
 }
 .card-type, .card-designer {
     font-weight: 700;
@@ -71,7 +61,7 @@ body {
 }
 
 .display-spoiler-card h4 {
-    border-bottom: 1px solid #ddd;
+    border-bottom: 1px solid var(--rb-line);
 }
 .deck-loading {
     padding: 50px 0;
@@ -100,26 +90,26 @@ td.type, td.faction {
     padding-bottom: 20px;
 }
 .container.main.white {
-    background-color: #fff;
+    background-color: var(--rb-leaf);
 }
 .container.main.admin {
-    background-color: #fff;
-    border: 1px solid red;
+    background-color: var(--rb-leaf);
+    border: 1px solid var(--rb-danger);
 }
 div.tags span.tag {
     font-size: 75%;
-    color: darkgray;
+    color: var(--rb-ink-3);
 }
 div.tags span.tag:not(:first-child)::before {
     content: " - ";
 }
 
 .social-icons>*{margin-left:5px}
-.social-icon-like{color:#1D5FAD}
-.social-icon-fire{color:#D9531E}
-.social-icon-favorite{color:#B7860B}
-.social-icon-comment{color:green}
-.social-icon-version{color:blue}
+.social-icon-like{color:var(--rb-link)}
+.social-icon-fire{color:var(--rb-fire)}
+.social-icon-favorite{color:var(--rb-crown-2)}
+.social-icon-comment{color:var(--rb-success)}
+.social-icon-version{color:var(--rb-link)}
 
 /*** generic ****/
 
@@ -166,24 +156,24 @@ div#description-preview img {
 
 #table-draw-simulator-content img {width:98px;height:136px;float:left;margin:5px;box-shadow: black 0px 0px 5px;border-radius: 5px;}
 
-#table-draw-simulator-content div.card-proxy {background:#888;color:white;width:99px;height:138px;float:left;margin:5px;box-shadow: black 0px 0px 5px;border-radius: 5px;}
+#table-draw-simulator-content div.card-proxy {background:var(--rb-ink-3);color:var(--rb-on-fill);width:99px;height:138px;float:left;margin:5px;box-shadow: black 0px 0px 5px;border-radius: 5px;}
 
 #table-draw-simulator-content div.card-proxy div{position: relative;top: 50%; transform: translateY(-50%);text-align:center}
 
 /*********** TYPEAHEAD **************/
 
-.twitter-typeahead{width:100%;background-color:#fff}
-.twitter-typeahead .tt-hint{color:#aaa;margin-left:11px;margin-top:4px;display:none}
+.twitter-typeahead{width:100%;background-color:var(--rb-leaf)}
+.twitter-typeahead .tt-hint{color:var(--rb-ink-3);margin-left:11px;margin-top:4px;display:none}
 .twitter-typeahead .tt-query{margin-bottom:0}
-.tt-dropdown-menu{min-width:160px;margin-top:2px;padding:5px 0;background-color:#fff;border:1px solid #ccc;border:1px solid rgba(0,0,0,.2);*border-right-width:2px;*border-bottom-width:2px;-webkit-border-radius:6px;-moz-border-radius:6px;border-radius:6px;-webkit-box-shadow:0 5px 10px rgba(0,0,0,.2);-moz-box-shadow:0 5px 10px rgba(0,0,0,.2);box-shadow:0 5px 10px rgba(0,0,0,.2);-webkit-background-clip:padding-box;-moz-background-clip:padding;background-clip:padding-box}
+.tt-dropdown-menu{min-width:160px;margin-top:2px;padding:5px 0;background-color:var(--rb-leaf);border:1px solid var(--rb-line-strong);border:1px solid rgba(0,0,0,.2);*border-right-width:2px;*border-bottom-width:2px;-webkit-border-radius:6px;-moz-border-radius:6px;border-radius:6px;-webkit-box-shadow:0 5px 10px rgba(0,0,0,.2);-moz-box-shadow:0 5px 10px rgba(0,0,0,.2);box-shadow:0 5px 10px rgba(0,0,0,.2);-webkit-background-clip:padding-box;-moz-background-clip:padding;background-clip:padding-box}
 .tt-suggestion{display:block;padding:3px 20px}
-.tt-suggestion.tt-cursor{color:#fff;background-color:#0081c2;background-image:-moz-linear-gradient(top,#08c,#0077b3);background-image:-webkit-gradient(linear,0 0,0 100%,from(#08c),to(#0077b3));background-image:-webkit-linear-gradient(top,#08c,#0077b3);background-image:-o-linear-gradient(top,#08c,#0077b3);background-image:linear-gradient(to bottom,#08c,#0077b3);background-repeat:repeat-x;filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff0088cc',endColorstr='#ff0077b3',GradientType=0)}
-.tt-suggestion.tt-cursor a{color:#fff}
+.tt-suggestion.tt-cursor{color:var(--rb-primary-ink);background-color:var(--rb-primary)}
+.tt-suggestion.tt-cursor a{color:var(--rb-on-fill)}
 .tt-suggestion p{margin:0}
 
 /************** QTIP ****************/
 .qtip-thronesdb{border-radius:2px;max-width:400px}
-.qtip-thronesdb-text{font-size:calc(15px * var(--rb-text-scale))}
+.qtip-thronesdb-text{font-size:15px}
 .qtip-thronesdb-image{max-width:none;padding:0;border:0;background:transparent;box-shadow:none}
 .qtip-thronesdb-image .qtip-content{padding:0}
 
@@ -194,14 +184,14 @@ div#description-preview img {
 h1.site-title {
     font-family: 'Julius Sans One', sans-serif;
     position:relative;
-    font-size:calc(116px * (1 + (var(--rb-text-scale) - 1) * 0.2));
+    font-size:116px;
     text-align:center;
     margin-top: 0;
 }
 div.site-slogan {
     font-family: 'Open Sans Condensed', sans-serif;
     position:relative;
-    font-size:calc(40px * (1 + (var(--rb-text-scale) - 1) * 0.2));
+    font-size:40px;
     text-align:center;
 }
 
@@ -233,7 +223,7 @@ div.site-slogan {
 article.review {
     margin-top: 2em;
     padding-top: 2em;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--rb-line);
 }
 article.review:first-child {
     margin-top: 0;
@@ -257,7 +247,7 @@ article.review .review-author {
     text-align: right
 }
 article.review .review-comment {
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--rb-line);
     padding: 0.5em;
 }
 
@@ -271,7 +261,7 @@ article.review .review-comment {
 
 @media print {
     h1 {
-        font-size: calc(24px * (1 + (var(--rb-text-scale) - 1) * 0.73));
+        font-size: 24px;
     }
     a[href]:after {
         content: none !important;
@@ -317,18 +307,18 @@ article.review .review-comment {
 /*************** DECK(LIST) COMPARE *****************/
 
 .diff {
-    background: rgba(255,0,0,.5);
+    background: color-mix(in srgb, var(--rb-danger) 45%, transparent);
 }
 
 /**************** Tournament Legality indicators *******/
 
 abbr.legality.rl-joust,
 abbr.legality.rl-melee {
-    color: #639;
+    color: var(--rb-ink-2);
 }
 
 abbr.legality.banned {
-    color: #f00;
+    color: var(--rb-danger);
 }
 
 /******* Deck view ********/
@@ -342,7 +332,7 @@ abbr.legality.banned {
 
 /* FAQ */
 #faq .new {
-    color: #ee0000;
+    color: var(--rb-danger);
 }
 
 #faq div.example {
@@ -407,11 +397,11 @@ abbr.legality.banned {
 .card-unique { margin-right: 1px; }
 .card-versions ol li { margin-bottom: 4px; }
 .deck-section-title { margin: 12px 0 4px; font-weight: bold; }
-.deck-culture { margin: 8px 0 2px; color: #777; }
+.deck-culture { margin: 8px 0 2px; color: var(--rb-ink-3); }
 .deck-site-number { min-height: 1.5em; }
-.deck-site-number .site-number { display: inline-block; width: 1.6em; color: #999; text-align: right; margin-right: .4em; }
+.deck-site-number .site-number { display: inline-block; width: 1.6em; color: var(--rb-ink-3); text-align: right; margin-right: .4em; }
 .deck-site-number .deck-card { display: inline-block; }
-.deck-card-edit a { color: #999; margin-left: 2px; }
-.deck-card-edit a:hover { color: #337ab7; }
+.deck-card-edit a { color: var(--rb-ink-3); margin-left: 2px; }
+.deck-card-edit a:hover { color: var(--rb-link); }
 .deck-validation-pending { opacity: .6; }
 .deck-problems { margin: 4px 0 0; padding-left: 18px; }

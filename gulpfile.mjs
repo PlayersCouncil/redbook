@@ -23,6 +23,7 @@ export function buildCss() {
       // the site's own, in cascade order (Ketura, 2026-11-09: split from one style.css)
       "assets/css/tokens.css",
       "assets/css/legacy.css",
+      "assets/css/theme.css",
       "assets/css/shell.css",
       "assets/css/deck.css",
       "assets/css/components.css",
@@ -31,6 +32,7 @@ export function buildCss() {
       "assets/css/publish.css",
       "assets/css/library.css",
       "assets/css/pages.css",
+      "assets/css/front.css",
       "assets/css/icons.css",
       "assets/css/languages.css",
     ],

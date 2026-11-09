@@ -1,4 +1,206 @@
-/* Tokens (Ketura, 2026-11-09): the culture palette; the theme's light and dark tokens join it */
+/* Tokens (Ketura, 2026-11-09): the theme's light and dark tokens (_planning/redbook-design,
+   theme/rb-theme.css), Red Book's own beside them, then the culture palette. Colour always
+   comes from here: a literal colour in a component rule is a bug in one of the two themes. */
+
+/* ---------- 1. Tokens: light ---------- */
+:root {
+    color-scheme: light;
+
+    /* Leather chrome */
+    --rb-leather:        #7C2216;
+    --rb-leather-hi:     #9C3423;
+    --rb-leather-lo:     #4A120B;
+    --rb-gilt:           #D9B66A;
+    --rb-gilt-hi:        #F3DDA2;
+    --rb-gilt-lo:        #9C7A3A;
+    --rb-on-leather:     #F5E9CF;
+    --rb-on-leather-2:   #DCC4A2;
+
+    /* Surfaces, lowest to highest */
+    --rb-desk:           #E6DFD1;   /* L0  page background */
+    --rb-page:           #F8F5EE;   /* L1  standard panel */
+    --rb-leaf:           #FFFFFF;   /* L2  emphasis, inputs, popovers */
+    --rb-sunk:           #EFE9DD;   /* L-1 wells, toolbars, table heads */
+    --rb-note:           #F6ECD2;   /* marginalia */
+    --rb-line:           #DDD4C3;
+    --rb-line-strong:    #BFB39C;
+    --rb-control:        #FFFFFF;   /* face of secondary buttons, pager links, toggles */
+    --rb-control-hover:  #EFE9DD;
+    --rb-control-edge:   #BFB39C;
+    --rb-plate:          #F4E6C8;   /* bookplate vellum, centre */
+    --rb-plate-edge:     #DCC294;   /* bookplate vellum, worn edge */
+
+    /* Ink */
+    --rb-ink:            #231E19;
+    --rb-ink-2:          #5D5448;
+    --rb-ink-3:          #887D6E;
+
+    /* Action: iron-gall blue. Links and primary buttons share the family:
+       blue means "you can act on this". */
+    --rb-primary:        #1F4F8A;
+    --rb-primary-hover:  #163C6B;
+    --rb-primary-ink:    #FFFFFF;
+    --rb-primary-soft:   #DCE7F5;
+    --rb-link:           #1C4E8E;
+    --rb-link-hover:     #123A6A;
+    --rb-focus:          #A87F2C;
+    --rb-hover:          rgba(60, 40, 20, .06);
+
+    /* Selection: ink in light. Used by toggles, segments, current page,
+       active tab mark, date tiles. */
+    --rb-selected:       #2B241E;
+    --rb-selected-ink:   #F8F5EE;
+    --rb-selected-edge:  #2B241E;
+    --rb-mark:           #2B241E;
+    --rb-mark-ink:       #F8F5EE;
+
+    /* Status. Danger is plain red: brand red never appears on a control. */
+    --rb-danger:         #B3261E;
+    --rb-danger-soft:    #F6D5D2;
+    --rb-danger-edge:    #DE8F88;
+    --rb-success:        #2D6A39;
+    --rb-success-soft:   #D6EAD3;
+    --rb-success-edge:   #8DBE8F;
+    --rb-warning:        #7E5300;
+    --rb-warning-soft:   #F5E1A3;
+    --rb-warning-edge:   #D1AC4A;
+    --rb-info:           #1C4E8E;
+    --rb-info-soft:      #D6E3F4;
+    --rb-info-edge:      #8EAEDA;
+
+    /* Free Peoples / Shadow */
+    --rb-fp:             #7A561A;
+    --rb-fp-solid:       #C9A25C;
+    --rb-fp-soft:        #F0E3C4;
+    --rb-shadow:         #5D3A87;
+    --rb-shadow-solid:   #7A56A8;
+    --rb-shadow-soft:    #E8DFF2;
+
+    /* Reactions (two-tone icons) */
+    --rb-cheers:         #CF8C22;
+    --rb-cheers-2:       #8E5C10;   /* staves, foam outline */
+    --rb-cheers-foam:    #FFF4DA;
+    --rb-fire:           #E0521C;
+    --rb-fire-core:      #F8B12E;
+    --rb-crown:          #DCA92A;
+    --rb-crown-2:        #9E7210;
+    --rb-crown-gem:      #FFF0B8;
+    --rb-fav:            #1F4F8A;
+
+    --rb-shadow-1:       0 1px 2px rgba(50, 30, 15, .08);
+    --rb-shadow-2:       0 2px 6px rgba(50, 30, 15, .10), 0 12px 28px rgba(50, 30, 15, .12);
+
+    --rb-font-display:   "Marcellus SC", "Marcellus", Georgia, serif;
+    --rb-font-title:     "Cinzel Decorative", "Cinzel", Georgia, serif;   /* the cover title only */
+    --rb-font-prose:     "Crimson Pro", "Crimson Text", Georgia, "Times New Roman", serif;
+    --rb-font-ui:        "Source Sans 3", "Source Sans Pro", "Segoe UI", system-ui, sans-serif;
+    --rb-font-mono:      ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace;
+
+    --rb-radius:         3px;
+    --rb-radius-panel:   4px;
+    --rb-control-h:      34px;
+    --rb-control-h-sm:   28px;
+    --rb-control-h-lg:   42px;
+    --rb-bar-h:          56px;
+}
+
+/* ---------- 1b. Tokens: dark ("Candlelight") ---------- */
+html.pc-dark {
+    color-scheme: dark;
+
+    --rb-leather:        #5E1911;
+    --rb-leather-hi:     #7A2619;
+    --rb-leather-lo:     #2E0A06;
+    --rb-gilt-lo:        #8C6C30;
+    --rb-on-leather:     #F2E4C6;
+    --rb-on-leather-2:   #C9AF8A;
+
+    --rb-desk:           #0E0B08;
+    --rb-page:           #1F1A15;
+    --rb-leaf:           #2E261E;
+    --rb-sunk:           #161210;
+    --rb-note:           #33291A;
+    --rb-line:           #3C3228;
+    --rb-line-strong:    #5F4F41;
+    --rb-control:        #3D3329;
+    --rb-control-hover:  #4B3F33;
+    --rb-control-edge:   #6E5C4A;
+    --rb-plate:          #2E261E;
+    --rb-plate-edge:     #261F18;
+
+    --rb-ink:            #F1E7D4;
+    --rb-ink-2:          #B4A68D;
+    --rb-ink-3:          #7F7262;
+
+    --rb-primary:        #3A70B5;
+    --rb-primary-hover:  #4A82C9;
+    --rb-primary-ink:    #FFFFFF;
+    --rb-primary-soft:   #1B2A40;
+    --rb-link:           #93B9E9;
+    --rb-link-hover:     #BFD6F4;
+    --rb-focus:          #E2BF6E;
+    --rb-hover:          rgba(255, 235, 200, .06);
+
+    /* Selection in dark: a gilt-rimmed, gold-lettered pressed state */
+    --rb-selected:       #45391F;
+    --rb-selected-ink:   #F6E1A6;
+    --rb-selected-edge:  #C9A75E;
+    --rb-mark:           #D9B66A;
+    --rb-mark-ink:       #241D12;
+
+    --rb-danger:         #F28B82;
+    --rb-danger-soft:    #3B1A1A;
+    --rb-danger-edge:    #7A3631;
+    --rb-success:        #82C48E;
+    --rb-success-soft:   #1B2B1D;
+    --rb-success-edge:   #3D6B45;
+    --rb-warning:        #E8BC5C;
+    --rb-warning-soft:   #33280F;
+    --rb-warning-edge:   #6E5520;
+    --rb-info:           #93B9E9;
+    --rb-info-soft:      #18233A;
+    --rb-info-edge:      #34507A;
+
+    --rb-fp:             #DDBE7E;
+    --rb-fp-solid:       #B8914C;
+    --rb-fp-soft:        #322815;
+    --rb-shadow:         #BFA2E6;
+    --rb-shadow-solid:   #8C69C2;
+    --rb-shadow-soft:    #271E37;
+
+    --rb-cheers:         #E0A23C;
+    --rb-cheers-2:       #A06A18;
+    --rb-cheers-foam:    #FFF1D2;
+    --rb-fire:           #F2663A;
+    --rb-fire-core:      #FFC24A;
+    --rb-crown:          #EBC04F;
+    --rb-crown-2:        #B58A22;
+    --rb-crown-gem:      #FFF4C8;
+    --rb-fav:            #93B9E9;
+
+    --rb-shadow-1:       0 1px 2px rgba(0, 0, 0, .4);
+    --rb-shadow-2:       0 2px 6px rgba(0, 0, 0, .4), 0 14px 32px rgba(0, 0, 0, .45);
+}
+
+
+/* ---------- 1c. Red Book's own tokens, beside the theme's (Ketura, 2026-11-09) ---------- */
+:root {
+    /* the starting fellowship's S and a card already in the deck: gold, as before */
+    --rb-highlight:      #E8B931;
+    --rb-highlight-ink:  #231E19;
+    /* the rules between the reader's columns, a step stronger than --rb-line-strong */
+    --rb-divide:         #A89C83;
+    /* text on a filled tag or button of a status colour (danger, success, the inks): white on
+       light, the page on dark, where those fills are light */
+    --rb-on-fill:        #FFFFFF;
+}
+html.pc-dark {
+    --rb-highlight:      #D9B66A;
+    --rb-highlight-ink:  #241D12;
+    --rb-divide:         #5F4F41;
+    --rb-on-fill:        #1F1A15;
+}
+
 
 /* ---- culture colours (Ketura, 2026-11-03) ----
    The one place the site keeps them: CSS uses var(--rb-culture-gondor), JS reads them

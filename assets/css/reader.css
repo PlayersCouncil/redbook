@@ -8,12 +8,11 @@
    tools (Stats, Details), the deck, the description, the comments. Narrower, the tools sit
    under the deck; on a phone everything stacks, deck first and tools last. */
 .rb-reader { width: 100%; }
-.rb-reader { --rb-divide: #A89C83; }
-.rb-reader-head { padding: 8px 16px 6px; border-bottom: 2px solid var(--rb-divide); background: #fff; }
+.rb-reader-head { padding: 8px 16px 6px; border-bottom: 2px solid var(--rb-divide); background: var(--rb-leaf); }
 .rb-reader-head .alert { margin: 0 0 6px; padding: 6px 12px; }
 .rb-reader-title { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 16px; }
 .rb-reader-name { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; min-width: 0; }
-.rb-reader-name h1 { margin: 0; font-size: calc(26px * (1 + (var(--rb-text-scale) - 1) * 0.67)); font-weight: 700; line-height: 1.2; }
+.rb-reader-name h1 { margin: 0; font-size: 26px; font-weight: 700; line-height: 1.2; }
 /* a long title wraps in its own column rather than pushing the buttons onto a line of their
    own (Ketura, 2026-11-08); a narrow window still stacks them */
 @media (min-width: 900px) {
@@ -34,37 +33,37 @@
 }
 /* like, favourite, comment: buttons, the icon filled and the button tinted once you have (Ketura, 2026-11-04) */
 .rb-social { display: flex; gap: 8px; }
-.rb-social-btn { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border: 1px solid var(--rb-line-strong); border-radius: 8px;
-    background: #fff; color: var(--rb-ink); font-size: calc(15px * var(--rb-text-scale)); font-weight: 600; line-height: 1; cursor: pointer; }
-.rb-social-btn .fa-thumbs-up, .rb-social-btn .fa-bookmark, .rb-social-btn .fa-comment { font-size: calc(24px * (1 + (var(--rb-text-scale) - 1) * 0.73)); }
+.rb-social-btn { font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px; border: 1px solid var(--rb-line-strong); border-radius: 8px;
+    background: var(--rb-control); color: var(--rb-ink); font-size: 15px; font-weight: 600; line-height: 1; cursor: pointer; }
+.rb-social-btn .fa-thumbs-up, .rb-social-btn .fa-bookmark, .rb-social-btn .fa-comment { font-size: 24px; }
 a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-ink); text-decoration: none; }
-.rb-social-btn:hover:not([disabled]) { border-color: #8F846C; background: var(--rb-soft); }
-.rb-social-btn.is-like .far, .rb-social-btn.is-like .fas { color: #1D5FAD; }
-.rb-social-btn.is-favorite .far, .rb-social-btn.is-favorite .fas { color: #B7860B; }
-.rb-social-btn.is-comment .far, .rb-social-btn.is-comment .fas { color: #24572A; }
-.rb-social-btn.is-like.is-on { border-color: #1D5FAD; background: #E7EFF9; }
-.rb-social-btn.is-favorite.is-on { border-color: #B7860B; background: #FBF2D9; }
-.rb-social-btn.is-comment.is-on { border-color: #24572A; background: #E6F0E6; }
+.rb-social-btn:hover:not([disabled]) { border-color: var(--rb-ink-3); background: var(--rb-page); }
+.rb-social-btn.is-like .far, .rb-social-btn.is-like .fas { color: var(--rb-link); }
+.rb-social-btn.is-favorite .far, .rb-social-btn.is-favorite .fas { color: var(--rb-crown-2); }
+.rb-social-btn.is-comment .far, .rb-social-btn.is-comment .fas { color: var(--rb-success); }
+.rb-social-btn.is-like.is-on { border-color: var(--rb-primary); background: var(--rb-primary-soft); }
+.rb-social-btn.is-favorite.is-on { border-color: var(--rb-crown-2); background: var(--rb-warning-soft); }
+.rb-social-btn.is-comment.is-on { border-color: var(--rb-success); background: var(--rb-success-soft); }
 .rb-social-btn[disabled] { cursor: default; opacity: .6; }
 /* the fire: its slot left of Like always kept; tucked, it waits behind Like and slides out
    to the left once you've liked the deck (Ketura, 2026-11-04) */
 .rb-fire-slot { display: inline-flex; }
 .rb-social-btn.is-like { position: relative; z-index: 1; }
 .rb-social-btn.is-fire { position: relative; z-index: 0; transition: transform .4s ease, opacity .3s ease, visibility 0s linear 0s; }
-.rb-social-btn.is-fire .fa-fire { font-size: calc(24px * (1 + (var(--rb-text-scale) - 1) * 0.73)); color: #D9531E; }
-.rb-social-btn.is-fire[disabled] .fa-fire { color: #B9AFA0; }
-.rb-social-btn.is-fire.is-on { border-color: #D9531E; background: #FDEBDD; }
+.rb-social-btn.is-fire .fa-fire { font-size: 24px; color: var(--rb-fire); }
+.rb-social-btn.is-fire[disabled] .fa-fire { color: var(--rb-ink-3); }
+.rb-social-btn.is-fire.is-on { border-color: var(--rb-fire); background: var(--rb-danger-soft); }
 .rb-social-btn.is-fire[disabled] { opacity: .75; }
 .rb-social-btn.is-fire.is-tucked { transform: translateX(calc(100% + 8px)); opacity: 0; visibility: hidden; pointer-events: none;
     transition: transform .4s ease, opacity .3s ease, visibility 0s linear .4s; }
 .rb-social-btn.is-fire.rb-no-anim { transition: none; }
 .rb-social-btn.processing { opacity: .6; }
 .rb-reader-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 0; padding: 0; list-style: none; }
-.rb-reader-tags .rb-tag-chip { padding: 1px 9px; font-size: calc(12px * var(--rb-text-scale)); }
-.rb-toast { position: fixed; z-index: 1060; padding: 5px 12px; border-radius: 6px; background: #fff; border: 1px solid #9CC79F; color: #1E7B2E;
-    font-size: calc(14px * var(--rb-text-scale)); font-weight: 700; box-shadow: 0 2px 8px rgba(0, 0, 0, .15); pointer-events: none; transition: opacity .5s; }
+.rb-reader-tags .rb-tag-chip { padding: 1px 9px; font-size: 12px; }
+.rb-toast { position: fixed; z-index: 1060; padding: 5px 12px; border-radius: 6px; background: var(--rb-leaf); border: 1px solid var(--rb-success-edge); color: var(--rb-success);
+    font-size: 14px; font-weight: 700; box-shadow: 0 2px 8px rgba(0, 0, 0, .15); pointer-events: none; transition: opacity .5s; }
 .rb-toast.is-leaving { opacity: 0; }
-.rb-reader-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 4px; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-reader-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 4px; font-size: 13px; }
 .rb-reader-author { font-weight: 700; }
 .rb-reader-grid { display: grid; grid-template-columns: minmax(0, 1fr); grid-template-areas: "deck" "desc" "tools"; }
 .rb-reader-tools { grid-area: tools; }
@@ -73,23 +72,23 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 /* the bars between the columns, on a desktop (app.splitter.js; Ketura, 2026-11-08) */
 .rb-reader-splitter { display: none; position: relative; cursor: col-resize; touch-action: none; }
 .rb-reader-splitter::before { content: ""; position: absolute; top: 0; bottom: 0; left: 5px; width: 2px; background: var(--rb-divide); }
-.rb-reader-splitter:hover::before, body.rb-resizing .rb-reader-splitter::before { left: 4px; width: 4px; background: #D4A017; }
+.rb-reader-splitter:hover::before, body.rb-resizing .rb-reader-splitter::before { left: 4px; width: 4px; background: var(--rb-highlight); }
 .rb-reader-splitter-tools { grid-area: st; }
 .rb-reader-splitter-desc { grid-area: sd; }
 /* the commentary: room either side (Ketura, 2026-11-08); its heading and who posted it stay put */
 .rb-reader-col-top { flex: 0 0 auto; border-bottom: 1px solid var(--rb-line); }
 .rb-reader-col-top .rb-reader-col-head { border-bottom: 0; padding-left: 28px; padding-right: 28px; }
-.rb-reader-posted { margin: -4px 0 0; padding: 0 28px 8px; color: var(--rb-muted); font-size: calc(14px * var(--rb-text-scale)); }
+.rb-reader-posted { margin: -4px 0 0; padding: 0 28px 8px; color: var(--rb-ink-2); font-size: 14px; }
 .rb-reader-desc .rb-reader-scroll { padding-left: 28px; padding-right: 28px; }
 /* where the deck came from and the comments, under the commentary */
 .rb-reader-comments { margin-top: 26px; padding-top: 14px; border-top: 2px solid var(--rb-divide); }
 .rb-reader-col { min-width: 0; padding: 0; }
 /* the deck on white, the other columns on the page's tint, so the eye goes to the deck (Ketura, 2026-11-04) */
-.rb-reader-deck { background: #fff; }
-.rb-reader-col-head { flex: 0 0 auto; margin: 0; padding: 10px 14px 8px; border-bottom: 1px solid var(--rb-line); font-size: calc(24px * (1 + (var(--rb-text-scale) - 1) * 0.73)); line-height: 1.15; font-weight: 700; }
+.rb-reader-deck { background: var(--rb-leaf); }
+.rb-reader-col-head { flex: 0 0 auto; margin: 0; padding: 10px 14px 8px; border-bottom: 1px solid var(--rb-line); font-size: 24px; line-height: 1.15; font-weight: 700; }
 .rb-reader-scroll { padding: 10px 14px 18px; }
 /* while the card data loads: the deck and Stats say so (Ketura, 2026-11-04) */
-.rb-reader-loading { padding: 40px 0; text-align: center; color: var(--rb-muted); }
+.rb-reader-loading { padding: 40px 0; text-align: center; color: var(--rb-ink-2); }
 .rb-reader-tools:not(.is-pending) .rb-reader-loading, .rb-reader-tools.is-pending #deck-stats { display: none; }
 /* its layout is the deck toolbar's grid (deck.css) */
 .rb-reader-deck-opts { gap: 6px 10px; padding: 8px 10px 4px; }
@@ -125,94 +124,94 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 /* the read-only deck: "4x Card" lines, a passive S on the starting fellowship */
 .rb-readonly .rb-qty-text { flex: 0 0 auto; min-width: 2.2em; text-align: right; font-variant-numeric: tabular-nums; color: var(--rb-ink); }
 .rb-readonly .rb-start-mark { flex: 0 0 auto; width: 16px; height: 16px; border-radius: 4px; font-size: 0; user-select: none; box-shadow: none; cursor: default; }
-.rb-readonly .rb-start-mark::before { content: "S"; font-size: calc(11px * var(--rb-text-scale)); font-weight: 800; }
+.rb-readonly .rb-start-mark::before { content: "S"; font-size: 11px; font-weight: 800; }
 .rb-readonly .rb-line[data-code] { min-height: 24px; }
 /* the row under the pointer, plainly (Ketura, 2026-11-04) */
-#deck.rb-readonly .rb-line[data-code]:hover { background: #FBE38E; }
+#deck.rb-readonly .rb-line[data-code]:hover { background: color-mix(in srgb, var(--rb-highlight) 50%, transparent); }
 /* groups side by side only when their names fit whole (Ketura, 2026-11-04) */
 .rb-readonly .view-list-groups .rb-group { flex: 1 0 auto; max-width: 100%; }
 .rb-tile-badges { position: absolute; left: 4px; bottom: 4px; display: flex; align-items: center; gap: 3px; }
 /* dark blue, so it doesn't sink into the card's black border (Ketura, 2026-11-04) */
-.rb-tile-count { padding: 1px 6px; border-radius: 9px; background: #17396B; color: #fff; font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; line-height: calc(17px * var(--rb-text-scale)); user-select: none; }
+.rb-tile-count { padding: 1px 6px; border-radius: 9px; background: var(--rb-primary); color: var(--rb-primary-ink); font-size: 12px; font-weight: 700; line-height: 17px; user-select: none; }
 .rb-tile-badges .rb-start-mark { position: static; transform: none; width: 19px; height: 19px; border-radius: 9px; }
 .rb-copies { display: flex; gap: 2px; height: 4px; }
-.rb-copies span { flex: 1 1 0; border-radius: 1px; background: #D3C9B5; }
-.rb-copies span.is-on { background: #111; }
-.rb-annot-mark { flex: 0 0 auto; display: inline-flex; align-items: center; color: #2F6DB5; cursor: help; user-select: none; }
-.rb-tile .rb-annot-mark { position: absolute; right: 4px; top: 4px; padding: 3px; border-radius: 50%; background: #fff; }
-#deck .is-linked, .rb-reader-note.is-linked { background: #FDF3C8; border-radius: 4px; }
+.rb-copies span { flex: 1 1 0; border-radius: 1px; background: var(--rb-line-strong); }
+.rb-copies span.is-on { background: var(--rb-ink); }
+.rb-annot-mark { flex: 0 0 auto; display: inline-flex; align-items: center; color: var(--rb-link); cursor: help; user-select: none; }
+.rb-tile .rb-annot-mark { position: absolute; right: 4px; top: 4px; padding: 3px; border-radius: 50%; background: var(--rb-leaf); }
+#deck .is-linked, .rb-reader-note.is-linked { background: color-mix(in srgb, var(--rb-highlight) 25%, transparent); border-radius: 4px; }
 /* a card shown as a picture lights up in gold instead (Ketura, 2026-11-08) */
 #deck .rb-tile.is-linked { background: none; }
-#deck .rb-tile.is-linked .rb-tile-img { outline: 3px solid #D4A017; outline-offset: 1px; box-shadow: 0 0 0 6px rgba(212, 160, 23, .35); border-radius: 4px; }
+#deck .rb-tile.is-linked .rb-tile-img { outline: 3px solid var(--rb-highlight); outline-offset: 1px; box-shadow: 0 0 0 6px rgba(212, 160, 23, .35); border-radius: 4px; }
 /* the description: headings kept to the text's scale, whatever the source sent */
-.rb-reader-text { font-size: calc(14px * var(--rb-text-scale)); line-height: 1.55; overflow-wrap: anywhere; }
+.rb-reader-text { font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
 .rb-reader-text h1, .rb-reader-text h2, .rb-reader-text h3 { font-size: 1.2em; font-weight: 700; margin: 1em 0 .4em; }
 .rb-reader-text h4, .rb-reader-text h5, .rb-reader-text h6 { font-size: 1.07em; font-weight: 700; margin: .85em 0 .3em; }
 /* the description column a quarter larger than the rest of the page (Ketura, 2026-11-04) */
-.rb-reader-desc .rb-reader-text { font-size: calc(17.5px * (1 + (var(--rb-text-scale) - 1) * 0.95)); }
-.rb-reader-desc .rb-starting-list, .rb-reader-desc .rb-reader-note-card { font-size: calc(16px * var(--rb-text-scale)); }
-.rb-reader-desc .rb-reader-starting h3, .rb-reader-desc .rb-reader-notes h3 { font-size: calc(19px * (1 + (var(--rb-text-scale) - 1) * 0.9)); }
+.rb-reader-desc .rb-reader-text { font-size: 17.5px; }
+.rb-reader-desc .rb-starting-list, .rb-reader-desc .rb-reader-note-card { font-size: 16px; }
+.rb-reader-desc .rb-reader-starting h3, .rb-reader-desc .rb-reader-notes h3 { font-size: 19px; }
 .rb-reader-text img { max-width: 100%; height: auto; }
 .rb-reader-starting { margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--rb-line); }
-.rb-reader-starting h3, .rb-reader-notes h3 { margin: 0 0 6px; font-size: calc(15px * var(--rb-text-scale)); font-weight: 700; }
+.rb-reader-starting h3, .rb-reader-notes h3 { margin: 0 0 6px; font-size: 15px; font-weight: 700; }
 .rb-reader-bid { margin-left: 8px; }
 .rb-reader-notes { margin-top: 18px; padding-top: 10px; border-top: 1px solid var(--rb-line); }
 .rb-reader-note { display: flow-root; padding: 6px 8px; margin: 0 -8px; }
 /* the card's top half beside its note (Ketura, 2026-11-08): floated, so a long note wraps
    under it; a short one is centred against it (ui.decklist.js, fit_notes) */
-.rb-note-thumb { float: left; width: 112px; margin: 2px 12px 4px 0; aspect-ratio: 260 / 231; overflow: hidden; border-radius: 5px; background: #E8E1D2; box-shadow: 0 1px 3px rgba(0, 0, 0, .25); }
+.rb-note-thumb { float: left; width: 112px; margin: 2px 12px 4px 0; aspect-ratio: 260 / 231; overflow: hidden; border-radius: 5px; background: var(--rb-sunk); box-shadow: 0 1px 3px rgba(0, 0, 0, .25); }
 .rb-note-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 .rb-reader-note.is-short { display: flex; align-items: center; gap: 12px; }
 .rb-reader-note.is-short .rb-note-thumb { float: none; flex: 0 0 112px; margin: 0; }
 .rb-reader-note.is-short .rb-note-body { flex: 1 1 auto; min-width: 0; }
-.rb-reader-note-card { font-weight: 600; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-reader-note-card { font-weight: 600; font-size: 13px; }
 .rb-reader-note .rb-reader-text p:last-child { margin-bottom: 0; }
 .rb-reader-comments .table { margin-bottom: 10px; }
-.rb-reader-tree .table { margin-bottom: 8px; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-reader-tree .table { margin-bottom: 8px; font-size: 13px; }
 .rb-reader-tree { margin-bottom: 6px; }
 /* the note-to-card line: over everything, catching nothing */
 
 /* the reader's dates, atop its Details tab (Ketura, 2026-11-08) */
-.rb-reader-dates { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0 0 12px; font-size: calc(14px * var(--rb-text-scale)); }
+.rb-reader-dates { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0 0 12px; font-size: 14px; }
 .rb-reader-dates dt { font-weight: 700; }
 .rb-reader-dates dd { margin: 0; }
 
 /* where the deck came from and what it led to: one line until opened (Ketura, 2026-11-08) */
-.rb-tree-summary { display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 10px; width: 100%; padding: 6px 4px; border: 0; border-radius: 5px; background: none; text-align: left; white-space: nowrap; font-size: calc(13px * var(--rb-text-scale)); font-weight: 700; color: var(--rb-ink); cursor: pointer; }
-.rb-tree-summary:hover, .rb-tree-summary:focus-visible { background: #F6E7B8; }
-.rb-tree-sep { color: var(--rb-muted); font-weight: 400; }
-.rb-tree-count { font-weight: 400; color: var(--rb-muted); }
-.rb-tree-count.is-some { color: #2A6BB0; text-decoration: underline; font-weight: 700; }
+.rb-tree-summary { display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 10px; width: 100%; padding: 6px 4px; border: 0; border-radius: 5px; background: none; text-align: left; white-space: nowrap; font-size: 13px; font-weight: 700; color: var(--rb-ink); cursor: pointer; }
+.rb-tree-summary:hover, .rb-tree-summary:focus-visible { background: color-mix(in srgb, var(--rb-highlight) 35%, transparent); }
+.rb-tree-sep { color: var(--rb-ink-2); font-weight: 400; }
+.rb-tree-count { font-weight: 400; color: var(--rb-ink-2); }
+.rb-tree-count.is-some { color: var(--rb-link); text-decoration: underline; font-weight: 700; }
 .rb-reader-tree.is-collapsed .rb-tree-tables, .rb-reader-tree:not(.is-collapsed) .rb-tree-summary { display: none; }
 .rb-reader-tree .rb-tree-tables thead th { cursor: pointer; }
-.rb-reader-tree .rb-tree-tables thead th:hover { background: #F6E7B8; }
+.rb-reader-tree .rb-tree-tables thead th:hover { background: color-mix(in srgb, var(--rb-highlight) 35%, transparent); }
 
 /* the comment box: the deckbuilder's editor, a fixed height (Ketura, 2026-11-08) */
 .rb-comment-form .rb-md-editor .md-editor > textarea, .rb-comment-form .rb-md-editor .md-editor > .md-preview { flex: none; height: 160px !important; }
 .rb-comment-form .btn { margin-top: 8px; }
 
 /* the comment box stands out from the column while it's idle (Ketura, 2026-11-08) */
-.rb-comment-form .md-editor:not(.active) > textarea { background: #F4F4F4; }
-.rb-comment-form .md-editor:not(.active) { border-color: #C9C9C9; }
+.rb-comment-form .md-editor:not(.active) > textarea { background: var(--rb-page); }
+.rb-comment-form .md-editor:not(.active) { border-color: var(--rb-line-strong); }
 
 /* A decklist's History tab (Ketura, 2026-11-08) */
 .rb-decklist-history { padding: 4px 2px 16px; }
 .rb-dh-list { list-style: none; margin: 0; padding: 0; }
-.rb-dh-version { margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--rb-line, #E3DED3); border-radius: 8px; background: #fff; }
-.rb-dh-version.is-current { border-color: #B89B5E; box-shadow: 0 0 0 1px #B89B5E inset; }
+.rb-dh-version { margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--rb-line, var(--rb-line)); border-radius: 8px; background: var(--rb-leaf); }
+.rb-dh-version.is-current { border-color: var(--rb-crown-2); box-shadow: 0 0 0 1px var(--rb-crown-2) inset; }
 .rb-dh-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; }
 .rb-dh-number { min-width: 3.2em; font-weight: 800; font-variant-numeric: tabular-nums; }
 .rb-dh-name { flex: 1 1 auto; min-width: 0; font-weight: 600; }
-.rb-dh-date { margin-left: auto; color: var(--rb-muted); font-size: calc(12px * var(--rb-text-scale)); white-space: nowrap; }
-.rb-dh-cards { list-style: none; margin: 6px 0 0; padding: 0 0 0 3.7em; font-size: calc(13px * var(--rb-text-scale)); }
+.rb-dh-date { margin-left: auto; color: var(--rb-ink-2); font-size: 12px; white-space: nowrap; }
+.rb-dh-cards { list-style: none; margin: 6px 0 0; padding: 0 0 0 3.7em; font-size: 13px; }
 p.rb-dh-cards { margin-bottom: 0; }
-.rb-dh-cards .is-added { color: #2F6B3A; }
-.rb-dh-cards .is-removed { color: #8E2A2A; }
-.rb-dh-cards a { color: inherit; text-decoration: underline; text-decoration-color: rgba(0, 0, 0, .2); }
-.rb-dh-edits { list-style: none; margin: 8px 0 0; padding: 6px 0 0; border-top: 1px dashed var(--rb-line, #E3DED3); font-size: calc(13px * var(--rb-text-scale)); }
+.rb-dh-cards .is-added { color: var(--rb-success); }
+.rb-dh-cards .is-removed { color: var(--rb-danger); }
+.rb-dh-cards a { color: inherit; text-decoration: underline; text-decoration-color: var(--rb-line-strong); }
+.rb-dh-edits { list-style: none; margin: 8px 0 0; padding: 6px 0 0; border-top: 1px dashed var(--rb-line, var(--rb-line)); font-size: 13px; }
 .rb-dh-edits li { display: grid; grid-template-columns: 3.2em minmax(0, 1fr); column-gap: 8px; padding: 3px 0; }
 .rb-dh-edits .rb-dh-date { grid-column: 2; margin-left: 0; }
-.rb-dh-edits .rb-dh-number { font-weight: 600; color: var(--rb-muted); }
+.rb-dh-edits .rb-dh-number { font-weight: 600; color: var(--rb-ink-2); }
 .rb-dh-edits .rb-dh-what { flex: 1 1 auto; min-width: 0; }
-.rb-dh-edits .is-correction .rb-dh-what { color: #5B4A2A; }
+.rb-dh-edits .is-correction .rb-dh-what { color: var(--rb-warning); }
 .decklist-recreate[hidden], .decklist-recreate-item[hidden] { display: none !important; }

@@ -20,18 +20,18 @@
 /* [[card]] links (Ketura, 2026-11-03): a card link looks like any link; one that matches
    several cards is dotted (it opens the search), one that matches nothing is marked */
 .rb-cardlink.is-ambiguous { text-decoration: underline dotted; }
-.rb-cardlink.is-missing { color: #a94442; text-decoration: underline wavy rgba(169, 68, 66, .6); cursor: help; }
-.card-versions li:target { background: #fdf3c8; outline: 2px solid #e6c200; outline-offset: 2px; border-radius: 2px; }
+.rb-cardlink.is-missing { color: var(--rb-danger); text-decoration: underline wavy color-mix(in srgb, var(--rb-danger) 60%, transparent); cursor: help; }
+.card-versions li:target { background: color-mix(in srgb, var(--rb-highlight) 25%, transparent); outline: 2px solid var(--rb-highlight); outline-offset: 2px; border-radius: 2px; }
 
 /* ---- scrollbars on the fixed-height pages (Ketura, 2026-11-04) ----
    Always drawn, never the thin overlay kind that fades away: a pane's scrollbar is what
    shows there is more in it. */
 #wrapper.rb-fill ::-webkit-scrollbar { width: 11px; height: 11px; }
-#wrapper.rb-fill ::-webkit-scrollbar-track { background: #EFEAE0; }
-#wrapper.rb-fill ::-webkit-scrollbar-thumb { background: #ADA189; border: 2px solid #EFEAE0; border-radius: 6px; }
-#wrapper.rb-fill ::-webkit-scrollbar-thumb:hover { background: #877C65; }
+#wrapper.rb-fill ::-webkit-scrollbar-track { background: var(--rb-sunk); }
+#wrapper.rb-fill ::-webkit-scrollbar-thumb { background: var(--rb-line-strong); border: 2px solid var(--rb-line); border-radius: 6px; }
+#wrapper.rb-fill ::-webkit-scrollbar-thumb:hover { background: var(--rb-ink-3); }
 @supports not selector(::-webkit-scrollbar) {
-    #wrapper.rb-fill * { scrollbar-color: #ADA189 #EFEAE0; scrollbar-width: auto; }
+    #wrapper.rb-fill * { scrollbar-color: var(--rb-line-strong) var(--rb-sunk); scrollbar-width: auto; }
 }
 
 /* ---- a published deck's thumbnail (Ketura, 2026-11-05) ----
@@ -41,7 +41,7 @@
    divided corner to corner; a fragment: its main culture filling the tile. Each half's ground
    is the culture's chosen card-template colour, lit from behind the symbol and lightly grained
    so it carries some of the card's texture. */
-.rb-thumb { position: relative; display: block; width: 104px; aspect-ratio: 260 / 231; overflow: hidden; border-radius: 7px; background: #EFE9DC; }
+.rb-thumb { position: relative; display: block; width: 104px; aspect-ratio: 260 / 231; overflow: hidden; border-radius: 7px; background: var(--rb-sunk); }
 .rb-thumb-card img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
 /* just the picture (Ketura, 2026-11-07): each template's art window, covering the tile and
    centred in it. The windows, as fractions of the card: character x .11-.895 y .14-.565;
@@ -51,12 +51,12 @@
 .rb-thumb-tpl-modifier img { width: 170.2%; left: -47%; top: -29.3%; }
 .rb-thumb-tpl-site img { width: 228.6%; left: -63.2%; top: -37%; }
 .rb-thumb-card { box-shadow: 0 1px 3px rgba(0, 0, 0, .3); }
-.rb-thumb-cultures { border: 1px solid #A89C83; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -3px 6px rgba(0, 0, 0, .2), 0 1px 3px rgba(0, 0, 0, .25); }
+.rb-thumb-cultures { border: 1px solid var(--rb-divide); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), inset 0 -3px 6px rgba(0, 0, 0, .2), 0 1px 3px rgba(0, 0, 0, .25); }
 .rb-thumb-part {
     position: absolute; inset: 0; --bg: #B5AC9C;
     background:
         url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .5 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
-        radial-gradient(90% 85% at var(--cx) var(--cy), color-mix(in srgb, var(--bg) 62%, #fff) 0%, var(--bg) 48%, color-mix(in srgb, var(--bg) 62%, #000) 100%);
+        radial-gradient(90% 85% at var(--cx) var(--cy), color-mix(in srgb, var(--bg) 62%, var(--rb-leaf)) 0%, var(--bg) 48%, color-mix(in srgb, var(--bg) 62%, #000) 100%);
     background-blend-mode: soft-light, normal;
 }
 /* the art: a box of --size (percent of the tile) centred on the corner's point (--cx, --cy),
@@ -106,12 +106,12 @@
 .rb-thumb-select { display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; cursor: pointer; }
 .rb-thumb-current { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rb-thumb-options { position: absolute; z-index: 1000; top: calc(100% + 3px); left: 0; right: 0; max-height: 340px; overflow-y: auto; padding: 4px 0;
-    border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; box-shadow: 0 6px 18px rgba(34, 31, 26, .18); }
+    border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-leaf); box-shadow: var(--rb-shadow-2); }
 .rb-thumb-options[hidden] { display: none; }
-.rb-thumb-group { padding: 6px 12px 2px; font-size: 12px; font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; }
-.rb-thumb-option { padding: 4px 12px 4px 22px; cursor: pointer; font-size: calc(14px * var(--rb-text-scale)); }
+.rb-thumb-group { padding: 6px 12px 2px; font-size: 12px; font-weight: 700; color: var(--rb-ink-2); letter-spacing: .03em; }
+.rb-thumb-option { padding: 4px 12px 4px 22px; cursor: pointer; font-size: 14px; }
 .rb-thumb-option[data-value=""] { padding-left: 12px; }
-.rb-thumb-option.is-active { background: #F1ECE2; }
+.rb-thumb-option.is-active { background: var(--rb-control-hover); }
 .rb-thumb-option[aria-selected=true] { font-weight: 700; }
 .rb-thumb-preview { flex: 0 0 auto; position: relative; }
 .rb-thumb-preview [hidden] { display: none; }
@@ -131,22 +131,22 @@
 body.rb-crop-open { overflow: hidden; }
 .rb-crop { position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(28, 24, 16, .6); }
 .rb-crop[hidden] { display: none; }
-.rb-crop-dialog { display: flex; flex-direction: column; max-width: 100%; max-height: 100%; padding: 16px 24px 18px; border-radius: 10px; background: #fff; box-shadow: 0 10px 40px rgba(0, 0, 0, .45); }
-.rb-crop-title { margin: 0; text-align: center; font-size: calc(20px * var(--rb-text-scale)); font-weight: 700; }
-.rb-crop-hint { margin: 4px 0 12px; text-align: center; color: var(--rb-muted); font-size: calc(13px * var(--rb-text-scale)); }
+.rb-crop-dialog { display: flex; flex-direction: column; max-width: 100%; max-height: 100%; padding: 16px 24px 18px; border-radius: 10px; background: var(--rb-leaf); box-shadow: 0 10px 40px rgba(0, 0, 0, .45); }
+.rb-crop-title { margin: 0; text-align: center; font-size: 20px; font-weight: 700; }
+.rb-crop-hint { margin: 4px 0 12px; text-align: center; color: var(--rb-ink-2); font-size: 13px; }
 .rb-crop-body { display: flex; align-items: flex-start; gap: 20px; min-height: 0; }
 .rb-crop-stage { position: relative; flex: 0 0 auto; overflow: hidden; border-radius: 8px; touch-action: none; user-select: none; }
 /* sized by ui.decklist_form.js to fit the window */
 .rb-crop-image { display: block; max-width: none; }
 .rb-crop-frame {
-    position: absolute; cursor: move; outline: 2px solid #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .5), 0 0 0 100vmax rgba(28, 24, 16, .62);
+    position: absolute; cursor: move; outline: 2px solid var(--rb-leaf); box-shadow: 0 0 0 1px rgba(0, 0, 0, .5), 0 0 0 100vmax rgba(28, 24, 16, .62);
 }
-.rb-crop-frame:focus-visible { outline-color: #D4A017; }
+.rb-crop-frame:focus-visible { outline-color: var(--rb-highlight); }
 /* each edge can be caught all along it, a knob at its middle; the corners over them */
 .rb-crop-handle { position: absolute; }
 .rb-crop-handle::after {
     content: ''; position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px;
-    border: 2px solid #fff; border-radius: 3px; background: #6B5A3A; box-shadow: 0 0 0 1px rgba(0, 0, 0, .4);
+    border: 2px solid var(--rb-leaf); border-radius: 3px; background: var(--rb-ink-2); box-shadow: 0 0 0 1px rgba(0, 0, 0, .4);
 }
 .rb-crop-n, .rb-crop-s { left: 0; width: 100%; height: 14px; margin-top: -7px; cursor: ns-resize; }
 .rb-crop-e, .rb-crop-w { top: 0; height: 100%; width: 14px; margin-left: -7px; cursor: ew-resize; }
@@ -158,7 +158,7 @@ body.rb-crop-open { overflow: hidden; }
 .rb-crop-ne, .rb-crop-sw { cursor: nesw-resize; }
 .rb-crop-nw, .rb-crop-se { cursor: nwse-resize; }
 .rb-crop-side { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.rb-crop-label { font-size: 12px; font-weight: 700; color: var(--rb-muted); text-transform: uppercase; letter-spacing: .03em; }
+.rb-crop-label { font-size: 12px; font-weight: 700; color: var(--rb-ink-2); letter-spacing: .03em; }
 .rb-crop-preview { width: 180px; }
 .rb-crop-actions { display: flex; gap: 10px; margin-top: 16px; }
 .rb-crop-gap { flex: 1 1 auto; }
@@ -170,15 +170,22 @@ body.rb-crop-open { overflow: hidden; }
 /* a form's buttons: the action, then Cancel (Ketura, 2026-11-06) */
 .rb-form-actions { display: flex; gap: 10px; margin: 20px 0; }
 
+/* bootstrap-markdown's own colours (its CDN stylesheet), in the theme's: a sunk toolbar and
+   footer around the leaf it is written on */
+.md-editor { border-color: var(--rb-line-strong); }
+.md-editor > .md-header, .md-editor .md-footer { background: var(--rb-sunk); }
+.md-editor > textarea, .md-editor > .md-preview { background: var(--rb-leaf); color: var(--rb-ink); border-color: var(--rb-line); }
+.md-editor.active { border-color: var(--rb-focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rb-focus) 28%, transparent); }
+
 /* the notes' markdown editors (Ketura, 2026-11-07): the toolbar, then the text or its
    preview; in the deckbuilder's Notes pane they fill their sections */
 .rb-md-editor { display: flex; flex-direction: column; min-height: 0; }
 .rb-md-editor .md-editor { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; margin: 0; border-radius: 6px; }
 .rb-md-editor .md-editor > textarea,
-.rb-md-editor .md-editor > .md-preview { flex: 1 1 0; min-height: 60px; height: auto !important; resize: none; overflow-y: auto; font-family: inherit; font-size: calc(13px * var(--rb-text-scale)); padding: 6px 8px; }
+.rb-md-editor .md-editor > .md-preview { flex: 1 1 0; min-height: 60px; height: auto !important; resize: none; overflow-y: auto; font-family: inherit; font-size: 13px; padding: 6px 8px; }
 .rb-md-editor .md-editor > .md-header { padding: 4px; }
 .rb-md-editor .md-editor .btn-sm { padding: 2px 8px; }
-.rb-md-editor .md-footer { padding: 3px 8px; font-size: calc(12px * var(--rb-text-scale)); color: var(--rb-muted); }
+.rb-md-editor .md-footer { padding: 3px 8px; font-size: 12px; color: var(--rb-ink-2); }
 
 /* the markdown editor's fullscreen (Ketura, 2026-11-07): a box over most of the page with the
    rest dimmed, its title above the toolbar, the toolbar as usual but centred, the text never
@@ -188,33 +195,33 @@ body.rb-crop-open { overflow: hidden; }
 .rb-md-editor .md-editor .md-controls .md-control,
 .rb-md-editor .md-editor.md-fullscreen-mode .md-fullscreen-controls a {
     display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0; margin: 0;
-    border: 1px solid #ccc; border-radius: 4px; background: #fff; color: #333; text-decoration: none;
+    border: 1px solid var(--rb-line-strong); border-radius: 4px; background: var(--rb-leaf); color: var(--rb-ink); text-decoration: none;
 }
 .rb-md-editor .md-editor .md-controls .md-control:hover,
-.rb-md-editor .md-editor.md-fullscreen-mode .md-fullscreen-controls a:hover { background: #e6e6e6; border-color: #adadad; color: #333; }
+.rb-md-editor .md-editor.md-fullscreen-mode .md-fullscreen-controls a:hover { background: var(--rb-control-hover); border-color: var(--rb-line-strong); color: var(--rb-ink); }
 .rb-md-editor .md-editor.md-fullscreen-mode {
     position: fixed; top: 5vh; left: 5vw; width: 90vw; height: 90vh; z-index: 99999;
     display: flex; flex-direction: column; gap: 10px; padding: 16px 24px 18px;
-    border-radius: 10px; background: #fff !important;
+    border-radius: 10px; background: var(--rb-leaf) !important;
     box-shadow: 0 0 0 100vmax rgba(28, 24, 16, .6), 0 10px 40px rgba(0, 0, 0, .45);
 }
-.rb-md-editor .md-editor.md-fullscreen-mode .rb-md-title { display: block; padding: 0 50px; text-align: center; font-size: calc(20px * var(--rb-text-scale)); font-weight: 700; }
+.rb-md-editor .md-editor.md-fullscreen-mode .rb-md-title { display: block; padding: 0 50px; text-align: center; font-size: 20px; font-weight: 700; }
 .rb-md-editor .md-editor.md-fullscreen-mode .md-header { position: static; top: auto; width: auto; padding: 0; text-align: center; background: none; }
-.rb-md-editor .md-editor.md-fullscreen-mode .md-header .btn { border: 1px solid #ccc; background: #fff; color: #333; }
+.rb-md-editor .md-editor.md-fullscreen-mode .md-header .btn { border: 1px solid var(--rb-line-strong); background: var(--rb-control); color: var(--rb-ink); }
 .rb-md-editor .md-editor.md-fullscreen-mode .md-header .btn:hover,
-.rb-md-editor .md-editor.md-fullscreen-mode .md-header .btn:focus { background: #e6e6e6; border-color: #adadad; color: #333; }
-.rb-md-editor .md-editor.md-fullscreen-mode .md-header .btn.active { background: #337ab7; border-color: #2e6da4; color: #fff; }
+.rb-md-editor .md-editor.md-fullscreen-mode .md-header .btn:focus { background: var(--rb-control-hover); border-color: var(--rb-line-strong); color: var(--rb-ink); }
+.rb-md-editor .md-editor.md-fullscreen-mode .md-header .btn.active { background: var(--rb-primary); border-color: var(--rb-primary); color: var(--rb-primary-ink); }
 .rb-md-editor .md-editor.md-fullscreen-mode .md-input,
 .rb-md-editor .md-editor.md-fullscreen-mode .md-preview {
     flex: 1 1 auto; width: 100%; height: auto !important; min-height: 0 !important; margin: 0 !important;
-    padding: 14px 18px !important; border: 1px solid #ddd !important; border-radius: 6px;
-    font-size: calc(17px * var(--rb-text-scale)) !important; line-height: 1.55 !important; color: #333 !important; background: #fff !important;
+    padding: 14px 18px !important; border: 1px solid var(--rb-line) !important; border-radius: 6px;
+    font-size: 17px !important; line-height: 1.55 !important; color: var(--rb-ink) !important; background: var(--rb-control) !important;
 }
 .rb-md-editor .md-editor.md-fullscreen-mode .md-fullscreen-controls { top: 14px; right: 18px; }
 .rb-md-editor .md-editor.md-fullscreen-mode .md-fullscreen-controls a { margin: 0; }
 .rb-md-editor .md-editor.md-fullscreen-mode .rb-md-done { display: flex; justify-content: center; }
-.rb-md-editor .md-editor.md-fullscreen-mode .rb-md-done .btn { min-width: 120px; border: 1px solid #2e6da4; background: #337ab7; color: #fff; }
-.rb-md-editor .md-editor.md-fullscreen-mode .rb-md-done .btn:hover { background: #286090; color: #fff; }
+.rb-md-editor .md-editor.md-fullscreen-mode .rb-md-done .btn { min-width: 120px; border: 1px solid var(--rb-primary); background: var(--rb-primary); color: var(--rb-primary-ink); }
+.rb-md-editor .md-editor.md-fullscreen-mode .rb-md-done .btn:hover { background: var(--rb-primary-hover); color: var(--rb-primary-ink); }
 /* the exit button stands in for the expand button while fullscreen */
 .rb-md-editor .md-editor.md-fullscreen-mode .md-controls { display: none; }
 /* the # completion's list hangs off the body: above the fullscreen editor too */
@@ -222,10 +229,10 @@ body > ul.dropdown-menu b, .rb-annot-suggest b { font-weight: 800; }
 body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 
 /* Preview: plain while off, blue while on (Ketura, 2026-11-07) */
-.rb-md-editor .md-header .btn.rb-md-preview-btn { background: #fff; border-color: #ccc; color: #111; box-shadow: none; }
-.rb-md-editor .md-header .btn.rb-md-preview-btn:hover { background: #e6e6e6; color: #111; }
+.rb-md-editor .md-header .btn.rb-md-preview-btn { background: var(--rb-control); border-color: var(--rb-line-strong); color: var(--rb-ink); box-shadow: none; }
+.rb-md-editor .md-header .btn.rb-md-preview-btn:hover { background: var(--rb-control-hover); color: var(--rb-ink); }
 .rb-md-editor .md-header .btn.rb-md-preview-btn.active,
-.rb-md-editor .md-header .btn.rb-md-preview-btn.active:hover { background: #337ab7; border-color: #2e6da4; color: #fff; }
+.rb-md-editor .md-header .btn.rb-md-preview-btn.active:hover { background: var(--rb-primary); border-color: var(--rb-primary); color: var(--rb-primary-ink); }
 .rb-md-editor .md-editor > .md-preview { width: auto !important; }
 
 /* game symbols in text (Ketura, 2026-11-07; MarkdownSymbols, app.symbols): the icon as a mask,
@@ -233,10 +240,10 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 .rb-sym { position: relative; display: inline-block; vertical-align: -0.2em; line-height: 1; }
 .rb-sym-icon { display: inline-block; width: 1.15em; height: 1.15em; background-color: currentColor;
     -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
-.rb-sym-icon { color: #111; }
+.rb-sym-icon { color: var(--rb-ink); }
 .rb-sym[data-tip]:hover::after {
     content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 5px); transform: translateX(-50%);
-    padding: 2px 7px; border-radius: 4px; background: #2B2620; color: #fff; font-size: 12px; font-weight: 600; line-height: 1.5;
+    padding: 2px 7px; border-radius: 4px; background: var(--rb-selected); color: var(--rb-selected-ink); font-size: 12px; font-weight: 600; line-height: 1.5;
     white-space: nowrap; pointer-events: none; z-index: 60;
 }
 .rb-sym-dunland { --icon: url(/images/cultures/dunland.svg); }
@@ -274,39 +281,39 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
    twilight costs in a row */
 .rb-md-editor .md-header .btn-group { position: relative; }
 .rb-sym-menu { position: absolute; top: calc(100% + 4px); left: 0; z-index: 100001; width: 430px; max-width: 80vw; padding: 8px;
-    border: 1px solid var(--rb-line-strong); border-radius: 6px; background: #fff; box-shadow: 0 6px 18px rgba(34, 31, 26, .2); text-align: left; }
+    border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-leaf); box-shadow: var(--rb-shadow-2); text-align: left; }
 .rb-sym-group { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; }
 .rb-sym-group + .rb-sym-group { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--rb-line); }
 .rb-sym-group-twilight { grid-template-columns: repeat(11, minmax(0, 1fr)); }
 .rb-sym-menu button { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border: 0; border-radius: 4px; background: none;
     font-size: 13px; color: var(--rb-ink); text-align: left; cursor: pointer; }
 .rb-sym-group-twilight button { justify-content: center; padding: 4px 0; }
-.rb-sym-menu button:hover, .rb-sym-menu button:focus { background: #F1ECE2; }
+.rb-sym-menu button:hover, .rb-sym-menu button:focus { background: var(--rb-control-hover); }
 .rb-sym-menu .rb-sym { font-size: 18px; vertical-align: middle; }
 .rb-my-decks .rb-results-sort select { width: auto; }
 .rb-my-decks .rb-browse-pane .rb-dates input { padding-left: 6px; padding-right: 4px; }
-.rb-history-edit { margin-bottom: 2px; font-weight: 600; color: #5B4A2A; }
+.rb-history-edit { margin-bottom: 2px; font-weight: 600; color: var(--rb-warning); }
 .rb-history-edit .label { margin-left: 6px; font-size: 75%; }
 
 /* the reputation after a name: a black pill (Ketura, 2026-11-08) */
-.rb-rep { display: inline-block; margin-left: 3px; padding: 0 6px; border-radius: 9px; background: #111; color: #fff; font-size: 75%; font-weight: 700; line-height: 1.5; vertical-align: 1px; }
+.rb-rep { display: inline-block; margin-left: 3px; padding: 0 6px; border-radius: 9px; background: var(--rb-ink); color: var(--rb-page); font-size: 75%; font-weight: 700; line-height: 1.5; vertical-align: 1px; }
 
 
 /* the Add to Library drawer */
-.rb-library-drawer { position: fixed; z-index: 1060; width: 320px; max-width: calc(100vw - 16px); display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--rb-line-strong); border-radius: 8px; background: #fff; box-shadow: 0 8px 28px rgba(0, 0, 0, .22); overflow: hidden; }
+.rb-library-drawer { position: fixed; z-index: 1060; width: 320px; max-width: calc(100vw - 16px); display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--rb-line-strong); border-radius: 8px; background: var(--rb-leaf); box-shadow: 0 8px 28px rgba(0, 0, 0, .22); overflow: hidden; }
 .rb-ld-head { display: flex; align-items: center; justify-content: space-between; }
 .rb-ld-title { font-weight: 700; color: var(--rb-ink); }
-.rb-ld-new { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px dashed var(--rb-line-strong); border-radius: 6px; background: #fff; color: var(--rb-ink); font-weight: 600; text-align: left; }
-.rb-ld-new:hover, .rb-ld-new:focus { background: var(--rb-soft); }
+.rb-ld-new { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px dashed var(--rb-line-strong); border-radius: 6px; background: var(--rb-leaf); color: var(--rb-ink); font-weight: 600; text-align: left; }
+.rb-ld-new:hover, .rb-ld-new:focus { background: var(--rb-page); }
 .rb-ld-new-form { display: flex; gap: 6px; }
-.rb-ld-message { padding: 6px 8px; border-radius: 6px; font-size: calc(13px * var(--rb-text-scale)); background: var(--rb-soft); }
-.rb-ld-message.is-ok { background: #EDF6EC; color: var(--rb-good); }
-.rb-ld-message.is-error { background: #FBEDEB; color: #8E1C12; }
+.rb-ld-message { padding: 6px 8px; border-radius: 6px; font-size: 13px; background: var(--rb-page); }
+.rb-ld-message.is-ok { background: var(--rb-success-soft); color: var(--rb-success); }
+.rb-ld-message.is-error { background: var(--rb-danger-soft); color: var(--rb-danger); }
 .rb-ld-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; border-top: 1px solid var(--rb-line); }
 .rb-ld-library { display: flex; align-items: baseline; gap: 8px; padding: 7px 6px; border: 0; border-bottom: 1px solid var(--rb-line); background: none; text-align: left; }
-.rb-ld-library:hover, .rb-ld-library:focus { background: var(--rb-soft); }
-.rb-ld-library.is-in { cursor: default; color: var(--rb-muted); }
+.rb-ld-library:hover, .rb-ld-library:focus { background: var(--rb-page); }
+.rb-ld-library.is-in { cursor: default; color: var(--rb-ink-2); }
 .rb-ld-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.rb-ld-count { flex: 0 0 auto; color: var(--rb-muted); font-size: calc(12px * var(--rb-text-scale)); }
-.rb-ld-in { flex: 0 0 auto; color: var(--rb-good); font-size: calc(12px * var(--rb-text-scale)); font-weight: 700; }
-.rb-ld-none { padding: 10px 4px; margin: 0; color: var(--rb-muted); }
+.rb-ld-count { flex: 0 0 auto; color: var(--rb-ink-2); font-size: 12px; }
+.rb-ld-in { flex: 0 0 auto; color: var(--rb-success); font-size: 12px; font-weight: 700; }
+.rb-ld-none { padding: 10px 4px; margin: 0; color: var(--rb-ink-2); }
