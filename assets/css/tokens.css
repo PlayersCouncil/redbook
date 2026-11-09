@@ -98,10 +98,11 @@
 
     --rb-radius:         3px;
     --rb-radius-panel:   4px;
-    --rb-control-h:      34px;
-    --rb-control-h-sm:   28px;
-    --rb-control-h-lg:   42px;
-    --rb-bar-h:          56px;
+    /* control and bar heights grow with the text (rem; Ketura, 2026-11-09): 34, 28, 42, 56px at 1 */
+    --rb-control-h:      2.125rem;
+    --rb-control-h-sm:   1.75rem;
+    --rb-control-h-lg:   2.625rem;
+    --rb-bar-h:          3.5rem;
 }
 
 /* ---------- 1b. Tokens: dark ("Candlelight") ---------- */
@@ -141,9 +142,10 @@ html.pc-dark {
     --rb-focus:          #E2BF6E;
     --rb-hover:          rgba(255, 235, 200, .06);
 
-    /* Selection in dark: a gilt-rimmed, gold-lettered pressed state */
-    --rb-selected:       #45391F;
-    --rb-selected-ink:   #F6E1A6;
+    /* Selection in dark: gilt-rimmed. Ketura (2026-11-09): filled with the light gold, dark
+       lettering, as inverted and eye-catching as light's ink (was #45391F with #F6E1A6 letters) */
+    --rb-selected:       #F6E1A6;
+    --rb-selected-ink:   #1E1A14;
     --rb-selected-edge:  #C9A75E;
     --rb-mark:           #D9B66A;
     --rb-mark-ink:       #241D12;
@@ -183,6 +185,11 @@ html.pc-dark {
 }
 
 
+/* ---------- 1a. The text size (Ketura, 2026-11-09) ----------
+   Every text size on the site is in rem, so this factor scales all text together (the root's
+   font size is the browser's own setting times it; bootstrap.css). 1 is the design's sizes. */
+:root { --rb-type: 1; }
+
 /* ---------- 1c. Red Book's own tokens, beside the theme's (Ketura, 2026-11-09) ---------- */
 :root {
     /* the starting fellowship's S and a card already in the deck: gold, as before */
@@ -193,10 +200,15 @@ html.pc-dark {
     /* text on a filled tag or button of a status colour (danger, success, the inks): white on
        light, the page on dark, where those fills are light */
     --rb-on-fill:        #FFFFFF;
-    /* the gilt foil of the title and wordmark, top to bottom. Ketura (2026-11-09): softer than
-       the design's; the three darker stops are 15% nearer the brightest (were #E3C277, #A47A33,
-       #D9B66A), the two brightest unchanged */
-    --rb-foil: linear-gradient(180deg, #FBEBB8 0%, #E7C881 38%, #B18B47 52%, #DEBE76 70%, #F3DDA2 100%);
+    /* the gilt foil of the title and wordmark (their SVGs take the five stops), top to bottom.
+       Ketura (2026-11-09): softer than the design's; the three darker stops are 15% nearer the
+       brightest (were #E3C277, #A47A33, #D9B66A), the two brightest unchanged */
+    --rb-foil-1: #FBEBB8;
+    --rb-foil-2: #E7C881;
+    --rb-foil-3: #B18B47;
+    --rb-foil-4: #DEBE76;
+    --rb-foil-5: #F3DDA2;
+    --rb-foil: linear-gradient(180deg, var(--rb-foil-1) 0%, var(--rb-foil-2) 38%, var(--rb-foil-3) 52%, var(--rb-foil-4) 70%, var(--rb-foil-5) 100%);
 }
 html.pc-dark {
     /* the same gold as in the light theme (Ketura, 2026-11-09): the starting S and its pills */

@@ -56,9 +56,9 @@
 /* ---- shared controls ---- */
 /* .rb-btn, .rb-btn-primary and .rb-btn-small are the theme's buttons (theme.css section 8) */
 .rb-field { display: flex; flex-direction: column; gap: 2px; margin: 0; font-weight: normal; min-width: 0; }
-.rb-field > span { font-size: 12px; font-weight: 600; color: var(--rb-ink-2); }
+.rb-field > span { font-size: 0.75rem; font-weight: 600; color: var(--rb-ink-2); }
 .rb-field input, .rb-field select, .rb-field textarea, .rb-stat input, .rb-stat select, .rb-search input {
-    height: 32px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-control); font-size: 13px; color: var(--rb-ink); min-width: 0;
+    height: 32px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-control); font-size: 0.8125rem; color: var(--rb-ink); min-width: 0;
 }
 .rb-field textarea { height: auto; padding: 6px 8px; resize: vertical; }
 .rb-field.rb-inline { flex-direction: row; align-items: center; gap: 6px; }
@@ -66,21 +66,21 @@
 .rb-field.rb-inline select { flex: 1 1 auto; }
 .rb-check { display: flex; align-items: center; gap: 6px; font-weight: 600; margin: 0; }
 .rb-check input { width: 16px; height: 16px; margin: 0; }
-.rb-muted, .rb-hint { color: var(--rb-ink-2); font-size: 12px; }
+.rb-muted, .rb-hint { color: var(--rb-ink-2); font-size: 0.75rem; }
 .rb-menu-wrap { position: relative; }
 .rb-menu { position: absolute; top: 40px; left: 0; z-index: 30; min-width: 230px; padding: 6px; border: 1px solid var(--rb-line-strong); border-radius: 8px; background: var(--rb-leaf); box-shadow: var(--rb-shadow-2); display: flex; flex-direction: column; gap: 2px; }
-.rb-menu button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-height: 34px; padding: 6px 10px; border: 0; border-radius: 6px; background: var(--rb-control); text-align: left; font-size: 14px; color: var(--rb-ink); cursor: pointer; }
+.rb-menu button { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; min-height: 34px; padding: 6px 10px; border: 0; border-radius: 6px; background: var(--rb-control); text-align: left; font-size: 0.875rem; color: var(--rb-ink); cursor: pointer; }
 .rb-menu button:hover, .rb-menu button.active { background: var(--rb-control-hover); }
-.rb-menu button span { font-size: 12px; color: var(--rb-ink-2); }
+.rb-menu button span { font-size: 0.75rem; color: var(--rb-ink-2); }
 .rb-menu hr { margin: 4px 0; border-color: var(--rb-line); }
 .rb-menu .rb-danger { color: var(--rb-danger); font-weight: 600; }
 
 /* ---- deck information ("pink") ---- */
 .rb-info { display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; }
-.rb-name-field input { height: 40px; font-size: 20px; font-weight: 700; }
+.rb-name-field input { height: 40px; font-size: 1.25rem; font-weight: 700; }
 /* name and format on one row, the format a quarter of it (Ketura, 2026-11-03) */
 .rb-title-row { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 1fr); gap: 10px; align-items: end; }
-.rb-format-field select { height: 40px; font-size: 13px; min-width: 0; width: 100%; }
+.rb-format-field select { height: 40px; font-size: 0.8125rem; min-width: 0; width: 100%; }
 .rb-format-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .rb-format-row:not(:has(> button:not([hidden]))) { display: none; }
 @media (max-width: 480px) { .rb-title-row { grid-template-columns: minmax(0, 1fr); } }
@@ -91,7 +91,7 @@
 .rb-popover { position: absolute; top: 62px; right: 0; z-index: 30; width: 330px; max-width: 100%; padding: 8px; border: 1px solid var(--rb-line-strong); border-radius: 8px; background: var(--rb-leaf); box-shadow: var(--rb-shadow-2); display: flex; flex-direction: column; gap: 4px; }
 .rb-suggestion { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; padding: 6px 8px; border: 0; border-radius: 6px; background: var(--rb-page); text-align: left; cursor: pointer; }
 .rb-suggestion:hover { background: var(--rb-control-hover); }
-.rb-suggestion span { font-size: 12px; color: var(--rb-success); }
+.rb-suggestion span { font-size: 0.75rem; color: var(--rb-success); }
 .rb-suggestion small { color: var(--rb-ink-2); }
 .rb-validation { border-radius: 6px; border: 1px solid var(--rb-line); background: var(--rb-page); color: var(--rb-ink-2); }
 .rb-validation-line { padding: 8px 10px; }
@@ -99,17 +99,17 @@
 .rb-validation.is-unavailable { border-color: var(--rb-warning-edge); background: var(--rb-warning-soft); color: var(--rb-warning); }
 .rb-validation.is-bad { border-color: var(--rb-danger-edge); background: var(--rb-danger-soft); color: var(--rb-danger); }
 .rb-validation-head { padding: 6px 10px 2px; font-weight: 700; }
-.rb-validation-list { margin: 0; padding: 0 10px 6px 26px; max-height: 70px; overflow-y: auto; line-height: 22px; }
+.rb-validation-list { margin: 0; padding: 0 10px 6px 26px; max-height: 70px; overflow-y: auto; line-height: 1.375rem; }
 .rb-validation.deck-validation-pending { opacity: .65; }
 .rb-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.rb-save-status { flex: 1 1 140px; font-size: 12px; color: var(--rb-ink-2); }
+.rb-save-status { flex: 1 1 140px; font-size: 0.75rem; color: var(--rb-ink-2); }
 .rb-save-status.is-dirty { color: var(--rb-warning); }
 .rb-save-status.is-saved { color: var(--rb-success); }
 .rb-draft-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--rb-warning-edge); border-radius: 6px; background: var(--rb-warning-soft); color: var(--rb-warning); }
 .rb-historic { border: 1px solid var(--rb-line); border-radius: 8px; background: var(--rb-page); }
-.rb-historic > h3 { margin: 0; padding: 8px 12px; font-size: 14px; font-weight: 700; border-bottom: 1px solid var(--rb-line); }
+.rb-historic > h3 { margin: 0; padding: 8px 12px; font-size: 0.875rem; font-weight: 700; border-bottom: 1px solid var(--rb-line); }
 .rb-historic > .rb-check { margin: 10px 12px 0; }
-.rb-historic-badge { margin-left: 8px; padding: 2px 8px; border-radius: 10px; background: var(--rb-sunk); font-size: 11px; color: var(--rb-ink-2); }
+.rb-historic-badge { margin-left: 8px; padding: 2px 8px; border-radius: 10px; background: var(--rb-sunk); font-size: 0.6875rem; color: var(--rb-ink-2); }
 #historic-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin: 0; padding: 10px 12px 12px; border: 0; min-width: 0; }
 #historic-fields[disabled] { opacity: .45; }
 #historic-fields .rb-wide { grid-column: span 2; }
@@ -118,23 +118,23 @@
 .rb-review { border: 1px solid var(--rb-warning-edge); border-radius: 8px; background: var(--rb-warning-soft); padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 .rb-review.is-verified { border-color: var(--rb-success-edge); background: var(--rb-success-soft); }
 .rb-review-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
-.rb-review-head h3 { margin: 0; font-size: 14px; font-weight: 700; }
-.rb-review-status { flex: 1 1 auto; font-size: 13px; color: var(--rb-warning); }
+.rb-review-head h3 { margin: 0; font-size: 0.875rem; font-weight: 700; }
+.rb-review-status { flex: 1 1 auto; font-size: 0.8125rem; color: var(--rb-warning); }
 .rb-review.is-verified .rb-review-status { color: var(--rb-success); }
-.rb-review-link { font-size: 13px; }
+.rb-review-link { font-size: 0.8125rem; }
 .rb-review-flags { display: flex; flex-wrap: wrap; gap: 4px 6px; margin: 0; padding: 0; list-style: none; }
 .rb-review-flags[hidden] { display: none; }
-.rb-flag { padding: 1px 8px; border-radius: 10px; background: var(--rb-leaf); border: 1px solid var(--rb-warning-edge); font-size: 12px; color: var(--rb-warning); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rb-flag { padding: 1px 8px; border-radius: 10px; background: var(--rb-leaf); border: 1px solid var(--rb-warning-edge); font-size: 0.75rem; color: var(--rb-warning); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rb-flag-problems, .rb-flag-no_format { border-color: var(--rb-danger-edge); color: var(--rb-danger); }
-.rb-review-hint { flex: 1 1 160px; font-size: 12px; color: var(--rb-ink-2); }
-.rb-review-original > summary { cursor: pointer; font-size: 13px; font-weight: 700; }
+.rb-review-hint { flex: 1 1 160px; font-size: 0.75rem; color: var(--rb-ink-2); }
+.rb-review-original > summary { cursor: pointer; font-size: 0.8125rem; font-weight: 700; }
 .rb-review-original > summary a { font-weight: 400; margin-left: 6px; }
-.rb-review-unresolved { margin: 8px 0; font-size: 13px; }
+.rb-review-unresolved { margin: 8px 0; font-size: 0.8125rem; }
 .rb-review-unresolved ul { margin: 4px 0 0; padding-left: 20px; }
-.rb-review-raw { margin: 8px 0 0; max-height: 260px; overflow: auto; font-size: 12px; white-space: pre-wrap; background: var(--rb-leaf); }
+.rb-review-raw { margin: 8px 0 0; max-height: 260px; overflow: auto; font-size: 0.75rem; white-space: pre-wrap; background: var(--rb-leaf); }
 
 /* historic accounts and unverified archive decks, site-wide */
-.rb-unverified-badge { margin-left: 6px; font-size: 10px; font-weight: 600; vertical-align: middle; }
+.rb-unverified-badge { margin-left: 6px; font-size: 0.625rem; font-weight: 600; vertical-align: middle; }
 
 /* ---- the deck ("green") ---- */
 .rb-deck-top { display: flex; gap: 14px; align-items: flex-start; }
@@ -144,7 +144,7 @@
 /* the deck's view and grouping, above its scrolling area */
 .rb-deck-toolbar { flex: 0 0 auto; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; padding: 8px 0; border-top: 1px solid var(--rb-line); }
 .rb-deck-toolbar .rb-display-opts { flex: 0 1 auto; min-width: 0; display: flex; }
-.rb-deck-toolbar .rb-opt { flex: 0 0 auto; gap: 0; padding: 0 10px; font-size: 13px; }
+.rb-deck-toolbar .rb-opt { flex: 0 0 auto; gap: 0; padding: 0 10px; font-size: 0.8125rem; }
 .rb-deck-toolbar .rb-opt svg { flex: 0 0 auto; }
 /* icons only, each button keeping the width its word gives it; a click shows the word for a
    moment, then it slides away (Ketura, 2026-11-04). app.deck_editor pins the widths. */
@@ -155,23 +155,23 @@
 @media (max-width: 480px) { .rb-deck-toolbar .rb-opt span { display: none; } }
 .rb-deck-toolbar:empty { display: none; }
 .rb-deck-toolbar + .rb-deck { border-top: 0; padding-top: 2px; }
-.rb-opt { height: 30px; padding: 0 2px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-control); color: var(--rb-ink); font-size: 12px; font-weight: 500; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.rb-opt { height: 30px; padding: 0 2px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-control); color: var(--rb-ink); font-size: 0.75rem; font-weight: 500; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .rb-opt.active, .rb-opt[data-active] { background: var(--rb-selected); border-color: var(--rb-selected-edge); color: var(--rb-selected-ink); }
 .rb-slot-head { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-.rb-slot-head h3 { margin: 0; font-size: 14px; font-weight: 700; }
-.rb-plus { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 5px; background: var(--rb-primary); color: var(--rb-primary-ink); font-size: 16px; font-weight: 700; line-height: 1; cursor: pointer; flex: 0 0 auto; }
+.rb-slot-head h3 { margin: 0; font-size: 0.875rem; font-weight: 700; }
+.rb-plus { width: 22px; height: 22px; padding: 0; border: 0; border-radius: 5px; background: var(--rb-primary); color: var(--rb-primary-ink); font-size: 1rem; font-weight: 700; line-height: 1; cursor: pointer; flex: 0 0 auto; }
 .rb-empty { color: var(--rb-ink-2); }
 .rb-line { display: flex; align-items: center; gap: 7px; min-height: 28px; }
 .rb-line .rb-name { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--rb-ink); }
 /* a group's lines: all as wide as its longest, plus a rem; the pool's row highlight (Ketura, 2026-11-03) */
 .rb-lines { display: grid; grid-template-columns: minmax(0, max-content); max-width: 100%; }
-.rb-lines .rb-line { padding: 0 1rem 0 3px; }
+.rb-lines .rb-line { padding: 0 10px 0 3px; }
 #deck .rb-line[data-code] { border-radius: 4px; }
 #deck .rb-line[data-code]:hover { background: var(--rb-primary-soft); }
 .rb-sub { color: var(--rb-ink-2); font-weight: normal; }
-.rb-pc { padding: 0 4px; border-radius: 3px; background: var(--rb-primary-soft); color: var(--rb-link); font-size: 10px; font-weight: 700; }
+.rb-pc { padding: 0 4px; border-radius: 3px; background: var(--rb-primary-soft); color: var(--rb-link); font-size: 0.625rem; font-weight: 700; }
 .rb-qty { flex: 0 0 auto; display: flex; gap: 2px; }
-.rb-qty button { width: 24px; height: 24px; padding: 0; border-radius: 5px; font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.rb-qty button { width: 24px; height: 24px; padding: 0; border-radius: 5px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .rb-n { border: 1px solid var(--rb-line-strong); background: var(--rb-control); color: var(--rb-ink); }
 .rb-n.active, .rb-n.is-filled { background: var(--rb-selected); border-color: var(--rb-selected-edge); color: var(--rb-selected-ink); }
 .rb-n[disabled] { opacity: .3; cursor: default; }
@@ -189,7 +189,7 @@
 .rb-site-n { flex: 0 0 16px; text-align: right; font-weight: 600; color: var(--rb-ink-2); }
 .rb-site-empty .rb-plus { width: 24px; height: 24px; }
 .rb-choose { color: var(--rb-ink-2); font-style: italic; }
-.rb-draw-head { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--rb-line); font-size: 20px; font-weight: 700; }
+.rb-draw-head { margin: 16px 0 0; padding-top: 12px; border-top: 1px solid var(--rb-line); font-size: 1.25rem; font-weight: 700; }
 /* Free Peoples and Shadow side by side once the deck area has room, each view by its own
    measure (Ketura, 2026-11-08; they used to wait for the thumbnails' width in every view) */
 .rb-deck { container: deck / inline-size; }
@@ -220,12 +220,12 @@
 .rb-readonly .view-list-groups .rb-group { flex-basis: 300px; }
 .rb-groups .rb-thumbs { display: flex; flex-wrap: wrap; }
 .rb-groups .rb-thumbs > .rb-tile { width: 118px; }
-.rb-side-head { margin: 0; padding-bottom: 3px; font-size: 17px; font-weight: 700; border-bottom: 2px solid currentColor; }
+.rb-side-head { margin: 0; padding-bottom: 3px; font-size: 1.0625rem; font-weight: 700; border-bottom: 2px solid currentColor; }
 .rb-sides { margin-top: 6px; }
 .rb-side-free_peoples .rb-side-head { color: var(--rb-fp); }
 .rb-side-shadow .rb-side-head { color: var(--rb-shadow); }
 .rb-group { margin-top: 10px; }
-.rb-group-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 15px; font-weight: 700; }
+.rb-group-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.9375rem; font-weight: 700; }
 .rb-group-head .culture-icon { width: 2em; height: 1.3em; }
 .rb-count { font-weight: 400; color: var(--rb-ink-2); }
 .rb-thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
@@ -235,7 +235,7 @@
 .rb-thumbs.is-half .rb-tile-img { aspect-ratio: 260 / 231; }
 .rb-tile .rb-qty { justify-content: space-between; }
 .rb-tile .rb-qty button { width: 22px; }
-.rb-tile-noimg { display: block; padding: 6px; font-size: 12px; }
+.rb-tile-noimg { display: block; padding: 6px; font-size: 0.75rem; }
 .rb-tile-overlay { padding: 0; background: transparent; }
 .rb-tile-x { position: absolute; right: 4px; bottom: 4px; }
 /* the X over a card sits low, off the card's name and numbers, and at full strength (Ketura, 2026-11-03) */
@@ -254,8 +254,8 @@
 .rb-slot-empty .rb-plus { width: 24px; height: 24px; }
 .rb-tile-site .rb-tile-img { aspect-ratio: 497 / 357; }
 .rb-tile-empty { position: relative; aspect-ratio: 497 / 357; border: 2px dashed var(--rb-info-edge); background: var(--rb-primary-soft); display: flex; align-items: center; justify-content: center; }
-.rb-tile-empty .rb-plus { width: 32px; height: 32px; font-size: 20px; }
-.rb-site-num { position: absolute; top: 3px; left: 3px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--rb-selected); color: var(--rb-selected-ink); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.rb-tile-empty .rb-plus { width: 32px; height: 32px; font-size: 1.25rem; }
+.rb-site-num { position: absolute; top: 3px; left: 3px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--rb-selected); color: var(--rb-selected-ink); font-size: 0.6875rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
 @media (max-width: 600px) {
     .rb-deck-top { flex-direction: column; }
     .rb-deck-top-left { flex-basis: auto; width: 100%; }
@@ -266,15 +266,15 @@
 .rb-filters { display: flex; flex-direction: column; gap: 8px; padding: 10px 2px 10px 0; }
 .rb-filters-scroll { display: flex; flex-direction: column; gap: 8px; }
 .rb-search { position: relative; display: flex; align-items: center; gap: 8px; }
-.rb-search input { flex: 1 1 auto; height: 38px; padding-left: 34px; font-size: 14px; }
+.rb-search input { flex: 1 1 auto; height: 38px; padding-left: 34px; font-size: 0.875rem; }
 .rb-search-icon { position: absolute; left: 10px; top: 10px; color: var(--rb-ink-2); }
-.rb-search-tips { font-size: 12px; white-space: nowrap; }
+.rb-search-tips { font-size: 0.75rem; white-space: nowrap; }
 .rb-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; }
 .rb-row-sets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .rb-row-sets select { min-width: 0; width: 100%; }
 .rb-row-side .rb-type { flex: 1 1 140px; }
 .rb-seg { display: flex; border: 1px solid var(--rb-line-strong); border-radius: 6px; overflow: hidden; }
-.rb-seg button { height: 32px; padding: 0 10px; border: 0; border-right: 1px solid var(--rb-line); background: var(--rb-control); font-size: 13px; font-weight: 500; color: var(--rb-ink); cursor: pointer; }
+.rb-seg button { height: 32px; padding: 0 10px; border: 0; border-right: 1px solid var(--rb-line); background: var(--rb-control); font-size: 0.8125rem; font-weight: 500; color: var(--rb-ink); cursor: pointer; }
 .rb-seg button:last-child { border-right: 0; }
 .rb-seg button.active { background: var(--rb-selected); color: var(--rb-selected-ink); }
 .rb-cultures { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; }
@@ -283,29 +283,29 @@
 .rb-culture.active { background: var(--rb-selected); border-color: var(--rb-selected-edge); color: var(--rb-selected-ink); }
 .rb-culture.dim { opacity: .3; }
 .rb-culture-sep { width: 1px; height: 24px; margin: 0 5px; background: var(--rb-line-strong); }
-.rb-more-toggle { height: 30px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-control); font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.rb-more-toggle { height: 30px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-control); font-size: 0.8125rem; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .rb-more-toggle.active { background: var(--rb-control-hover); }
-.rb-more-count { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--rb-primary); color: var(--rb-primary-ink); font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.rb-more-count { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--rb-primary); color: var(--rb-primary-ink); font-size: 0.6875rem; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
 div.rb-more { display: flex; flex-direction: column; gap: 12px; padding: 10px 12px 12px; border: 1px solid var(--rb-line); border-radius: 8px; background: var(--rb-page); }
 div.rb-more fieldset { margin: 0; padding: 0; border: 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
-div.rb-more legend { margin-bottom: 4px; padding: 0; border: 0; font-size: 13px; font-weight: 700; color: var(--rb-ink); }
+div.rb-more legend { margin-bottom: 4px; padding: 0; border: 0; font-size: 0.8125rem; font-weight: 700; color: var(--rb-ink); }
 .rb-more-cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 16px; }
 .rb-more-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; }
 .rb-mentions .rb-more-grid { gap: 6px 16px; }
-.rb-quick > span, .rb-quick > label { margin: 0; font-size: 13px; font-weight: 700; color: var(--rb-ink); }
+.rb-quick > span, .rb-quick > label { margin: 0; font-size: 0.8125rem; font-weight: 700; color: var(--rb-ink); }
 .rb-stat { display: flex; align-items: center; gap: 6px; margin: 0; font-weight: normal; }
-.rb-stat > span { flex: 0 0 82px; font-size: 12px; font-weight: 600; color: var(--rb-ink-2); }
+.rb-stat > span { flex: 0 0 82px; font-size: 0.75rem; font-weight: 600; color: var(--rb-ink-2); }
 .rb-stat select { flex: 0 0 48px; padding: 0 4px; }
 .rb-stat input { flex: 1 1 auto; width: 60px; }
 @media (max-width: 600px) {
     .rb-more-cols, .rb-more-grid, .rb-row-sets { grid-template-columns: minmax(0, 1fr); }
 }
 .rb-showing { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 8px; background: var(--rb-sunk); }
-.rb-showing-label { font-size: 12px; font-weight: 700; color: var(--rb-ink-2); }
-.rb-chip { height: 26px; padding: 0 8px; border: 1px solid var(--rb-info-edge); border-radius: 13px; background: var(--rb-primary-soft); color: var(--rb-link); font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.rb-showing-label { font-size: 0.75rem; font-weight: 700; color: var(--rb-ink-2); }
+.rb-chip { height: 26px; padding: 0 8px; border: 1px solid var(--rb-info-edge); border-radius: 13px; background: var(--rb-primary-soft); color: var(--rb-link); font-size: 0.75rem; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
 .rb-chip-fixed { border-color: var(--rb-line-strong); background: var(--rb-control); color: var(--rb-ink-2); cursor: default; }
-.rb-clear-all { height: 26px; padding: 0 6px; border: 0; background: transparent; color: var(--rb-danger); font-size: 12px; font-weight: 600; cursor: pointer; }
-.rb-showing-count { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--rb-ink-2); }
+.rb-clear-all { height: 26px; padding: 0 6px; border: 0; background: transparent; color: var(--rb-danger); font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+.rb-showing-count { margin-left: auto; font-size: 0.75rem; font-weight: 700; color: var(--rb-ink-2); }
 
 /* ---- card pool ("navy") ---- */
 .rb-pool { padding: 8px 2px 8px 0; }
@@ -318,10 +318,10 @@ div.rb-more legend { margin-bottom: 4px; padding: 0; border: 0; font-size: 13px;
 .rb-pool-views { display: flex; gap: 4px; justify-self: center; }
 .rb-pool-views .rb-opt { width: 40px; height: 32px; }
 /* the pool's pager: the theme's pages (theme.css) as prev and next buttons around "1 / 12" */
-.rb-pager-top, .rb-pager-bottom { flex-wrap: nowrap; gap: 6px; font-size: 12px; font-weight: 600; color: var(--rb-ink-2); }
+.rb-pager-top, .rb-pager-bottom { flex-wrap: nowrap; gap: 6px; font-size: 0.75rem; font-weight: 600; color: var(--rb-ink-2); }
 .rb-pager-top { margin-left: auto; }
 .rb-pager-bottom { margin-top: 10px; }
-button.rb-page { padding: 0; font-size: 16px; color: var(--rb-ink); cursor: pointer; }
+button.rb-page { padding: 0; font-size: 1rem; color: var(--rb-ink); cursor: pointer; }
 button.rb-page:hover:not([disabled]) { background: var(--rb-control-hover); }
 button.rb-page[disabled] { color: var(--rb-ink-3); border-color: var(--rb-line); background: transparent; opacity: .6; cursor: default; }
 .rb-pool-empty { padding: 20px 0; color: var(--rb-ink-2); }
@@ -332,16 +332,16 @@ button.rb-page[disabled] { color: var(--rb-ink-3); border-color: var(--rb-line);
 .rb-pool-row .rb-name { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; color: var(--rb-ink); }
 .rb-pool-row.is-banned .rb-name, .rb-pool-row.is-banned .culture-icon { opacity: .55; }
 .rb-pool-buttons { flex: 0 0 auto; display: flex; gap: 3px; }
-.rb-pool-add, .rb-pool-rb { width: 26px; height: 24px; padding: 0; border-radius: 5px; font-size: 17px; font-weight: 700; line-height: 1; cursor: pointer; }
+.rb-pool-add, .rb-pool-rb { width: 26px; height: 24px; padding: 0; border-radius: 5px; font-size: 1.0625rem; font-weight: 700; line-height: 1; cursor: pointer; }
 /* + : blue when not in the deck, yellow when in it, grey when banned or at the limit (Ketura, 2026-11-02) */
 .rb-pool-add { border: 0; }
 .rb-pool-add.is-none { background: var(--rb-primary); color: var(--rb-primary-ink); }
 .rb-pool-add.is-some { background: var(--rb-highlight); color: var(--rb-highlight-ink); }
 .rb-pool-add.is-off { background: var(--rb-ink-3); color: var(--rb-on-fill); }
 .rb-pool-add[disabled] { cursor: default; }
-.rb-pool-rb { border: 1px solid var(--rb-crown-2); background: var(--rb-control); color: var(--rb-crown-2); font-size: 13px; }
+.rb-pool-rb { border: 1px solid var(--rb-crown-2); background: var(--rb-control); color: var(--rb-crown-2); font-size: 0.8125rem; }
 .rb-pool-rb.active { background: var(--rb-crown-2); color: var(--rb-on-fill); }
-.rb-badge { flex: 0 0 auto; padding: 1px 5px; border-radius: 4px; background: var(--rb-ink-2); color: var(--rb-on-fill); font-size: 10px; font-weight: 700; }
+.rb-badge { flex: 0 0 auto; padding: 1px 5px; border-radius: 4px; background: var(--rb-ink-2); color: var(--rb-on-fill); font-size: 0.625rem; font-weight: 700; }
 .rb-badge-banned { background: var(--rb-danger); }
 .rb-badge-rb { background: var(--rb-crown-2); }
 .rb-badge-site { background: var(--rb-selected); }
@@ -359,21 +359,21 @@ button.rb-page[disabled] { color: var(--rb-ink-3); border-color: var(--rb-line);
 /* the deckbuilder's Archive info tab */
 .rb-archive-pane { display: flex; flex-direction: column; gap: 14px; padding: 12px 2px; }
 .rb-tab-dot { display: inline-block; width: 7px; height: 7px; margin-left: 4px; border-radius: 50%; background: var(--rb-warning); vertical-align: middle; }
-.rb-review h4 { margin: 4px 0; font-size: 13px; font-weight: 700; }
-.rb-review-sources { margin: 0; font-size: 13px; }
+.rb-review h4 { margin: 4px 0; font-size: 0.8125rem; font-weight: 700; }
+.rb-review-sources { margin: 0; font-size: 0.8125rem; }
 .rb-review-unresolved ul { list-style: none; padding-left: 0; }
 .rb-review-unresolved li { padding: 5px 0; border-top: 1px solid var(--rb-line); }
-.rb-line-search { padding: 0; border: 0; background: none; color: var(--rb-link); font-family: var(--rb-font-mono); font-size: 12.5px; text-align: left; text-decoration: underline dotted; cursor: pointer; }
-.rb-line-search .fas { font-size: 10px; color: var(--rb-ink-2); }
+.rb-line-search { padding: 0; border: 0; background: none; color: var(--rb-link); font-family: var(--rb-font-mono); font-size: 0.78125rem; text-align: left; text-decoration: underline dotted; cursor: pointer; }
+.rb-line-search .fas { font-size: 0.625rem; color: var(--rb-ink-2); }
 .rb-line-search:hover { color: var(--rb-link); text-decoration-style: solid; }
 .rb-candidates { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-.rb-candidate { padding: 2px 8px; border: 1px solid var(--rb-line-strong); border-radius: 12px; background: var(--rb-control); color: var(--rb-ink); font-size: 12px; cursor: pointer; }
+.rb-candidate { padding: 2px 8px; border: 1px solid var(--rb-line-strong); border-radius: 12px; background: var(--rb-control); color: var(--rb-ink); font-size: 0.75rem; cursor: pointer; }
 .rb-candidate:hover { border-color: var(--rb-link); color: var(--rb-link); }
 .rb-candidate small { color: var(--rb-ink-2); }
 .rb-candidate.is-added { border-color: var(--rb-success-edge); background: var(--rb-success-soft); }
 .rb-candidate.is-added::after { content: " \2713 " attr(data-count); color: var(--rb-success); font-weight: 700; }
-.rb-review-guessed > summary { cursor: pointer; font-size: 13px; font-weight: 700; }
-.rb-review-guessed ul { margin: 4px 0 0; padding-left: 18px; font-size: 13px; }
+.rb-review-guessed > summary { cursor: pointer; font-size: 0.8125rem; font-weight: 700; }
+.rb-review-guessed ul { margin: 4px 0 0; padding-left: 18px; font-size: 0.8125rem; }
 
 /* a click anywhere on a pool card adds it */
 .rb-pool-tile, .rb-pool-row { cursor: pointer; }
@@ -383,7 +383,7 @@ button.rb-page[disabled] { color: var(--rb-ink-3); border-color: var(--rb-line);
 .rb-section-label { flex: 1 1 auto; min-width: 0; }
 .rb-collapse { flex: 0 0 auto; width: 24px; height: 24px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-control); color: var(--rb-ink); display: inline-flex; align-items: center; justify-content: center; }
 .rb-section-toggle:hover .rb-collapse { border-color: var(--rb-ink); }
-.rb-deck-head { margin: 0 0 8px; padding-bottom: 3px; font-size: 18px; font-weight: 700; border-bottom: 2px solid var(--rb-ink); }
+.rb-deck-head { margin: 0 0 8px; padding-bottom: 3px; font-size: 1.125rem; font-weight: 700; border-bottom: 2px solid var(--rb-ink); }
 .rb-deck-head.is-collapsed { border-bottom-style: dashed; }
 /* the three headings light up under the pointer, to say they fold (Ketura, 2026-11-08) */
 .rb-deck-head .rb-section-toggle, .rb-side-head .rb-section-toggle { padding: 2px 4px; border-radius: 5px 5px 0 0; transition: background-color .12s; }
@@ -399,15 +399,15 @@ button.rb-page[disabled] { color: var(--rb-ink-3); border-color: var(--rb-line);
 @media (max-width: 600px) { .rb-site-list.is-columns { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-auto-flow: row; } }
 
 /* Quick Search: every group at once, in columns, on desktops (Ketura, 2026-11-03) */
-.rb-quick-btn { display: none; height: 34px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-control); color: var(--rb-ink); font-size: 14px; text-align: left; align-items: center; gap: 8px; cursor: pointer; }
+.rb-quick-btn { display: none; height: 34px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-control); color: var(--rb-ink); font-size: 0.875rem; text-align: left; align-items: center; gap: 8px; cursor: pointer; }
 .rb-quick-value { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rb-quick-panel { z-index: 40; overflow-y: auto; padding: 10px 12px 12px; border: 1px solid var(--rb-line-strong); border-radius: 8px; background: var(--rb-leaf); box-shadow: var(--rb-shadow-2); }
 .rb-quick-panel[hidden] { display: none !important; }
 .rb-quick-any { margin-bottom: 6px; }
 .rb-quick-groups { column-width: 190px; column-gap: 18px; }
 .rb-quick-group { break-inside: avoid; margin-bottom: 10px; }
-.rb-quick-group h4 { margin: 0 0 3px; font-size: 12px; font-weight: 700; letter-spacing: .03em; color: var(--rb-ink-2); }
-.rb-quick-item { display: block; width: 100%; padding: 3px 6px; border: 0; border-radius: 4px; background: none; color: var(--rb-ink); font-size: 13px; text-align: left; cursor: pointer; }
+.rb-quick-group h4 { margin: 0 0 3px; font-size: 0.75rem; font-weight: 700; letter-spacing: .03em; color: var(--rb-ink-2); }
+.rb-quick-item { display: block; width: 100%; padding: 3px 6px; border: 0; border-radius: 4px; background: none; color: var(--rb-ink); font-size: 0.8125rem; text-align: left; cursor: pointer; }
 .rb-quick-item:hover, .rb-quick-item:focus { background: var(--rb-control-hover); outline: none; }
 .rb-quick-item.active { background: var(--rb-selected); color: var(--rb-selected-ink); }
 @media (min-width: 992px) {
@@ -416,7 +416,7 @@ button.rb-page[disabled] { color: var(--rb-ink-3); border-color: var(--rb-line);
 }
 
 /* starting fellowship: an S on the card's right edge, grey, or yellow when marked (Ketura, 2026-11-03) */
-.rb-start { width: 22px; height: 26px; padding: 0; border: 0; border-radius: 5px; background: var(--rb-ink-2); color: var(--rb-on-fill); font-size: 13px; font-weight: 800; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
+.rb-start { width: 22px; height: 26px; padding: 0; border: 0; border-radius: 5px; background: var(--rb-ink-2); color: var(--rb-on-fill); font-size: 0.8125rem; font-weight: 800; line-height: 1; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 1px 3px rgba(0, 0, 0, .35); }
 .rb-start.active { background: var(--rb-highlight); color: var(--rb-highlight-ink); }
 .rb-tile-img .rb-start { position: absolute; right: 0; top: 50%; transform: translateY(-50%); border-radius: 5px 0 0 5px; }
 .rb-line .rb-start { flex: 0 0 auto; width: 22px; height: 22px; box-shadow: none; }
@@ -425,30 +425,30 @@ button.rb-page[disabled] { color: var(--rb-ink-3); border-color: var(--rb-line);
 
 /* History: saved and published versions in one timeline (Ketura, 2026-11-03) */
 .rb-history-published td { background: var(--rb-page); }
-.rb-history-social { display: inline-flex; gap: 12px; margin-left: 12px; color: var(--rb-ink-2); font-size: 12px; }
+.rb-history-social { display: inline-flex; gap: 12px; margin-left: 12px; color: var(--rb-ink-2); font-size: 0.75rem; }
 
 /* the Notes tab (Ketura, 2026-11-03) */
 /* a little inset, so the focus ring of a box at the edge isn't cut off by the pane (Ketura, 2026-11-03) */
 .rb-notes { display: flex; flex-direction: column; gap: 10px; padding: 0 4px 4px; }
-.rb-notes-tags > label { display: block; margin: 0 0 3px; font-size: 13px; font-weight: 700; }
+.rb-notes-tags > label { display: block; margin: 0 0 3px; font-size: 0.8125rem; font-weight: 700; }
 .rb-tag-input { display: flex; align-items: flex-start; gap: 10px; }
 .rb-tag-entry { position: relative; flex: 0 0 220px; }
-.rb-tag-entry input { width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 13px; }
+.rb-tag-entry input { width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 0.8125rem; }
 .rb-tag-chips { flex: 1 1 auto; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-height: 30px; }
-.rb-tag-chip { display: inline-flex; align-items: center; gap: 2px; padding: 1px 4px 1px 9px; border-radius: 12px; background: var(--rb-sunk); font-size: 13px; }
-.rb-tag-chip button { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--rb-ink-2); font-size: 15px; line-height: 1; cursor: pointer; }
+.rb-tag-chip { display: inline-flex; align-items: center; gap: 2px; padding: 1px 4px 1px 9px; border-radius: 12px; background: var(--rb-sunk); font-size: 0.8125rem; }
+.rb-tag-chip button { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--rb-ink-2); font-size: 0.9375rem; line-height: 1; cursor: pointer; }
 .rb-tag-chip button:hover { background: var(--rb-control); color: var(--rb-danger); }
 .rb-tag-suggest, .rb-annot-suggest { position: absolute; z-index: 30; top: 100%; left: 0; right: 0; margin-top: 3px; max-height: 260px; overflow-y: auto; padding: 4px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-leaf); box-shadow: var(--rb-shadow-2); }
-.rb-tag-suggest button, .rb-annot-suggest button { display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 4px 8px; border: 0; border-radius: 4px; background: none; font-size: 13px; text-align: left; cursor: pointer; }
+.rb-tag-suggest button, .rb-annot-suggest button { display: flex; justify-content: space-between; gap: 10px; width: 100%; padding: 4px 8px; border: 0; border-radius: 4px; background: none; font-size: 0.8125rem; text-align: left; cursor: pointer; }
 .rb-tag-suggest button:hover, .rb-annot-suggest button:hover { background: var(--rb-control-hover); }
 .rb-tag-suggest small, .rb-annot-suggest small { color: var(--rb-ink-2); }
 .rb-notes-section { display: flex; flex-direction: column; gap: 5px; min-height: 0; }
 .rb-notes-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-.rb-notes-head h3 { margin: 0; font-size: 14px; font-weight: 700; }
-.rb-notes-head .rb-hint { margin-left: auto; font-size: 12px; color: var(--rb-ink-2); }
-.rb-notes-bid > label { display: block; margin: 0 0 3px; font-size: 13px; font-weight: 700; }
-.rb-notes-bid input { width: 220px; max-width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 13px; }
-.rb-starting-list { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 13px; }
+.rb-notes-head h3 { margin: 0; font-size: 0.875rem; font-weight: 700; }
+.rb-notes-head .rb-hint { margin-left: auto; font-size: 0.75rem; color: var(--rb-ink-2); }
+.rb-notes-bid > label { display: block; margin: 0 0 3px; font-size: 0.8125rem; font-weight: 700; }
+.rb-notes-bid input { width: 220px; max-width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 0.8125rem; }
+.rb-starting-list { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; font-size: 0.8125rem; }
 .rb-starting-label { font-weight: 600; color: var(--rb-ink-2); }
 .rb-starting-card { padding: 1px 8px; border-radius: 12px; background: var(--rb-highlight); color: var(--rb-highlight-ink); }
 /* black on the yellow, whatever the link colours say; underlined on hover (Ketura, 2026-11-03) */
@@ -457,11 +457,11 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 /* the starting companions (Ketura, 2026-11-07): + to pick one from the deck, pills with x to take one off */
 .rb-starting-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .rb-starting-fields { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 4px; }
-.rb-starting-bid { width: 120px; height: 28px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 13px; }
-.rb-notes .rb-btn.rb-start-pick { width: 28px; height: 28px; padding: 0; justify-content: center; font-size: 18px; font-weight: 700; line-height: 1; }
+.rb-starting-bid { width: 120px; height: 28px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 0.8125rem; }
+.rb-notes .rb-btn.rb-start-pick { width: 28px; height: 28px; padding: 0; justify-content: center; font-size: 1.125rem; font-weight: 700; line-height: 1; }
 .rb-starting-pill { display: inline-flex; align-items: center; gap: 2px; padding: 1px 9px 1px 4px; border-radius: 12px; background: var(--rb-highlight); }
 .rb-starting-pill .rb-starting-card { padding: 0; background: none; }
-.rb-starting-remove { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--rb-warning); font-size: 15px; line-height: 1; cursor: pointer; }
+.rb-starting-remove { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--rb-warning); font-size: 0.9375rem; line-height: 1; cursor: pointer; }
 .rb-starting-remove:hover { background: var(--rb-leaf); color: var(--rb-danger); }
 #deck.rb-picking-start .rb-pick-off { opacity: .3; filter: grayscale(1); cursor: not-allowed; }
 #deck.rb-picking-start .rb-pick-off, #deck.rb-picking-start .rb-pick-off:hover { outline: none; }
@@ -473,14 +473,14 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 #deck.rb-picking .rb-line[data-code]:hover, #deck.rb-picking .rb-tile[data-code]:hover { outline: 2px solid var(--rb-highlight); }
 .rb-annot.is-new { animation: rb-annot-flash 1.2s ease-out; }
 @keyframes rb-annot-flash { from { background: color-mix(in srgb, var(--rb-highlight) 25%, transparent); } to { background: transparent; } }
-.rb-annot-add input { width: 100%; height: 28px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 13px; }
+.rb-annot-add input { width: 100%; height: 28px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 0.8125rem; }
 .rb-annot-list { flex: 1 1 auto; min-height: 60px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
 .rb-annot { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr) auto; gap: 8px; align-items: center; }
-.rb-annot-card { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; font-size: 13px; }
+.rb-annot-card { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; font-size: 0.8125rem; }
 .rb-annot-out { margin-left: 1px; color: var(--rb-ink-2); font-weight: 700; cursor: help; }
-.rb-annot-remove { width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--rb-ink-2); font-size: 16px; line-height: 1; cursor: pointer; }
+.rb-annot-remove { width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--rb-ink-2); font-size: 1rem; line-height: 1; cursor: pointer; }
 .rb-annot-remove:hover { color: var(--rb-danger); }
-.rb-annot textarea { width: 100%; resize: none; padding: 4px 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 13px;
+.rb-annot textarea { width: 100%; resize: none; padding: 4px 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 0.8125rem;
     /* never shorter than a line (Ketura, 2026-11-07) */
     min-height: calc(1.5em + 10px); line-height: 1.5; }
 @media (max-width: 600px) { .rb-annot { grid-template-columns: minmax(0, 1fr) auto; } .rb-annot-card { grid-column: 1 / -1; } }
@@ -495,8 +495,8 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
     box-shadow: 0 0 0 100vmax rgba(28, 24, 16, .6), 0 10px 40px rgba(0, 0, 0, .45); animation: none;
 }
 .rb-annot.is-full .rb-annot-card { display: none; }
-.rb-annot.is-full .rb-annot-title { display: block; padding: 0 50px; text-align: center; font-size: 20px; font-weight: 700; }
-.rb-annot.is-full textarea { flex: 1 1 0; min-height: 0; resize: none; padding: 14px 18px; border-color: var(--rb-line); font-size: 17px; line-height: 1.55; }
+.rb-annot.is-full .rb-annot-title { display: block; padding: 0 50px; text-align: center; font-size: 1.25rem; font-weight: 700; }
+.rb-annot.is-full textarea { flex: 1 1 0; min-height: 0; resize: none; padding: 14px 18px; border-color: var(--rb-line); font-size: 1.0625rem; line-height: 1.55; }
 .rb-annot.is-full .rb-annot-full { position: absolute; top: 14px; right: 18px; }
 .rb-annot.is-full .rb-annot-full .fa-expand::before { content: "\f066"; }
 .rb-annot.is-full .rb-annot-done { display: flex; justify-content: center; }
@@ -505,11 +505,11 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 /* the Stats tab (Ketura, 2026-11-03) */
 /* room inside the tab, so nothing runs into the pane's edges (Ketura, 2026-11-03) */
 .rb-stats { display: flex; flex-direction: column; gap: 26px; padding: 12px 16px 24px; }
-.rb-stats-section h3 { margin: 0 0 6px; font-size: 15px; font-weight: 700; }
-.rb-stats-section .rb-hint { margin: 0 0 8px; font-size: 12px; color: var(--rb-ink-2); }
+.rb-stats-section h3 { margin: 0 0 6px; font-size: 0.9375rem; font-weight: 700; }
+.rb-stats-section .rb-hint { margin: 0 0 8px; font-size: 0.75rem; color: var(--rb-ink-2); }
 .rb-draw-buttons { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .rb-draw-sep { width: 10px; }
-.rb-draw-status { margin: 8px 0 4px; font-size: 12px; color: var(--rb-ink-2); }
+.rb-draw-status { margin: 8px 0 4px; font-size: 0.75rem; color: var(--rb-ink-2); }
 .rb-draw-hand { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 6px 22px; min-height: 40px; }
 .rb-draw-group { display: flex; flex-wrap: wrap; gap: 5px; padding: 4px; border-radius: 6px; }
 .rb-draw-group.is-fp { background: var(--rb-fp-soft); }
@@ -517,14 +517,14 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 .rb-draw-group.is-extra { border: 1px dashed var(--rb-line-strong); }
 .rb-draw-card { width: 84px; aspect-ratio: 260 / 231; overflow: hidden; border-radius: 4px; background: #222; }
 .rb-draw-card img { width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
-.rb-draw-chance { margin-top: 10px; font-size: 13px; }
-.rb-draw-chance .rb-hint { font-size: 12px; color: var(--rb-ink-2); }
-.rb-draw-odds { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 12px; }
+.rb-draw-chance { margin-top: 10px; font-size: 0.8125rem; }
+.rb-draw-chance .rb-hint { font-size: 0.75rem; color: var(--rb-ink-2); }
+.rb-draw-odds { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: 0.75rem; }
 .rb-odds-label { color: var(--rb-ink-2); }
 .rb-chart { width: 100%; min-height: 160px; }
 /* a fixed height, so redrawing it never collapses the page and jumps the scroll */
 .rb-chart.rb-chart-tall { height: 300px; }
-.rb-runout-inputs { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+.rb-runout-inputs { display: flex; flex-direction: column; gap: 8px; margin-bottom: 6px; font-size: 0.8125rem; }
 .rb-runout-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
 .rb-runout-row label { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-weight: 600; }
 .rb-runout-row input[type=number] { width: 60px; height: 28px; padding: 0 6px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-weight: 400; }
@@ -535,7 +535,7 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 .rb-runout-moves .rb-pattern { justify-content: center; }
 .rb-first { display: inline-flex; align-items: center; gap: 4px; }
 .rb-first > span { font-weight: 600; margin-right: 2px; }
-.rb-first button, .rb-pattern-turn button { height: 26px; padding: 0 9px; border: 1px solid var(--rb-line-strong); background: var(--rb-control); font-size: 12px; font-weight: 700; cursor: pointer; }
+.rb-first button, .rb-pattern-turn button { height: 26px; padding: 0 9px; border: 1px solid var(--rb-line-strong); background: var(--rb-control); font-size: 0.75rem; font-weight: 700; cursor: pointer; }
 .rb-first button { border-radius: 6px; }
 .rb-first button.active, .rb-pattern-turn button.active { background: var(--rb-selected); border-color: var(--rb-selected-edge); color: var(--rb-selected-ink); }
 .rb-pattern { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
@@ -543,7 +543,7 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 .rb-pattern-turn button:first-child { border-radius: 6px 0 0 6px; }
 .rb-pattern-turn button:last-child { border-radius: 0 6px 6px 0; border-left: 0; }
 .rb-pattern-text { margin-left: 6px; font-family: var(--rb-font-mono); color: var(--rb-ink-2); }
-.rb-runout-summary { margin: 4px 0 0; font-size: 13px; }
+.rb-runout-summary { margin: 4px 0 0; font-size: 0.8125rem; }
 
 /* hover counts on the Stats bars must not catch the pointer, or the bar loses its hover */
 .rb-chart .highcharts-data-labels, .rb-chart .highcharts-data-labels *, .rb-chart .rb-bar-count { pointer-events: none; }
@@ -551,8 +551,8 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
    this until a new version is chosen */
 .rb-gate { position: fixed; inset: 0; z-index: 2000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(28, 24, 16, .55); backdrop-filter: blur(2px); }
 .rb-gate-card { max-width: 560px; padding: 24px 28px; border-radius: 12px; background: var(--rb-leaf); box-shadow: 0 12px 40px rgba(0, 0, 0, .4); text-align: center; }
-.rb-gate-card h2 { margin: 0 0 12px; font-size: 24px; font-weight: 800; }
-.rb-gate-card p { font-size: 15px; }
+.rb-gate-card h2 { margin: 0 0 12px; font-size: 1.5rem; font-weight: 800; }
+.rb-gate-card p { font-size: 0.9375rem; }
 .rb-gate-next { color: var(--rb-ink-2); }
 .rb-gate-actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px; margin: 18px 0 8px; }
 
@@ -568,23 +568,23 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 .rb-pie-label { display: flex; flex-direction: column; align-items: center; gap: 1px; pointer-events: none; }
 .rb-pie-icon { width: 30px; height: 30px; background-color: currentColor; -webkit-mask: var(--icon) center / contain no-repeat; mask: var(--icon) center / contain no-repeat; }
 /* the count on a black box (Ketura, 2026-11-08) */
-.rb-pie-count { padding: 1px 6px; border-radius: 4px; background: var(--rb-selected); font-weight: 700; font-size: 12px; line-height: 1.4; color: var(--rb-selected-ink); }
+.rb-pie-count { padding: 1px 6px; border-radius: 4px; background: var(--rb-selected); font-weight: 700; font-size: 0.75rem; line-height: 1.4; color: var(--rb-selected-ink); }
 
 /* A deck as it was published (Ketura, 2026-11-08): the deck side greyed, a banner with New
    Revision above it; a change asks first (ui.deckedit) */
 .rb-builder.is-locked .rb-col-left { position: relative; }
 .rb-builder.is-locked .rb-col-left::after { content: ''; position: absolute; inset: 0; z-index: 5; background: rgba(110, 110, 110, .16); pointer-events: none; }
 .rb-builder.is-locked .rb-col-left > .rb-info, .rb-builder.is-locked .rb-col-left > .rb-deck { filter: grayscale(.6); }
-.rb-revision-banner { position: relative; z-index: 6; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 8px; padding: 8px 12px; border-radius: 8px; background: var(--rb-ink); color: var(--rb-page); font-size: 13px; }
+.rb-revision-banner { position: relative; z-index: 6; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 8px; padding: 8px 12px; border-radius: 8px; background: var(--rb-ink); color: var(--rb-page); font-size: 0.8125rem; }
 .rb-revision-banner > span:nth-child(2) { flex: 1 1 220px; }
 .rb-revision-banner .rb-btn { margin-left: auto; }
-#revision-prompt .modal-body p { font-size: 15px; }
+#revision-prompt .modal-body p { font-size: 0.9375rem; }
 
 /* Publish, apart from who can see the deck as it stands */
 .rb-btn-publish svg { vertical-align: -2px; }
 
 /* the deck History's revisions since the last publication, and the decklists' detail edits */
-.rb-history-group td { padding-top: 10px !important; background: var(--rb-sunk); color: var(--rb-warning); font-weight: 700; font-size: 12px; }
+.rb-history-group td { padding-top: 10px !important; background: var(--rb-sunk); color: var(--rb-warning); font-weight: 700; font-size: 0.75rem; }
 .rb-history-patch td { background: var(--rb-page); color: var(--rb-ink-2); }
 .rb-history-changed { color: var(--rb-warning); }
 
@@ -598,7 +598,7 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 .rb-tile-half-left { clip-path: inset(0 50% 0 0); }
 .rb-tile-half-right { clip-path: inset(0 0 0 50%); }
 .rb-tile-split::after { content: ''; position: absolute; top: 0; bottom: 0; left: calc(50% - 1px); width: 2px; background: var(--rb-leaf); box-shadow: 0 0 3px rgba(0, 0, 0, .5); }
-.rb-tile-any { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); padding: 1px 8px; border-radius: 10px; background: rgba(31, 27, 22, .82); color: #fff; font-size: 11px; font-weight: 700; white-space: nowrap; pointer-events: none; }
+.rb-tile-any { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); padding: 1px 8px; border-radius: 10px; background: rgba(31, 27, 22, .82); color: #fff; font-size: 0.6875rem; font-weight: 700; white-space: nowrap; pointer-events: none; }
 .rb-any-pick { display: inline-flex; align-items: center; gap: 5px; }
 .rb-any-pick.active { border-color: var(--rb-success); background: var(--rb-success); color: var(--rb-on-fill); }
 .rb-any-icon { font-size: 1.15em; font-weight: 700; line-height: 1; }
@@ -618,7 +618,7 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 .rb-hover.is-split img:first-child { clip-path: inset(0 50% 0 0); }
 .rb-hover.is-split .rb-hover-half { display: block; position: absolute; inset: 0; clip-path: inset(0 0 0 50%); }
 .rb-hover.is-split::after { content: ''; position: absolute; top: 0; bottom: 0; left: calc(50% - 1px); width: 2px; background: var(--rb-leaf); box-shadow: 0 0 4px rgba(0, 0, 0, .6); }
-.rb-lib-culture-order { position: absolute; top: -7px; right: -7px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--rb-selected); color: var(--rb-selected-ink); font-size: 10px; font-weight: 700; line-height: 16px; }
+.rb-lib-culture-order { position: absolute; top: -7px; right: -7px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 8px; background: var(--rb-selected); color: var(--rb-selected-ink); font-size: 0.625rem; font-weight: 700; line-height: 1rem; }
 
 /* a read-only list line copies as "2x Card" (Ketura, 2026-11-04; restored 2026-11-09): its
    parts inline in one span, the marks left out of a selection, an any-version line's

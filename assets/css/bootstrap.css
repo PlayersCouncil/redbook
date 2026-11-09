@@ -281,12 +281,15 @@ th {
   box-sizing: border-box;
 }
 html {
-  font-size: 10px;
+  /* the site's text size (Ketura, 2026-11-09): every text size is in rem, so this one root
+     sets them all; it follows the browser's own font size setting (100%), times --rb-type
+     (tokens.css). Bootstrap's own 10px root is gone; nothing here sized by it. */
+  font-size: calc(100% * var(--rb-type, 1));
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }
 body {
   font-family: var(--rb-font-ui);
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.42857143;
   color: #333333;
   background-color: #ecf0f1;
@@ -466,40 +469,40 @@ h6 .small,
 }
 h1,
 .h1 {
-  font-size: 36px;
+  font-size: 2.25rem;
 }
 h2,
 .h2 {
-  font-size: 30px;
+  font-size: 1.875rem;
 }
 h3,
 .h3 {
-  font-size: 24px;
+  font-size: 1.5rem;
 }
 h4,
 .h4 {
-  font-size: 18px;
+  font-size: 1.125rem;
 }
 h5,
 .h5 {
-  font-size: 14px;
+  font-size: 0.875rem;
 }
 h6,
 .h6 {
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 p {
   margin: 0 0 10px;
 }
 .lead {
   margin-bottom: 20px;
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 300;
   line-height: 1.4;
 }
 @media (min-width: 768px) {
   .lead {
-    font-size: 21px;
+    font-size: 1.3125rem;
   }
 }
 small,
@@ -679,7 +682,7 @@ abbr[data-original-title] {
 blockquote {
   padding: 10px 20px;
   margin: 0 0 20px;
-  font-size: 17.5px;
+  font-size: 1.09375rem;
   border-left: 5px solid #eeeeee;
 }
 blockquote p:last-child,
@@ -762,7 +765,7 @@ pre {
   display: block;
   padding: 9.5px;
   margin: 0 0 10px;
-  font-size: 13px;
+  font-size: 0.8125rem;
   line-height: 1.42857143;
   word-break: break-all;
   word-wrap: break-word;
@@ -1701,7 +1704,7 @@ legend {
   width: 100%;
   padding: 0;
   margin-bottom: 20px;
-  font-size: 21px;
+  font-size: 1.3125rem;
   line-height: inherit;
   color: #333333;
   border: 0;
@@ -1745,7 +1748,7 @@ input[type="checkbox"]:focus {
 output {
   display: block;
   padding-top: 7px;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.42857143;
   color: #555555;
 }
@@ -1754,7 +1757,7 @@ output {
   width: 100%;
   height: 34px;
   padding: 6px 12px;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.42857143;
   color: #555555;
   background-color: #ffffff;
@@ -1808,7 +1811,7 @@ input[type="search"] {
   input[type="time"].form-control,
   input[type="datetime-local"].form-control,
   input[type="month"].form-control {
-    line-height: 34px;
+    line-height: 2.125rem;
   }
   input[type="date"].input-sm,
   input[type="time"].input-sm,
@@ -1818,7 +1821,7 @@ input[type="search"] {
   .input-group-sm input[type="time"],
   .input-group-sm input[type="datetime-local"],
   .input-group-sm input[type="month"] {
-    line-height: 30px;
+    line-height: 1.875rem;
   }
   input[type="date"].input-lg,
   input[type="time"].input-lg,
@@ -1828,7 +1831,7 @@ input[type="search"] {
   .input-group-lg input[type="time"],
   .input-group-lg input[type="datetime-local"],
   .input-group-lg input[type="month"] {
-    line-height: 46px;
+    line-height: 2.875rem;
   }
 }
 .form-group {
@@ -1910,13 +1913,13 @@ fieldset[disabled] .checkbox label {
 .input-sm {
   height: 30px;
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.5;
   border-radius: 0px;
 }
 select.input-sm {
   height: 30px;
-  line-height: 30px;
+  line-height: 1.875rem;
 }
 textarea.input-sm,
 select[multiple].input-sm {
@@ -1925,13 +1928,13 @@ select[multiple].input-sm {
 .form-group-sm .form-control {
   height: 30px;
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.5;
   border-radius: 0px;
 }
 .form-group-sm select.form-control {
   height: 30px;
-  line-height: 30px;
+  line-height: 1.875rem;
 }
 .form-group-sm textarea.form-control,
 .form-group-sm select[multiple].form-control {
@@ -1941,19 +1944,19 @@ select[multiple].input-sm {
   height: 30px;
   min-height: 32px;
   padding: 6px 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.5;
 }
 .input-lg {
   height: 46px;
   padding: 10px 16px;
-  font-size: 18px;
+  font-size: 1.125rem;
   line-height: 1.3333333;
   border-radius: 2px;
 }
 select.input-lg {
   height: 46px;
-  line-height: 46px;
+  line-height: 2.875rem;
 }
 textarea.input-lg,
 select[multiple].input-lg {
@@ -1962,13 +1965,13 @@ select[multiple].input-lg {
 .form-group-lg .form-control {
   height: 46px;
   padding: 10px 16px;
-  font-size: 18px;
+  font-size: 1.125rem;
   line-height: 1.3333333;
   border-radius: 2px;
 }
 .form-group-lg select.form-control {
   height: 46px;
-  line-height: 46px;
+  line-height: 2.875rem;
 }
 .form-group-lg textarea.form-control,
 .form-group-lg select[multiple].form-control {
@@ -1978,7 +1981,7 @@ select[multiple].input-lg {
   height: 46px;
   min-height: 38px;
   padding: 11px 16px;
-  font-size: 18px;
+  font-size: 1.125rem;
   line-height: 1.3333333;
 }
 .has-feedback {
@@ -1995,7 +1998,7 @@ select[multiple].input-lg {
   display: block;
   width: 34px;
   height: 34px;
-  line-height: 34px;
+  line-height: 2.125rem;
   text-align: center;
   pointer-events: none;
 }
@@ -2004,14 +2007,14 @@ select[multiple].input-lg {
 .form-group-lg .form-control + .form-control-feedback {
   width: 46px;
   height: 46px;
-  line-height: 46px;
+  line-height: 2.875rem;
 }
 .input-sm + .form-control-feedback,
 .input-group-sm + .form-control-feedback,
 .form-group-sm .form-control + .form-control-feedback {
   width: 30px;
   height: 30px;
-  line-height: 30px;
+  line-height: 1.875rem;
 }
 .has-success .help-block,
 .has-success .control-label,
@@ -2194,13 +2197,13 @@ select[multiple].input-lg {
 @media (min-width: 768px) {
   .form-horizontal .form-group-lg .control-label {
     padding-top: 11px;
-    font-size: 18px;
+    font-size: 1.125rem;
   }
 }
 @media (min-width: 768px) {
   .form-horizontal .form-group-sm .control-label {
     padding-top: 6px;
-    font-size: 12px;
+    font-size: 0.75rem;
   }
 }
 .btn {
@@ -2216,7 +2219,7 @@ select[multiple].input-lg {
   border: 1px solid transparent;
   white-space: nowrap;
   padding: 6px 12px;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.42857143;
   border-radius: 1px;
   -webkit-user-select: none;
@@ -2638,21 +2641,21 @@ fieldset[disabled] .btn-link:focus {
 .btn-lg,
 .btn-group-lg > .btn {
   padding: 10px 16px;
-  font-size: 18px;
+  font-size: 1.125rem;
   line-height: 1.3333333;
   border-radius: 2px;
 }
 .btn-sm,
 .btn-group-sm > .btn {
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.5;
   border-radius: 0px;
 }
 .btn-xs,
 .btn-group-xs > .btn {
   padding: 1px 5px;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.5;
   border-radius: 0px;
 }
@@ -2732,7 +2735,7 @@ tbody.collapse.in {
   padding: 5px 0;
   margin: 2px 0 0;
   list-style: none;
-  font-size: 14px;
+  font-size: 0.875rem;
   text-align: left;
   background-color: #ffffff;
   border: 1px solid #cccccc;
@@ -2806,7 +2809,7 @@ tbody.collapse.in {
 .dropdown-header {
   display: block;
   padding: 3px 20px;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.42857143;
   color: #777777;
   white-space: nowrap;
@@ -3042,7 +3045,7 @@ tbody.collapse.in {
 .input-group-lg > .input-group-btn > .btn {
   height: 46px;
   padding: 10px 16px;
-  font-size: 18px;
+  font-size: 1.125rem;
   line-height: 1.3333333;
   border-radius: 2px;
 }
@@ -3050,7 +3053,7 @@ select.input-group-lg > .form-control,
 select.input-group-lg > .input-group-addon,
 select.input-group-lg > .input-group-btn > .btn {
   height: 46px;
-  line-height: 46px;
+  line-height: 2.875rem;
 }
 textarea.input-group-lg > .form-control,
 textarea.input-group-lg > .input-group-addon,
@@ -3065,7 +3068,7 @@ select[multiple].input-group-lg > .input-group-btn > .btn {
 .input-group-sm > .input-group-btn > .btn {
   height: 30px;
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.5;
   border-radius: 0px;
 }
@@ -3073,7 +3076,7 @@ select.input-group-sm > .form-control,
 select.input-group-sm > .input-group-addon,
 select.input-group-sm > .input-group-btn > .btn {
   height: 30px;
-  line-height: 30px;
+  line-height: 1.875rem;
 }
 textarea.input-group-sm > .form-control,
 textarea.input-group-sm > .input-group-addon,
@@ -3101,7 +3104,7 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
 }
 .input-group-addon {
   padding: 6px 12px;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: normal;
   line-height: 1;
   color: #555555;
@@ -3112,12 +3115,12 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
 }
 .input-group-addon.input-sm {
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   border-radius: 0px;
 }
 .input-group-addon.input-lg {
   padding: 10px 16px;
-  font-size: 18px;
+  font-size: 1.125rem;
   border-radius: 2px;
 }
 .input-group-addon input[type="radio"],
@@ -3478,8 +3481,8 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
 .navbar-brand {
   float: left;
   padding: 30px 15px;
-  font-size: 18px;
-  line-height: 20px;
+  font-size: 1.125rem;
+  line-height: 1.25rem;
   height: 80px;
 }
 .navbar-brand:hover,
@@ -3530,7 +3533,7 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
 .navbar-nav > li > a {
   padding-top: 10px;
   padding-bottom: 10px;
-  line-height: 20px;
+  line-height: 1.25rem;
 }
 @media (max-width: 767px) {
   .navbar-nav .open .dropdown-menu {
@@ -3548,7 +3551,7 @@ select[multiple].input-group-sm > .input-group-btn > .btn {
     padding: 5px 15px 5px 25px;
   }
   .navbar-nav .open .dropdown-menu > li > a {
-    line-height: 20px;
+    line-height: 1.25rem;
   }
   .navbar-nav .open .dropdown-menu > li > a:hover,
   .navbar-nav .open .dropdown-menu > li > a:focus {
@@ -3979,7 +3982,7 @@ fieldset[disabled] .navbar-inverse .btn-link:focus {
 .pagination-lg > li > a,
 .pagination-lg > li > span {
   padding: 10px 16px;
-  font-size: 18px;
+  font-size: 1.125rem;
   line-height: 1.3333333;
 }
 .pagination-lg > li:first-child > a,
@@ -3995,7 +3998,7 @@ fieldset[disabled] .navbar-inverse .btn-link:focus {
 .pagination-sm > li > a,
 .pagination-sm > li > span {
   padding: 5px 10px;
-  font-size: 12px;
+  font-size: 0.75rem;
   line-height: 1.5;
 }
 .pagination-sm > li:first-child > a,
@@ -4117,7 +4120,7 @@ a.label:focus {
   display: inline-block;
   min-width: 10px;
   padding: 3px 7px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: bold;
   color: #ffffff;
   line-height: 1;
@@ -4172,7 +4175,7 @@ a.badge:focus {
 }
 .jumbotron p {
   margin-bottom: 15px;
-  font-size: 21px;
+  font-size: 1.3125rem;
   font-weight: 200;
 }
 .jumbotron > hr {
@@ -4199,7 +4202,7 @@ a.badge:focus {
   }
   .jumbotron h1,
   .jumbotron .h1 {
-    font-size: 63px;
+    font-size: 3.9375rem;
   }
 }
 .thumbnail {
@@ -4340,8 +4343,8 @@ a.thumbnail.active {
   float: left;
   width: 0%;
   height: 100%;
-  font-size: 12px;
-  line-height: 20px;
+  font-size: 0.75rem;
+  line-height: 1.25rem;
   color: #ffffff;
   text-align: center;
   background-color: #2980b9;
@@ -4674,7 +4677,7 @@ button.list-group-item-danger.active:focus {
 .panel-title {
   margin-top: 0;
   margin-bottom: 0;
-  font-size: 16px;
+  font-size: 1rem;
   color: inherit;
 }
 .panel-title > a,
@@ -5044,7 +5047,7 @@ button.list-group-item-danger.active:focus {
 }
 .close {
   float: right;
-  font-size: 21px;
+  font-size: 1.3125rem;
   font-weight: bold;
   line-height: 1;
   color: #000000;
@@ -5209,7 +5212,7 @@ button.close {
   word-break: normal;
   word-spacing: normal;
   word-wrap: normal;
-  font-size: 12px;
+  font-size: 0.75rem;
   opacity: 0;
   filter: alpha(opacity=0);
 }
@@ -5327,7 +5330,7 @@ button.close {
   word-break: normal;
   word-spacing: normal;
   word-wrap: normal;
-  font-size: 14px;
+  font-size: 0.875rem;
   background-color: #ffffff;
   -webkit-background-clip: padding-box;
           background-clip: padding-box;
@@ -5352,7 +5355,7 @@ button.close {
 .popover-title {
   margin: 0;
   padding: 8px 14px;
-  font-size: 14px;
+  font-size: 0.875rem;
   background-color: #f7f7f7;
   border-bottom: 1px solid #ebebeb;
   border-radius: 1px 1px 0 0;

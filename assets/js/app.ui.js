@@ -139,6 +139,12 @@
         return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
     };
 
+    /** A text size given in the design's px, in the page's current px (Ketura, 2026-11-09):
+        for code that must give a number, like the charts; follows the root text size */
+    ui.text_px = function text_px(px) {
+        return px * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16;
+    };
+
     ui.export_gemp = function export_gemp(deck) {
         $('#export-deck').text(deck.get_export('gemp'));
         $('#exportModal').modal('show');

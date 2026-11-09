@@ -1238,8 +1238,9 @@ decklist.state.replace_cards: Replace Cards From Deck
 decklist.state.open_deck: Open the Deck
 decklist.state.no_deck: "The deck it was published from is gone, so its cards can't be replaced."
 decklist.state.withdrawn_help: "Withdrawn: only you can see this decklist. Fix the deck in the deckbuilder, replace the cards with it here, then publish it again at the same address, with a fresh three days to undo it."
-decklist.state.grace_help: "Until %date% you can undo publishing to fix the cards. After that the cards and release date are fixed, and changing them means publishing a new version."
-decklist.state.fixed_help: "The cards and release date are fixed. To change them, publish a new version from the deck."
+decklist.state.grace_help: "Until %date% you can undo publishing if you need to fix the deck contents."
+decklist.state.fixed_help: "Once published a decklist cannot have its cards edited, but you can publish a new version. %link% to make a new private revision."
+decklist.state.fixed_link: "Go to My Decks"
 decklist.state.withdrawn_note: "Withdrawn: only you can see this decklist."
 decklist.state.gone_title: Decklist Withdrawn
 decklist.state.gone_text: "Its author has withdrawn this decklist, perhaps to fix it. It may be back at this address soon."

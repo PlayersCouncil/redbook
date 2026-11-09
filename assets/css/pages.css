@@ -1,23 +1,23 @@
 /* Smaller pages: the historians' queue, New Deck */
 
 /* the historians' review queue */
-.rb-review-page h2 { font-size: 18px; margin: 18px 0 8px; }
+.rb-review-page h2 { font-size: 1.125rem; margin: 18px 0 8px; }
 .rb-queue-filters { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px 12px; padding: 12px; border: 1px solid var(--rb-line); border-radius: 8px; background: var(--rb-page); }
-.rb-queue-filters label { display: flex; flex-direction: column; gap: 2px; margin: 0; font-size: 12px; font-weight: 600; color: var(--rb-ink-2); }
-.rb-queue-filters input, .rb-queue-filters select { height: 32px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-control); color: var(--rb-ink); font-size: 13px; font-weight: 400; min-width: 0; }
+.rb-queue-filters label { display: flex; flex-direction: column; gap: 2px; margin: 0; font-size: 0.75rem; font-weight: 600; color: var(--rb-ink-2); }
+.rb-queue-filters input, .rb-queue-filters select { height: 32px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-control); color: var(--rb-ink); font-size: 0.8125rem; font-weight: 400; min-width: 0; }
 .rb-queue-filter-actions { display: flex; align-items: flex-end; gap: 6px; }
 .rb-queue { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--rb-line); }
 .rb-queue-row { padding: 8px 4px; border-bottom: 1px solid var(--rb-line); display: flex; flex-direction: column; gap: 3px; }
 .rb-queue-main { display: flex; align-items: baseline; gap: 8px; }
 .rb-queue-name { font-weight: 700; color: var(--rb-ink); }
-.rb-queue-public { font-size: 11px; color: var(--rb-ink-2); }
-.rb-queue-meta { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 12px; color: var(--rb-ink-2); }
-.rb-queue-verified { font-size: 12px; color: var(--rb-success); }
-.rb-queue-pager { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; font-size: 13px; }
+.rb-queue-public { font-size: 0.6875rem; color: var(--rb-ink-2); }
+.rb-queue-meta { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 0.75rem; color: var(--rb-ink-2); }
+.rb-queue-verified { font-size: 0.75rem; color: var(--rb-success); }
+.rb-queue-pager { display: flex; justify-content: space-between; align-items: center; padding: 10px 4px; font-size: 0.8125rem; }
 
 /* New Deck with its imports (Ketura, 2026-11-08) */
 .rb-new-deck h1 { margin-bottom: 18px; }
 .rb-new-import { margin: 18px 0 8px; padding: 12px 16px 4px; border: 1px solid var(--rb-line, var(--rb-line)); border-radius: 8px; background: var(--rb-page); }
-.rb-new-import legend { width: auto; margin: 0; padding: 0 6px; border: 0; font-size: 15px; font-weight: 700; }
+.rb-new-import legend { width: auto; margin: 0; padding: 0 6px; border: 0; font-size: 0.9375rem; font-weight: 700; }
 .rb-new-blank { margin: 4px 0 10px; color: var(--rb-ink-2); font-style: italic; }
 .rb-new-private { margin: 14px 0 10px; color: var(--rb-ink-2); }

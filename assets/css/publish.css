@@ -42,7 +42,7 @@
 .rb-publish-top { flex: none; }
 .rb-publish-top .alert { margin-bottom: 10px; }
 .rb-derived-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 8px; vertical-align: middle; }
-.rb-derived-tags .rb-tag-chip { padding: 0 8px; font-size: 12px; }
+.rb-derived-tags .rb-tag-chip { padding: 0 8px; font-size: 0.75rem; }
 #version-card { margin: 6px 0; }
 .rb-publish-top .form-group { margin-bottom: 10px; }
 .rb-publish-scroll { padding: 12px 12px 18px 8px; border-top: 1px solid var(--rb-line); }
@@ -57,7 +57,7 @@
 .rb-publish .rb-release-date input { max-width: 220px; }
 
 /* the decklist form's version, under the Deck Name heading (Ketura, 2026-11-08) */
-.rb-form-version { margin: -2px 0 6px; color: var(--rb-ink-2); font-weight: 600; font-size: 13px; }
+.rb-form-version { margin: -2px 0 6px; color: var(--rb-ink-2); font-weight: 600; font-size: 0.8125rem; }
 /* derived from: several picks, each a card with Remove (Ketura, 2026-11-08) */
 .rb-derived-chosen:not(:empty) { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
 .rb-derived-pick { display: flex; align-items: center; gap: 6px; }

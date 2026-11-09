@@ -26,11 +26,10 @@
     <script>(function(){var h=document.documentElement,t="auto";try{t=localStorage.getItem("pc-theme")||t;}catch(e){}
     if(t==="dark"||(t==="auto"&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches))h.classList.add("pc-dark");
     h.classList.add("theme-"+t);})();</script>
-    {# the design's faces; the second is the title's, cut to the letters it uses #}
+    {# the design's faces (the title and wordmark are outlines, _logo.svg.twig and _wordmark.svg.twig) #}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Marcellus+SC&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&text=the%20RdbOk&display=swap">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/qtip2/2.1.1/jquery.qtip.css">
     <link rel="stylesheet"
@@ -76,9 +75,8 @@
         {% block navbar %}
             <button type="button" class="rb-burger" aria-label="{{ 'nav.menu' | trans }}" aria-controls="rb-nav-primary" aria-expanded="false"><span class="fas fa-bars"></span></button>
             <a class="rb-brand" href="{{ path('index') }}" aria-label="{{ 'site.name' | trans }}">
-                <svg viewBox="0 0 26 30" aria-hidden="true"><path d="M5 2h15.5A2.5 2.5 0 0 1 23 4.5v19a2.5 2.5 0 0 1-2.5 2.5H5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 2.2v23.6" stroke="currentColor" stroke-width="3.2"/><rect x="9" y="5.5" width="10.5" height="16.5" fill="none" stroke="currentColor" stroke-width=".8"/><path d="M14.25 9.2l1.15 3.1 3.1 1.15-3.1 1.15-1.15 3.1-1.15-3.1-3.1-1.15 3.1-1.15z" fill="currentColor"/><path d="M16 26v3.6l1.6-1.3 1.6 1.3V26" fill="currentColor"/></svg>
-                {# the odd casing is the face's: in Cinzel Decorative a lowercase b is the plain B, a capital O the wanted one #}
-                <span class="rb-brand-word" aria-hidden="true"><span class="rb-cap">R</span>ed <span class="rb-cap">b</span>OOk</span>
+                <svg class="rb-mark" viewBox="0 0 26 30" aria-hidden="true"><path d="M5 2h15.5A2.5 2.5 0 0 1 23 4.5v19a2.5 2.5 0 0 1-2.5 2.5H5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 2.2v23.6" stroke="currentColor" stroke-width="3.2"/><rect x="9" y="5.5" width="10.5" height="16.5" fill="none" stroke="currentColor" stroke-width=".8"/><path d="M14.25 9.2l1.15 3.1 3.1 1.15-3.1 1.15-1.15 3.1-1.15-3.1-3.1-1.15 3.1-1.15z" fill="currentColor"/><path d="M16 26v3.6l1.6-1.3 1.6 1.3V26" fill="currentColor"/></svg>
+                {% include '_wordmark.svg.twig' %}
             </a>
             <ul class="rb-nav rb-nav-primary" id="rb-nav-primary">
                 <li><a href="{{ path('decklists_list') }}"{% if _section == 'decklists' %} class="active" aria-current="page"{% endif %}><span class="fas fa-search"></span>{{ 'nav.decklists' | trans }}</a></li>

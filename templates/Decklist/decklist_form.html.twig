@@ -98,9 +98,13 @@
                                     </form>
                                 {% endif %}
                             </div>
-                        {% else %}
-                            <div class="alert alert-default rb-state" id="decklist-state" data-state="fixed">
-                                <p>{{ 'decklist.state.fixed_help' | trans }}</p>
+                        {% endif %}
+                        {% if not decklist.withdrawn %}
+                            {# always (Ketura, 2026-11-09): the cards are fixed once published; a new
+                               version starts from the deck, as a private revision #}
+                            {% set deck_link = source_deck ? '<a href="' ~ path('deck_edit', {deck_uuid: source_deck.uuid}) ~ '">' ~ ('decklist.state.fixed_link' | trans) ~ '</a>' : ('decklist.state.fixed_link' | trans) %}
+                            <div class="alert alert-default rb-state rb-state-fixed"{% if not decklist.canWithdraw %} id="decklist-state" data-state="fixed"{% endif %}>
+                                <p>{{ 'decklist.state.fixed_help' | trans({'%link%': deck_link}) | raw }}</p>
                             </div>
                         {% endif %}
                     {% endif %}

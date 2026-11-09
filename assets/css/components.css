@@ -115,8 +115,8 @@
 .rb-thumb-options { position: absolute; z-index: 1000; top: calc(100% + 3px); left: 0; right: 0; max-height: 340px; overflow-y: auto; padding: 4px 0;
     border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-leaf); box-shadow: var(--rb-shadow-2); }
 .rb-thumb-options[hidden] { display: none; }
-.rb-thumb-group { padding: 6px 12px 2px; font-size: 12px; font-weight: 700; color: var(--rb-ink-2); letter-spacing: .03em; }
-.rb-thumb-option { padding: 4px 12px 4px 22px; cursor: pointer; font-size: 14px; }
+.rb-thumb-group { padding: 6px 12px 2px; font-size: 0.75rem; font-weight: 700; color: var(--rb-ink-2); letter-spacing: .03em; }
+.rb-thumb-option { padding: 4px 12px 4px 22px; cursor: pointer; font-size: 0.875rem; }
 .rb-thumb-option[data-value=""] { padding-left: 12px; }
 .rb-thumb-option.is-active { background: var(--rb-control-hover); }
 .rb-thumb-option[aria-selected=true] { font-weight: 700; }
@@ -129,7 +129,7 @@
     padding: 0; border: 0; border-radius: 7px; background: rgba(28, 24, 16, .35); color: #fff; cursor: pointer;
     opacity: 0; transition: opacity .12s;
 }
-.rb-thumb-edit .fas { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(28, 24, 16, .75); font-size: 15px; }
+.rb-thumb-edit .fas { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; background: rgba(28, 24, 16, .75); font-size: 0.9375rem; }
 .rb-thumb-preview:hover .rb-thumb-edit, .rb-thumb-edit:focus-visible { opacity: 1; }
 @media (hover: none) { .rb-thumb-edit { opacity: 1; background: none; align-items: flex-end; justify-content: flex-end; padding: 4px; } }
 
@@ -139,8 +139,8 @@ body.rb-crop-open { overflow: hidden; }
 .rb-crop { position: fixed; inset: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(28, 24, 16, .6); }
 .rb-crop[hidden] { display: none; }
 .rb-crop-dialog { display: flex; flex-direction: column; max-width: 100%; max-height: 100%; padding: 16px 24px 18px; border-radius: 10px; background: var(--rb-leaf); box-shadow: 0 10px 40px rgba(0, 0, 0, .45); }
-.rb-crop-title { margin: 0; text-align: center; font-size: 20px; font-weight: 700; }
-.rb-crop-hint { margin: 4px 0 12px; text-align: center; color: var(--rb-ink-2); font-size: 13px; }
+.rb-crop-title { margin: 0; text-align: center; font-size: 1.25rem; font-weight: 700; }
+.rb-crop-hint { margin: 4px 0 12px; text-align: center; color: var(--rb-ink-2); font-size: 0.8125rem; }
 .rb-crop-body { display: flex; align-items: flex-start; gap: 20px; min-height: 0; }
 .rb-crop-stage { position: relative; flex: 0 0 auto; overflow: hidden; border-radius: 8px; touch-action: none; user-select: none; }
 /* sized by ui.decklist_form.js to fit the window */
@@ -167,7 +167,7 @@ body.rb-crop-open { overflow: hidden; }
 .rb-crop-ne, .rb-crop-sw { cursor: nesw-resize; }
 .rb-crop-nw, .rb-crop-se { cursor: nwse-resize; }
 .rb-crop-side { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.rb-crop-label { font-size: 12px; font-weight: 700; color: var(--rb-ink-2); letter-spacing: .03em; }
+.rb-crop-label { font-size: 0.75rem; font-weight: 700; color: var(--rb-ink-2); letter-spacing: .03em; }
 .rb-crop-preview { width: 180px; }
 .rb-crop-actions { display: flex; gap: 10px; margin-top: 16px; }
 .rb-crop-gap { flex: 1 1 auto; }
@@ -191,10 +191,10 @@ body.rb-crop-open { overflow: hidden; }
 .rb-md-editor { display: flex; flex-direction: column; min-height: 0; }
 .rb-md-editor .md-editor { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; margin: 0; border-radius: 6px; }
 .rb-md-editor .md-editor > textarea,
-.rb-md-editor .md-editor > .md-preview { flex: 1 1 0; min-height: 60px; height: auto !important; resize: none; overflow-y: auto; font-family: inherit; font-size: 13px; padding: 6px 8px; }
+.rb-md-editor .md-editor > .md-preview { flex: 1 1 0; min-height: 60px; height: auto !important; resize: none; overflow-y: auto; font-family: inherit; font-size: 0.8125rem; padding: 6px 8px; }
 .rb-md-editor .md-editor > .md-header { padding: 4px; }
 .rb-md-editor .md-editor .btn-sm { padding: 2px 8px; }
-.rb-md-editor .md-footer { padding: 3px 8px; font-size: 12px; color: var(--rb-ink-2); }
+.rb-md-editor .md-footer { padding: 3px 8px; font-size: 0.75rem; color: var(--rb-ink-2); }
 
 /* the markdown editor's fullscreen (Ketura, 2026-11-07): a box over most of the page with the
    rest dimmed, its title above the toolbar, the toolbar as usual but centred, the text never
@@ -214,7 +214,7 @@ body.rb-crop-open { overflow: hidden; }
     border-radius: 10px; background: var(--rb-leaf) !important;
     box-shadow: 0 0 0 100vmax rgba(28, 24, 16, .6), 0 10px 40px rgba(0, 0, 0, .45);
 }
-.rb-md-editor .md-editor.md-fullscreen-mode .rb-md-title { display: block; padding: 0 50px; text-align: center; font-size: 20px; font-weight: 700; }
+.rb-md-editor .md-editor.md-fullscreen-mode .rb-md-title { display: block; padding: 0 50px; text-align: center; font-size: 1.25rem; font-weight: 700; }
 .rb-md-editor .md-editor.md-fullscreen-mode .md-header { position: static; top: auto; width: auto; padding: 0; text-align: center; background: none; }
 .rb-md-editor .md-editor.md-fullscreen-mode .md-header .btn { border: 1px solid var(--rb-line-strong); background: var(--rb-control); color: var(--rb-ink); }
 .rb-md-editor .md-editor.md-fullscreen-mode .md-header .btn:hover,
@@ -224,7 +224,7 @@ body.rb-crop-open { overflow: hidden; }
 .rb-md-editor .md-editor.md-fullscreen-mode .md-preview {
     flex: 1 1 auto; width: 100%; height: auto !important; min-height: 0 !important; margin: 0 !important;
     padding: 14px 18px !important; border: 1px solid var(--rb-line) !important; border-radius: 6px;
-    font-size: 17px !important; line-height: 1.55 !important; color: var(--rb-ink) !important; background: var(--rb-control) !important;
+    font-size: 1.0625rem !important; line-height: 1.55 !important; color: var(--rb-ink) !important; background: var(--rb-control) !important;
 }
 .rb-md-editor .md-editor.md-fullscreen-mode .md-fullscreen-controls { top: 14px; right: 18px; }
 .rb-md-editor .md-editor.md-fullscreen-mode .md-fullscreen-controls a { margin: 0; }
@@ -252,7 +252,7 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 .rb-sym-icon { color: var(--rb-ink); }
 .rb-sym[data-tip]:hover::after {
     content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 5px); transform: translateX(-50%);
-    padding: 2px 7px; border-radius: 4px; background: var(--rb-selected); color: var(--rb-selected-ink); font-size: 12px; font-weight: 600; line-height: 1.5;
+    padding: 2px 7px; border-radius: 4px; background: var(--rb-selected); color: var(--rb-selected-ink); font-size: 0.75rem; font-weight: 600; line-height: 1.5;
     white-space: nowrap; pointer-events: none; z-index: 60;
 }
 .rb-sym-dunland { --icon: url(/images/cultures/dunland.svg); }
@@ -295,10 +295,10 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 .rb-sym-group + .rb-sym-group { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--rb-line); }
 .rb-sym-group-twilight { grid-template-columns: repeat(11, minmax(0, 1fr)); }
 .rb-sym-menu button { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border: 0; border-radius: 4px; background: none;
-    font-size: 13px; color: var(--rb-ink); text-align: left; cursor: pointer; }
+    font-size: 0.8125rem; color: var(--rb-ink); text-align: left; cursor: pointer; }
 .rb-sym-group-twilight button { justify-content: center; padding: 4px 0; }
 .rb-sym-menu button:hover, .rb-sym-menu button:focus { background: var(--rb-control-hover); }
-.rb-sym-menu .rb-sym { font-size: 18px; vertical-align: middle; }
+.rb-sym-menu .rb-sym { font-size: 1.125rem; vertical-align: middle; }
 .rb-my-decks .rb-results-sort select { width: auto; }
 .rb-my-decks .rb-browse-pane .rb-dates input { padding-left: 6px; padding-right: 4px; }
 .rb-history-edit { margin-bottom: 2px; font-weight: 600; color: var(--rb-warning); }
@@ -315,7 +315,7 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 .rb-ld-new { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px dashed var(--rb-line-strong); border-radius: 6px; background: var(--rb-leaf); color: var(--rb-ink); font-weight: 600; text-align: left; }
 .rb-ld-new:hover, .rb-ld-new:focus { background: var(--rb-page); }
 .rb-ld-new-form { display: flex; gap: 6px; }
-.rb-ld-message { padding: 6px 8px; border-radius: 6px; font-size: 13px; background: var(--rb-page); }
+.rb-ld-message { padding: 6px 8px; border-radius: 6px; font-size: 0.8125rem; background: var(--rb-page); }
 .rb-ld-message.is-ok { background: var(--rb-success-soft); color: var(--rb-success); }
 .rb-ld-message.is-error { background: var(--rb-danger-soft); color: var(--rb-danger); }
 .rb-ld-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; border-top: 1px solid var(--rb-line); }
@@ -323,8 +323,8 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 .rb-ld-library:hover, .rb-ld-library:focus { background: var(--rb-page); }
 .rb-ld-library.is-in { cursor: default; color: var(--rb-ink-2); }
 .rb-ld-name { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
-.rb-ld-count { flex: 0 0 auto; color: var(--rb-ink-2); font-size: 12px; }
-.rb-ld-in { flex: 0 0 auto; color: var(--rb-success); font-size: 12px; font-weight: 700; }
+.rb-ld-count { flex: 0 0 auto; color: var(--rb-ink-2); font-size: 0.75rem; }
+.rb-ld-in { flex: 0 0 auto; color: var(--rb-success); font-size: 0.75rem; font-weight: 700; }
 .rb-ld-none { padding: 10px 4px; margin: 0; color: var(--rb-ink-2); }
 
 /* Publish is green (Ketura, 2026-11-09: the switch from blue to green is deliberate): the
@@ -337,7 +337,7 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
    the pill keeps to one line; a status beside a name sits a little smaller */
 .rb-col-format .rb-format { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
 .rb-fmt-state { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 4px; }
-.rb-user-historic, .rb-deck-by .rb-status, .rb-fmt-state .rb-status { height: 19px; padding: 0 6px; font-size: 11.5px; margin-left: 4px; }
+.rb-user-historic, .rb-deck-by .rb-status, .rb-fmt-state .rb-status { height: 19px; padding: 0 6px; font-size: 0.71875rem; margin-left: 4px; }
 .rb-fmt-state .rb-status { margin-left: 0; }
 a.rb-status:hover { text-decoration: none; filter: brightness(.95); }
 
@@ -417,3 +417,7 @@ html.pc-dark .rb-thumb, html.pc-dark .rb-tile-img, html.pc-dark .rb-pool-img, ht
 .container.main > :is(h1, h2, h3, h4), .container.main > .row > [class*="col-"] > :is(h1, h2, h3, h4) { margin: 0 0 .45em; }
 .rb-reader-text :is(h1, h2, h3, h4, h5, h6):not(:first-child), .md-preview :is(h1, h2, h3, h4, h5, h6):not(:first-child), article.review .review-text :is(h1, h2, h3, h4):not(:first-child),
 .container.main > :is(h1, h2, h3, h4):not(:first-child), .container.main > .row > [class*="col-"] > :is(h1, h2, h3, h4):not(:first-child) { margin-top: 1.1em; }
+
+/* the pager's start and end half as wide again as the other buttons (Ketura, 2026-11-09) */
+.rb-page.rb-page-end { min-width: 48px; }
+@media (max-width: 767px) { .rb-page.rb-page-end { min-width: 60px; } }

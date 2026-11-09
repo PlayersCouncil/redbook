@@ -611,8 +611,9 @@ decklist.state.replace_cards: Reemplazar Cartas Desde el Mazo
 decklist.state.open_deck: Abrir el Mazo
 decklist.state.no_deck: "El mazo desde el que se publicó ya no existe, así que sus cartas no se pueden reemplazar."
 decklist.state.withdrawn_help: "Retirada: solo tú puedes ver esta lista. Corrige el mazo en el constructor, reemplaza aquí las cartas y publícala de nuevo en la misma dirección, con otros tres días para deshacerlo."
-decklist.state.grace_help: "Hasta %date% puedes deshacer la publicación para corregir las cartas. Después, las cartas y la fecha de lanzamiento quedan fijas, y cambiarlas significa publicar una nueva versión."
-decklist.state.fixed_help: "Las cartas y la fecha de lanzamiento son fijas. Para cambiarlas, publica una nueva versión desde el mazo."
+decklist.state.grace_help: "Hasta el %date% puedes deshacer la publicación si necesitas corregir el contenido del mazo."
+decklist.state.fixed_help: "Una vez publicada, una lista no puede cambiar sus cartas, pero puedes publicar una versión nueva. %link% para crear una nueva revisión privada."
+decklist.state.fixed_link: "Ve a Mis mazos"
 decklist.state.withdrawn_note: "Retirada: solo tú puedes ver esta lista."
 decklist.state.gone_title: Lista Retirada
 decklist.state.gone_text: "Su autor ha retirado esta lista, quizá para corregirla. Puede que vuelva pronto a esta dirección."

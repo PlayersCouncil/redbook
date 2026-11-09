@@ -206,6 +206,11 @@ test('the author edits the decklist from its page; nobody else gets Edit', async
   await expect(page.locator('.rb-publish-title')).toHaveText('Edit Decklist Details');
   await expect(page.locator('#annot-list textarea[data-annotation="1_12"]')).toHaveValue('The only companion.');
   await expect(page.locator('#decklist-state')).toHaveAttribute('data-state', 'grace');
+  await expect(page.locator('#decklist-state')).toContainText('you can undo publishing if you need to fix the deck contents');
+  // under it, always (Ketura, 2026-11-09): a new version starts from the deck
+  const fixed = page.locator('.rb-state-fixed');
+  await expect(fixed).toContainText('Once published a decklist cannot have its cards edited');
+  await expect(fixed.locator('a', { hasText: 'Go to My Decks' })).toHaveAttribute('href', /\/deck\/edit\//);
   await expect(page.locator('#effective_date')).toBeDisabled();
   await expect(page.locator('#version-line')).toContainText('Version v1.0');
   await expect(page.locator('.rb-form-actions a')).toHaveAttribute('href', new URL(decklistUrl).pathname);

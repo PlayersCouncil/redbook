@@ -49,8 +49,10 @@
             row: Highcharts.Color(tk('--rb-highlight')).setOpacity(0.35).get()
         };
         // axes, gridlines and legends in the theme's inks, for every chart drawn after this
-        var axis = {labels: {style: {color: C.ink2}}, title: {style: {color: C.ink2}}, lineColor: C.line_strong, tickColor: C.line_strong, gridLineColor: C.line};
-        Highcharts.setOptions({xAxis: axis, yAxis: axis, legend: {itemStyle: {color: C.ink}, itemHoverStyle: {color: C.ink}}, title: {style: {color: C.ink}}});
+        // and in the site's text size (Highcharts' own 11px and 12px, scaled as the rest of the text)
+        var small = app.ui.text_px(11) + 'px', normal = app.ui.text_px(12) + 'px',
+            axis = {labels: {style: {color: C.ink2, fontSize: small}}, title: {style: {color: C.ink2, fontSize: normal}}, lineColor: C.line_strong, tickColor: C.line_strong, gridLineColor: C.line};
+        Highcharts.setOptions({xAxis: axis, yAxis: axis, legend: {itemStyle: {color: C.ink, fontSize: normal}, itemHoverStyle: {color: C.ink}}, title: {style: {color: C.ink}}});
     }
 
     function t(key, params)
@@ -309,7 +311,7 @@
                 var bar = point.graphic.element.getBoundingClientRect(),
                     label = chart.renderer.label(String(Math.abs(point.y)), 0, 0)
                         .attr({fill: C.ink, padding: 3, r: 3, zIndex: 9, 'class': 'rb-bar-count'})
-                        .css({fontWeight: '700', fontSize: '12px', color: C.page, pointerEvents: 'none'})
+                        .css({fontWeight: '700', fontSize: app.ui.text_px(12) + 'px', color: C.page, pointerEvents: 'none'})
                         .add(),
                     size = label.getBBox();
                 label.attr({x: Math.round(bar.left - box.left + bar.width / 2 - size.width / 2), y: Math.round(bar.top - box.top + bar.height / 2 - size.height / 2)});
@@ -455,7 +457,7 @@
                         .attr({stroke: C.ink2, 'stroke-width': 1}).add(hover);
                 }
                 chart.renderer.text(_.escape(point.name) + (thin(point) ? ' · ' + point.y : ''), tx, y)
-                    .attr({align: align}).css({fontSize: '13px', fontWeight: '700', color: C.ink}).add(hover);
+                    .attr({align: align}).css({fontSize: app.ui.text_px(13) + 'px', fontWeight: '700', color: C.ink}).add(hover);
             },
             hide_name = function () {
                 if(hover) {
@@ -659,7 +661,7 @@
                     color: C.ink3, lineWidth: 2, dashStyle: 'Dash', marker: {enabled: false}, enableMouseTracking: false,
                     showInLegend: false, zIndex: z,
                     dataLabels: {enabled: false, align: 'right', verticalAlign: 'middle', x: -8, y: 0, crop: false, overflow: 'none',
-                        style: {color: color, fontWeight: '700', fontSize: '12px', textShadow: '0 0 3px ' + C.page + ', 0 0 2px ' + C.page},
+                        style: {color: color, fontWeight: '700', fontSize: app.ui.text_px(12) + 'px', textShadow: '0 0 3px ' + C.page + ', 0 0 2px ' + C.page},
                         formatter: function () { return Translator.transChoice('deckbuilder.statstab.cards_remain', end[1], {count: end[1]}); }}
                 };
             },

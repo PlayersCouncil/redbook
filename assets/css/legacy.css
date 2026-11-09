@@ -2,7 +2,7 @@
 
 
 .card-content {
-    font: 17px/1.35 var(--rb-font-prose);
+    font: 1.0625rem/1.35 var(--rb-font-prose);
 }
 .card-content abbr[title] {
     border-bottom: none;
@@ -169,7 +169,7 @@ div#description-preview img {
 
 /************** QTIP ****************/
 .qtip-thronesdb{border-radius:2px;max-width:400px}
-.qtip-thronesdb-text{font-size:15px}
+.qtip-thronesdb-text{font-size:0.9375rem}
 .qtip-thronesdb-image{max-width:none;padding:0;border:0;background:transparent;box-shadow:none}
 .qtip-thronesdb-image .qtip-content{padding:0}
 
@@ -180,14 +180,14 @@ div#description-preview img {
 h1.site-title {
     font-family: var(--rb-font-title);
     position:relative;
-    font-size:116px;
+    font-size:7.25rem;
     text-align:center;
     margin-top: 0;
 }
 div.site-slogan {
     font-family: var(--rb-font-display);
     position:relative;
-    font-size:40px;
+    font-size:2.5rem;
     text-align:center;
 }
 
@@ -257,7 +257,7 @@ article.review .review-comment {
 
 @media print {
     h1 {
-        font-size: 24px;
+        font-size: 1.5rem;
     }
     a[href]:after {
         content: none !important;
