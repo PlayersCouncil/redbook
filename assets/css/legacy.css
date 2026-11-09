@@ -2,7 +2,7 @@
 
 
 .card-content {
-    font: 16px/20px 'Crimson Text', serif;
+    font: 17px/1.35 var(--rb-font-prose);
 }
 .card-content abbr[title] {
     border-bottom: none;
@@ -17,7 +17,7 @@
 }
 
 .card-name {
-    font-family: 'Julius Sans One', sans-serif;
+    font-family: var(--rb-font-prose);
     font-weight: 700;
 }
 .card-preview {
@@ -50,10 +50,6 @@
 .card-flavor cite::before {
     /* en dash followed by non-breaking zero-width space */
     content: "\2013\FEFF";
-}
-
-.navbar-static-top {
-    z-index: auto;
 }
 
 .display-spoiler-card {
@@ -182,14 +178,14 @@ div#description-preview img {
 /************** INDEX PAGE ***************/
 
 h1.site-title {
-    font-family: 'Julius Sans One', sans-serif;
+    font-family: var(--rb-font-title);
     position:relative;
     font-size:116px;
     text-align:center;
     margin-top: 0;
 }
 div.site-slogan {
-    font-family: 'Open Sans Condensed', sans-serif;
+    font-family: var(--rb-font-display);
     position:relative;
     font-size:40px;
     text-align:center;

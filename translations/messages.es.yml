@@ -10,10 +10,17 @@ noimage: Sin imagen
 design_team_call_to_action: "Si te interesa probar cartas como esta, ¡visita <a href=\"%url%\">The Citadel</a> para más información!"
 
 nav:
+  notifications: Notificaciones
+  menu: Menú
+  theme:
+    label: Tema de color
+    light: Claro
+    auto: Según el sistema
+    dark: Oscuro
   mydecks: Mis mazos
   mylibraries: Mis bibliotecas
   decklists: Mazos
-  decklibrary: Biblioteca de mazos
+  libraries: Bibliotecas
   cardstats: Estadísticas de cartas
   players: Jugadores
   events: Eventos

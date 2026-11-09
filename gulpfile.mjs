@@ -94,6 +94,7 @@ export function buildAppJs() {
       "assets/js/app.deck_history.js",
       "assets/js/app.deck_charts.js",
       "assets/js/app.ui.js",
+      "assets/js/app.theme_switch.js",
       "assets/js/app.splitter.js",
       "assets/js/app.thumbnail.js",
       "assets/js/app.tag_input.js",

@@ -10,6 +10,14 @@ noimage: Kein Bild
 design_team_call_to_action: "Wenn du daran interessiert bist, Karten wie diese zu testen, dann besuche <a href=\"%url%\">The Citadel</a> für weitere Informationen!"
 
 nav:
+  notifications: Benachrichtigungen
+  menu: Menü
+  theme:
+    label: Farbschema
+    light: Hell
+    auto: Wie das System
+    dark: Dunkel
+  libraries: Bibliotheken
   mydecks: Meine Decks
   decklists: Decklisten
   cards: Karten

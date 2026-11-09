@@ -11,10 +11,17 @@ noimage: No image
 design_team_call_to_action: "If you are interested in playtesting cards like this, visit <a href=\"%url%\">The Citadel</a> for more info!"
 
 nav:
+  notifications: Notifications
+  menu: Menu
+  theme:
+    label: Colour theme
+    light: Light
+    auto: Match system
+    dark: Dark
   mydecks: My Decks
   mylibraries: My Libraries
   decklists: Decklists
-  decklibrary: Deck Library
+  libraries: Libraries
   cardstats: Card Stats
   players: Players
   events: Events

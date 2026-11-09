@@ -370,7 +370,7 @@ button.rb-page[disabled] { color: var(--rb-ink-3); border-color: var(--rb-line);
 .rb-review-sources { margin: 0; font-size: 13px; }
 .rb-review-unresolved ul { list-style: none; padding-left: 0; }
 .rb-review-unresolved li { padding: 5px 0; border-top: 1px solid var(--rb-line); }
-.rb-line-search { padding: 0; border: 0; background: none; color: var(--rb-link); font-family: Menlo, Consolas, monospace; font-size: 12.5px; text-align: left; text-decoration: underline dotted; cursor: pointer; }
+.rb-line-search { padding: 0; border: 0; background: none; color: var(--rb-link); font-family: var(--rb-font-mono); font-size: 12.5px; text-align: left; text-decoration: underline dotted; cursor: pointer; }
 .rb-line-search .fas { font-size: 10px; color: var(--rb-ink-2); }
 .rb-line-search:hover { color: var(--rb-link); text-decoration-style: solid; }
 .rb-candidates { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
@@ -551,7 +551,7 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 .rb-pattern-turn { display: inline-flex; }
 .rb-pattern-turn button:first-child { border-radius: 6px 0 0 6px; }
 .rb-pattern-turn button:last-child { border-radius: 0 6px 6px 0; border-left: 0; }
-.rb-pattern-text { margin-left: 6px; font-family: Menlo, Consolas, monospace; color: var(--rb-ink-2); }
+.rb-pattern-text { margin-left: 6px; font-family: var(--rb-font-mono); color: var(--rb-ink-2); }
 .rb-runout-summary { margin: 4px 0 0; font-size: 13px; }
 
 /* hover counts on the Stats bars must not catch the pointer, or the bar loses its hover */

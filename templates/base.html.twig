@@ -21,8 +21,16 @@
         <meta name="description" content="{{ pagedescription }}">
     {% endif %}
 
-    <link href='https://fonts.googleapis.com/css?family=Crimson+Text:400,400i,700,700i|Julius+Sans+One|Open+Sans:400,400i,700,700i|Open+Sans+Condensed:300'
-          rel='stylesheet' type='text/css'>
+    {# the theme before anything paints (Ketura, 2026-11-09; the design's theme-switch.js): light,
+       dark or the system's, from the same "pc-theme" the wiki uses #}
+    <script>(function(){var h=document.documentElement,t="auto";try{t=localStorage.getItem("pc-theme")||t;}catch(e){}
+    if(t==="dark"||(t==="auto"&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches))h.classList.add("pc-dark");
+    h.classList.add("theme-"+t);})();</script>
+    {# the design's faces; the second is the title's, cut to the letters it uses #}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Marcellus+SC&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&text=the%20RdbOk&display=swap">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/qtip2/2.1.1/jquery.qtip.css">
     <link rel="stylesheet"
@@ -33,81 +41,89 @@
     {% block stylesheets %}{% endblock %}
 </head>
 <body>
-{# The page is the size of the window (Ketura, 2026-11-03): the navbar and footer stay
+{# The page is the size of the window (Ketura, 2026-11-03): the top bar and footer stay
    put and the content between scrolls, or, on pages like the deckbuilder that set
-   wrapper_class to rb-fill, fills the space and lets its own panes scroll. #}
-    <nav class="navbar navbar-default navbar-static-top" role="navigation">
-        <div class="container">
-            {% block navbar %}
-                <div class="navbar-header">
-                    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                    </button>
-                    <a class="navbar-brand" href="{{ path('index') }}">
-                        <span class="fas fa-book"></span> {{ 'site.name' | trans }}
-                    </a>
-                </div>
-                {# The header (Ketura, 2026-11-06): the public sections on the left, the user's own on the
-                   right. Sections not built yet show greyed out, with no link. #}
-                <div class="navbar-collapse collapse">
-                    <ul class="nav navbar-nav">
-                        <li><a href="{{ path('decklists_list') }}">{{ 'nav.decklists' | trans }}</a></li>
-                        {# the public libraries (Ketura, 2026-11-08) #}
-                        <li><a href="{{ path('libraries_list') }}">{{ 'nav.decklibrary' | trans }}</a></li>
-                        {% for soon in ['nav.cardstats', 'nav.players', 'nav.events', 'nav.posts'] %}
-                            <li class="disabled rb-nav-soon"><a title="{{ 'nav.notyet' | trans }}">{{ soon | trans }}</a></li>
-                        {% endfor %}
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button"
-                               aria-expanded="false">{{ 'nav.links' | trans }} <span class="caret"></span></a>
-                            <ul class="dropdown-menu" role="menu">
-                                <li><a href="https://play.lotrtcgpc.net/" rel="noopener">{{ 'nav.gemp' | trans }}</a></li>
-                                <li><a href="https://wiki.lotrtcgpc.net/" rel="noopener">{{ 'nav.wiki' | trans }}</a></li>
-                                <li><a href="https://forum.lotrtcgpc.net/" rel="noopener">{{ 'nav.forums' | trans }}</a></li>
-                                <li><a href="https://lotrtcgpc.net/discord" rel="noopener">{{ 'nav.discord' | trans }}</a></li>
-                            </ul>
-                        </li>
+   wrapper_class to rb-fill, fills the space and lets its own panes scroll.
+   The top bar is the design's (Ketura, 2026-11-09): leather, the public sections on the
+   left, the user's own and the theme and language on the right. Sections not built yet show
+   greyed out, with no link. Below 1100px the sections fold into the menu button. #}
+{% macro theme_switch() %}
+    <div class="rb-theme-switch" role="group" aria-label="{{ 'nav.theme.label' | trans }}">
+        <button type="button" data-theme-set="light" title="{{ 'nav.theme.light' | trans }}"><span class="fas fa-sun"></span></button>
+        <button type="button" data-theme-set="auto" title="{{ 'nav.theme.auto' | trans }}"><span class="fas fa-adjust"></span></button>
+        <button type="button" data-theme-set="dark" title="{{ 'nav.theme.dark' | trans }}"><span class="fas fa-moon"></span></button>
+    </div>
+{% endmacro %}
+{% macro language_menu(route, params, align_right) %}
+    <div class="dropdown rb-lang-menu">
+        <button type="button" class="rb-lang dropdown-toggle" data-toggle="dropdown" aria-expanded="false" title="{{ 'nav.language' | trans }}">
+            <span class="fas fa-globe"></span>{{ app.request.locale | default(default_locale) | upper }}
+        </button>
+        <ul class="dropdown-menu{% if align_right %} dropdown-menu-right{% endif %}">
+            {% for supported_locale in supported_locales %}
+                <li><a href="{{ path(route, params|merge({'_locale': supported_locale})) }}"><span lang="{{ supported_locale }}" class="lang-sm lang-lbl lang-lbl-full"></span></a></li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endmacro %}
+{% import _self as shell %}
+{% set _canonical = app.request.attributes.get('_canonical_route')|default(_route) %}
+{% set _section = {
+    decklists_list: 'decklists', decklist_detail: 'decklists', decklist_edit: 'decklists',
+    libraries_list: 'libraries', library_view: 'libraries', library_tags: 'libraries',
+    decks_list: 'mydecks', deck_edit: 'mydecks', deck_view: 'mydecks', deck_publish_form: 'mydecks', deck_buildform: 'mydecks',
+    my_libraries: 'mylibraries', library_new: 'mylibraries', library_edit: 'mylibraries', library_view_private: 'mylibraries',
+}[_canonical]|default('') %}
+<header class="rb-topbar rb-leather {% block topbar_edge %}rb-tooled-bottom{% endblock %} hidden-print">
+    <div class="rb-bar-inner">
+        {% block navbar %}
+            <button type="button" class="rb-burger" aria-label="{{ 'nav.menu' | trans }}" aria-controls="rb-nav-primary" aria-expanded="false"><span class="fas fa-bars"></span></button>
+            <a class="rb-brand" href="{{ path('index') }}" aria-label="{{ 'site.name' | trans }}">
+                <svg viewBox="0 0 26 30" aria-hidden="true"><path d="M5 2h15.5A2.5 2.5 0 0 1 23 4.5v19a2.5 2.5 0 0 1-2.5 2.5H5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 2.2v23.6" stroke="currentColor" stroke-width="3.2"/><rect x="9" y="5.5" width="10.5" height="16.5" fill="none" stroke="currentColor" stroke-width=".8"/><path d="M14.25 9.2l1.15 3.1 3.1 1.15-3.1 1.15-1.15 3.1-1.15-3.1-3.1-1.15 3.1-1.15z" fill="currentColor"/><path d="M16 26v3.6l1.6-1.3 1.6 1.3V26" fill="currentColor"/></svg>
+                {# the odd casing is the face's: in Cinzel Decorative a lowercase b is the plain B, a capital O the wanted one #}
+                <span class="rb-brand-word" aria-hidden="true"><span class="rb-cap">R</span>ed <span class="rb-cap">b</span>OOk</span>
+            </a>
+            <ul class="rb-nav rb-nav-primary" id="rb-nav-primary">
+                <li><a href="{{ path('decklists_list') }}"{% if _section == 'decklists' %} class="active" aria-current="page"{% endif %}><span class="fas fa-search"></span>{{ 'nav.decklists' | trans }}</a></li>
+                <li><a href="{{ path('libraries_list') }}"{% if _section == 'libraries' %} class="active" aria-current="page"{% endif %}><span class="fas fa-book"></span>{{ 'nav.libraries' | trans }}</a></li>
+                {% for soon, icon in {'nav.cardstats': 'fa-chart-bar', 'nav.players': 'fa-users', 'nav.events': 'fa-calendar-alt', 'nav.posts': 'fa-scroll'} %}
+                    <li><a class="is-soon" aria-disabled="true" title="{{ 'nav.notyet' | trans }}"><span class="fas {{ icon }}"></span>{{ soon | trans }}</a></li>
+                {% endfor %}
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false"><span class="fas fa-link"></span>{{ 'nav.links' | trans }} <span class="caret"></span></a>
+                    <ul class="dropdown-menu" role="menu">
+                        <li><a href="https://play.lotrtcgpc.net/" rel="noopener">{{ 'nav.gemp' | trans }}</a></li>
+                        <li><a href="https://wiki.lotrtcgpc.net/" rel="noopener">{{ 'nav.wiki' | trans }}</a></li>
+                        <li><a href="https://forum.lotrtcgpc.net/" rel="noopener">{{ 'nav.forums' | trans }}</a></li>
+                        <li><a href="https://lotrtcgpc.net/discord" rel="noopener">{{ 'nav.discord' | trans }}</a></li>
                     </ul>
-                    <ul class="nav navbar-nav navbar-right">
-                        {# filled in by app.user.js: My Account, Admin, Logout #}
-                        <li id="login">
-                            <a href="#" class="disabled" title="{{ 'nav.account' | trans }}"><span class="fas fa-user"></span></a>
-                        </li>
-                        {# the user's own things, shown by app.user.js once logged in (Ketura, 2026-11-06) #}
-                        <li class="rb-nav-private hidden"><a href="{{ path('decks_list') }}">{{ 'nav.mydecks' | trans }}</a></li>
-                        <li class="rb-nav-private hidden"><a href="{{ path('my_libraries') }}">{{ 'nav.mylibraries' | trans }}</a></li>
-                        <!-- locale selection -->
-                        {% if _route is not empty %}
-                            <li class="dropdown">
-                                <a class="dropdown-toggle" data-toggle="dropdown" title="{{ 'nav.language' | trans }}">
-                                    <span class="lang-sm"
-                                          lang="{{ app.request.locale | default(default_locale) }}"></span>
-                                    <span class="caret"></span>
-                                </a>
-                                <ul class="dropdown-menu">
-                                    {% for supported_locale in supported_locales %}
-                                        <li>
-                                            <a href="{{ path(_route, _route_params|merge(_get_params)|merge({'_locale': supported_locale})) }}">
-                                                <span lang="{{ supported_locale }}"
-                                                      class="lang-sm lang-lbl lang-lbl-full"></span>
-                                            </a>
-                                        </li>
-                                    {% endfor %}
-                                </ul>
-                            </li>
-                        {% endif %}
-                    </ul>
-                </div><!--/.navbar-collapse -->
-            {% endblock %}
-        </div>
-    </nav>
+                </li>
+                {# on a phone the bar has no room for the theme and language: the menu ends with them #}
+                <li class="rb-nav-phone-tools">{{ shell.theme_switch() }}{% if _route is not empty %}{{ shell.language_menu(_route, _route_params|merge(_get_params), false) }}{% endif %}</li>
+            </ul>
+            <span class="rb-nav-spacer"></span>
+            <div class="rb-bar-tools">
+                <ul class="rb-nav rb-nav-user">
+                    {# the user's own things, shown by app.user.js once logged in (Ketura, 2026-11-06) #}
+                    <li class="rb-nav-private hidden"><a class="is-soon" aria-disabled="true" title="{{ 'nav.notifications' | trans }} ({{ 'nav.notyet' | trans }})"><span class="fas fa-bell"></span><span class="sr-only">{{ 'nav.notifications' | trans }}</span></a></li>
+                    {# filled in by app.user.js: My Account, Admin, Logout #}
+                    <li id="login" class="dropdown">
+                        <a href="#" class="disabled" title="{{ 'nav.account' | trans }}"><span class="fas fa-user-circle"></span><span class="sr-only">{{ 'nav.account' | trans }}</span></a>
+                    </li>
+                    <li class="rb-nav-private hidden"><a href="{{ path('decks_list') }}" title="{{ 'nav.mydecks' | trans }}"{% if _section == 'mydecks' %} class="active" aria-current="page"{% endif %}><span class="fas fa-layer-group"></span><span class="rb-nav-label">{{ 'nav.mydecks' | trans }}</span></a></li>
+                    <li class="rb-nav-private hidden"><a href="{{ path('my_libraries') }}" title="{{ 'nav.mylibraries' | trans }}"{% if _section == 'mylibraries' %} class="active" aria-current="page"{% endif %}><span class="fas fa-book-open"></span><span class="rb-nav-label">{{ 'nav.mylibraries' | trans }}</span></a></li>
+                </ul>
+                {{ shell.theme_switch() }}
+                {% if _route is not empty %}{{ shell.language_menu(_route, _route_params|merge(_get_params), true) }}{% endif %}
+            </div>
+        {% endblock %}
+    </div>
+</header>
 <main id="wrapper" class="{% block wrapper_class %}{% endblock %}">
     {% block body %}{% endblock %}
 </main>
-<footer class="hidden-print">
-    <div class="container">
+<footer class="rb-foot rb-leather rb-tooled-top hidden-print">
+    <div class="rb-foot-inner">
         {% block footer %}
             {% include 'footer.'~ app.request.locale ~'.html.twig' %}
         {% endblock %}
@@ -143,12 +159,15 @@
 <script>
   window.addEventListener("load", function () {
     window.cookieconsent.initialise({
+      // the leather and gilt of the top bar (Ketura, 2026-11-09)
       "palette": {
         "popup": {
-          "background": "#000"
+          "background": "#4A120B",
+          "text": "#F5E9CF"
         },
         "button": {
-          "background": "#f1d600"
+          "background": "#D9B66A",
+          "text": "#3A1009"
         }
       }
     })

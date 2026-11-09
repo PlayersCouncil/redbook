@@ -131,7 +131,7 @@ test('private until made public; then listed, and read one deck at a time', asyn
   publicUrl = await page.locator('#save-status a').getAttribute('href') ?? '';
   expect(publicUrl).toMatch(/\/library\/view\/\d+\//);
 
-  // the Deck Library lists it, found by its tag
+  // Libraries lists it, found by its tag
   await voter.goto(`/libraries?tags[]=e2etag${runId}`);
   // as cards, two to a row (Ketura, 2026-11-08)
   await expect(voter.locator('.rb-lib-cards .rb-deck-name')).toHaveText(name);

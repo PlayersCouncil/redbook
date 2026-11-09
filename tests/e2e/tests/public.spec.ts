@@ -5,16 +5,21 @@ import { baseURL } from '../playwright.config';
 
 test('home page renders with navigation', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('nav.navbar')).toBeVisible();
-  await expect(page.locator('nav.navbar')).toContainText('Red Book');
+  const bar = page.locator('header.rb-topbar');
+  await expect(bar).toBeVisible();
+  await expect(bar.locator('a.rb-brand')).toHaveAccessibleName('Red Book');
   await expect(page.getByRole('link', { name: 'Decklists' }).first()).toBeVisible();
-  // the header (Ketura, 2026-11-06); sections not built yet are greyed out with no link
-  await expect(page.locator('nav.navbar .navbar-nav:not(.navbar-right) > li > a')).toHaveText(
-    ['Decklists', 'Deck Library', 'Card Stats', 'Players', 'Events', 'Posts', /Links/]);
-  await expect(page.locator('nav.navbar li.rb-nav-soon a[href]')).toHaveCount(0);
-  // logged out, the right side is just the account and language menus (Ketura, 2026-11-06)
-  await expect(page.locator('nav.navbar .navbar-right > li:visible > a')).toHaveText(['', '']);
-  const links = page.locator('nav.navbar .dropdown-menu a', { hasText: /Gemp|Wiki|Forums|Discord/ });
+  // the top bar (Ketura, 2026-11-06; the design, 2026-11-09); sections not built yet are
+  // greyed out with no link
+  await expect(bar.locator('.rb-nav-primary > li > a')).toHaveText(
+    ['Decklists', 'Libraries', 'Card Stats', 'Players', 'Events', 'Posts', /Links/]);
+  await expect(bar.locator('a.is-soon')).toHaveCount(5);
+  await expect(bar.locator('a.is-soon[href]')).toHaveCount(0);
+  // logged out, the right side is just the account menu, the theme and the language
+  await expect(bar.locator('.rb-nav-user > li:visible > a')).toHaveCount(1);
+  await expect(bar.locator('.rb-nav-user > li:visible > a')).toHaveAttribute('title', 'Account');
+  await expect(bar.locator('.rb-bar-tools .rb-lang')).toContainText('EN');
+  const links = bar.locator('.dropdown-menu a', { hasText: /Gemp|Wiki|Forums|Discord/ });
   await expect(links).toHaveText(['Play on Gemp', 'LOTR-TCG Wiki', 'PC Forums', 'PC Discord']);
   await snap(page, 'home page');
   // The built CSS and JS bundles (gulp output) are referenced and load
@@ -22,6 +27,28 @@ test('home page renders with navigation', async ({ page }) => {
   const js = await page.locator('script[src*="/js/app"]').count();
   expect(css).toBeGreaterThan(0);
   expect(js).toBeGreaterThan(0);
+});
+
+test('the theme switch: light, the system theme, or dark, kept across pages', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/');
+  const html = page.locator('html');
+  const button = (mode: string) => page.locator(`.rb-bar-tools [data-theme-set=${mode}]`);
+  // nothing chosen: the system's, which here is light
+  await expect(button('auto')).toHaveAttribute('aria-pressed', 'true');
+  await expect(html).not.toHaveClass(/pc-dark/);
+  await button('dark').click();
+  await expect(html).toHaveClass(/pc-dark/);
+  await expect(button('dark')).toHaveAttribute('aria-pressed', 'true');
+  // set before the page paints, on the next page too
+  await page.goto('/decklists');
+  await expect(html).toHaveClass(/pc-dark/);
+  await button('auto').click();
+  await expect(html).not.toHaveClass(/pc-dark/);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(html).toHaveClass(/pc-dark/);
+  await button('light').click();
+  await expect(html).not.toHaveClass(/pc-dark/);
 });
 
 test('card search finds cards by name and by key', async ({ page }) => {

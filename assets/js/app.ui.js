@@ -100,6 +100,27 @@
         });
     });
 
+    // the top bar's menu button (Ketura, 2026-11-09): below 1100px the sections fold into it;
+    // a click outside the bar, or Escape, folds them again
+    $(document).on('click', '.rb-burger', function (event) {
+        event.stopPropagation();
+        var open = !$('body').hasClass('rb-menu-open');
+        $('body').toggleClass('rb-menu-open', open);
+        $(this).attr('aria-expanded', open ? 'true' : 'false');
+    });
+    $(document).on('click', function (event) {
+        if ($('body').hasClass('rb-menu-open') && !$(event.target).closest('.rb-topbar').length) {
+            $('body').removeClass('rb-menu-open');
+            $('.rb-burger').attr('aria-expanded', 'false');
+        }
+    });
+    $(document).on('keydown', function (event) {
+        if (event.key === 'Escape' && $('body').hasClass('rb-menu-open')) {
+            $('body').removeClass('rb-menu-open');
+            $('.rb-burger').attr('aria-expanded', 'false').trigger('focus');
+        }
+    });
+
     ui.export_gemp = function export_gemp(deck) {
         $('#export-deck').text(deck.get_export('gemp'));
         $('#exportModal').modal('show');
