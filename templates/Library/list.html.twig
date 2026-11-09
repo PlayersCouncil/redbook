@@ -170,7 +170,7 @@
                         <a href="{{ url }}" class="rb-deck-name deck-name">{{ library.name }}</a>
                         <span class="rb-deck-by">
                             {% if library.official %}<span class="rb-official-mark" title="{{ 'library.official_title' | trans }}">{{ 'library.official' | trans }}</span>{% endif %}
-                            {{ library.user.displayName }} <span class="rb-deck-dot" aria-hidden="true">•</span>
+                            {% if library.official and library.curator %}{{ 'library.curated_by' | trans }} {{ library.curator.displayName }}{% else %}{{ library.user.displayName }}{% endif %} <span class="rb-deck-dot" aria-hidden="true">•</span>
                             <time datetime="{{ library.dateUpdate | date('Y-m-d') }}" data-absolute>{{ library.dateUpdate | date('M j, Y') }}</time>
                         </span>
                         {# the description, a few lines of it (Ketura, 2026-11-09) #}

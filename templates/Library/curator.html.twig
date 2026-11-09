@@ -1,0 +1,9 @@
+{# An official library's credit (Ketura, 2026-11-09): "Curated by" whoever made it, and their own
+   library it was copied from while that is public. Variables: library #}
+{% import "macros.html.twig" as macros %}
+{% if library.curator %}
+    <span class="rb-curator">{{ 'library.curated_by' | trans }} {{ macros.username(library.curator) }}
+        {%- set from = library.promotedFrom -%}
+        {%- if from and from.public %} <span class="rb-deck-dot" aria-hidden="true">•</span> <a href="{{ path('library_view', {public_id: from.publicId, library_name: from.nameCanonical}) }}">{{ 'library.curated_from' | trans }}</a>{% endif -%}
+    </span>
+{% endif %}

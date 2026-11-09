@@ -102,6 +102,20 @@ class Library implements \App\Classes\ThumbnailSubject
     #[ORM\Column(name: 'seed_id', type: 'string', length: 100, nullable: true)]
     protected ?string $seedId = null;
 
+    /**
+     * An official library's credit (Ketura, 2026-11-09): whoever curated it, when that isn't
+     * its owner (the PC's account). Set when a user's library is made official (copied), or
+     * by a seed manifest.
+     */
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'curator_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    protected ?User $curator = null;
+
+    /** The user's library an official one was copied from, while it lasts */
+    #[ORM\ManyToOne(targetEntity: Library::class)]
+    #[ORM\JoinColumn(name: 'promoted_from_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    protected ?Library $promotedFrom = null;
+
     #[ORM\Column(name: 'date_creation', type: 'datetime')]
     protected DateTimeInterface $dateCreation;
 
@@ -264,6 +278,10 @@ class Library implements \App\Classes\ThumbnailSubject
     public function getSeedId(): ?string { return $this->seedId; }
     public function setSeed(?string $source, ?string $id): void { $this->seedSource = $source; $this->seedId = $id; }
     public function isSeeded(): bool { return $this->seedSource !== null; }
+    public function getCurator(): ?User { return $this->curator; }
+    public function setCurator(?User $curator): void { $this->curator = $curator; }
+    public function getPromotedFrom(): ?Library { return $this->promotedFrom; }
+    public function setPromotedFrom(?Library $library): void { $this->promotedFrom = $library; }
     public function setOfficial(bool $official): void { $this->official = $official; }
     public function getDateCreation(): DateTimeInterface { return $this->dateCreation; }
     public function getDateUpdate(): DateTimeInterface { return $this->dateUpdate; }

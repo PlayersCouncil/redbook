@@ -145,6 +145,13 @@
         return px * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16) / 16;
     };
 
+    // a form that asks first (data-confirm: the question; Ketura, 2026-11-09)
+    $(document).on('submit', 'form[data-confirm]', function (event) {
+        if(!window.confirm($(this).data('confirm'))) {
+            event.preventDefault();
+        }
+    });
+
     ui.export_gemp = function export_gemp(deck) {
         $('#export-deck').text(deck.get_export('gemp'));
         $('#exportModal').modal('show');

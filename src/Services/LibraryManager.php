@@ -177,6 +177,54 @@ class LibraryManager
     }
 
     /**
+     * Makes a user's library official by copying it (Ketura, 2026-11-09): a new library owned by
+     * the PC's account, public, crediting the user as its curator and remembering where it came
+     * from. The user's library stays theirs, untouched; the official copy is the Librarians' to
+     * look after from then on. Refreshing copies the original's contents over again.
+     */
+    public function promote(Library $original, User $officialAccount): Library
+    {
+        $copy = $this->create($officialAccount, $original->getName());
+        $copy->setOfficial(true);
+        $copy->setCurator($original->getUser());
+        $copy->setPromotedFrom($original);
+        $this->copyContents($original, $copy);
+        $this->setVisibility($copy, Library::PUBLIC);
+        return $copy;
+    }
+
+    /** The official copy, made again from its original: texts, tags, thumbnail and decks */
+    public function refreshFromOriginal(Library $copy): bool
+    {
+        $original = $copy->getPromotedFrom();
+        if ($original === null) {
+            return false;
+        }
+        $this->copyContents($original, $copy);
+        return true;
+    }
+
+    /** The official copy of a user's library, if one was made */
+    public function officialCopyOf(Library $original): ?Library
+    {
+        return $this->em->getRepository(Library::class)->findOneBy(['promotedFrom' => $original, 'official' => true]);
+    }
+
+    private function copyContents(Library $from, Library $to): void
+    {
+        $this->save($to, [
+            'name' => $from->getName(),
+            'description' => (string) $from->getDescriptionMd(),
+            'notes' => (string) $from->getNotesMd(),
+            'tags' => (string) $from->getTags(),
+            'entries' => array_map(fn (LibraryEntry $e) => ['decklist' => $e->getDecklist()->getId(), 'annotation' => (string) $e->getAnnotationMd()], $from->getEntries()->toArray()),
+        ]);
+        $to->setThumbnailCard($from->getOwnThumbnailCard());
+        $to->setThumbnailCrop($from->getThumbnailCrop());
+        $to->setThumbnailCultures($from->getOwnThumbnailCultures());
+    }
+
+    /**
      * The library's own thumbnail (Ketura, 2026-11-08/09): a card (any with a picture, framed
      * by hand or by its template), a banner of one or two cultures in any combination, or
      * neither, for its first deck's. One clears the others.

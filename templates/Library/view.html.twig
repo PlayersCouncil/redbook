@@ -59,12 +59,30 @@
                         {% if can_edit %}
                             <a href="{{ path('library_edit', {library_uuid: library.uuid}) }}" class="rb-btn" id="btn-edit-library"><span class="fas fa-pencil-alt" aria-hidden="true"></span> {{ 'library.view.edit' | trans }}</a>
                         {% endif %}
+                        {# making a user's library official: an admin copies it (Ketura, 2026-11-09) #}
+                        {% if not library.official and library.public and is_granted('ROLE_ADMIN') %}
+                            {% if official_copy %}
+                                <a href="{{ path('library_view', {public_id: official_copy.publicId, library_name: official_copy.nameCanonical}) }}" class="rb-btn" id="btn-official-copy"><span class="fas fa-landmark" aria-hidden="true"></span> {{ 'library.promote.view_copy' | trans }}</a>
+                            {% else %}
+                                <form method="post" action="{{ path('library_promote') }}" class="rb-inline-form" data-confirm="{{ 'library.promote.confirm' | trans }}">
+                                    <input type="hidden" name="id" value="{{ library.uuid }}"><input type="hidden" name="token" value="{{ csrf_token('library') }}">
+                                    <button type="submit" class="rb-btn" id="btn-promote"><span class="fas fa-landmark" aria-hidden="true"></span> {{ 'library.promote.button' | trans }}</button>
+                                </form>
+                            {% endif %}
+                        {% endif %}
+                        {% if library.official and library.promotedFrom and is_granted('ROLE_LIBRARIAN') %}
+                            <form method="post" action="{{ path('library_refresh') }}" class="rb-inline-form" data-confirm="{{ 'library.promote.refresh_confirm' | trans }}">
+                                <input type="hidden" name="id" value="{{ library.uuid }}"><input type="hidden" name="token" value="{{ csrf_token('library') }}">
+                                <button type="submit" class="rb-btn" id="btn-refresh"><span class="fas fa-sync-alt" aria-hidden="true"></span> {{ 'library.promote.refresh' | trans }}</button>
+                            </form>
+                        {% endif %}
                     </div>
                 </div>
             </div>
             <div class="rb-reader-meta">
                 <span class="rb-reader-author">{{ macros.username(library.user) }}</span>
                 {% if library.official %}<span class="rb-official-mark" title="{{ 'library.official_title' | trans }}">{{ 'library.official' | trans }}</span>{% endif %}
+                {% include 'Library/curator.html.twig' %}
                 <span>{{ 'library.view.updated' | trans }} <time datetime="{{ library.dateUpdate | date('Y-m-d') }}" data-absolute>{{ library.dateUpdate | date('M j, Y') }}</time></span>
             </div>
         </header>

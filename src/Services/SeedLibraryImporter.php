@@ -74,6 +74,13 @@ class SeedLibraryImporter
                 $report['updated']++;
             }
             $library->setOfficial(true);
+            // the credit, when someone other than the PC curated it (a champion's own library)
+            $curatorName = trim((string) ($row['curator'] ?? ''));
+            $curator = $curatorName !== '' ? $this->em->getRepository(User::class)->findOneBy(['username' => $curatorName]) : null;
+            if ($curatorName !== '' && $curator === null) {
+                $report['missing'][] = $id . ': curator ' . $curatorName;
+            }
+            $library->setCurator($curator instanceof User ? $curator : null);
             $this->libraries->save($library, [
                 'name' => (string) ($row['name'] ?? $id),
                 'description' => (string) ($row['description'] ?? ''),

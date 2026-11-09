@@ -6,12 +6,15 @@
 parameters:
     env(APP_EMAIL_SENDER_ADDRESS): ~ #see https://github.com/symfony/symfony/issues/28618#issuecomment-425039954
     env(APP_EMAIL_SENDER_NAME): ~
+    # the PC's own account, owner of the official libraries (Ketura, 2026-11-09)
+    env(APP_OFFICIAL_ACCOUNT): 'PlayersCouncil'
     cache_expiration: "%env(int:APP_CACHE_EXPIRATION)%"
     email_sender_address: "%env(string:APP_EMAIL_SENDER_ADDRESS)%"
     email_sender_name: "%env(string:APP_EMAIL_SENDER_NAME)%"
     website_name: "%env(string:APP_WEBSITE_NAME)%"
     website_url: "%env(string:APP_WEBSITE_URL)%"
     game_name: "%env(string:APP_GAME_NAME)%"
+    official_account: "%env(string:APP_OFFICIAL_ACCOUNT)%"
     publisher_name: "%env(string:APP_PUBLISHER_NAME)%"
     google_analytics_tracking_code: "%env(string:APP_GOOGLE_ANALYTICS_TRACKING_CODE)%"
     allow_search_engine_tracking: "%env(bool:APP_ALLOW_SEARCH_ENGINE_TRACKING)%"
@@ -47,6 +50,7 @@ services:
             $kernelProjectDirectory: '%kernel.project_dir%'
             $gameName: '%game_name%'
             $publisherName: '%publisher_name%'
+            $officialAccount: '%official_account%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name

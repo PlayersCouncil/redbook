@@ -36,6 +36,7 @@ The owner account must exist before the first import (make it once, e.g. `Player
       "description": "The two **starter decks** from the first set.",
       "notes": "Markdown, as the library's notes.",
       "tags": ["starter-decks", "fotr"],
+      "curator": "someusername",
       "decks": [
         {"seed": {"source": "gemp", "id": "starter-gandalf"}, "annotation": "Markdown commentary on this deck."},
         {"decklist": 1234}
@@ -50,3 +51,13 @@ The owner account must exist before the first import (make it once, e.g. `Player
   (`PublishedDeckSource`), or any published decklist by its number. A deck not found, or
   withdrawn, is left out and listed in the command's report; the rest still import.
 - The decks keep the manifest's order.
+- `curator` (optional): the username credited as "Curated by" on the library; the library
+  still belongs to the owner account. A curator not found is reported and left off.
+
+## Official libraries made from a user's
+
+An admin's **Make Official** on a public user library copies it into a new official library
+owned by the official account (`APP_OFFICIAL_ACCOUNT`, `PlayersCouncil` by default), crediting
+the user as curator and linking back to the original (Ketura, 2026-11-09). The user's library
+stays theirs. Librarians look after the copy; **Refresh from Original** copies the original's
+contents over it again.

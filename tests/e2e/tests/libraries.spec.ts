@@ -262,6 +262,44 @@ test('seeded libraries: official, public, and updated in place on a second impor
   await expect(page.locator('.rb-lib-cards .rb-deck-name')).toHaveText(`E2E seeded again ${runId}`);
 });
 
+
+test('an admin makes a user library official: a copy owned by the PC, crediting its curator', async ({ browser }) => {
+  // the official account, made once (it may be there already), and an admin of this run's own
+  try { appConsole(['fos:user:create', 'PlayersCouncil', 'pc@redbook.invalid', `pc-${runId}-pw`]); } catch { /* there already */ }
+  const adminName = `e2e_admin_${runId}`, password = `pw-${runId}-admin`;
+  appConsole(['fos:user:create', adminName, `${adminName}@example.test`, password]);
+  appConsole(['fos:user:promote', adminName, 'ROLE_ADMIN']);
+  const context = await browser.newContext();
+  await context.addCookies([{ name: 'cookieconsent_status', value: 'dismiss', url: new URL(publicUrl, 'http://localhost:1300').origin }]);
+  const admin = await context.newPage();
+  admin.on('dialog', (dialog) => dialog.accept());
+  await admin.goto('/login');
+  await admin.fill('#username', adminName);
+  await admin.fill('#password', password);
+  await Promise.all([admin.waitForURL((u) => !u.pathname.startsWith('/login')), admin.click('#_submit')]);
+
+  await admin.goto(publicUrl);
+  await admin.locator('#btn-promote').click();
+  // the official copy: another library, the PC's, crediting the curator and linking back
+  await expect(admin).not.toHaveURL(publicUrl);
+  await expect(admin).toHaveURL(/\/library\/view\/\d+\//);
+  await expect(admin.locator('.rb-library-title')).toHaveText(name);
+  await expect(admin.locator('.rb-reader-author')).toContainText('PlayersCouncil');
+  await expect(admin.locator('.rb-official-mark')).toBeVisible();
+  await expect(admin.locator('.rb-curator')).toContainText(loadUsers().author.username);
+  await expect(admin.locator('.rb-curator a[href*="/library/view/"]')).toHaveAttribute('href', new URL(publicUrl).pathname);
+  await expect(admin.locator('.rb-lv-entry')).toHaveCount(await admin.locator('.rb-lv-toc-link').count());
+  const officialUrl = admin.url();
+  // Refresh from Original copies the original over it again
+  await admin.locator('#btn-refresh').click();
+  await expect(admin.locator('.alert')).toContainText('Refreshed from the original.');
+  // the original stays its curator's, and now points to its official copy
+  await admin.goto(publicUrl);
+  await expect(admin.locator('.rb-official-mark')).toHaveCount(0);
+  await expect(admin.locator('#btn-official-copy')).toHaveAttribute('href', new URL(officialUrl).pathname);
+  await context.close();
+});
+
 async function importDeck(page: Page, deckName: string): Promise<string> {
   const [, gemp] = fs.readFileSync(path.join(__dirname, '..', 'fixtures', 'fellowship-gemp.txt'), 'utf8').trim().split('\n');
   await page.goto('/deck/new');

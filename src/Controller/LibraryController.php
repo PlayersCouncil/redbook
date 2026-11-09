@@ -397,8 +397,51 @@ class LibraryController extends AbstractController
                 'favorite' => $user !== null && $library->getFavorites()->contains($user),
                 'commented' => $user !== null && $library->getComments()->exists(fn ($i, LibraryComment $c) => $c->getUser() === $user),
             ],
+            // an admin's Make Official, or the official copy already made of it
+            'official_copy' => $library->isOfficial() ? null : $this->libraries->officialCopyOf($library),
             'commenters' => array_values(array_unique(array_map(fn (LibraryComment $c) => $c->getUser()->getUsername(), $library->getComments()->toArray()))),
         ]);
+    }
+
+    /* ---- making a user's library official (Ketura, 2026-11-09: by copying it) ---- */
+
+    /** An admin makes a public user library official: a copy owned by the PC's account */
+    #[Route(path: '/library/promote', name: 'library_promote', methods: ['POST'])]
+    public function promoteAction(Request $request, string $officialAccount, TranslatorInterface $translator): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $this->requireToken($request);
+        $library = $this->findLibrary((string) $request->request->get('id'));
+        if ($library->isOfficial() || !$library->isPublic()) {
+            throw new BadRequestHttpException('Only a public user library can be made official.');
+        }
+        $existing = $this->libraries->officialCopyOf($library);
+        if ($existing === null) {
+            $owner = $this->managerRegistry->getRepository(User::class)->findOneBy(['username' => $officialAccount]);
+            if (!$owner instanceof User) {
+                $this->addFlash('error', $translator->trans('library.promote.no_account', ['%name%' => $officialAccount]));
+                return $this->redirectToRoute('library_view', ['public_id' => $library->getPublicId(), 'library_name' => $library->getNameCanonical()]);
+            }
+            $existing = $this->libraries->promote($library, $owner);
+            $this->managerRegistry->getManager()->flush();
+            $this->addFlash('notice', $translator->trans('library.promote.done'));
+        }
+        return $this->redirectToRoute('library_view', ['public_id' => $existing->getPublicId(), 'library_name' => $existing->getNameCanonical()]);
+    }
+
+    /** A Librarian copies the original's contents over an official copy again */
+    #[Route(path: '/library/refresh', name: 'library_refresh', methods: ['POST'])]
+    public function refreshAction(Request $request, TranslatorInterface $translator): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_LIBRARIAN');
+        $this->requireToken($request);
+        $library = $this->findLibrary((string) $request->request->get('id'));
+        if (!$library->isOfficial() || !$this->libraries->refreshFromOriginal($library)) {
+            throw new BadRequestHttpException("This library wasn't copied from another.");
+        }
+        $this->managerRegistry->getManager()->flush();
+        $this->addFlash('notice', $translator->trans('library.promote.refreshed'));
+        return $this->redirectToRoute('library_view', ['public_id' => $library->getPublicId(), 'library_name' => $library->getNameCanonical()]);
     }
 
     /* ---- likes, favourites and comments (Ketura, 2026-11-09) ---- */

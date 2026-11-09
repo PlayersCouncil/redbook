@@ -170,3 +170,5 @@ div.rb-browse-title h1 { margin: 0; font: inherit; letter-spacing: inherit; colo
 .rb-library-tabs .rb-tab { font-size: 1.5rem; white-space: nowrap; padding-left: 12px; padding-right: 12px; }
 .rb-library-tabs .rb-tab-row { flex-wrap: nowrap; }
 .rb-library-tabs .rb-browse-intro { margin-top: 8px; }
+.rb-curator { color: var(--rb-ink-2); }
+.rb-reader-buttons .rb-inline-form { display: inline-flex; margin: 0; }
