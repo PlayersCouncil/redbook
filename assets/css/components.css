@@ -331,3 +331,71 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 .rb-user-historic, .rb-deck-by .rb-status, .rb-fmt-state .rb-status { height: 19px; padding: 0 6px; font-size: 11.5px; margin-left: 4px; }
 .rb-fmt-state .rb-status { margin-left: 0; }
 a.rb-status:hover { text-decoration: none; filter: brightness(.95); }
+
+/* Bootstrap's own neutrals, which the theme doesn't cover, in the theme's tokens so they
+   follow the dark theme too (Ketura, 2026-11-09): modals, popovers, the old pager and
+   pagination, list groups, tables, wells of code, input addons, labels, badges, rules */
+.modal-content { background: var(--rb-leaf); color: var(--rb-ink); border-color: var(--rb-line-strong); box-shadow: var(--rb-shadow-2); }
+.modal-header, .modal-footer { border-color: var(--rb-line); }
+.modal-backdrop.in { opacity: .55; }
+.close { color: var(--rb-ink); text-shadow: none; opacity: .45; }
+.close:hover, .close:focus { color: var(--rb-ink); opacity: .8; }
+.popover { background: var(--rb-leaf); color: var(--rb-ink); border-color: var(--rb-line-strong); box-shadow: var(--rb-shadow-2); font-family: var(--rb-font-ui); }
+.popover-title { background: var(--rb-sunk); border-color: var(--rb-line); }
+.popover.top > .arrow::after { border-top-color: var(--rb-leaf); }
+.popover.bottom > .arrow::after { border-bottom-color: var(--rb-leaf); }
+.popover.left > .arrow::after { border-left-color: var(--rb-leaf); }
+.popover.right > .arrow::after { border-right-color: var(--rb-leaf); }
+.popover.top > .arrow { border-top-color: var(--rb-line-strong); }
+.popover.bottom > .arrow { border-bottom-color: var(--rb-line-strong); }
+.popover.left > .arrow { border-left-color: var(--rb-line-strong); }
+.popover.right > .arrow { border-right-color: var(--rb-line-strong); }
+.tooltip { font-family: var(--rb-font-ui); }
+.pager li > a, .pager li > span, .pagination > li > a, .pagination > li > span { background: var(--rb-control); border-color: var(--rb-control-edge); color: var(--rb-link); }
+.pager li > a:hover, .pager li > a:focus, .pagination > li > a:hover, .pagination > li > a:focus { background: var(--rb-primary-soft); border-color: var(--rb-info-edge); }
+.pager .disabled > a, .pager .disabled > span, .pagination > .disabled > a, .pagination > .disabled > span { background: transparent; color: var(--rb-ink-3); border-color: var(--rb-line); }
+.pagination > .active > a, .pagination > .active > span, .pagination > .active > a:hover { background: var(--rb-selected); border-color: var(--rb-selected-edge); color: var(--rb-selected-ink); }
+.list-group-item { background: var(--rb-leaf); border-color: var(--rb-line); color: var(--rb-ink); }
+a.list-group-item:hover, a.list-group-item:focus { background: var(--rb-sunk); color: var(--rb-ink); }
+.list-group-item.active, .list-group-item.active:hover { background: var(--rb-selected); border-color: var(--rb-selected-edge); color: var(--rb-selected-ink); }
+.table > thead > tr > th, .table > tbody > tr > th, .table > tfoot > tr > th, .table > thead > tr > td, .table > tbody > tr > td, .table > tfoot > tr > td { border-color: var(--rb-line); }
+.table > thead > tr > th { border-bottom-color: var(--rb-line-strong); }
+.table-bordered, .table-bordered > thead > tr > th, .table-bordered > tbody > tr > th, .table-bordered > thead > tr > td, .table-bordered > tbody > tr > td { border-color: var(--rb-line); }
+.table-striped > tbody > tr:nth-of-type(odd) { background: color-mix(in srgb, var(--rb-sunk) 55%, transparent); }
+.table-hover > tbody > tr:hover { background: var(--rb-hover); }
+.input-group-addon { background: var(--rb-sunk); border-color: var(--rb-line-strong); color: var(--rb-ink-2); }
+pre { background: var(--rb-sunk); border-color: var(--rb-line); color: var(--rb-ink); }
+code { background: var(--rb-sunk); color: var(--rb-ink); }
+kbd { background: var(--rb-ink); color: var(--rb-page); }
+blockquote { border-left-color: var(--rb-line-strong); }
+hr { border-top-color: var(--rb-line); }
+legend { color: var(--rb-ink); border-bottom-color: var(--rb-line); }
+.text-muted { color: var(--rb-ink-2); }
+.text-danger { color: var(--rb-danger); }
+.text-success { color: var(--rb-success); }
+.text-warning { color: var(--rb-warning); }
+.text-info, .text-primary { color: var(--rb-info); }
+.badge { background: var(--rb-ink-2); color: var(--rb-on-fill); }
+.label-default { background: var(--rb-ink-3); color: var(--rb-on-fill); }
+.label-primary, .label-info { background: var(--rb-info); color: var(--rb-on-fill); }
+.label-success { background: var(--rb-success); color: var(--rb-on-fill); }
+.label-warning { background: var(--rb-warning); color: var(--rb-on-fill); }
+.label-danger { background: var(--rb-danger); color: var(--rb-on-fill); }
+.breadcrumb { background: var(--rb-sunk); }
+.thumbnail { background: var(--rb-leaf); border-color: var(--rb-line); }
+.nav-pills > li.active > a, .nav-pills > li.active > a:hover, .nav-pills > li.active > a:focus { background: var(--rb-selected); color: var(--rb-selected-ink); }
+.nav > li > a:hover, .nav > li > a:focus { background: var(--rb-hover); }
+/* Bootstrap's tabs draw a box round the current one; the theme marks it with a rule beneath */
+.nav-tabs > li > a, .nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus { border-top: 0; border-left: 0; border-right: 0; border-radius: 0; background: none; }
+.nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus { color: var(--rb-ink); border-bottom: 3px solid var(--rb-mark); }
+
+/* card art: a dark frame on a dark page needs an edge (the design: a 1px border in dark) */
+html.pc-dark .rb-thumb, html.pc-dark .rb-tile-img, html.pc-dark .rb-pool-img, html.pc-dark .rb-hover { box-shadow: 0 0 0 1px var(--rb-line-strong); }
+
+/* qtip's card tooltips (its CDN stylesheet's light look), on the theme's leaf */
+.qtip-default, .qtip-bootstrap, .qtip-thronesdb { background: var(--rb-leaf); color: var(--rb-ink); border-color: var(--rb-line-strong); box-shadow: var(--rb-shadow-2); }
+.qtip-default .qtip-titlebar, .qtip-bootstrap .qtip-titlebar { background: var(--rb-sunk); color: var(--rb-ink); }
+.qtip-thronesdb-image { background: transparent; border: 0; box-shadow: none; }
+.panel-default { border-color: var(--rb-line); }
+.panel-default > .panel-heading { background: var(--rb-sunk); color: var(--rb-ink); border-color: var(--rb-line); }
+.panel-default > .panel-footer { background: var(--rb-sunk); border-color: var(--rb-line); }
