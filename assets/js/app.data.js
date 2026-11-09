@@ -135,18 +135,43 @@
      * @memberOf data
      */
     function release() {
-        data.formats = database.collection('format', {primaryKey: 'code', changeTimestamp: false});
-        data.formats.setData(masters.formats.find());
-
-        data.packs = database.collection('pack', {primaryKey: 'code', changeTimestamp: false});
-        data.packs.setData(masters.packs.find());
-
-        data.cards = database.collection('card', {primaryKey: 'code', changeTimestamp: false});
-        data.cards.setData(masters.cards.find());
+        // one copy of each in memory (Ketura, 2026-11-09): the app reads the stored collections
+        // themselves rather than a copy of each, and its lookups hand out the stored objects
+        // rather than a fresh deep copy per call (Forerunner's default, a JSON round trip of
+        // every card a find() returns). Nothing in the app changes a card it looked up.
+        data.formats = shared(masters.formats);
+        data.packs = shared(masters.packs);
+        data.cards = shared(masters.cards);
 
         data.isLoaded = true;
 
         $(document).trigger('data.app');
+    }
+
+    /** A collection whose find() and findById() return its own objects, not copies */
+    function shared(collection) {
+        if(collection.__shared) {
+            return collection;
+        }
+        var find = collection.find;
+        collection.find = function (query, options) {
+            return find.call(this, query || {}, _.extend({$decouple: false}, options));
+        };
+        collection.findById = function (id) {
+            return this._primaryIndex.get(id);
+        };
+        collection.__shared = true;
+        return collection;
+    }
+
+    /**
+     * Ask for the data only if it changed since the stored copy (Ketura, 2026-11-09): the
+     * server answers 304 with nothing to parse. Without this every page parsed the whole
+     * card list (4 MB) from the browser's cache, only to find it unchanged.
+     */
+    function since(collection) {
+        var meta = collection.metaData();
+        return meta.lastModified && collection.count() ? {'If-Modified-Since': meta.lastModified} : {};
     }
 
     /**
@@ -173,6 +198,7 @@
         $.ajax({
             // v=2: a new URL so a browser's cached copy (without blocks) isn't reused
             url: Routing.generate('api_packs', {v: 2}),
+            headers: since(masters.packs),
             success: parse_packs,
             error: function (jqXHR, textStatus, errorThrown) {
                 console.log('error when requesting packs', errorThrown);
@@ -182,6 +208,7 @@
 
         $.ajax({
             url: Routing.generate('api_cards', {'v': '2.0'}),
+            headers: since(masters.cards),
             success: parse_cards,
             error: function (jqXHR, textStatus, errorThrown) {
                 console.log('error when requesting cards', errorThrown);
@@ -300,6 +327,9 @@
      * @memberOf data
      */
     function parse_packs(response, textStatus, jqXHR) {
+        if(jqXHR.status === 304) {
+            return dfd.packs.resolve();
+        }
         var locale = jqXHR.getResponseHeader('Content-Language');
         update_collection(response, masters.packs, locale, dfd.packs, jqXHR.getResponseHeader('Last-Modified'));
     }
@@ -309,6 +339,9 @@
      * @memberOf data
      */
     function parse_cards(response, textStatus, jqXHR) {
+        if(jqXHR.status === 304) {
+            return dfd.cards.resolve();
+        }
         var locale = jqXHR.getResponseHeader('Content-Language');
         update_collection(response, masters.cards, locale, dfd.cards, jqXHR.getResponseHeader('Last-Modified'));
     }

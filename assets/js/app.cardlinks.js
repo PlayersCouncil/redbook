@@ -36,10 +36,10 @@
         if(!app.data || !app.data.cards) {
             return false;
         }
-        var all = app.data.cards.find();
-        if(cards && loaded_from === all.length) {
+        if(cards && loaded_from === app.data.cards.count()) {
             return true;
         }
+        var all = app.data.cards.find();
         cards = {};
         tiers = [{}, {}, {}, {}, {}];
         by_coll = {};

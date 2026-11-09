@@ -63,6 +63,8 @@ test('a new library from My Libraries, filled from the Build tab', async ({ page
   await expect(page.locator('#library-thumb-preview .rb-thumb-card img')).toBeVisible();
   await page.locator('#thumb-edit').click();
   await expect(page.locator('#thumb-crop')).toBeVisible();
+  // framed once the card has loaded
+  await expect(page.locator('#thumb-crop .rb-crop-frame')).toBeVisible();
   await page.locator('#thumb-crop .rb-crop-frame').focus();
   await page.keyboard.press('-');
   await page.keyboard.press('ArrowRight');

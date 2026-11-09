@@ -142,11 +142,12 @@
                 return;
             }
             state = {code: card.code + '', edited: false, reset: false};
+            dialog.removeClass('is-ready');
             mini.attr('class', 'rb-thumb rb-thumb-card rb-crop-preview rb-thumb-tpl-' + (card.template || 'modifier'));
             miniImg.attr('src', src);
             dialog.prop('hidden', false);
             $('body').addClass('rb-crop-open');
-            image.one('load', start).attr('src', src);
+            image.off('load', start).one('load', start).attr('src', src);
             if(image[0].complete && image[0].naturalWidth) {
                 image.off('load', start);
                 start();
@@ -159,8 +160,13 @@
                 room = Math.min(Math.min(700, window.innerWidth - (narrow ? 80 : 300)) / w, (window.innerHeight - (narrow ? 360 : 200)) / h);
             image.css({width: Math.round(w * room), height: Math.round(h * room)});
         }
+        /** The card has arrived: frame it. Until then the frame isn't shown and takes no keys; a
+            picture arriving after the dialog closed is ignored */
         function start()
         {
+            if(!state) {
+                return;
+            }
             size();
             var crop = current_crop();
             state.ratio = image[0].naturalHeight / image[0].naturalWidth;
@@ -168,6 +174,7 @@
             state.A = tile.width / tile.height;
             state.box = fit(crop && crop.code === state.code ? from_css(crop) : template_box());
             render();
+            dialog.addClass('is-ready');
             frame.focus();
         }
         function close(confirmed)
@@ -184,7 +191,8 @@
             }
             drag = null;
             state = null;
-            dialog.prop('hidden', true);
+            image.off('load', start);
+            dialog.removeClass('is-ready').prop('hidden', true);
             $('body').removeClass('rb-crop-open');
             pencil.focus();
         }
@@ -261,7 +269,7 @@
             }
         });
         dialog.on('click', '.rb-crop-cancel', function () { close(false); });
-        dialog.on('click', '.rb-crop-confirm', function () { close(true); });
+        dialog.on('click', '.rb-crop-confirm', function () { if(state && state.box) { close(true); } });
         $(window).on('resize', function () { if(state && state.box) { size(); } });
         $(document).on('keydown', function (event) {
             if(state && event.key === 'Escape') {

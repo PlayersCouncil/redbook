@@ -54,10 +54,10 @@
 
     function build()
     {
-        var all = app.data.cards.find();
-        if(index && index_size === all.length) {
+        if(index && index_size === app.data.cards.count()) {
             return;
         }
+        var all = app.data.cards.find();
         index = _.groupBy(all, versions.group);
         index_size = all.length;
         _.each(index, function (list) {

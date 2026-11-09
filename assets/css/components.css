@@ -145,6 +145,8 @@ body.rb-crop-open { overflow: hidden; }
 .rb-crop-stage { position: relative; flex: 0 0 auto; overflow: hidden; border-radius: 8px; touch-action: none; user-select: none; }
 /* sized by ui.decklist_form.js to fit the window */
 .rb-crop-image { display: block; max-width: none; }
+/* until the card has loaded there is nothing to frame */
+.rb-crop:not(.is-ready) .rb-crop-frame { visibility: hidden; }
 .rb-crop-frame {
     position: absolute; cursor: move; outline: 2px solid var(--rb-leaf); box-shadow: 0 0 0 1px rgba(0, 0, 0, .5), 0 0 0 100vmax rgba(28, 24, 16, .62);
 }
