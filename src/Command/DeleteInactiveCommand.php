@@ -14,7 +14,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * @package App\Command
  */
-#[AsCommand(name: 'app:delete-inactive-users', description: 'Delete inactive users that were created 48 hours or longer ago.')]
+#[AsCommand(name: 'app:delete-inactive-users', description: 'Delete registrations never confirmed, 48 hours after they were made.')]
 class DeleteInactiveCommand extends Command
 {
     protected EntityManagerInterface $entityManager;
@@ -31,7 +31,17 @@ class DeleteInactiveCommand extends Command
         $limit->sub(new DateInterval('PT48H'));
         $count = 0;
 
-        $users = $this->entityManager->getRepository(User::class)->findBy(array('enabled' => false));
+        // only registrations never confirmed: not the accounts disabled because nobody logs in as
+        // them (historic authors, organizations, merged accounts), nor one an admin disabled,
+        // all of which deleting would take their decks with them (Ketura, 2026-11-09)
+        $users = $this->entityManager->getRepository(User::class)->createQueryBuilder('u')
+            ->where('u.enabled = false')
+            ->andWhere('u.confirmationToken IS NOT NULL')
+            ->andWhere('u.lastLogin IS NULL')
+            ->andWhere('u.historic = false')
+            ->andWhere('u.organization = false')
+            ->andWhere('u.mergedInto IS NULL')
+            ->getQuery()->getResult();
         foreach ($users as $user) {
             /* @var UserInterface $user */
             if ($user->getDateCreation() < $limit) {
