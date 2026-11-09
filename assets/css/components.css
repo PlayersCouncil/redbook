@@ -399,3 +399,12 @@ html.pc-dark .rb-thumb, html.pc-dark .rb-tile-img, html.pc-dark .rb-pool-img, ht
 .panel-default { border-color: var(--rb-line); }
 .panel-default > .panel-heading { background: var(--rb-sunk); color: var(--rb-ink); border-color: var(--rb-line); }
 .panel-default > .panel-footer { background: var(--rb-sunk); border-color: var(--rb-line); }
+
+/* headings in running text (Ketura, 2026-11-09): the theme zeroes heading margins, which
+   suits its panels and bars; written text needs a space above a heading and a little below.
+   Markdown (descriptions, notes, previews) and the plain pages whose headings sit straight in
+   the page's container or its columns (About, Formats, Syntax, the API, card pages, profiles) */
+.rb-reader-text :is(h1, h2, h3, h4, h5, h6), .md-preview :is(h1, h2, h3, h4, h5, h6), article.review .review-text :is(h1, h2, h3, h4),
+.container.main > :is(h1, h2, h3, h4), .container.main > .row > [class*="col-"] > :is(h1, h2, h3, h4) { margin: 0 0 .45em; }
+.rb-reader-text :is(h1, h2, h3, h4, h5, h6):not(:first-child), .md-preview :is(h1, h2, h3, h4, h5, h6):not(:first-child), article.review .review-text :is(h1, h2, h3, h4):not(:first-child),
+.container.main > :is(h1, h2, h3, h4):not(:first-child), .container.main > .row > [class*="col-"] > :is(h1, h2, h3, h4):not(:first-child) { margin-top: 1.1em; }
