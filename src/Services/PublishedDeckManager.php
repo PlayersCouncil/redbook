@@ -286,12 +286,14 @@ class PublishedDeckManager
         return array_column($rows, 'n', 'code');
     }
 
-    /** The home page's lists: whole decks Gemp accepts (decision 0023) */
+    /** The home page's lists: whole decks Gemp accepts (decision 0023), or hasn't checked yet */
     private function applyHomeFilters(QueryBuilder $qb): void
     {
         $qb->andWhere('d.withdrawn = false');
         $qb->andWhere('d.half IS NULL');
-        $qb->andWhere('d.completeness = :complete')->setParameter('complete', CommonDeckInterface::COMPLETENESS_COMPLETE);
+        // whole decks, and those Gemp hasn't checked yet (Ketura, 2026-11-09: a fresh import is
+        // all unchecked, which left the front page empty until the hourly job got through them)
+        $qb->andWhere('d.completeness IN (:shown)')->setParameter('shown', [CommonDeckInterface::COMPLETENESS_COMPLETE, CommonDeckInterface::COMPLETENESS_UNVALIDATED]);
     }
 
     public function setLimit($limit)

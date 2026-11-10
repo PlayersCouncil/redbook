@@ -27,6 +27,11 @@
     <script>(function(){var h=document.documentElement,t="auto";try{t=localStorage.getItem("pc-theme")||t;}catch(e){}
     if(t==="dark"||(t==="auto"&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches))h.classList.add("pc-dark");
     h.classList.add("theme-"+t);})();</script>
+    {# before the stylesheets arrive (Ketura, 2026-11-09: on the live site the book mark filled
+       the window for a moment on every page): the inline icons at their size, and the page's
+       ground in its theme's colour rather than white #}
+    <style>svg.rb-mark{width:26px;height:30px}svg.rb-ri{width:1.15em;height:1.15em}svg.rb-wordmark{height:30px;width:auto}
+    html{background:#E6DFD1}html.pc-dark{background:#0E0B08}</style>
     {# the design's faces (the title and wordmark are outlines, _logo.svg.twig and _wordmark.svg.twig) #}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -76,7 +81,7 @@
         {% block navbar %}
             <button type="button" class="rb-burger" aria-label="{{ 'nav.menu' | trans }}" aria-controls="rb-nav-primary" aria-expanded="false"><span class="fas fa-bars"></span></button>
             <a class="rb-brand" href="{{ path('index') }}" aria-label="{{ 'site.name' | trans }}">
-                <svg class="rb-mark" viewBox="0 0 26 30" aria-hidden="true"><path d="M5 2h15.5A2.5 2.5 0 0 1 23 4.5v19a2.5 2.5 0 0 1-2.5 2.5H5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 2.2v23.6" stroke="currentColor" stroke-width="3.2"/><rect x="9" y="5.5" width="10.5" height="16.5" fill="none" stroke="currentColor" stroke-width=".8"/><path d="M14.25 9.2l1.15 3.1 3.1 1.15-3.1 1.15-1.15 3.1-1.15-3.1-3.1-1.15 3.1-1.15z" fill="currentColor"/><path d="M16 26v3.6l1.6-1.3 1.6 1.3V26" fill="currentColor"/></svg>
+                <svg class="rb-mark" viewBox="0 0 26 30" width="26" height="30" aria-hidden="true"><path d="M5 2h15.5A2.5 2.5 0 0 1 23 4.5v19a2.5 2.5 0 0 1-2.5 2.5H5z" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M5 2.2v23.6" stroke="currentColor" stroke-width="3.2"/><rect x="9" y="5.5" width="10.5" height="16.5" fill="none" stroke="currentColor" stroke-width=".8"/><path d="M14.25 9.2l1.15 3.1 3.1 1.15-3.1 1.15-1.15 3.1-1.15-3.1-3.1-1.15 3.1-1.15z" fill="currentColor"/><path d="M16 26v3.6l1.6-1.3 1.6 1.3V26" fill="currentColor"/></svg>
                 {% include '_wordmark.svg.twig' %}
             </a>
             <ul class="rb-nav rb-nav-primary" id="rb-nav-primary">
