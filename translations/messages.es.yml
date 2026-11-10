@@ -829,17 +829,17 @@ library.view.contents: "Mazos"
 library.view.login_to_comment: "Inicia sesión para comentar"
 library.list.user_title: "Bibliotecas de usuarios"
 library.list.tabs: "Bibliotecas"
-library.list.intro_official: "Las del Players Council: mazos de inicio, eventos y otras colecciones oficiales."
-library.list.intro_user: "Creadas y compartidas por jugadores, y colecciones oficiales que aún no tienen pestaña propia."
+library.list.intro_official: "Las del Player's Council: mazos de inicio, eventos y otras colecciones oficiales."
+library.list.intro_user: "Colecciones de mazos reunidas por miembros de la comunidad."
 library.list.tab.samples: "Mazos de muestra"
 library.list.tab.sealed: "Referencia de sellado"
 library.list.tab.user: "Bibliotecas de usuarios"
-library.list.intro_samples: "Mazos de inicio, de muestra y otros mazos de ejemplo que guarda el Players Council."
-library.list.intro_sealed: "Los mazos de referencia del Players Council para los eventos de sellado."
+library.list.intro_samples: "Mazos de inicio y otras muestras útiles para principiantes o para mostrar estrategias."
+library.list.intro_sealed: "Cada colección de aquí representa los mazos que se pueden elegir en un evento de sellado personalizado en <a href=\"https://play.lotrtcgpc.net\">Gemp</a>."
 library.curated_by: "Recopilada por"
 library.curated_from: "Su biblioteca"
 library.promote.button: "Hacer oficial"
-library.promote.confirm: "¿Copiar esta biblioteca en una oficial, del Players Council, con el crédito de quien la recopiló? Esta biblioteca sigue siendo suya."
+library.promote.confirm: "¿Copiar esta biblioteca en una oficial, del Player's Council, con el crédito de quien la recopiló? Esta biblioteca sigue siendo suya."
 library.promote.done: "La copia oficial está hecha. La original sigue siendo de quien la recopiló."
 library.promote.view_copy: "Copia oficial"
 library.promote.refresh: "Actualizar desde la original"
@@ -876,7 +876,7 @@ library.list.title: Bibliotecas
 library.list.intro: "Una <strong>biblioteca de mazos</strong> es una colección de mazos reunida por un usuario, con comentarios opcionales, para enseñar o como referencia."
 library.deleted: "{1} Se borró la biblioteca.|]1,Inf[ Se borraron %count% bibliotecas."
 library.official: PC
-library.official_title: "Una biblioteca del Players Council"
+library.official_title: "Una biblioteca del Player's Council"
 library.new.title: Nueva biblioteca
 library.new.intro: "Una biblioteca reúne mazos publicados que van juntos, como los mazos de un evento o los mazos de inicio, con tus notas sobre cada uno."
 library.new.name: Nombre
@@ -923,7 +923,7 @@ library.visibility.public: Pública
 library.visibility.private_hint: Solo tú
 library.visibility.hidden_hint: "Cualquiera con el enlace; no aparece en las listas"
 library.browse.name: Nombre de la biblioteca
-library.browse.official: Players Council
+library.browse.official: "Player's Council"
 library.browse.official_only: "Solo bibliotecas del PC"
 library.browse.count: "{0} Ninguna biblioteca coincide|{1} 1 biblioteca|]1,Inf[ %n% bibliotecas"
 library.browse.sorts.new: Cambiadas recientemente

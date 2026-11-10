@@ -173,13 +173,18 @@
         measure();
         $(window).on('resize', _.debounce(measure, 100));
         var list = $('#library-list');
-        list.on('click', '.rb-lv-head', function () {
-            var row = $(this).closest('.rb-lv-entry');
-            if(open_row && !open_row.is(row)) {
-                swap(row);
+        /** A deck's row, opened and scrolled to; already open, scrolled to */
+        function go_to(row)
+        {
+            if(!row.is(open_row)) {
+                open(row, true, true);
             } else {
-                open(row, false);
+                row[0].scrollIntoView({block: 'start', behavior: 'smooth'});
             }
+        }
+        // a click on a deck's head does what its line in the contents does (Ketura, 2026-11-09)
+        list.on('click', '.rb-lv-head', function () {
+            go_to($(this).closest('.rb-lv-entry'));
         });
         list.on('click', '[data-step]', function () {
             var row = $(this).closest('.rb-lv-entry'), next = $(this).data('step') < 0 ? row.prev('.rb-lv-entry') : row.next('.rb-lv-entry');
@@ -190,12 +195,7 @@
         // a deck in the contents: its row, opened and scrolled to
         $('.rb-lv-toc').on('click', '.rb-lv-toc-link', function (event) {
             event.preventDefault();
-            var row = $('#' + $(this).data('row'));
-            if(!row.is(open_row)) {
-                open(row, true, true);
-            } else {
-                row[0].scrollIntoView({block: 'start', behavior: 'smooth'});
-            }
+            go_to($('#' + $(this).data('row')));
         });
         $('#btn-back-to-top').on('click', function () {
             $('#library-intro')[0].scrollIntoView({block: 'start', behavior: 'smooth'});

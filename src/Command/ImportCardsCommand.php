@@ -38,8 +38,8 @@ class ImportCardsCommand extends Command
         ['king', 'King', 7, 10],
         ['war', 'War of the Ring', 11, 14],
         ['hunters', 'Hunters', 15, 19],
-        ['pc', "Players Council", 100, 149],
-        ['pc_errata', 'Players Council errata', 50, 69],
+        ['pc', "Player's Council", 100, 149],
+        ['pc_errata', "Player's Council errata", 50, 69],
     ];
 
     private const KIND_ORDER = ['decipher' => 0, 'pc' => 1, 'pc-errata' => 2];

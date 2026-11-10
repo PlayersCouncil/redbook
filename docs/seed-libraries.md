@@ -69,7 +69,7 @@ The full schema, with every field's limits, is `_planning/schema/seed-library.sc
 
 ## Organization accounts
 
-Decipher's and the Players Council's accounts are organization accounts (Ketura, 2026-11-09):
+Decipher's and the Player's Council's accounts are organization accounts (Ketura, 2026-11-09):
 like historic accounts, nobody logs in as them. They're disabled with no usable password, can't
 be claimed or merged, and only own things. Admins edit their profiles (name, bio, colour) with
 the Edit Profile button on the account's page. One is made the first time it's needed (Make
@@ -77,7 +77,7 @@ Official, a seed import), or by hand:
 
 ```
 docker exec -u www-data redbook php bin/console app:account:organization Decipher "Decipher"
-docker exec -u www-data redbook php bin/console app:account:organization PlayersCouncil "Players Council" --convert
+docker exec -u www-data redbook php bin/console app:account:organization PlayersCouncil "Player's Council" --convert
 ```
 
 `--convert` turns an existing ordinary account into an organization's (its login stops working

@@ -31,7 +31,7 @@ class OrganizationAccountCommand extends Command
     {
         $this
             ->addArgument('username', InputArgument::REQUIRED, 'The username, which addresses it (APP_OFFICIAL_ACCOUNT names the PC\'s)')
-            ->addArgument('display-name', InputArgument::OPTIONAL, 'The name shown on the site, e.g. "Players Council"')
+            ->addArgument('display-name', InputArgument::OPTIONAL, 'The name shown on the site, e.g. "Player\'s Council"')
             ->addOption('convert', null, InputOption::VALUE_NONE, 'Turn an existing ordinary account into an organization\'s: its password stops working and its roles are dropped');
     }
 

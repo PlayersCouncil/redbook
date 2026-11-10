@@ -331,7 +331,7 @@ test('an admin makes a user library official: a copy owned by the PC, crediting 
   await expect(admin).not.toHaveURL(publicUrl);
   await expect(admin).toHaveURL(/\/library\/view\/\d+\//);
   await expect(admin.locator('.rb-library-title')).toHaveText(name);
-  await expect(admin.locator('.rb-reader-author')).toContainText('Players Council');
+  await expect(admin.locator('.rb-reader-author')).toContainText("Player's Council");
   await expect(admin.locator('.rb-reader-author .rb-user-organization')).toBeVisible();
   await expect(admin.locator('.rb-official-mark')).toBeVisible();
   await expect(admin.locator('.rb-curator')).toContainText(loadUsers().author.username);
@@ -362,9 +362,9 @@ test('an admin makes a user library official: a copy owned by the PC, crediting 
   await expect(admin.locator('#username')).toHaveCount(0);
   await expect(admin.locator('#email')).toHaveCount(0);
   await snap(admin, 'organization profile edit');
-  await admin.fill('#resume', `The Players Council, ${runId}.`);
+  await admin.fill('#resume', `The Player's Council, ${runId}.`);
   await admin.locator('form[action$="/user/profile_save"] button[type=submit]').click();
-  await expect(admin.locator('.alert')).toContainText("Saved Players Council's profile.");
+  await expect(admin.locator('.alert')).toContainText("Saved Player's Council's profile.");
 
   // Library Info (Ketura, 2026-11-09): an admin files the official library under another
   // organization's account, made for it; Edit sits on the row of privileged buttons

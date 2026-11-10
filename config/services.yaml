@@ -8,7 +8,7 @@ parameters:
     env(APP_EMAIL_SENDER_NAME): ~
     # the PC's own account, owner of the official libraries (Ketura, 2026-11-09)
     env(APP_OFFICIAL_ACCOUNT): 'PlayersCouncil'
-    env(APP_OFFICIAL_ACCOUNT_NAME): 'Players Council'
+    env(APP_OFFICIAL_ACCOUNT_NAME): "Player's Council"
     # where the bug report form's messages go; empty: every admin (Ketura, 2026-11-09)
     env(APP_FEEDBACK_EMAIL): ''
     cache_expiration: "%env(int:APP_CACHE_EXPIRATION)%"

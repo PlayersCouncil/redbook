@@ -185,3 +185,6 @@
 .rb-library-info-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 6px 0 10px; font-size: 0.875rem; }
 .rb-library-info-facts dt { color: var(--rb-ink-2); font-weight: 600; }
 .rb-library-info-facts dd { margin: 0; }
+/* what a library is, atop the search on the public tabs (Ketura, 2026-11-09) */
+.rb-browse-pane-intro { margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--rb-line); font-size: 0.875rem; line-height: 1.45; color: var(--rb-ink-2); }
+.rb-browse-pane-intro strong { color: var(--rb-ink); }

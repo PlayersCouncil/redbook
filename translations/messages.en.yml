@@ -445,7 +445,7 @@ card:
   kind:
     card: Cards
     errata: PC errata blueprints
-    errata_short: Players Council errata
+    errata_short: "Player's Council errata"
   versions:
     title: Revisions
     printed: As printed
@@ -517,8 +517,8 @@ card:
     signet: Signet
     subtypes: Subtype
     kind: Card or errata
-    errata_of: "Players Council errata of"
-    has_pc_errata: "This card has a Players Council errata:"
+    errata_of: "Player's Council errata of"
+    has_pc_errata: "This card has a Player's Council errata:"
     unique: Unique
     text: Text
     flavor: Flavor text
@@ -676,7 +676,7 @@ deck:
   shared: "Anyone with the link can view this deck"
   shared_label: Shared by link
   convert: Convert to PC errata
-  convert_hint: "Swap each card for its Players Council errata in this format, through Gemp"
+  convert_hint: "Swap each card for its Player's Council errata in this format, through Gemp"
   convert_failed: "Gemp couldn't convert the deck just now. Try again in a moment."
   half:
     none: Whole deck
@@ -1455,17 +1455,17 @@ library.view.contents: "Decks"
 library.view.login_to_comment: "Log in to comment"
 library.list.user_title: "User Libraries"
 library.list.tabs: "Libraries"
-library.list.intro_official: "The Players Council's own: starter decks, events and other official collections."
-library.list.intro_user: "Made and shared by players, and official collections not yet on a tab of their own."
+library.list.intro_official: "The Player's Council's own: starter decks, events and other official collections."
+library.list.intro_user: "Deck collections curated by members of the community."
 library.list.tab.samples: "Sample Decks"
 library.list.tab.sealed: "Sealed Reference"
 library.list.tab.user: "User Libraries"
-library.list.intro_samples: "Starter decks, sample decks and other example decks the Players Council keeps."
-library.list.intro_sealed: "The Players Council's reference decks for Sealed events."
+library.list.intro_samples: "Starter decks and other samples useful for beginners or to demonstrate strategies."
+library.list.intro_sealed: "Each collection here represents decks available to select during a custom sealed event on <a href=\"https://play.lotrtcgpc.net\">Gemp</a>."
 library.curated_by: "Curated by"
 library.curated_from: "Their library"
 library.promote.button: "Make Official"
-library.promote.confirm: "Copy this library into an official one, owned by the Players Council and crediting its curator? This library stays theirs."
+library.promote.confirm: "Copy this library into an official one, owned by the Player's Council and crediting its curator? This library stays theirs."
 library.promote.done: "The official copy is made. The original stays its curator's."
 library.promote.view_copy: "Official Copy"
 library.promote.refresh: "Refresh from Original"
@@ -1502,7 +1502,7 @@ library.list.title: Libraries
 library.list.intro: "A <strong>Deck Library</strong> is a collection of decks curated by a user with optional commentary, for teaching or reference."
 library.deleted: "{1} The library was deleted.|]1,Inf[ %count% libraries were deleted."
 library.official: PC
-library.official_title: "A Players Council library"
+library.official_title: "A Player's Council library"
 library.new.title: New Library
 library.new.intro: "A Library collects published decks that belong together, such as an event's decks or a set of starter decks, with your notes on each."
 library.new.name: Name
@@ -1549,7 +1549,7 @@ library.visibility.public: Public
 library.visibility.private_hint: Only you
 library.visibility.hidden_hint: "Anyone with the link; not listed"
 library.browse.name: Library name
-library.browse.official: Players Council
+library.browse.official: "Player's Council"
 library.browse.official_only: "PC libraries only"
 library.browse.count: "{0} No libraries match|{1} 1 library|]1,Inf[ %n% libraries"
 library.browse.sorts.new: Recently changed

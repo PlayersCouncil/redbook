@@ -38,11 +38,13 @@
                     <a href="{{ list_path(def.route, query) }}" class="rb-tab{{ list_kind == tab ? ' is-active' }}" data-tab="{{ tab }}"{% if list_kind == tab %} aria-current="page"{% endif %}>{{ ('library.list.tab.' ~ tab) | trans }}</a>
                 {% endfor %}
             </nav></div>
-            <p class="rb-browse-intro">{{ 'library.list.intro' | trans | raw }} {{ ('library.list.intro_' ~ list_kind) | trans }}</p>
+            <p class="rb-browse-intro">{{ ('library.list.intro_' ~ list_kind) | trans | raw }}</p>
         </div>
     {% endif %}
 
     <form method="get" action="{{ path(list_route) }}" class="rb-browse-pane" id="browse-form">
+        {# what a library is, atop the search on the public tabs (Ketura, 2026-11-09) #}
+        {% if not mine %}<p class="rb-browse-pane-intro">{{ 'library.list.intro' | trans | raw }}</p>{% endif %}
         <div class="rb-browse-top" id="browse-top">{{ block('browse_top') }}</div>
         <div class="rb-browse-fields" id="browse-fields">{{ block('browse_fields') }}</div>
     </form>
