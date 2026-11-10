@@ -381,6 +381,13 @@ test('an admin makes a user library official: a copy owned by the PC, crediting 
   await admin.goto(officialUrl);
   await expect(admin.locator('.rb-reader-author')).toContainText(`E2E Decipher ${runId}`);
   await expect(admin.locator('.rb-reader-author .rb-user-organization')).toBeVisible();
+  // an official library tagged for neither official tab is listed with User Libraries, so it
+  // can be found and tagged (Ketura, 2026-11-09); its tags lead there
+  await admin.goto(`/libraries/user?tags[]=e2etag${runId}`);
+  await expect(admin.locator('.rb-lib-cards .rb-official-mark')).toHaveCount(1);
+  await expect(admin.locator('.rb-lib-cards .rb-deck-name')).toHaveCount(2);
+  await admin.goto(`/libraries/samples?tags[]=e2etag${runId}`);
+  await expect(admin.locator('.rb-lib-cards .rb-deck-name')).toHaveCount(0);
   await context.close();
 });
 

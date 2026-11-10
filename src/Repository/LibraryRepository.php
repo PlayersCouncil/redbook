@@ -76,6 +76,19 @@ class LibraryRepository extends EntityRepository
             $qb->andWhere('l.official = true');
         } elseif (($filters['kind'] ?? null) === 'user') {
             $qb->andWhere('l.official = false');
+        } elseif (($filters['kind'] ?? null) === 'rest') {
+            // User Libraries: everyone else's, and an official library on no tab of its own
+            // (Ketura, 2026-11-09: else it can't be found to be tagged)
+            $untagged = ['l.official = false'];
+            $none = [];
+            foreach (array_values($filters['tab_tags'] ?? []) as $i => $tag) {
+                $none[] = "CONCAT(' ', COALESCE(l.tags, ''), ' ') NOT LIKE :tabtags$i";
+                $qb->setParameter("tabtags$i", '% ' . addcslashes($tag, '%_') . ' %');
+            }
+            if ($none) {
+                $untagged[] = '(' . implode(' AND ', $none) . ')';
+            }
+            $qb->andWhere(implode(' OR ', $untagged));
         }
     }
 

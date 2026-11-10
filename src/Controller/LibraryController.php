@@ -96,14 +96,21 @@ class LibraryController extends AbstractController
 
     /**
      * The public libraries' tabs (Ketura, 2026-11-09), each with the same search: the official
-     * libraries tagged as sample decks, those tagged sealed, and everyone else's. A tab: its
+     * libraries tagged as sample decks, those tagged sealed, and the rest: everyone else's, and
+     * an official one with neither tag (so it can always be found, and tagged). A tab: its
      * route, the libraries it holds (LibraryRepository's kind) and the tag they carry.
      */
     public const TABS = [
         'samples' => ['route' => 'libraries_samples', 'kind' => 'official', 'tag' => 'sample-decks'],
         'sealed' => ['route' => 'libraries_sealed', 'kind' => 'official', 'tag' => 'sealed'],
-        'user' => ['route' => 'libraries_user', 'kind' => 'user', 'tag' => null],
+        'user' => ['route' => 'libraries_user', 'kind' => 'rest', 'tag' => null],
     ];
+
+    /** The tags that put an official library on a tab of its own */
+    public static function tabTags(): array
+    {
+        return array_values(array_filter(array_column(self::TABS, 'tag')));
+    }
     /** The cookie that remembers the tab last looked at (ui.libraries.js sets it) */
     public const TAB_COOKIE = 'rb_libraries_tab';
 
@@ -139,13 +146,17 @@ class LibraryController extends AbstractController
         return $this->publicList($request, $pager, $translator, 'user');
     }
 
-    /** Where a library's tag leads: its own tab (sealed, else sample decks for an official one), searching for that tag */
+    /** Where a library's tag leads: the tab it's on, searching for that tag */
     public static function tabRouteFor(Library $library): string
     {
-        if (!$library->isOfficial()) {
-            return self::TABS['user']['route'];
+        if ($library->isOfficial()) {
+            foreach (self::TABS as $tab) {
+                if ($tab['tag'] !== null && in_array($tab['tag'], $library->getTagList(), true)) {
+                    return $tab['route'];
+                }
+            }
         }
-        return in_array(self::TABS['sealed']['tag'], $library->getTagList(), true) ? self::TABS['sealed']['route'] : self::TABS['samples']['route'];
+        return self::TABS['user']['route'];
     }
 
     private function publicList(Request $request, PublishedDeckManager $pager, TranslatorInterface $translator, string $tab): Response
@@ -165,7 +176,7 @@ class LibraryController extends AbstractController
     private function listResponse(Request $request, PublishedDeckManager $pager, ?User $owner, array $params, ?string $kind = null, ?string $tag = null): Response
     {
         $filters = $this->libraries->getFilters($request, $owner !== null);
-        $query = $filters + ($kind ? ['kind' => $kind] : []) + ($tag ? ['tab_tag' => $tag] : []);
+        $query = $filters + ($kind ? ['kind' => $kind] : []) + ($tag ? ['tab_tag' => $tag] : []) + ['tab_tags' => self::tabTags()];
         $limit = $filters['limit'] ?? PublishedDeckManager::DEFAULT_LIMIT;
         $page = max(1, (int) $request->query->get('page', 1));
         [$rows, $total] = $this->repo()->browse($query, $owner, $page, $limit);
