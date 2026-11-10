@@ -199,6 +199,11 @@ test('the author edits the decklist from its page; nobody else gets Edit', async
   await page.goto(decklistUrl);
   const edit = page.locator('.rb-reader-buttons .decklist-edit');
   await expect(edit).toBeVisible();
+  // on a row of their own under the others, beside the facts (Ketura, 2026-11-09); the
+  // thumbnail in the corner
+  await expect(page.locator('#btn-group-gated .decklist-edit')).toBeVisible();
+  await expect(page.locator('#btn-group-decklist .decklist-edit')).toHaveCount(0);
+  await expect(page.locator('.rb-reader-head .rb-reader-thumb .rb-thumb')).toBeVisible();
   await Promise.all([page.waitForURL(new RegExp(`/decklist/edit/${decklistId}$`)), edit.click()]);
   await expect(page.locator('#name')).toHaveValue(decklistName);
   // the same form, editing, and Cancel goes back to the decklist; within the grace period
@@ -209,8 +214,10 @@ test('the author edits the decklist from its page; nobody else gets Edit', async
   await expect(page.locator('#decklist-state')).toContainText('you can undo publishing if you need to fix the deck contents');
   // under it, always (Ketura, 2026-11-09): a new version starts from the deck
   const fixed = page.locator('.rb-state-fixed');
-  await expect(fixed).toContainText('Once published a decklist cannot have its cards edited');
-  await expect(fixed.locator('a', { hasText: 'Go to My Decks' })).toHaveAttribute('href', /\/deck\/edit\//);
+  await expect(fixed).toContainText('Once you publish a decklist, you cannot edit the cards');
+  await expect(fixed.locator('a', { hasText: 'click here to open the private revision in My Decks' })).toHaveAttribute('href', /\/deck\/edit\//);
+  // the deck greyed, on a darker panel, since its cards can't change here (Ketura, 2026-11-09)
+  await expect(page.locator('.rb-col-left')).toHaveClass(/is-fixed/);
   await expect(page.locator('#effective_date')).toBeDisabled();
   await expect(page.locator('#version-line')).toContainText('Version v1.0');
   await expect(page.locator('.rb-form-actions a')).toHaveAttribute('href', new URL(decklistUrl).pathname);

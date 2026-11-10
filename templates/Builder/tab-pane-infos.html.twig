@@ -1,4 +1,8 @@
 {# The Notes tab (Ketura, 2026-11-03): the deck's notes, the same editor as the decklist
    form's (Deck/notes-editor). The pane itself doesn't scroll; the text fields and the
    annotation list do. #}
+{# the deck's own thumbnail (Ketura, 2026-11-09), the decklist form's picker; publishing starts from it #}
+<div class="rb-notes-thumb">
+    {% include 'Thumbnail/picker.html.twig' with {subject: deck, chosen: deck.thumbnailCard ? deck.thumbnailCard.code : '', crop: deck.thumbnailCrop} %}
+</div>
 {% include 'Deck/notes-editor.html.twig' with {notes_tags: deck.tags, notes_description: deck.descriptionMd} %}

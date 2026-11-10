@@ -4,7 +4,6 @@
 .rb-library-table .rb-col-count { width: 64px; font-weight: 700; color: var(--rb-ink); }
 .rb-thumb-empty { display: inline-flex; align-items: center; justify-content: center; background: var(--rb-page); color: var(--rb-ink-2); font-size: 1.375rem; }
 .rb-official-mark { display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 4px; background: var(--rb-primary); color: var(--rb-primary-ink); font-size: 0.6875rem; font-weight: 700; letter-spacing: .04em; vertical-align: 2px; }
-.rb-libraries:not(.rb-my-decks) > .rb-browse-title { margin-bottom: 10px; }
 .rb-field-official .rb-check { display: inline-flex; align-items: center; gap: 6px; font-weight: 400; }
 .rb-new-library-intro { color: var(--rb-ink-2); margin-bottom: 18px; }
 
@@ -131,7 +130,6 @@
 .rb-lib-card-body .rb-deck-name { font-size: 1.125rem; font-weight: 700; line-height: 1.25; }
 .rb-lib-card-body .rb-row-tags { flex-wrap: wrap; row-gap: 3px; }
 /* the title, with what a library is under it (Ketura, 2026-11-09) */
-div.rb-browse-title h1 { margin: 0; font: inherit; letter-spacing: inherit; color: inherit; }
 .rb-browse-intro { margin: 4px 0 0; font: 400 0.9375rem/1.4 var(--rb-font-ui); letter-spacing: 0; color: var(--rb-ink-2); }
 .rb-browse-intro strong { color: var(--rb-ink); }
 /* a card: its description (a few lines), tags; on the right its decks, then its counts */
@@ -166,10 +164,8 @@ div.rb-browse-title h1 { margin: 0; font: inherit; letter-spacing: inherit; colo
 .rb-lv-notes-head .rb-lv-section-head { margin: 0; }
 .rb-lv-notes-head .rb-lv-nav { margin-top: 0; }
 .rb-lv-tools { margin-left: 4px; }
-/* Libraries and User Libraries, as tabs that fit the filters' column on one line */
-.rb-library-tabs .rb-tab { font-size: 1.5rem; white-space: nowrap; padding-left: 12px; padding-right: 12px; }
-.rb-library-tabs .rb-tab-row { flex-wrap: nowrap; }
-.rb-library-tabs .rb-browse-intro { margin-top: 8px; }
+/* Libraries and User Libraries: what a library is, under the tabs */
+.rb-browse-title > .rb-browse-intro { margin-top: 8px; }
 .rb-curator { color: var(--rb-ink-2); }
 .rb-reader-buttons .rb-inline-form { display: inline-flex; margin: 0; }
 

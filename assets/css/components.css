@@ -184,6 +184,10 @@ body.rb-crop-open { overflow: hidden; }
 .md-editor { border-color: var(--rb-line-strong); }
 .md-editor > .md-header, .md-editor .md-footer { background: var(--rb-sunk); }
 .md-editor > textarea, .md-editor > .md-preview { background: var(--rb-leaf); color: var(--rb-ink); border-color: var(--rb-line); }
+/* resting a shade off the focused face, as bootstrap-markdown has it, but in the theme's colours
+   (its own sets plain white on focus; Ketura, 2026-11-09) */
+.md-editor > textarea { background: var(--rb-field-rest); }
+.md-editor > textarea:focus { background: var(--rb-leaf); }
 .md-editor.active { border-color: var(--rb-focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--rb-focus) 28%, transparent); }
 
 /* the notes' markdown editors (Ketura, 2026-11-07): the toolbar, then the text or its
@@ -330,8 +334,9 @@ body.md-nooverflow > ul.dropdown-menu { z-index: 100000 !important; }
 /* Publish is green (Ketura, 2026-11-09: the switch from blue to green is deliberate): the
    deckbuilder's Publish once the deck can be, and the publish and republish buttons */
 .btn.btn-publish, .rb-btn-publish:not([disabled]) { border-color: var(--rb-success); background: var(--rb-success); color: var(--rb-on-fill); font-weight: 700; }
-.btn.btn-publish:hover, .btn.btn-publish:focus, .rb-btn-publish:not([disabled]):hover, .rb-btn-publish:not([disabled]):focus {
-    border-color: var(--rb-success); background: color-mix(in srgb, var(--rb-success) 85%, var(--rb-ink)); color: var(--rb-on-fill); }
+/* brighter under the pointer, still green (Ketura, 2026-11-09: it took the outlined buttons' beige) */
+.btn.btn-publish:is(:hover, :focus), .rb-btn.rb-btn-publish:not([disabled]):is(:hover, :focus), .rb-btn-publish:not([disabled]):is(:hover, :focus) {
+    border-color: var(--rb-success); background: var(--rb-success); color: var(--rb-on-fill); filter: brightness(1.2); }
 
 /* the tag families (theme.css section 13; Tags/tags.html.twig): in a table's format column
    the pill keeps to one line; a status beside a name sits a little smaller */
@@ -362,7 +367,7 @@ a.rb-status:hover { text-decoration: none; filter: brightness(.95); }
 .tooltip { font-family: var(--rb-font-ui); }
 .pager li > a, .pager li > span, .pagination > li > a, .pagination > li > span { background: var(--rb-control); border-color: var(--rb-control-edge); color: var(--rb-link); }
 .pager li > a:hover, .pager li > a:focus, .pagination > li > a:hover, .pagination > li > a:focus { background: var(--rb-primary-soft); border-color: var(--rb-info-edge); }
-.pager .disabled > a, .pager .disabled > span, .pagination > .disabled > a, .pagination > .disabled > span { background: transparent; color: var(--rb-ink-3); border-color: var(--rb-line); }
+.pager .disabled > a, .pager .disabled > span, .pagination > .disabled > a, .pagination > .disabled > span { background: transparent; color: var(--rb-ink-3); border-color: var(--rb-line); opacity: var(--rb-disabled, .5); }
 .pagination > .active > a, .pagination > .active > span, .pagination > .active > a:hover { background: var(--rb-selected); border-color: var(--rb-selected-edge); color: var(--rb-selected-ink); }
 .list-group-item { background: var(--rb-leaf); border-color: var(--rb-line); color: var(--rb-ink); }
 a.list-group-item:hover, a.list-group-item:focus { background: var(--rb-sunk); color: var(--rb-ink); }

@@ -24,6 +24,7 @@
     var cards_zoom_regexp = /card\/(\d+_\d+)$/,
         PORTRAIT = 497 / 357,
         GAP = 10,
+        MIN_SIDE = 200,
         overlay = null,
         current = null,
         last_touch = 0,
@@ -51,7 +52,12 @@
         return overlay;
     }
 
-    /** Where the image goes: beside the element, inside the window */
+    /**
+     * Where the image goes: beside the element, inside the window. Right at full size, else
+     * left; when neither has room, smaller on the right (else the left) rather than over or
+     * under it, which would cover the pointer (Ketura, 2026-11-09: a site, wide, beside the
+     * last lines of a list); only with no room either side, above or below.
+     */
     function target_rect(el_rect, landscape)
     {
         var edge = long_edge(),
@@ -59,12 +65,26 @@
             h = landscape ? edge / PORTRAIT : edge,
             vw = window.innerWidth,
             vh = window.innerHeight,
+            right_room = vw - el_rect.right - 2 * GAP,
+            left_room = el_rect.left - 2 * GAP,
             left, top,
             mid_y = el_rect.top + el_rect.height / 2;
-        if(el_rect.right + GAP + w <= vw) {
+        function shrink(room)
+        {
+            h = h * room / w;
+            w = room;
+        }
+        if(w > right_room && w > left_room) {
+            if(right_room >= MIN_SIDE) {
+                shrink(right_room);
+            } else if(left_room >= MIN_SIDE) {
+                shrink(left_room);
+            }
+        }
+        if(w <= right_room) {
             left = el_rect.right + GAP;
             top = mid_y - h / 2;
-        } else if(el_rect.left - GAP - w >= 0) {
+        } else if(w <= left_room) {
             left = el_rect.left - GAP - w;
             top = mid_y - h / 2;
         } else {
@@ -231,7 +251,18 @@
     $(document).on('start.app', function ()
     {
         var selector = 'a.card-tip, [data-hover-code]';
-        $('body').on('mouseenter', selector, on_enter).on('mouseleave', selector, on_leave);
+        // a card's name inside a row that previews it (the reader's lines) leaves it to the row,
+        // so the card sits beside the whole row, not the name (Ketura, 2026-11-09)
+        function own(handler)
+        {
+            return function (event) {
+                if(!$(this).is('[data-hover-code]') && $(this).parent().closest('[data-hover-code]').length) {
+                    return;
+                }
+                handler.call(this, event);
+            };
+        }
+        $('body').on('mouseenter', selector, own(on_enter)).on('mouseleave', selector, own(on_leave));
         $('body').on('mouseenter', 'a:not(.card-tip):not([data-hover-code])', function (event) {
             if($(this).closest('[data-hover-code]').length) {
                 return;

@@ -13,9 +13,22 @@ use stdClass;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'deck')]
-class Deck extends CommonDeck implements DeckInterface
+class Deck extends CommonDeck implements DeckInterface, \App\Classes\ThumbnailSubject
 {
     use LotrDeckTrait;
+
+    /**
+     * The card the deck's thumbnail shows (Ketura, 2026-11-09), chosen on the deckbuilder's Notes
+     * tab; publishing starts the decklist's from it. Without one, a published deck's own, else
+     * the deck's two main cultures (getThumbnailShown).
+     */
+    #[ORM\ManyToOne(targetEntity: Card::class)]
+    #[ORM\JoinColumn(name: 'thumbnail_card_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    protected ?Card $thumbnailCard = null;
+
+    /** A framing of its own for the thumbnail card, as a decklist's (App\Classes\ThumbnailCrop) */
+    #[ORM\Column(name: 'thumbnail_crop', type: 'json', nullable: true)]
+    protected ?array $thumbnailCrop = null;
 
     /**
      * @var int
@@ -667,6 +680,65 @@ class Deck extends CommonDeck implements DeckInterface
         return $snapshots;
     }
 
+    public function getThumbnailCard(): ?Card
+    {
+        return $this->thumbnailCard;
+    }
+
+    public function setThumbnailCard(?Card $card): void
+    {
+        $this->thumbnailCard = $card;
+    }
+
+    public function getThumbnailCrop(): ?array
+    {
+        return $this->thumbnailCrop;
+    }
+
+    public function setThumbnailCrop(?array $crop): void
+    {
+        $this->thumbnailCrop = $crop;
+    }
+
+    public function getThumbnailCropFor(?Card $card): ?array
+    {
+        return $card && $this->thumbnailCrop && ($this->thumbnailCrop['code'] ?? null) === $card->getCode() ? $this->thumbnailCrop : null;
+    }
+
+    /** The draw deck's two main cultures, as a decklist's thumbnail picks them */
+    public function getThumbnailCultures(): array
+    {
+        $counts = [];
+        foreach ($this->getSlots()->getDrawDeck() as $slot) {
+            $card = $slot->getCard();
+            if ($card->getSide() && $card->getCulture()) {
+                $row = &$counts[$card->getSide()][$card->getCulture()->getCode()];
+                $row ??= ['name' => $card->getCulture()->getName(), 'count' => 0];
+                $row['count'] += (int) $slot->getQuantity();
+                unset($row);
+            }
+        }
+        return PublishedDeck::pickThumbnailCultures($counts);
+    }
+
+    /**
+     * What the deck's thumbnail shows (Ketura, 2026-11-09): its own card; else its latest
+     * publication's thumbnail; else its cultures
+     */
+    public function getThumbnailShown(): \App\Classes\ThumbnailSubject
+    {
+        if ($this->thumbnailCard !== null) {
+            return $this;
+        }
+        $latest = null;
+        foreach ($this->getChildren() as $decklist) {
+            if (!$decklist->isWithdrawn() && ($latest === null || $decklist->getVersion() > $latest->getVersion())) {
+                $latest = $decklist;
+            }
+        }
+        return $latest ?? $this;
+    }
+
     /**
      * @inheritdoc
      */
@@ -687,6 +759,9 @@ class Deck extends CommonDeck implements DeckInterface
             'tags' => $this->getTags(),
             'shared' => $this->shared,
             'historic' => $this->historic,
+            // its own thumbnail (Ketura, 2026-11-09): the card, and a framing for it
+            'thumbnail' => $this->thumbnailCard?->getCode(),
+            'thumbnail_crop' => $this->thumbnailCrop,
         ] + $this->lotrDeckJson();
     }
 

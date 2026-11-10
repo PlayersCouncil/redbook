@@ -357,7 +357,7 @@ test('an admin makes a user library official: a copy owned by the PC, crediting 
   await expect(admin.locator('#email')).toHaveCount(0);
   await snap(admin, 'organization profile edit');
   await admin.fill('#resume', `The Players Council, ${runId}.`);
-  await admin.locator('form button[type=submit]').click();
+  await admin.locator('form[action$="/user/profile_save"] button[type=submit]').click();
   await expect(admin.locator('.alert')).toContainText("Saved Players Council's profile.");
   await context.close();
 });

@@ -221,6 +221,11 @@ class PublishedDeckFactory
         $this->replaceSlots($decklist, $deck);
         if ($deck instanceof Deck) {
             $this->copyNotes($deck, $decklist);
+            // the deck's own thumbnail, to start from (Ketura, 2026-11-09)
+            if ($deck->getThumbnailCard() !== null) {
+                $decklist->setThumbnailCard($deck->getThumbnailCard());
+                $decklist->setThumbnailCrop($deck->getThumbnailCrop());
+            }
         }
         // derived from: what the deck was copied from; its own earlier publications are
         // versions now, in its line (Ketura, 2026-11-07)

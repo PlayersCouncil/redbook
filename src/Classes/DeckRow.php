@@ -85,8 +85,9 @@ final class DeckRow
             }
         }
         $row->cultures = array_values($deck->getSlots()->getCultures());
-        // a published deck shows its decklist's thumbnail; the others their cultures
-        $row->thumbnail = $row->published ?? new DeckThumbnail(PublishedDeck::pickThumbnailCultures($counts));
+        // the deck's own thumbnail card (Ketura, 2026-11-09); else a published deck's decklist's;
+        // else its cultures
+        $row->thumbnail = $deck->getThumbnailCard() !== null ? $deck : ($row->published ?? new DeckThumbnail(PublishedDeck::pickThumbnailCultures($counts)));
         return $row;
     }
 

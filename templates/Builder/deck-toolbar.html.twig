@@ -1,10 +1,11 @@
 {# A saved deck's buttons in the reader (Ketura, 2026-11-08): its owner's Edit and Delete,
    then Clone, Copy Text and Download, as a decklist's page has them
-   (Decklist/reader-copy-buttons). Variables: deck, is_owner #}
-{% if is_owner %}
+   (Decklist/reader-copy-buttons). Variables: deck, is_owner; part as Decklist/toolbar's #}
+{% set part = part ?? 'both' %}
+{% if is_owner and part != 'main' %}
     <a href="{{ path('deck_edit', {deck_uuid: deck.uuid}) }}" class="rb-btn rb-btn-small deck-edit">
         <span class="fas fa-pencil-alt text-primary" aria-hidden="true"></span> {{ 'forms.edit' | trans }}</a>
     <button type="button" class="rb-btn rb-btn-small deck-delete" data-id="{{ deck.id }}" data-name="{{ deck.name }}"{% if deck.children | length %} data-published="1"{% endif %}>
         <span class="fas fa-trash-alt text-danger" aria-hidden="true"></span> {{ 'forms.delete' | trans }}</button>
 {% endif %}
-{% include 'Decklist/reader-copy-buttons.html.twig' with {clone_url: path('deck_clone', {deck_uuid: deck.uuid}), download_url: path('deck_download', {deck_uuid: deck.uuid}) ~ '?format=text'} %}
+{% if part != 'gated' %}{% include 'Decklist/reader-copy-buttons.html.twig' with {clone_url: path('deck_clone', {deck_uuid: deck.uuid}), download_url: path('deck_download', {deck_uuid: deck.uuid}) ~ '?format=text'} %}{% endif %}

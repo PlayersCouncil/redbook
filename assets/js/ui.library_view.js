@@ -75,6 +75,34 @@
         setTimeout(go, 400);
     }
 
+    /** What scrolls the page around an element: its nearest scrolling ancestor, or the page */
+    function scroller(el)
+    {
+        for(var node = el.parentElement; node && node !== document.body; node = node.parentElement) {
+            var overflow = getComputedStyle(node).overflowY;
+            if((overflow === 'auto' || overflow === 'scroll') && node.scrollHeight > node.clientHeight) {
+                return node;
+            }
+        }
+        return document.scrollingElement || document.documentElement;
+    }
+
+    /**
+     * From one open deck to another (Ketura, 2026-11-09): the new deck's head takes the place
+     * the old one's had on the screen, at once, so nothing seems to move but the deck under it
+     */
+    function swap(row)
+    {
+        var old_head = open_row.find('.rb-lv-head')[0],
+            before = old_head.getBoundingClientRect().top;
+        row.addClass('no-anim');
+        open(row, false, true);
+        var head = row.find('.rb-lv-head')[0],
+            box = scroller(head);
+        box.scrollTop += head.getBoundingClientRect().top - before;
+        setTimeout(function () { row.removeClass('no-anim'); }, 50);
+    }
+
     /** Closes the open row; its deck stays in it until another row opens */
     function close(instant)
     {
@@ -146,12 +174,17 @@
         $(window).on('resize', _.debounce(measure, 100));
         var list = $('#library-list');
         list.on('click', '.rb-lv-head', function () {
-            open($(this).closest('.rb-lv-entry'), false);
+            var row = $(this).closest('.rb-lv-entry');
+            if(open_row && !open_row.is(row)) {
+                swap(row);
+            } else {
+                open(row, false);
+            }
         });
         list.on('click', '[data-step]', function () {
             var row = $(this).closest('.rb-lv-entry'), next = $(this).data('step') < 0 ? row.prev('.rb-lv-entry') : row.next('.rb-lv-entry');
             if(next.length) {
-                open(next, true, true);
+                open_row ? swap(next) : open(next, true, true);
             }
         });
         // a deck in the contents: its row, opened and scrolled to

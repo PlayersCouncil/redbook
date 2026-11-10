@@ -37,6 +37,10 @@
                 </div>
             {% endif %}
         {% endif %}
+        {# the thumbnail in the corner (Ketura, 2026-11-09), as the lists show the deck #}
+        <div class="rb-reader-headrow">
+        <span class="rb-reader-thumb">{% include 'Decklist/thumbnail.html.twig' with {decklist: is_deck ? subject.thumbnailShown : subject} %}</span>
+        <div class="rb-reader-headmain">
         <div class="rb-reader-title">
             <div class="rb-reader-name">
                 <h1 class="decklist-name">{{ subject.name }}</h1>
@@ -70,10 +74,13 @@
             <div class="rb-reader-actions">
                 {% if not is_deck %}{% include 'Decklist/social.html.twig' with {decklist: subject} %}{% endif %}
                 <div class="rb-reader-buttons" id="btn-group-decklist">
-                    {% if is_deck %}{% include 'Builder/deck-toolbar.html.twig' with {deck: subject} %}{% else %}{% include 'Decklist/toolbar.html.twig' with {decklist: subject} %}{% endif %}
+                    {% if is_deck %}{% include 'Builder/deck-toolbar.html.twig' with {deck: subject, part: 'main'} %}{% else %}{% include 'Decklist/toolbar.html.twig' with {decklist: subject, part: 'main'} %}{% endif %}
                 </div>
             </div>
         </div>
+        {# the facts, and on the right the buttons only some get (Edit, Undo Publish, Delete): a row
+           of their own, so they don't shift the others as they appear (Ketura, 2026-11-09) #}
+        <div class="rb-reader-subrow">
         <div class="rb-reader-meta">
             <span class="rb-reader-author">{{ macros.username(subject.user) }}</span>
             {# an archive deck's author claims it from right beside the name #}
@@ -98,6 +105,12 @@
                 {% set duplink %}<a href="{{ path('decklist_detail', { 'decklist_id': duplicate.id, 'decklist_name': duplicate.nameCanonical|e('url') }) }}">{{ duplicate.name }} v{{ duplicate.versionLabel }}</a>{% endset %}
                 <small class="text-muted">{{ 'decklist.view.duplicate' | trans({'%duplicate%': duplink}) | raw }}</small>
             {% endif %}
+        </div>
+        <div class="rb-reader-buttons rb-reader-gated" id="btn-group-gated">
+            {% if is_deck %}{% include 'Builder/deck-toolbar.html.twig' with {deck: subject, part: 'gated'} %}{% else %}{% include 'Decklist/toolbar.html.twig' with {decklist: subject, part: 'gated'} %}{% endif %}
+        </div>
+        </div>
+        </div>
         </div>
     </header>
 

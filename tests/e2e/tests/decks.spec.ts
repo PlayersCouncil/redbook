@@ -379,6 +379,36 @@ test('any version of a card: the Ring-bearer, a site; not a card with one versio
   await expect(page.locator('.rb-slot-ring_bearer .rb-name')).toContainText('Frodo, Son of Drogo');
 });
 
+test('the deck\'s thumbnail: picked on the Notes tab from the corner, kept, and shown in My Decks', async ({ page }) => {
+  const deckName = `E2E thumb ${runId}`;
+  await page.goto('/deck/new');
+  await page.selectOption('#target_format', 'fotr_block');
+  await page.fill('#name', deckName);
+  await page.locator('form[action$="/deck/build"] button[type=submit]').click();
+  await expect(page).toHaveURL(/\/deck\/edit\//);
+  await waitForCardData(page);
+  await pick(page, 'gimli', 'Gimli, Dwarf of Erebor', '[data-add]');
+  // the corner shows the cultures until a card is picked (Ketura, 2026-11-09)
+  await expect(page.locator('#deck-thumb .rb-thumb-cultures')).toBeVisible();
+  // it opens the Notes tab at the picker, whose cards follow the deck
+  await page.click('#deck-thumb');
+  await expect(page.locator('#tab-pane-infos')).toBeVisible();
+  await expect(page.locator('#thumb-select')).toBeFocused();
+  await page.click('#thumb-select');
+  await page.locator('#thumb-options .rb-thumb-option', { hasText: 'Gimli, Dwarf of Erebor' }).click();
+  await expect(page.locator('#deck-thumb img')).toHaveAttribute('src', /LOTR01012/);
+  await expect(page.locator('#btn-save')).toBeEnabled();
+  await page.click('#btn-save');
+  await expect(page.locator('#btn-save')).toBeDisabled();
+  await page.reload();
+  await waitForCardData(page);
+  await expect(page.locator('#thumbnail')).toHaveValue('1_12');
+  await expect(page.locator('#deck-thumb img')).toHaveAttribute('src', /LOTR01012/);
+  // My Decks shows it
+  await page.goto(`/decks?name=${encodeURIComponent(deckName)}`);
+  await expect(page.locator('.rb-my-decks-table .rb-thumb img').first()).toHaveAttribute('src', /LOTR01012/);
+});
+
 test('New Deck: Fellowship Block first, imports on the same page, the button says which', async ({ page }) => {
   // Import Deck leads to New Deck (Ketura, 2026-11-08)
   await page.goto('/deck/import');

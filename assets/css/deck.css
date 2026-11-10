@@ -111,7 +111,7 @@
 .rb-historic > .rb-check { margin: 10px 12px 0; }
 .rb-historic-badge { margin-left: 8px; padding: 2px 8px; border-radius: 10px; background: var(--rb-sunk); font-size: 0.6875rem; color: var(--rb-ink-2); }
 #historic-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin: 0; padding: 10px 12px 12px; border: 0; min-width: 0; }
-#historic-fields[disabled] { opacity: .45; }
+#historic-fields[disabled] { opacity: var(--rb-disabled, .5); }
 #historic-fields .rb-wide { grid-column: span 2; }
 
 /* the historian's review of an archive deck */
@@ -174,7 +174,7 @@
 .rb-qty button { width: 24px; height: 24px; padding: 0; border-radius: 5px; font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .rb-n { border: 1px solid var(--rb-line-strong); background: var(--rb-control); color: var(--rb-ink); }
 .rb-n.active, .rb-n.is-filled { background: var(--rb-selected); border-color: var(--rb-selected-edge); color: var(--rb-selected-ink); }
-.rb-n[disabled] { opacity: .3; cursor: default; }
+.rb-n[disabled] { opacity: var(--rb-disabled, .5); cursor: default; }
 /* the X is half as loud as the rest (Ketura, 2026-11-02) */
 .rb-x { border: 0; background: var(--rb-danger); color: var(--rb-on-fill); opacity: .5; }
 .rb-x:hover { opacity: .85; }
@@ -323,7 +323,7 @@ div.rb-more legend { margin-bottom: 4px; padding: 0; border: 0; font-size: 0.812
 .rb-pager-bottom { margin-top: 10px; }
 button.rb-page { padding: 0; font-size: 1rem; color: var(--rb-ink); cursor: pointer; }
 button.rb-page:hover:not([disabled]) { background: var(--rb-control-hover); }
-button.rb-page[disabled] { color: var(--rb-ink-3); border-color: var(--rb-line); background: transparent; opacity: .6; cursor: default; }
+button.rb-page[disabled] { color: var(--rb-ink-3); border-color: var(--rb-line); background: transparent; opacity: var(--rb-disabled, .5); cursor: default; }
 .rb-pool-empty { padding: 20px 0; color: var(--rb-ink-2); }
 /* list: two columns of rows when there is room; the whole row highlights and shows the card */
 .rb-pool-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 0 10px; }
@@ -338,7 +338,7 @@ button.rb-page[disabled] { color: var(--rb-ink-3); border-color: var(--rb-line);
 .rb-pool-add.is-none { background: var(--rb-primary); color: var(--rb-primary-ink); }
 .rb-pool-add.is-some { background: var(--rb-highlight); color: var(--rb-highlight-ink); }
 .rb-pool-add.is-off { background: var(--rb-ink-3); color: var(--rb-on-fill); }
-.rb-pool-add[disabled] { cursor: default; }
+.rb-pool-add[disabled] { cursor: default; opacity: var(--rb-disabled, .5); }
 .rb-pool-rb { border: 1px solid var(--rb-crown-2); background: var(--rb-control); color: var(--rb-crown-2); font-size: 0.8125rem; }
 .rb-pool-rb.active { background: var(--rb-crown-2); color: var(--rb-on-fill); }
 .rb-badge { flex: 0 0 auto; padding: 1px 5px; border-radius: 4px; background: var(--rb-ink-2); color: var(--rb-on-fill); font-size: 0.625rem; font-weight: 700; }
@@ -630,3 +630,17 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 .rb-no-copy, .rb-no-copy-name, .rb-line-text .rb-pc, .rb-line-text .rb-any, .rb-line-text .rb-annot-mark { user-select: none; }
 .rb-no-copy { display: inline-flex; align-items: center; gap: 7px; margin-right: 7px; vertical-align: middle; }
 .rb-no-copy:empty { display: none; }
+
+/* the deck's thumbnail (Ketura, 2026-11-09): in the corner of its information, opening the
+   Notes tab at its picker; the picker atop that tab */
+.rb-title-row { grid-template-columns: auto minmax(0, 3fr) minmax(0, 1fr); }
+.rb-info-thumb { align-self: end; padding: 0; border: 0; border-radius: 7px; background: none; cursor: pointer; }
+.rb-info-thumb .rb-thumb { width: 64px; }
+.rb-info-thumb:hover .rb-thumb, .rb-info-thumb:focus-visible .rb-thumb { outline: 2px solid var(--rb-highlight); outline-offset: 1px; }
+@media (max-width: 480px) { .rb-title-row { grid-template-columns: auto minmax(0, 1fr); } .rb-title-row .rb-format-field { grid-column: 1 / -1; } }
+.rb-notes-thumb { flex: none; padding: 0 12px 10px; margin-bottom: 4px; border-bottom: 1px solid var(--rb-line); }
+.rb-notes-thumb .rb-thumb-field { display: flex; align-items: center; gap: 14px; margin-bottom: 0; }
+.rb-notes-thumb .rb-thumb-field > label { margin: 0; }
+.rb-notes-thumb .rb-thumb-pick { flex: 1 1 auto; min-width: 0; }
+.rb-notes-thumb .rb-thumb { width: 64px; }
+.rb-notes-thumb .rb-thumb-choice { max-width: 420px; }

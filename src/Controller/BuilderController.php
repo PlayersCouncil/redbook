@@ -316,6 +316,11 @@ class BuilderController extends AbstractController
         if ($request->request->has('starting')) {
             $data['starting'] = (string) $request->get('starting');
         }
+        // the thumbnail, from the Notes tab (Ketura, 2026-11-09)
+        if ($request->request->has('thumbnail')) {
+            $data['thumbnail'] = (string) $request->get('thumbnail');
+            $data['thumbnail_crop'] = (string) $request->get('thumbnail_crop');
+        }
         foreach (['starting_bid', 'starting_notes', 'annotations'] as $key) {
             if ($request->request->has($key)) {
                 $data[$key] = (string) $request->get($key);

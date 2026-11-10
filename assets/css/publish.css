@@ -38,7 +38,7 @@
     body.rb-resizing { cursor: col-resize; user-select: none; }
 }
 @media (max-width: 991px) { .rb-publish-splitter { display: none; } }
-.rb-publish-title { flex: none; margin-top: 18px; margin-bottom: 14px; }
+.rb-publish-title { flex: none; margin-top: 18px; margin-bottom: 14px; font-size: 2.125rem; line-height: 1.1; font-weight: 700; letter-spacing: -.01em; color: var(--rb-ink); }
 .rb-publish-top { flex: none; }
 .rb-publish-top .alert { margin-bottom: 10px; }
 .rb-derived-tags { display: inline-flex; flex-wrap: wrap; gap: 4px; margin-left: 8px; vertical-align: middle; }
@@ -66,3 +66,10 @@
 /* the publish gate's popup shows the whole Gemp box (Ketura, 2026-11-08) */
 .rb-publish-gate .rb-validation { margin: 10px 0 14px; }
 .rb-publish-gate .rb-validation-list { max-height: 240px; }
+
+/* the deck once its cards are fixed (Ketura, 2026-11-09): on a darker panel and a little grey,
+   to say at a glance it can't be edited here */
+.rb-publish .rb-col-left.is-fixed { background: var(--rb-desk); border-radius: 6px; }
+.rb-publish .rb-col-left.is-fixed > * { filter: grayscale(.55); }
+.rb-publish .rb-col-left.is-fixed .rb-deck, .rb-publish .rb-col-left.is-fixed .rb-info,
+.rb-publish .rb-col-left.is-fixed .rb-deck-toolbar { background: transparent; }

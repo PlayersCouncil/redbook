@@ -12,7 +12,11 @@ test('home page renders with navigation', async ({ page }) => {
   // the top bar (Ketura, 2026-11-06; the design, 2026-11-09); sections not built yet are
   // greyed out with no link
   await expect(bar.locator('.rb-nav-primary > li > a')).toHaveText(
-    ['Decklists', 'Libraries', 'Card Stats', 'Players', 'Events', 'Posts', /Links/]);
+    ['Decklists', 'Libraries', 'Card Stats', 'Players', 'Events', 'Posts', /Links/, 'Feedback']);
+  // the bug report form, boxed, right of Links (Ketura, 2026-11-09)
+  await expect(bar.locator('.rb-nav-feedback > a')).toHaveCSS('border-top-style', 'solid');
+  // the footer: About and API (Ketura, 2026-11-09)
+  await expect(page.locator('.rb-footer-links a')).toHaveText(['About', 'API']);
   await expect(bar.locator('a.is-soon')).toHaveCount(5);
   await expect(bar.locator('a.is-soon[href]')).toHaveCount(0);
   // logged out, the right side is just the account menu, the theme and the language
@@ -41,6 +45,12 @@ test('the front page: the cover, the decks feed and its tabs, the feeds still to
   await expect(newFeed).toBeHidden();
   await expect(page.locator('.rb-tabs button[aria-controls=feed-popular]')).toHaveAttribute('aria-selected', 'true');
   await expect(page.locator('.rb-feed-soon h2')).toHaveText(['Posts', 'Events', 'This Week in Years Past']);
+  // Deck of the Day, when there's one (Ketura, 2026-11-09): its heading and the date on a plate
+  // of their own, over the deck as the Decks feed shows it
+  if(await page.locator('.rb-dotd').count()) {
+    await expect(page.locator('.rb-dotd-label time')).toHaveText(/^\d{4}-\d{2}-\d{2}$/);
+    await expect(page.locator('.rb-dotd .rb-bookplate .rb-deckrow .rb-deck-name')).toBeVisible();
+  }
 });
 
 test('the theme switch: light, the system theme, or dark, kept across pages', async ({ page }) => {
@@ -99,6 +109,9 @@ test('decklist listings load; the old list addresses are gone', async ({ page })
   const res = await page.goto('/decklists?played=1');
   expect(res?.status()).toBe(200);
   await expect(page.locator('#browse-form')).toBeVisible();
+  // the list pages' title (Ketura, 2026-11-09): My Decks' size and line, without a tab around it
+  await expect(page.locator('.rb-browse-title .rb-tabs .rb-tab-solo')).toHaveText('Decklists');
+  await expect(page.locator('.rb-browse-title .rb-tabs')).toHaveCSS('border-bottom-style', 'solid');
   // a filter with no field of its own shows as a chip that drops it (Ketura, 2026-11-06)
   await expect(page.locator('.rb-browse-also .rb-card-pick')).toHaveCount(1);
   // the pager: first and previous off on page 1, nine pages at most

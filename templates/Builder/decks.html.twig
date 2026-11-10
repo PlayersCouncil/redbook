@@ -34,7 +34,7 @@
         {% include 'banner-alerts.html.twig' %}
     </div>
 
-    <div class="rb-browse-title rb-tabs" id="browse-tabs">{{ block('browse_tabs') }}</div>
+    <div class="rb-browse-title"><div class="rb-tabs" id="browse-tabs">{{ block('browse_tabs') }}</div></div>
 
     <form method="get" action="{{ path('decks_list') }}" class="rb-browse-pane" id="browse-form">
         <div class="rb-browse-top" id="browse-top">{{ block('browse_top') }}</div>

@@ -1,6 +1,11 @@
 {# The reader's buttons (Ketura, 2026-11-04): the author's Edit and, within the grace period,
    Undo Publish (Ketura, 2026-11-07); a moderator's Delete; then Clone, Copy Text and Download,
-   as a saved deck's page has them (Decklist/reader-copy-buttons). #}
+   as a saved deck's page has them (Decklist/reader-copy-buttons).
+   part: 'gated' for only the buttons some people get (Edit, Undo Publish, Delete), which the
+   reader puts on a row of their own so they don't shift the others as they appear (Ketura,
+   2026-11-09); 'main' for the rest; left out, both. #}
+{% set part = part ?? 'both' %}
+{% if part != 'main' %}
 <a href="{{ path('decklist_edit', {decklist_id:decklist.id}) }}" title="{{ 'decklist.view.toolbar.edit' | trans }}"
    class="rb-btn rb-btn-small decklist-edit" style="display:none">
     <span class="fas fa-pencil-alt text-primary" aria-hidden="true"></span> {{ 'forms.edit' | trans }}
@@ -12,4 +17,7 @@
 <a href="#" title="Delete decklist" class="rb-btn rb-btn-small decklist-delete" style="display:none">
     <span class="fas fa-trash-alt text-danger" aria-hidden="true"></span> {{ 'forms.delete' | trans }}
 </a>
+{% endif %}
+{% if part != 'gated' %}
 {% include 'Decklist/reader-copy-buttons.html.twig' with {clone_url: path('deck_copy', {decklist_id: decklist.id}), download_url: path('decklist_download', {decklist_id: decklist.id, format: 'text'}), recreate_url: path('decklist_recreate', {decklist_id: decklist.id})} %}
+{% endif %}

@@ -1,0 +1,56 @@
+{#
+   The bug report form (Ketura, 2026-11-09), on every page: who's writing, how to reach them,
+   the page they were on (app.feedback fills it in, and the name for someone logged in), a
+   category, and the message in the site's markdown editor. Emailed to the admins
+   (FeedbackController). The Website field is a trap for robots, never shown.
+#}
+<div class="modal fade" id="feedback-modal" tabindex="-1" role="dialog" aria-labelledby="feedback-title">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <form id="feedback-form" method="post" action="{{ path('feedback_send') }}" novalidate>
+                <input type="hidden" name="_token" value="{{ csrf_token('feedback') }}">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="{{ 'forms.cancel' | trans }}"><span aria-hidden="true">&times;</span></button>
+                    <h3 class="modal-title" id="feedback-title"><span class="fas fa-bug" aria-hidden="true"></span> {{ 'feedback.title' | trans }}</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="rb-feedback-fields">
+                        <p class="rb-feedback-intro">{{ 'feedback.intro' | trans }}</p>
+                        <div class="rb-feedback-grid">
+                            <div class="form-group">
+                                <label for="feedback-name">{{ 'feedback.field.name' | trans }}</label>
+                                <input type="text" class="form-control" id="feedback-name" name="name" maxlength="100" autocomplete="name">
+                            </div>
+                            <div class="form-group">
+                                <label for="feedback-contact">{{ 'feedback.field.contact' | trans }}</label>
+                                <input type="text" class="form-control" id="feedback-contact" name="contact" maxlength="200" placeholder="{{ 'feedback.field.contact_placeholder' | trans }}">
+                            </div>
+                            <div class="form-group">
+                                <label for="feedback-category">{{ 'feedback.field.category' | trans }}</label>
+                                <select class="form-control" id="feedback-category" name="category">
+                                    <option value="bug">{{ 'feedback.category.bug' | trans }}</option>
+                                    <option value="feedback">{{ 'feedback.category.feedback' | trans }}</option>
+                                    <option value="question">{{ 'feedback.category.question' | trans }}</option>
+                                </select>
+                            </div>
+                            <div class="form-group rb-feedback-page">
+                                <label for="feedback-page">{{ 'feedback.field.page' | trans }}</label>
+                                <input type="text" class="form-control" id="feedback-page" name="page" maxlength="500">
+                            </div>
+                        </div>
+                        <div class="form-group rb-md-editor rb-feedback-message">
+                            <label for="feedback-message">{{ 'feedback.field.message' | trans }}</label>
+                            <textarea class="form-control" id="feedback-message" name="message" rows="8" maxlength="10000" data-md-title="{{ 'feedback.field.message' | trans }}"></textarea>
+                        </div>
+                        <div class="rb-hp" aria-hidden="true"><label>Website <input type="text" name="website" tabindex="-1" autocomplete="off"></label></div>
+                    </div>
+                    <p class="rb-feedback-status" role="status" aria-live="polite"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="rb-btn" data-dismiss="modal">{{ 'feedback.close' | trans }}</button>
+                    <button type="submit" class="rb-btn rb-btn-primary"><span class="fas fa-paper-plane" aria-hidden="true"></span> {{ 'feedback.send' | trans }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

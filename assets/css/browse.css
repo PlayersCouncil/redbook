@@ -10,7 +10,11 @@
 .rb-browse-pane { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; padding: 12px 14px; border: 1px solid var(--rb-line); border-radius: 10px; background: var(--rb-page); }
 .rb-browse-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
 /* the page's title, above the pane rather than in it (Ketura, 2026-11-06) */
-.rb-browse-title { margin: 0 0 10px; font-size: 2.125rem; line-height: 1.1; font-weight: 700; letter-spacing: -.01em; color: var(--rb-ink); }
+/* every list page's title (Ketura, 2026-11-09): My Decks' tabs over a line across the page; a
+   page with one title has the line and the size, without the tab around it */
+.rb-browse-title { margin: 0 0 10px; }
+.rb-browse-title > .rb-tabs { margin-bottom: 0; }
+.rb-tab-solo { margin: 0; padding: 4px 18px 6px; font-family: var(--rb-font-ui); font-size: 2rem; font-weight: 800; line-height: 1.15; letter-spacing: 0; color: var(--rb-ink); }
 .rb-filters-toggle { display: none; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border: 1px solid var(--rb-line-strong); border-radius: 6px; background: var(--rb-leaf); font-size: 0.8125rem; font-weight: 600; }
 .rb-browse-pane.is-open .rb-filters-toggle { background: var(--rb-sunk); }
 .rb-field { display: flex; flex-direction: column; gap: 3px; min-width: 0; margin: 0; font-weight: 400; }
@@ -80,11 +84,11 @@
         display: grid; grid-template-columns: var(--rb-pane-width, 392px) 17px minmax(0, 1fr); grid-template-rows: auto auto minmax(0, 1fr); gap: 0;
     }
     .rb-browse > :not(.rb-browse-pane):not(.rb-browse-results):not(.rb-browse-title):not(.rb-browse-side):not(.rb-browse-splitter) { grid-column: 1 / -1; grid-row: 1; }
-    /* the title over the pane; the results start level with it */
-    .rb-browse > .rb-browse-title { grid-column: 1; grid-row: 2; }
+    /* the title across the page; the pane and the results under it */
+    .rb-browse > .rb-browse-title { grid-column: 1 / -1; grid-row: 2; }
     .rb-browse > .rb-browse-pane { grid-column: 1; grid-row: 3; margin: 0; overflow-y: auto; scrollbar-gutter: stable; }
-    .rb-browse > .rb-browse-results { grid-column: 3; grid-row: 2 / 4; display: flex; flex-direction: column; min-height: 0; }
-    .rb-browse > .rb-browse-splitter { grid-column: 2; grid-row: 2 / 4; position: relative; cursor: col-resize; touch-action: none; }
+    .rb-browse > .rb-browse-results { grid-column: 3; grid-row: 3; display: flex; flex-direction: column; min-height: 0; }
+    .rb-browse > .rb-browse-splitter { grid-column: 2; grid-row: 3; position: relative; cursor: col-resize; touch-action: none; }
     .rb-browse > .rb-browse-splitter::before { content: ""; position: absolute; top: 0; bottom: 0; left: 8px; width: 1px; background: var(--rb-line); }
     .rb-browse > .rb-browse-splitter:hover::before, body.rb-resizing .rb-browse > .rb-browse-splitter::before { left: 7px; width: 3px; background: var(--rb-highlight); }
     .rb-browse .rb-browse-pane .rb-toggles { flex-wrap: wrap; }
@@ -194,9 +198,9 @@
    decks and to the ones ticked ---- */
 .rb-browse-alerts:empty { display: none; }
 .rb-tabs { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 4px 20px; margin: 0 0 10px; border-bottom: 2px solid var(--rb-line-strong); }
-.rb-tab-row { display: flex; gap: 4px; margin-bottom: -2px; }
+.rb-tab-row { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: -2px; }
 .rb-tab {
-    padding: 4px 16px 6px; border: 2px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0;
+    padding: 4px 16px 6px; font-family: var(--rb-font-ui); border: 2px solid transparent; border-bottom: 0; border-radius: 8px 8px 0 0;
     font-size: 2rem; font-weight: 800; line-height: 1.15; color: var(--rb-ink-3); text-decoration: none;
 }
 .rb-tab:hover, .rb-tab:focus-visible { color: var(--rb-ink-2); text-decoration: none; background: var(--rb-page); }
@@ -204,7 +208,7 @@
 .rb-slot-count { margin: 0 0 8px auto; font-size: 0.8125rem; font-weight: 600; color: var(--rb-ink-2); white-space: nowrap; }
 .rb-slot-count.is-full { color: var(--rb-danger); }
 /* the include row doesn't apply to favourites: greyed out, kept for the decks tab */
-.rb-field-include.is-off { opacity: .4; pointer-events: none; }
+.rb-field-include.is-off { opacity: var(--rb-disabled, .5); pointer-events: none; }
 
 /* the actions pane */
 .rb-browse-side { display: flex; flex-direction: column; gap: 14px; }
@@ -215,7 +219,7 @@
 .rb-side-hint { margin: 0; font-size: 0.75rem; color: var(--rb-ink-2); }
 .rb-selection:not(.is-off) .rb-side-hint { display: none; }
 .rb-selection.is-off { background: var(--rb-page); }
-.rb-selection.is-off .rb-side-title { opacity: .6; }
+.rb-selection.is-off .rb-side-title { opacity: var(--rb-disabled, .5); }
 .rb-selected-count { color: var(--rb-ink); }
 
 /* the decks */
@@ -239,7 +243,7 @@
 .rb-icon-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0; border: 1px solid transparent; border-radius: 5px; background: none; color: var(--rb-ink-2); }
 .rb-icon-btn:hover, .rb-icon-btn:focus-visible { border-color: var(--rb-line-strong); background: var(--rb-control); color: var(--rb-ink); text-decoration: none; }
 .rb-icon-btn.rb-icon-danger:hover { color: var(--rb-danger); }
-.rb-icon-btn.is-disabled { opacity: .35; cursor: default; }
+.rb-icon-btn.is-disabled { opacity: var(--rb-disabled, .5); cursor: default; }
 .rb-icon-btn.is-disabled:hover { border-color: transparent; background: none; color: var(--rb-ink-2); }
 /* the buttons' tooltips: at once, to the left, clear of the column headings above */
 .rb-icon-btn[data-tip]:hover::after, .rb-icon-btn[data-tip]:focus-visible::after {
@@ -278,6 +282,7 @@
 }
 @media (max-width: 767px) {
     .rb-tab { font-size: 1.375rem; padding: 4px 10px 6px; }
+    .rb-tab-solo { font-size: 1.375rem; }
     .rb-my-decks-table tr { grid-template-columns: auto auto auto minmax(0, 1fr); grid-template-areas: "pick thumb size fmt" "pick thumb deck deck" "pick thumb pub vis" "pick thumb tags tags" "pick thumb acts acts"; }
     .rb-my-decks-table td.rb-col-published { grid-area: pub; }
     .rb-my-decks-table td.rb-col-pick { grid-area: pick; width: auto; padding: 0; }

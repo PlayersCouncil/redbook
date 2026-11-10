@@ -29,7 +29,8 @@
 
     {% include 'alerts.html.twig' %}
 
-    <h1 class="rb-browse-title">{{ 'decklist.list.title' | trans }}</h1>
+    {# the list pages' title (Ketura, 2026-11-09): My Decks', without a tab around the one title #}
+    <div class="rb-browse-title"><div class="rb-tabs"><h1 class="rb-tab-solo">{{ 'decklist.list.title' | trans }}</h1></div></div>
 
     <form method="get" action="{{ path('decklists_list') }}" class="rb-browse-pane" id="browse-form">
         <div class="rb-browse-top" id="browse-top">{{ block('browse_top') }}</div>

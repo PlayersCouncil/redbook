@@ -4,7 +4,6 @@
 {% block javascripts %}
     {{ parent() }}
     <script src="{{ asset('js/app.deck_editor.js') }}"></script>
-    <script src="{{ asset('js/app.md_editor.js') }}"></script>
     <script src="{{ asset('js/app.deck_notes.js') }}"></script>
     <script src="{{ asset('js/ui.decklist_form.js') }}"></script>
     <script type="text/javascript">
@@ -34,8 +33,9 @@
     <div class="main white container rb-builder rb-publish">
         {% include 'alerts.html.twig' %}
         <div class="row rb-builder-row">
-            <!-- Left: the deck, as it is published -->
-            <div class="col-md-6 rb-col-left">
+            <!-- Left: the deck, as it is published; greyed, on a darker panel, once its cards
+                 can't change (Ketura, 2026-11-09) -->
+            <div class="col-md-6 rb-col-left{% if mode != 'create' and not content_editable %} is-fixed{% endif %}">
                 <section class="rb-info rb-publish-info" aria-label="{{ 'decklist.form.deck_label' | trans }}">
                     <div class="rb-publish-facts">
                         {{ tags.format(format, false) }}
@@ -102,7 +102,7 @@
                         {% if not decklist.withdrawn %}
                             {# always (Ketura, 2026-11-09): the cards are fixed once published; a new
                                version starts from the deck, as a private revision #}
-                            {% set deck_link = source_deck ? '<a href="' ~ path('deck_edit', {deck_uuid: source_deck.uuid}) ~ '">' ~ ('decklist.state.fixed_link' | trans) ~ '</a>' : ('decklist.state.fixed_link' | trans) %}
+                            {% set deck_link = source_deck ? '<a href="' ~ path('deck_edit', {deck_uuid: source_deck.uuid}) ~ '">' ~ ('decklist.state.fixed_link' | trans) ~ '</a>' : '<a href="' ~ path('decks_list') ~ '">' ~ ('decklist.state.fixed_link' | trans) ~ '</a>' %}
                             <div class="alert alert-default rb-state rb-state-fixed"{% if not decklist.canWithdraw %} id="decklist-state" data-state="fixed"{% endif %}>
                                 <p>{{ 'decklist.state.fixed_help' | trans({'%link%': deck_link}) | raw }}</p>
                             </div>
@@ -120,56 +120,8 @@
                     <input type="hidden" name="_token" value="{{ csrf_token('decklist_form') }}">
                     {% if private_revision %}<input type="hidden" name="apply_to_deck" id="apply-to-deck" value="">{% endif %}
 
-                    {#
-                       The thumbnail the lists show (Ketura, 2026-11-05): a card of the deck, or the
-                       culture banner. A list of its own rather than a <select> (Ketura, 2026-11-07):
-                       hovering an option previews it, the wheel over it steps one at a time, and the
-                       cards are in the deck list's order (ui.decklist_form.js sorts them).
-                    #}
-                    {% set chosen = decklist.thumbnailCard ? decklist.thumbnailCard.code : '' %}
-                    {% set type_rank = {companion: 0, ally: 1, follower: 2, minion: 3, artifact: 4, possession: 5, condition: 6, event: 7} %}
-                    <div class="form-group rb-thumb-field">
-                        <label for="thumb-select">{{ 'decklist.publish.thumbnail' | trans }}</label>
-                        <div class="rb-thumb-pick">
-                            <div class="rb-thumb-preview">
-                                <span id="thumb-cultures" aria-hidden="true">{% include 'Decklist/thumbnail.html.twig' with {thumb_card: false} %}</span>
-                                <span class="rb-thumb rb-thumb-card" id="thumb-card" aria-hidden="true" hidden><img alt=""></span>
-                                {# a card's framing can be adjusted (Ketura, 2026-11-07): the crop editor below #}
-                                {% include 'Thumbnail/edit-button.html.twig' %}
-                                <input type="hidden" name="thumbnail_crop" id="thumbnail_crop" value="{{ decklist.thumbnailCrop ? decklist.thumbnailCrop | json_encode : '' }}">
-                            </div>
-                            <div class="rb-thumb-choice">
-                                <input type="hidden" name="thumbnail" id="thumbnail" value="{{ chosen }}">
-                                <button type="button" class="form-control rb-thumb-select" id="thumb-select" aria-haspopup="listbox" aria-expanded="false">
-                                    <span class="rb-thumb-current"></span><span class="caret" aria-hidden="true"></span>
-                                </button>
-                                <div class="rb-thumb-options" id="thumb-options" role="listbox" tabindex="-1" hidden>
-                                    <div class="rb-thumb-option" role="option" data-value="">{{ 'decklist.publish.thumbnail_cultures' | trans }}</div>
-                                    {% set slots = decklist.slots | filter(s => s.card.imageUrl) %}
-                                    {% for group in [
-                                        {key: 'rb', label: 'decklist.publish.thumbnail_rb' | trans, slots: slots | filter(s => s.role == 'ring_bearer' or s.role == 'ring')},
-                                        {key: 'fp', label: 'side.free_peoples' | trans, slots: slots | filter(s => s.role == 'draw' and s.card.side == 'free_peoples')},
-                                        {key: 'shadow', label: 'side.shadow' | trans, slots: slots | filter(s => s.role == 'draw' and s.card.side == 'shadow')},
-                                        {key: 'sites', label: 'decklist.publish.thumbnail_sites' | trans, slots: slots | filter(s => s.role == 'site')},
-                                    ] %}
-                                        {% if group.slots | length %}
-                                            <div class="rb-thumb-group" data-group="{{ group.key }}" role="presentation">{{ group.label }}</div>
-                                            {% for slot in group.slots %}
-                                                {% set card = slot.card %}
-                                                <div class="rb-thumb-option" role="option" data-group="{{ group.key }}" data-value="{{ card.code }}"
-                                                     data-image="{{ card.imageUrl }}" data-template="{{ card.thumbnailTemplate }}"
-                                                     data-rank="{{ slot.role == 'ring_bearer' ? -2 : (slot.role == 'ring' ? -1 : (type_rank[card.type.code] ?? 99)) }}"
-                                                     data-site="{{ card.siteNumber ?? 99 }}" data-shadow="{{ card.shadowNumber ?? 99 }}">{{ card.fullName }}</div>
-                                            {% endfor %}
-                                        {% endif %}
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {# the crop editor, shared with the library editor (Ketura, 2026-11-09) #}
-                    {% include 'Thumbnail/crop-dialog.html.twig' %}
+                    {# the thumbnail the lists show: the picker shared with the deckbuilder's Notes tab #}
+                    {% include 'Thumbnail/picker.html.twig' with {subject: decklist, chosen: decklist.thumbnailCard ? decklist.thumbnailCard.code : '', crop: decklist.thumbnailCrop, slots: decklist.slots} %}
 
                     <div class="form-group rb-release-date">
                         <label for="effective_date">{{ 'decklist.form.release_date' | trans }}</label>

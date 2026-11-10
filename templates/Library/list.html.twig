@@ -26,17 +26,17 @@
     <div class="rb-browse-alerts">{% include 'alerts.html.twig' %}</div>
 
     {% if mine %}
-        <div class="rb-browse-title"><h1>{{ 'nav.mylibraries' | trans }}</h1></div>
+        <div class="rb-browse-title"><div class="rb-tabs"><h1 class="rb-tab-solo">{{ 'nav.mylibraries' | trans }}</h1></div></div>
     {% else %}
         {# Libraries, the PC's official ones, and User Libraries, everyone else's (Ketura,
            2026-11-09): tabs, as My Decks and My Favorites; each its own page, the filters kept #}
         {% set query = app.request.query.all | filter((v, k) => k != 'page') %}
         <div class="rb-browse-title rb-library-tabs">
-            <nav class="rb-tab-row" aria-label="{{ 'library.list.tabs' | trans }}">
+            <div class="rb-tabs"><nav class="rb-tab-row" aria-label="{{ 'library.list.tabs' | trans }}">
                 {% for kind, route in {official: 'libraries_list', user: 'libraries_user'} %}
                     <a href="{{ list_path(route, query) }}" class="rb-tab{{ list_kind == kind ? ' is-active' }}"{% if list_kind == kind %} aria-current="page"{% endif %}>{{ (kind == 'official' ? 'library.list.title' : 'library.list.user_title') | trans }}</a>
                 {% endfor %}
-            </nav>
+            </nav></div>
             <p class="rb-browse-intro">{{ 'library.list.intro' | trans | raw }} {{ ('library.list.intro_' ~ list_kind) | trans }}</p>
         </div>
     {% endif %}

@@ -1,0 +1,11 @@
+{{ category }}
+
+From:    {{ name ?: '(not given)' }}
+Contact: {{ contact ?: '(not given)' }}
+Page:    {{ page ?: '(not given)' }}
+Account: {{ account ? account.username : 'not logged in' }}
+
+{{ message_md }}
+
+--
+{{ ip }} · {{ agent }}

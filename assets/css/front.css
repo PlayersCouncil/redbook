@@ -67,6 +67,7 @@
 @media (max-width: 1199px) {
     .rb-feeds { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
     .rb-cover-inner { grid-template-columns: 1fr; gap: 14px; }
+    .rb-dotd { justify-self: center; }
     .rb-logo { width: min(460px, 100%); }
 }
 /* below 992px the site's shell lets go and the page scrolls: the feeds take their own height */
@@ -77,8 +78,7 @@
 @media (max-width: 767px) {
     .rb-feeds { grid-template-columns: minmax(0, 1fr); }
     .rb-logo { width: min(340px, 100%); }
-    .rb-bookplate { grid-template-columns: 1fr; }
-    .rb-bookplate > :first-child { display: none; }
+    .rb-dotd { justify-self: stretch; width: auto; }
     .rb-feed-soon .rb-feed-placeholder { padding: 14px; }
 }
 
@@ -91,16 +91,20 @@
 .rb-deckrow .rb-meta { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rb-deckrow .rb-votes { flex: none; gap: 8px; }
 
-/* Deck of the Day as a plate sized to what it holds (Ketura, 2026-11-09), centred in the cover
-   beside the title: the thumbnail, then its heading and date (twice the size they were), the
-   name, and one line of facts with the counts */
-.rb-bookplate { align-self: center; justify-self: center; width: fit-content; max-width: 100%; padding: 10px 16px 10px 10px; align-items: center; }
-.rb-bookplate > :first-child { grid-row: auto; }
-.rb-bookplate-eyebrow { justify-content: flex-start; gap: 2px 16px; }
-.rb-bookplate-eyebrow b { font-size: 2.125rem; line-height: 1.1; }
-.rb-bookplate-date { font: 1.625rem/1.1 var(--rb-font-display); color: var(--rb-ink-2); }
-.rb-bookplate-facts { margin: 4px 0 0; }
-.rb-bookplate-facts .rb-votes { margin-left: 4px; }
+/* Deck of the Day (Ketura, 2026-11-09): at the right of the cover; its heading and date on a
+   plate of their own, then the deck as the Decks feed shows it, larger */
+.rb-dotd { align-self: center; justify-self: end; display: flex; flex-direction: column; gap: 10px; width: min(500px, 100%); }
+.rb-dotd-label { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 16px; padding: 6px 14px;
+    border: 1px solid color-mix(in srgb, var(--rb-gilt) 70%, transparent); border-radius: 3px; background: rgba(0, 0, 0, .22); color: var(--rb-on-leather); }
+.rb-dotd-label b { font: 1.75rem/1.1 var(--rb-font-display); letter-spacing: .03em; color: var(--rb-gilt-hi); }
+.rb-dotd-label .rb-bookplate-date { font: 1.25rem/1.1 var(--rb-font-ui); font-variant-numeric: tabular-nums; color: var(--rb-on-leather-2); }
+.rb-dotd .rb-bookplate { display: block; padding: 12px 16px 12px 12px; }
+.rb-dotd .rb-bookplate > :first-child { grid-row: auto; }
+.rb-dotd .rb-deckrow { gap: 4px 14px; }
+.rb-dotd .rb-deckrow .rb-thumb { width: 104px; }
+.rb-dotd .rb-deckrow .rb-deck-name { font-size: 1.375rem; }
+.rb-dotd .rb-deckrow .rb-meta { font-size: 0.9375rem; }
+.rb-dotd .rb-deckrow .rb-size { font-size: 1.125rem; }
 
 /* a tile that is one link (Ketura, 2026-11-09): its main link stretched over the whole of it */
 .rb-stretch { position: relative; cursor: pointer; transition: background-color .12s, box-shadow .12s; }

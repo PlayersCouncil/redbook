@@ -11,7 +11,6 @@
     <script src="{{ asset('js/app.card_terms.js') }}"></script>
     <script src="{{ asset('js/app.deck_editor.js') }}"></script>
     <script src="{{ asset('js/app.pool.js') }}"></script>
-    <script src="{{ asset('js/app.md_editor.js') }}"></script>
     <script src="{{ asset('js/app.deck_notes.js') }}"></script>
     <script src="{{ asset('js/app.deck_stats.js') }}"></script>
     <script src="{{ asset('js/ui.deckedit.js') }}"></script>
@@ -29,7 +28,8 @@
           published_versions: published_versions,
           imported_from_archive: imported_from_archive,
           origin_html: origin_html,
-          review: review
+          review: review,
+          published_thumbnail: deck.thumbnailShown is same as(deck) ? null : include('Decklist/thumbnail.html.twig', {decklist: deck.thumbnailShown})
       }|json_encode|raw }};
     </script>
 {% endblock %}
@@ -54,6 +54,8 @@
                     <div class="rb-draft-banner" id="draft-banner" hidden></div>
 
                     <div class="rb-title-row">
+                        {# the deck's thumbnail (Ketura, 2026-11-09): opens the Notes tab at its picker #}
+                        <button type="button" class="rb-info-thumb" id="deck-thumb" title="{{ 'deckbuilder.info.thumbnail' | trans }}" aria-label="{{ 'deckbuilder.info.thumbnail' | trans }}">{% include 'Decklist/thumbnail.html.twig' with {decklist: deck.thumbnailShown} %}</button>
                         <label class="rb-field rb-name-field">
                             <span>{{ 'deckbuilder.info.name' | trans }}</span>
                             <input type="text" id="deck-name" value="{{ deck.name }}" autocomplete="off">

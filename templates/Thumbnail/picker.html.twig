@@ -1,0 +1,58 @@
+{#
+   The thumbnail picker (Ketura, 2026-11-05; a component since 2026-11-09, for the decklist form
+   and the deckbuilder's Notes tab): a card of the deck, or the culture banner. A list of its
+   own rather than a <select> (Ketura, 2026-11-07): hovering an option previews it, the wheel
+   over it steps one at a time, and the cards are in the deck list's order (app.thumbnail.picker
+   sorts them). A card's framing can be adjusted with the crop editor under the pencil.
+   Variables:
+   - subject: what the culture banner is drawn for (App\Classes\ThumbnailSubject)
+   - chosen: the chosen card's code, '' for the cultures; crop: its framing, or null
+   - slots: the deck's slots, to list their cards (a decklist's); left out, the page lists them
+     (the deckbuilder, from the deck as it changes: app.thumbnail.deck_options_html)
+#}
+{% set slots = slots ?? null %}
+{% set type_rank = {companion: 0, ally: 1, follower: 2, minion: 3, artifact: 4, possession: 5, condition: 6, event: 7} %}
+<div class="form-group rb-thumb-field" id="thumb-field">
+    <label for="thumb-select">{{ 'decklist.publish.thumbnail' | trans }}</label>
+    <div class="rb-thumb-pick">
+        <div class="rb-thumb-preview">
+            <span id="thumb-cultures" aria-hidden="true">{% include 'Decklist/thumbnail.html.twig' with {decklist: subject, thumb_card: false} %}</span>
+            <span class="rb-thumb rb-thumb-card" id="thumb-card" aria-hidden="true" hidden><img alt=""></span>
+            {% include 'Thumbnail/edit-button.html.twig' %}
+            <input type="hidden" name="thumbnail_crop" id="thumbnail_crop" value="{{ crop ? crop | json_encode : '' }}">
+        </div>
+        <div class="rb-thumb-choice">
+            <input type="hidden" name="thumbnail" id="thumbnail" value="{{ chosen }}">
+            <button type="button" class="form-control rb-thumb-select" id="thumb-select" aria-haspopup="listbox" aria-expanded="false">
+                <span class="rb-thumb-current"></span><span class="caret" aria-hidden="true"></span>
+            </button>
+            <div class="rb-thumb-options" id="thumb-options" role="listbox" tabindex="-1" hidden
+                 data-label-cultures="{{ 'decklist.publish.thumbnail_cultures' | trans }}" data-label-rb="{{ 'decklist.publish.thumbnail_rb' | trans }}"
+                 data-label-fp="{{ 'side.free_peoples' | trans }}" data-label-shadow="{{ 'side.shadow' | trans }}" data-label-sites="{{ 'decklist.publish.thumbnail_sites' | trans }}">
+                <div class="rb-thumb-option" role="option" data-value="">{{ 'decklist.publish.thumbnail_cultures' | trans }}</div>
+                {% if slots is not null %}
+                    {% set slots = slots | filter(s => s.card.imageUrl) %}
+                    {% for group in [
+                        {key: 'rb', label: 'decklist.publish.thumbnail_rb' | trans, slots: slots | filter(s => s.role == 'ring_bearer' or s.role == 'ring')},
+                        {key: 'fp', label: 'side.free_peoples' | trans, slots: slots | filter(s => s.role == 'draw' and s.card.side == 'free_peoples')},
+                        {key: 'shadow', label: 'side.shadow' | trans, slots: slots | filter(s => s.role == 'draw' and s.card.side == 'shadow')},
+                        {key: 'sites', label: 'decklist.publish.thumbnail_sites' | trans, slots: slots | filter(s => s.role == 'site')},
+                    ] %}
+                        {% if group.slots | length %}
+                            <div class="rb-thumb-group" data-group="{{ group.key }}" role="presentation">{{ group.label }}</div>
+                            {% for slot in group.slots %}
+                                {% set card = slot.card %}
+                                <div class="rb-thumb-option" role="option" data-group="{{ group.key }}" data-value="{{ card.code }}"
+                                     data-image="{{ card.imageUrl }}" data-template="{{ card.thumbnailTemplate }}"
+                                     data-rank="{{ slot.role == 'ring_bearer' ? -2 : (slot.role == 'ring' ? -1 : (type_rank[card.type.code] ?? 99)) }}"
+                                     data-site="{{ card.siteNumber ?? 99 }}" data-shadow="{{ card.shadowNumber ?? 99 }}">{{ card.fullName }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{# the crop editor, shared with the library editor #}
+{% include 'Thumbnail/crop-dialog.html.twig' %}

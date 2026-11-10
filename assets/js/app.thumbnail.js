@@ -1,4 +1,4 @@
-/* global _, jQuery */
+/* global _, jQuery, app */
 
 /**
  * Thumbnails, shared (Ketura, 2026-11-09): the decklist form's and the library editor's live
@@ -59,6 +59,292 @@
     {
         var corners = cultures.length === 1 ? ['full'] : ['fp', 'shadow'];
         return _.map(cultures.slice(0, 2), function (c, i) { return _.extend({}, c, {corner: corners[i]}); });
+    };
+
+    /**
+     * The thumbnail picker (Ketura, 2026-11-07; shared with the deckbuilder 2026-11-09): its
+     * markup is Thumbnail/picker.html.twig. A list of its own rather than a <select>: open,
+     * hovering an option previews it; the wheel over the closed control steps one option per
+     * notch; the cards are in the deck list's order (type, the starting companions first,
+     * then name; sites by site number, shadow number, name). The pencil over a card's preview
+     * opens the crop editor.
+     *
+     * options: scroll (what scrolling closes the list), changed(code, crop) after a choice or
+     * a framing. Returns {refresh(options_html), cultures(html)}: the deckbuilder's list and
+     * culture banner follow the deck as it changes.
+     */
+    thumb.picker = function picker(options)
+    {
+        options = options || {};
+        var input = $('#thumbnail'), button = $('#thumb-select'), list = $('#thumb-options'), field = $('#thumbnail_crop');
+        if(!list.length) {
+            return null;
+        }
+        function crop()
+        {
+            return thumb.parse_crop(field.val());
+        }
+        function all()
+        {
+            return list.find('.rb-thumb-option');
+        }
+        function preview(option)
+        {
+            var image = option.data('image');
+            var img = $('#thumb-card').prop('hidden', !image).attr('class', 'rb-thumb rb-thumb-card rb-thumb-tpl-' + (option.data('template') || 'modifier'))
+                .find('img').attr('src', image || '');
+            thumb.crop_style(img, option.data('value') + '', crop());
+            $('#thumb-cultures').prop('hidden', !!image);
+        }
+        function current()
+        {
+            var value = input.val() + '';
+            return all().filter(function () { return ($(this).data('value') + '') === value; }).first();
+        }
+        function choose(option, quiet)
+        {
+            var before = input.val() + '';
+            input.val(option.data('value') + '');
+            all().attr('aria-selected', 'false').removeClass('is-active');
+            option.attr('aria-selected', 'true');
+            button.find('.rb-thumb-current').text(option.text());
+            preview(option);
+            // a card's framing can be adjusted; the banner's can't
+            $('#thumb-edit').prop('hidden', !option.data('image'));
+            if(!quiet && before !== input.val() + '' && options.changed) {
+                options.changed(input.val() + '', crop());
+            }
+        }
+        function sort()
+        {
+            var starting = app.deck && app.deck.is_starting ? app.deck.is_starting : function () { return false; };
+            list.find('.rb-thumb-group').each(function () {
+                var group = $(this).data('group'),
+                    items = all().filter('[data-group="' + group + '"]').get();
+                items.sort(function (a, b) {
+                    var x = $(a), y = $(b);
+                    if(group === 'sites') {
+                        return x.data('site') - y.data('site') || x.data('shadow') - y.data('shadow') || x.text().localeCompare(y.text());
+                    }
+                    return x.data('rank') - y.data('rank')
+                        || (starting(x.data('value') + '') ? 0 : 1) - (starting(y.data('value') + '') ? 0 : 1)
+                        || x.text().localeCompare(y.text());
+                });
+                $(this).after(items);
+            });
+        }
+        function open(on)
+        {
+            if(on) {
+                sort();
+                list.prop('hidden', false);
+                // fixed to the window, so the scrolling pane doesn't cut it off: below the
+                // button, or above it when there's more room there
+                var rect = button[0].getBoundingClientRect(),
+                    below = window.innerHeight - rect.bottom - 12, above = rect.top - 12,
+                    up = below < 220 && above > below,
+                    height = Math.min(340, up ? above : below);
+                list.css({position: 'fixed', left: rect.left, width: rect.width, right: 'auto', maxHeight: height,
+                    top: up ? 'auto' : rect.bottom + 3, bottom: up ? window.innerHeight - rect.top + 3 : 'auto'});
+                reveal(current().addClass('is-active'));
+            } else {
+                list.prop('hidden', true);
+                all().removeClass('is-active');
+                preview(current());
+            }
+            button.attr('aria-expanded', on ? 'true' : 'false');
+        }
+        /** Scrolls the list alone (scrollIntoView would scroll the pane too, closing it) */
+        function reveal(option)
+        {
+            var el = option[0], box = list[0];
+            if(!el) {
+                return;
+            }
+            if(el.offsetTop < box.scrollTop) {
+                box.scrollTop = el.offsetTop;
+            } else if(el.offsetTop + el.offsetHeight > box.scrollTop + box.clientHeight) {
+                box.scrollTop = el.offsetTop + el.offsetHeight - box.clientHeight;
+            }
+        }
+        function step(by)
+        {
+            var items = all(), i = items.index(current()), next = items.eq(Math.max(0, Math.min(items.length - 1, i + by)));
+            if(next.length && next[0] !== current()[0]) {
+                choose(next);
+            }
+        }
+        sort();
+        choose(current().length ? current() : all().first(), true);
+
+        button.on('click', function () { open(list.prop('hidden')); });
+        list.on('mouseenter', '.rb-thumb-option', function () {
+            all().removeClass('is-active');
+            preview($(this).addClass('is-active'));
+        });
+        list.on('mouseleave', function () { preview(current()); });
+        list.on('click', '.rb-thumb-option', function () {
+            choose($(this));
+            open(false);
+            button.focus();
+        });
+        $(document).on('mousedown', function (event) {
+            if(!list.prop('hidden') && !$(event.target).closest('.rb-thumb-choice').length) {
+                open(false);
+            }
+        });
+        // it stays where it opened, so it closes when the pane scrolls or the window changes
+        options.scroll && $(options.scroll).on('scroll', function () { if(!list.prop('hidden')) { open(false); } });
+        $(window).on('resize', function () { if(!list.prop('hidden')) { open(false); } });
+        // one option per notch of the wheel; a touchpad's small steps add up to one
+        var wheel = 0;
+        button[0].addEventListener('wheel', function (event) {
+            if(!list.prop('hidden')) {
+                return;
+            }
+            event.preventDefault();
+            wheel += event.deltaY;
+            if(Math.abs(wheel) >= 40) {
+                step(wheel > 0 ? 1 : -1);
+                wheel = 0;
+            }
+        }, {passive: false});
+        button.on('keydown', function (event) {
+            var openNow = !list.prop('hidden');
+            if(event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                event.preventDefault();
+                if(openNow) {
+                    var items = all(), at = items.index(items.filter('.is-active')), next = items.eq(Math.max(0, Math.min(items.length - 1, at + (event.key === 'ArrowDown' ? 1 : -1))));
+                    items.removeClass('is-active');
+                    preview(next.addClass('is-active'));
+                    reveal(next);
+                } else {
+                    step(event.key === 'ArrowDown' ? 1 : -1);
+                }
+            } else if(event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                if(openNow && all().filter('.is-active').length) {
+                    choose(all().filter('.is-active'));
+                    open(false);
+                } else {
+                    open(!openNow);
+                }
+            } else if(event.key === 'Escape' && openNow) {
+                event.preventDefault();
+                open(false);
+            }
+        });
+
+        // the crop editor, on the card chosen
+        thumb.crop_editor({
+            dialog: '#thumb-crop',
+            field: '#thumbnail_crop',
+            pencil: '#thumb-edit',
+            current: function () {
+                var option = list.find('.rb-thumb-option[aria-selected=true]');
+                return option.data('image') ? {code: option.data('value') + '', image: option.data('image'), template: option.data('template')} : null;
+            },
+            applied: function (code) {
+                thumb.crop_style($('#thumb-card img'), code, crop());
+                options.changed && options.changed(input.val() + '', crop());
+            }
+        });
+
+        return {
+            /** New options (the cultures' first): the chosen card kept if it's still there, else the cultures */
+            refresh: function refresh(html)
+            {
+                list.html(html);
+                sort();
+                var chosen = current();
+                if(chosen.length) {
+                    choose(chosen, true);
+                } else {
+                    choose(all().first());
+                }
+            },
+            /** A choice and framing from elsewhere (the deckbuilder's draft, a revert), quietly */
+            set: function set(code, framing)
+            {
+                field.val(framing ? JSON.stringify(framing) : '');
+                input.val(code || '');
+                var chosen = current();
+                choose(chosen.length ? chosen : all().first(), true);
+            },
+            /** The culture banner the cultures option shows */
+            cultures: function cultures(html)
+            {
+                $('#thumb-cultures').html(html);
+            }
+        };
+    };
+
+    var TYPE_RANK = {companion: 0, ally: 1, follower: 2, minion: 3, artifact: 4, possession: 5, condition: 6, event: 7};
+
+    /**
+     * A deck's picker options from the deckbuilder's deck (Ketura, 2026-11-09), as
+     * Thumbnail/picker.html.twig lists a decklist's: the cultures, then the Ring-bearer and the
+     * Ring, the Free Peoples, the Shadow and the sites, each card once
+     */
+    thumb.deck_options_html = function deck_options_html(deck, labels)
+    {
+        var html = '<div class="rb-thumb-option" role="option" data-value="">' + _.escape(labels.cultures) + '</div>',
+            seen = {},
+            groups = [
+                {key: 'rb', label: labels.rb, slots: deck.get_cards('ring_bearer').concat(deck.get_cards('ring'))},
+                {key: 'fp', label: labels.fp, slots: _.filter(deck.get_cards('draw'), function (s) { return s.card.side === 'free_peoples'; })},
+                {key: 'shadow', label: labels.shadow, slots: _.filter(deck.get_cards('draw'), function (s) { return s.card.side === 'shadow'; })},
+                {key: 'sites', label: labels.sites, slots: deck.get_cards('site')}
+            ];
+        _.each(groups, function (group) {
+            var cards = _.filter(_.pluck(_.reject(group.slots, 'pending'), 'card'), function (card) {
+                if(!card.image_url || seen[card.code]) {
+                    return false;
+                }
+                return (seen[card.code] = true);
+            });
+            if(!cards.length) {
+                return;
+            }
+            html += '<div class="rb-thumb-group" data-group="' + group.key + '" role="presentation">' + _.escape(group.label) + '</div>';
+            _.each(cards, function (card) {
+                var rank = group.key === 'rb' ? (card.type_code === 'the_one_ring' ? -1 : -2) : (TYPE_RANK[card.type_code] !== undefined ? TYPE_RANK[card.type_code] : 99);
+                html += '<div class="rb-thumb-option" role="option" data-group="' + group.key + '" data-value="' + _.escape(card.code) + '"'
+                    + ' data-image="' + _.escape(card.image_url) + '" data-template="' + thumb.template(card.type_code) + '"'
+                    + ' data-rank="' + rank + '" data-site="' + (card.site_number || 99) + '" data-shadow="' + (card.shadow_number || 99) + '">'
+                    + _.escape(card.label) + '</div>';
+            });
+        });
+        return html;
+    };
+
+    /**
+     * A deck's culture banner as PublishedDeck::pickThumbnailCultures picks it: the draw deck's
+     * largest Free Peoples culture top left, its largest Shadow culture bottom right (ties by
+     * name); one alone fills the tile
+     */
+    thumb.deck_cultures = function deck_cultures(deck)
+    {
+        var counts = {free_peoples: {}, shadow: {}};
+        _.each(_.reject(deck.get_cards('draw'), 'pending'), function (slot) {
+            var card = slot.card;
+            if(counts[card.side] && card.culture_code) {
+                var row = counts[card.side][card.culture_code] = counts[card.side][card.culture_code] || {code: card.culture_code, name: card.culture_name, count: 0};
+                row.count += slot.qty;
+            }
+        });
+        function top(side)
+        {
+            return _.values(counts[side]).sort(function (a, b) { return b.count - a.count || a.name.localeCompare(b.name); })[0] || null;
+        }
+        var fp = top('free_peoples'), shadow = top('shadow');
+        if(fp && shadow) {
+            return [_.extend({}, fp, {corner: 'fp', side: 'free_peoples'}), _.extend({}, shadow, {corner: 'shadow', side: 'shadow'})];
+        }
+        if(fp) {
+            return [_.extend({}, fp, {corner: 'full', side: 'free_peoples'})];
+        }
+        return shadow ? [_.extend({}, shadow, {corner: 'full', side: 'shadow'})] : [];
     };
 
     /**

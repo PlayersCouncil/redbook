@@ -94,6 +94,8 @@
                         <li><a href="https://lotrtcgpc.net/discord" rel="noopener">{{ 'nav.discord' | trans }}</a></li>
                     </ul>
                 </li>
+                {# the bug report form (Ketura, 2026-11-09), boxed so it's easy to find #}
+                <li class="rb-nav-feedback"><a href="#" role="button" data-feedback id="nav-feedback" title="{{ 'feedback.title' | trans }}"><span class="fas fa-bug"></span><span class="rb-feedback-label">{{ 'nav.feedback' | trans }}</span></a></li>
                 {# on a phone the bar has no room for the theme and language: the menu ends with them #}
                 <li class="rb-nav-phone-tools">{{ shell.theme_switch() }}{% if _route is not empty %}{{ shell.language_menu(_route, _route_params|merge(_get_params), false) }}{% endif %}</li>
             </ul>
@@ -126,6 +128,7 @@
     </div>
 </footer>
 {% include 'Modale/card.html.twig' %}
+{% include 'Feedback/modal.html.twig' %}
 <!--[if lt IE 9]>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7/html5shiv.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/respond.js/1.4.2/respond.js"></script>

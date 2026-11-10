@@ -25,7 +25,7 @@
     --rb-line:           #DDD4C3;
     --rb-line-strong:    #BFB39C;
     --rb-control:        #FFFFFF;   /* face of secondary buttons, pager links, toggles */
-    --rb-control-hover:  #EFE9DD;
+    --rb-control-hover:  #E2D6BF;   /* Ketura, 2026-11-09: was #EFE9DD, too close to the face */
     --rb-control-edge:   #BFB39C;
     --rb-plate:          #F4E6C8;   /* bookplate vellum, centre */
     --rb-plate-edge:     #DCC294;   /* bookplate vellum, worn edge */
@@ -124,7 +124,7 @@ html.pc-dark {
     --rb-line:           #3C3228;
     --rb-line-strong:    #5F4F41;
     --rb-control:        #3D3329;
-    --rb-control-hover:  #4B3F33;
+    --rb-control-hover:  #5E4E3D;   /* was #4B3F33 */
     --rb-control-edge:   #6E5C4A;
     --rb-plate:          #2E261E;
     --rb-plate-edge:     #261F18;
@@ -189,6 +189,11 @@ html.pc-dark {
    Every text size on the site is in rem, so this factor scales all text together (the root's
    font size is the browser's own setting times it; bootstrap.css). 1 is the design's sizes. */
 :root { --rb-type: 1.1; }   /* Ketura, 2026-11-09: 1.1; the top bar's breakpoints follow it (theme.css section 19) */
+/* how strong a switched-off control is drawn (Ketura, 2026-11-09) */
+:root { --rb-disabled: .5; }
+/* a text field at rest, a shade off its focused face; what's selected in one (Ketura, 2026-11-09) */
+:root { --rb-field-rest: color-mix(in srgb, var(--rb-leaf) 45%, var(--rb-page)); --rb-field-selection: #9FC2F2; --rb-field-selection-ink: #14100C; }
+html.pc-dark { --rb-field-selection: #3F78C9; --rb-field-selection-ink: #FFFFFF; }
 
 /* ---------- 1c. Red Book's own tokens, beside the theme's (Ketura, 2026-11-09) ---------- */
 :root {

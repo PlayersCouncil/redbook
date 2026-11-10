@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Classes\DeckContent;
+use App\Classes\ThumbnailCrop;
 use App\Entity\Card;
 use App\Entity\Deck;
 use App\Entity\DeckRevision;
@@ -203,6 +204,14 @@ class DeckManager
             $starting = is_string($data['starting']) ? json_decode($data['starting'], true) : $data['starting'];
             $deck->setStarting(array_filter((array) ($starting ?? []), fn ($code) => isset($content[$code], $cards[$code])
                 && $cards[$code]->getType()->getCode() === 'companion'));
+        }
+        // its thumbnail (Ketura, 2026-11-09): one of its cards, sites included, or none for the
+        // cultures; a framing only for that card. Not a revision of the deck on its own.
+        if (array_key_exists('thumbnail', $data) && $deck instanceof Deck) {
+            $code = (string) $data['thumbnail'];
+            $card = $code !== '' ? ($cards[$code] ?? null) : null;
+            $deck->setThumbnailCard($card);
+            $deck->setThumbnailCrop($card ? ThumbnailCrop::sanitize($data['thumbnail_crop'] ?? null, [$card->getCode()]) : null);
         }
         $this->validator->validateDeck($deck);
 

@@ -74,6 +74,10 @@
     deck.get_effective_date = function () { return data.effective_date; };
 
     /* ---- notes (Ketura, 2026-11-03): the bid, starting notes, card annotations ---- */
+    /* its own thumbnail (Ketura, 2026-11-09): a card's code, '' for the cultures; a framing for it */
+    deck.get_thumbnail = function () { return data.thumbnail || ''; };
+    deck.get_thumbnail_crop = function () { return data.thumbnail_crop || null; };
+    deck.set_thumbnail = function (code, crop) { data.thumbnail = code || ''; data.thumbnail_crop = code && crop && crop.code === code ? crop : null; };
     deck.get_starting_bid = function () { return data.starting_bid || ''; };
     deck.set_starting_bid = function (bid) { data.starting_bid = bid; };
     deck.get_starting_notes = function () { return data.starting_notes || ''; };
@@ -106,6 +110,8 @@
             starting_bid: data.starting_bid || '',
             starting_notes: data.starting_notes || '',
             annotations: _.map(data.annotations || [], _.clone),
+            thumbnail: data.thumbnail || '',
+            thumbnail_crop: data.thumbnail_crop || null,
             content: _.extend({}, content),
             pending: _.keys(pending)
         };
@@ -122,6 +128,8 @@
         data.starting_bid = state.starting_bid || '';
         data.starting_notes = state.starting_notes || '';
         data.annotations = _.map(state.annotations || [], _.clone);
+        data.thumbnail = state.thumbnail || '';
+        data.thumbnail_crop = state.thumbnail_crop || null;
         content = _.extend({}, state.content || {});
         pending = {};
         _.each(state.pending || [], function (key) {

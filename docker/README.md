@@ -62,7 +62,7 @@ Deck validation, PC errata conversion and the formats come from Gemp's public JS
 
 ## Mail
 
-Mail goes out through Symfony Mailer, configured by `MAILER_DSN` in `app.env` (for example `smtp://user:password@smtp.example.com:587`). With `null://null` nothing is sent, which also means new accounts can't confirm their email.
+Mail goes out through Symfony Mailer, configured by `MAILER_DSN` in `app.env` (for example `smtp://user:password@smtp.example.com:587`). With `null://null` nothing is sent, which also means new accounts can't confirm their email. The bug report form (the boxed bug in the top bar) emails `APP_FEEDBACK_EMAIL` (comma-separated); left empty, it goes to the admins' own addresses, the newest twenty.
 
 ## Reverse proxy
 

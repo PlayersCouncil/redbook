@@ -10,7 +10,9 @@ body { margin: 0; color: var(--rb-ink); font: 1rem/1.5 var(--rb-font-ui); -webki
 a { color: var(--rb-link); text-decoration: none; }
 a:hover { color: var(--rb-link-hover); text-decoration: underline; text-underline-offset: 2px; }
 :focus-visible { outline: 2px solid var(--rb-focus); outline-offset: 2px; }
-::selection { background: var(--rb-fp-soft); color: var(--rb-ink); }
+/* selecting (Ketura, 2026-11-09): text on the page keeps the browser's own highlight; in a
+   field, a clear blue in both themes */
+:is(input, textarea, [contenteditable="true"])::selection { background: var(--rb-field-selection); color: var(--rb-field-selection-ink); }
 h1, h2, h3, h4 { font-family: var(--rb-font-prose); font-weight: 600; color: var(--rb-ink); line-height: 1.15; text-wrap: balance; margin: 0; }
 h1 { font-size: 2.125rem; } h2 { font-size: 1.625rem; } h3 { font-size: 1.3125rem; }
 h4 { font-size: 1.0625rem; font-family: var(--rb-font-ui); font-weight: 700; }
@@ -118,7 +120,14 @@ html.rb-onepage .rb-main { flex: 1 1 auto; min-height: 0; overflow: hidden; disp
     font: 600 0.9375rem/1 var(--rb-font-ui); white-space: nowrap; cursor: pointer; border: 1px solid transparent; text-decoration: none !important;
     transition: background-color .12s, border-color .12s, color .12s; box-shadow: none; }
 .btn:focus-visible, .rb-btn:focus-visible { outline: 2px solid var(--rb-focus); outline-offset: 2px; }
-.btn[disabled], .btn.disabled, .rb-btn[disabled] { opacity: .45; cursor: not-allowed; }
+.btn[disabled], .btn.disabled, .rb-btn[disabled] { opacity: var(--rb-disabled, .5); cursor: not-allowed; box-shadow: none; }
+/* anything else switched off reads as off at a glance: half strength, as the top bar's (Ketura,
+   2026-11-09) */
+fieldset[disabled] .btn, input:disabled, select:disabled, textarea:disabled, button:disabled,
+.checkbox.disabled, .radio.disabled, label.disabled, .nav-tabs > li.disabled > a, .dropdown-menu > .disabled > a,
+.list-group-item.disabled, .rb-tabs > [disabled], .rb-tabs > .disabled { opacity: var(--rb-disabled, .5); cursor: not-allowed; }
+/* inside something already at half strength, not halved again */
+fieldset[disabled] :disabled, .btn[disabled] :disabled { opacity: 1; }
 .btn i, .btn svg, .rb-btn i, .rb-btn svg { font-size: .92em; }
 .btn-sm, .rb-btn-small { height: var(--rb-control-h-sm); padding: 0 10px; font-size: 0.875rem; }
 .btn-lg { height: var(--rb-control-h-lg); padding: 0 20px; font-size: 1.0625rem; }
@@ -127,11 +136,13 @@ html.rb-onepage .rb-main { flex: 1 1 auto; min-height: 0; overflow: hidden; disp
 
 /* Primary: iron-gall blue. One per region. .btn-success maps here so the old green buttons fall in line. */
 .btn-primary, .btn-success, .rb-btn-primary { background: var(--rb-primary); border-color: var(--rb-primary); color: var(--rb-primary-ink); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); }
-.btn-primary:hover, .btn-success:hover, .btn-primary:focus, .btn-success:focus, .rb-btn-primary:hover:not([disabled]), .rb-btn-primary:focus { background: var(--rb-primary-hover); border-color: var(--rb-primary-hover); color: var(--rb-primary-ink); }
+/* a filled button brightens under the pointer, keeping its colour (Ketura, 2026-11-09) */
+.btn-primary:hover, .btn-success:hover, .btn-primary:focus, .btn-success:focus, .rb-btn-primary:hover:not([disabled]), .rb-btn-primary:focus { background: var(--rb-primary); border-color: var(--rb-primary); color: var(--rb-primary-ink); filter: brightness(1.2); }
 .btn-primary:active, .btn-success:active, .rb-btn-primary:active { box-shadow: inset 0 2px 3px rgba(0,0,0,.25); }
 
 .btn-default, .rb-btn:not(.rb-btn-primary) { background: var(--rb-control); border-color: var(--rb-control-edge); color: var(--rb-ink); }
-.btn-default:hover, .btn-default:focus, .rb-btn:not(.rb-btn-primary):hover:not([disabled]), .rb-btn:not(.rb-btn-primary):focus { background: var(--rb-control-hover); border-color: var(--rb-control-edge); color: var(--rb-ink); }
+/* an outlined one darkens its face and edge, enough to see at once (Ketura, 2026-11-09) */
+.btn-default:hover, .btn-default:focus, .rb-btn:not(.rb-btn-primary):hover:not([disabled]), .rb-btn:not(.rb-btn-primary):focus { background: var(--rb-control-hover); border-color: var(--rb-ink-3); color: var(--rb-ink); }
 
 .btn-quiet, .btn-link { background: transparent; border-color: transparent; color: var(--rb-ink-2); }
 .btn-quiet:hover, .btn-link:hover { background: var(--rb-hover); color: var(--rb-ink); }
@@ -265,7 +276,7 @@ a.rb-tag:hover { color: var(--rb-ink); border-color: var(--rb-line-strong); text
 a.rb-page:hover, a.rb-page:focus { background: var(--rb-primary-soft); border-color: var(--rb-info-edge); }
 .rb-page.is-current { background: var(--rb-selected); border-color: var(--rb-selected-edge); color: var(--rb-selected-ink); }
 .rb-page-step { color: var(--rb-ink-2); font-size: 0.6875rem; }
-.rb-page.is-disabled { color: var(--rb-ink-3); border-color: var(--rb-line); background: transparent; opacity: .6; }
+.rb-page.is-disabled { color: var(--rb-ink-3); border-color: var(--rb-line); background: transparent; opacity: var(--rb-disabled, .5); }
 .rb-page-jump { display: inline-flex; gap: 4px; margin: 0 0 0 8px; }
 .rb-page-jump input { width: 84px; height: 32px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: var(--rb-radius); background: var(--rb-leaf); color: var(--rb-ink);
     font: 0.875rem var(--rb-font-ui); -moz-appearance: textfield; appearance: textfield; }
@@ -285,15 +296,17 @@ a.rb-deck-name:hover { color: var(--rb-link); text-decoration: none; }
 /* ---------- 19. Responsive ---------- */
 /* The top bar's breakpoints are in em, so they follow the text (Ketura, 2026-11-09): the
    design's widths (1400, 1200, 1100px) times --rb-type (1.1), over 16; recompute them when
-   --rb-type changes. In em they also follow the browser's own font size setting. */
+   --rb-type changes. In em they also follow the browser's own font size setting. The first two
+   are a little wider than the design's since the bug report button joined the bar (Ketura,
+   2026-11-09): 96.2438em and 82.4938em before. */
 @media (pointer: coarse) {
     :root { --rb-control-h: 40px; --rb-control-h-sm: 36px; }
     .rb-page { min-width: 40px; height: 40px; }
     .rb-splitter { display: none; }
 }
-@media (max-width: 96.2438em) { .rb-nav > li > a .rb-nav-label { display: none; } .rb-nav > li > a { padding: 0 9px; } }
+@media (max-width: 98.25em) { .rb-nav > li > a .rb-nav-label { display: none; } .rb-nav > li > a { padding: 0 9px; } }
 /* the front page's responsive rules are in front.css, after its own */
-@media (max-width: 82.4938em) { .rb-brand > .rb-wordmark { display: none; } .rb-brand { margin-right: 6px; } }
+@media (max-width: 83.5em) { .rb-brand > .rb-wordmark { display: none; } .rb-brand { margin-right: 6px; } }
 @media (max-width: 75.6188em) {
     .rb-topbar .rb-nav-primary { display: none; }
     .rb-brand > .rb-wordmark { display: block; }

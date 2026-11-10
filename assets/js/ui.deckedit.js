@@ -92,7 +92,8 @@
         return {
             name: state.name || '', target_format: state.target_format || '', description_md: state.description_md || '',
             tags: state.tags || '', historic: state.historic || null, starting: (state.starting || []).slice().sort(), content: sorted,
-            starting_bid: state.starting_bid || '', starting_notes: state.starting_notes || '', annotations: state.annotations || [], pending: (state.pending || []).slice().sort()
+            starting_bid: state.starting_bid || '', starting_notes: state.starting_notes || '', annotations: state.annotations || [], pending: (state.pending || []).slice().sort(),
+            thumbnail: state.thumbnail || '', thumbnail_crop: state.thumbnail_crop || null
         };
     }
 
@@ -156,7 +157,9 @@
             starting: JSON.stringify(app.deck.get_starting()),
             starting_bid: app.deck.get_starting_bid(),
             starting_notes: app.deck.get_starting_notes(),
-            annotations: JSON.stringify(app.deck.get_annotations())
+            annotations: JSON.stringify(app.deck.get_annotations()),
+            thumbnail: app.deck.get_thumbnail(),
+            thumbnail_crop: app.deck.get_thumbnail_crop() ? JSON.stringify(app.deck.get_thumbnail_crop()) : ''
         };
     }
 
@@ -258,6 +261,8 @@
         $('textarea[name=description_]').val(app.deck.get_description_md() || '');
         $('input[name=tags_]').val(app.deck.get_tags() || '');
         app.deck_notes && app.deck_notes.fill();
+        thumbnail && thumbnail.set(app.deck.get_thumbnail(), app.deck.get_thumbnail_crop());
+        show_thumbnail();
         var historic = app.deck.get_historic();
         $('[data-historic]').each(function () {
             $(this).val(historic ? historic[$(this).data('historic')] || '' : '');
@@ -726,7 +731,59 @@
 
         // the Notes tab: tags, starting notes, card annotations, the description's preview
         app.deck_notes && app.deck_notes.setup(on_edit);
+
+        // the thumbnail in the corner opens the Notes tab at its picker (Ketura, 2026-11-09)
+        $('#deck-thumb').on('click', function () {
+            $('a[href="#tab-pane-infos"]').tab('show');
+            var field = $('#thumb-field');
+            field[0] && field[0].scrollIntoView({block: 'nearest'});
+            $('#thumb-select').focus();
+        });
     };
+
+    /* ---- the deck's thumbnail (Ketura, 2026-11-09): picked on the Notes tab, shown in the corner ---- */
+
+    var thumbnail = null;
+
+    function thumb_labels()
+    {
+        var list = $('#thumb-options');
+        return {cultures: list.data('label-cultures'), rb: list.data('label-rb'), fp: list.data('label-fp'), shadow: list.data('label-shadow'), sites: list.data('label-sites')};
+    }
+
+    /** The corner's thumbnail, as the lists will show the deck */
+    function show_thumbnail()
+    {
+        var code = app.deck.get_thumbnail(),
+            card = code && app.data.cards ? app.data.cards.findById(code) : null,
+            html = card && card.image_url
+                ? app.thumbnail.card_html({code: card.code, image: card.image_url, template: app.thumbnail.template(card.type_code), label: card.label}, app.deck.get_thumbnail_crop())
+                : (page.published_thumbnail || app.thumbnail.cultures_html(app.thumbnail.deck_cultures(app.deck)));
+        $('#deck-thumb').html(html);
+    }
+
+    function setup_thumbnail()
+    {
+        thumbnail = app.thumbnail.picker({
+            scroll: '#tab-pane-infos .rb-notes',
+            changed: function (code, crop) {
+                app.deck.set_thumbnail(code, crop);
+                show_thumbnail();
+                on_edit();
+            }
+        });
+        if(!thumbnail) {
+            return;
+        }
+        function follow()
+        {
+            thumbnail.refresh(app.thumbnail.deck_options_html(app.deck, thumb_labels()));
+            thumbnail.cultures(app.thumbnail.cultures_html(app.thumbnail.deck_cultures(app.deck)));
+            show_thumbnail();
+        }
+        follow();
+        $(document).on('deck.changed', follow);
+    }
 
     ui.on_dom_loaded = function on_dom_loaded()
     {
@@ -774,6 +831,7 @@
                 offer_old_draft(draft);
             }
         }
+        setup_thumbnail();
         fill_fields();
         app.deck_history && app.deck_history.render();
         // a draft carried on from before means its revision had begun

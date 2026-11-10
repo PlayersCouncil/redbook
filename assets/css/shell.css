@@ -23,7 +23,7 @@ body { height: 100vh; height: 100dvh; display: flex; flex-direction: column; ove
 /* the top bar's menus open on paper, below the bar */
 .rb-topbar .dropdown { position: relative; }
 .rb-topbar .dropdown-menu { margin-top: 0; }
-.rb-nav > li > a.is-soon, .rb-lang[disabled] { cursor: default; opacity: .5; }
+.rb-nav > li > a.is-soon, .rb-lang[disabled] { cursor: default; opacity: var(--rb-disabled, .5); }
 .rb-lang[disabled]:hover { background: none; }
 .rb-nav > li > a.is-soon:hover { color: var(--rb-on-leather-2); background: none; }
 .rb-nav .caret { margin-left: 2px; color: var(--rb-gilt); }
@@ -40,7 +40,33 @@ body { height: 100vh; height: 100dvh; display: flex; flex-direction: column; ove
 
 /* the footer: the links, then the disclaimer, centred (Ketura, 2026-11-09) */
 .rb-foot .rb-foot-inner { justify-content: center; }
-.rb-footer { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 2px 18px; text-align: center; }
+.rb-footer { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; gap: 2px 40px; text-align: center; }
 .rb-footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 14px; }
 .rb-footer-links a { white-space: nowrap; }
 .rb-footer-disclaimer { margin: 0; }
+
+/* the bug report button (Ketura, 2026-11-09): boxed, right of Links; its label goes before the
+   top bar gets tight, leaving the boxed bug */
+.rb-nav > li.rb-nav-feedback { display: flex; align-items: center; margin-left: 2px; }
+.rb-nav > li.rb-nav-feedback > a { height: auto; padding: 5px 8px; border: 1px solid color-mix(in srgb, var(--rb-gilt) 65%, transparent); border-radius: var(--rb-radius); }
+.rb-nav > li.rb-nav-feedback > a:hover, .rb-nav > li.rb-nav-feedback > a:focus-visible { border-color: var(--rb-gilt); background: rgba(243, 221, 162, .12); }
+.rb-nav > li.rb-nav-feedback .fas { margin: 0; }
+
+@media (max-width: 106.25em) { .rb-feedback-label { display: none; } }
+@media (max-width: 75.6188em) {
+    .rb-nav > li.rb-nav-feedback { margin: 0; }
+    .rb-nav > li.rb-nav-feedback > a { border: 0; padding: 0 max(20px, env(safe-area-inset-left, 0px)); }
+    .rb-feedback-label { display: inline; }
+}
+
+/* the bug report form */
+.rb-feedback-intro { color: var(--rb-ink-2); }
+.rb-feedback-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 14px; }
+.rb-feedback-grid .rb-feedback-page { min-width: 0; }
+@media (max-width: 600px) { .rb-feedback-grid { grid-template-columns: minmax(0, 1fr); } }
+.rb-feedback-message .md-editor > textarea { height: 200px !important; }
+.rb-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.rb-feedback-status:empty { display: none; }
+.rb-feedback-status { margin: 10px 0 0; font-weight: 600; }
+.rb-feedback-status.is-error { color: var(--rb-danger); }
+.rb-feedback-status.is-sent { color: var(--rb-success); font-size: 1.0625rem; }
