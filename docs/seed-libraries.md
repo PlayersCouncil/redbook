@@ -54,13 +54,18 @@ The full schema, with every field's limits, is `_planning/schema/seed-library.sc
 - `source`: up to 30 characters; names the manifest's family. `id`: up to 100, unique in it.
 - `owner` (optional): the username of the organization account that owns the libraries; the
   PC's (`APP_OFFICIAL_ACCOUNT`) when left out. It's made if it doesn't exist yet, shown as
-  `ownerName`. It must be an organization's account, not a person's (see below).
+  `ownerName`. It must be an organization's account, not a person's (see below). It applies
+  to the libraries the import makes; a re-import leaves an existing library under whichever
+  organization it's filed under now (an admin may have moved it with Library Info).
+- A library's own `owner` and `ownerName` (optional): the same, for that library alone, and
+  applied on a re-import too: Decipher's starter decks in a manifest that's otherwise the PC's.
 - A deck is either a seeded decklist, by its batch's `source` and its own `sourceId`, as the
   seed deck batch gave them (`PublishedDeckSource`), or any published decklist by its number. A deck not found, or
   withdrawn, is left out and listed in the command's report; the rest still import.
 - The decks keep the manifest's order.
 - `curator` (optional): the username credited as "Curated by" on the library; the library
-  still belongs to the owner account. A curator not found is reported and left off.
+  still belongs to the owner account. A curator not found is reported and left off. Left out,
+  a re-import keeps whatever credit the library has; `""` removes it.
 
 ## Organization accounts
 

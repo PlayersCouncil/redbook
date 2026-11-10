@@ -67,9 +67,10 @@
 .rb-publish-gate .rb-validation { margin: 10px 0 14px; }
 .rb-publish-gate .rb-validation-list { max-height: 240px; }
 
-/* the deck once its cards are fixed (Ketura, 2026-11-09): on a darker panel and a little grey,
-   to say at a glance it can't be edited here */
-.rb-publish .rb-col-left.is-fixed { background: var(--rb-desk); border-radius: 6px; }
-.rb-publish .rb-col-left.is-fixed > * { filter: grayscale(.55); }
+/* the deck once its cards are fixed (Ketura, 2026-11-09): on a darker panel, plain grey, under
+   a tenth of the panel's own colour, to say at a glance it can't be edited here */
+.rb-publish .rb-col-left.is-fixed { position: relative; background: var(--rb-desk); border-radius: 6px; }
+.rb-publish .rb-col-left.is-fixed > * { filter: grayscale(1); }
+.rb-publish .rb-col-left.is-fixed::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: var(--rb-desk); opacity: .1; pointer-events: none; }
 .rb-publish .rb-col-left.is-fixed .rb-deck, .rb-publish .rb-col-left.is-fixed .rb-info,
 .rb-publish .rb-col-left.is-fixed .rb-deck-toolbar { background: transparent; }

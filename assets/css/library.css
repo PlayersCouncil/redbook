@@ -176,3 +176,12 @@
 .rb-history-changes { margin: 2px 0 0; font-size: 0.8125rem; }
 .rb-history-changes li { overflow-wrap: anywhere; }
 .rb-history-none { color: var(--rb-ink-2); }
+
+/* the editor's Library Info tab (Ketura, 2026-11-09), an admin's */
+.rb-library-info { max-width: 620px; padding: 12px 14px; }
+.rb-library-info-new { margin: 4px 0 14px; padding: 10px 12px 2px; border: 1px solid var(--rb-line); border-radius: 6px; }
+.rb-library-info-new legend { width: auto; margin: 0; padding: 0 6px; border: 0; font-size: 0.875rem; font-weight: 700; }
+.rb-library-info-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 12px; }
+.rb-library-info-facts { display: grid; grid-template-columns: max-content 1fr; gap: 4px 14px; margin: 6px 0 10px; font-size: 0.875rem; }
+.rb-library-info-facts dt { color: var(--rb-ink-2); font-weight: 600; }
+.rb-library-info-facts dd { margin: 0; }

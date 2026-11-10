@@ -400,12 +400,21 @@
             + '#deck-toolbar .rb-any-pick, #pool [data-add], #pool [data-rb], a[href="#tab-pane-build"], '
             + '#tab-pane-infos input, #tab-pane-infos textarea, #tab-pane-infos select, #tab-pane-infos button, '
             + '#tab-pane-history a[role=button], #tab-pane-archive button, #tab-pane-archive input, #tab-pane-archive select, #tab-pane-archive textarea',
-        NOT_EDITS = '#btn-preview, #btn-more, #btn-visibility, #btn-publish, .rb-menu, .rb-menu *';
+        NOT_EDITS = '#btn-preview, #btn-more, #btn-visibility, #btn-publish, .rb-menu, #revision-banner, .rb-opt, [data-collapse]';
 
     function edit_target(element)
     {
-        var target = $(element).closest(EDITS);
-        return target.length && !target.is(NOT_EDITS) ? target : null;
+        var el = $(element);
+        if(el.closest(NOT_EDITS).length) {
+            return null;
+        }
+        var target = el.closest(EDITS);
+        if(target.length) {
+            return target;
+        }
+        // the locked deck side's own background: what's on it doesn't take the pointer
+        // (Ketura, 2026-11-09), so a click there lands here
+        return el.is('.rb-col-left, #deck-info, #deck, #deck-toolbar') ? el : null;
     }
 
     function guard(event)

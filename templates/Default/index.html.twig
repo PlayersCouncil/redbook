@@ -3,7 +3,8 @@
    The front page (Ketura, 2026-11-09; the design's reference/index.html): the cover band with
    the gilt-framed title and the Deck of the Day bookplate, then four feeds. Only the decks
    feed has data yet; Posts, Events and This Week in Years Past are placeholders until those
-   sections are built. Deck of the Day is drawn from the popular decks, a new one each day.
+   sections are built. Deck of the Day is one listed deck, picked by the date, never a deck
+   from the last week (PublishedDeckManager::findDeckOfTheDay).
 #}
 {% block topbar_edge %}rb-hinge{% endblock %}
 {% block wrapper_class %}rb-fill rb-front{% endblock %}
@@ -37,7 +38,6 @@
 {% block body %}
     {% import _self as home %}
     {% import 'Tags/tags.html.twig' as tags %}
-    {% set dotd = popular_decklists ? popular_decklists[('now' | date('z')) % (popular_decklists | length)] : null %}
     <section class="rb-cover rb-leather rb-tooled-bottom">
         <div class="rb-cover-inner{% if not dotd %} is-title-only{% endif %}">
             <div class="rb-cover-brand">

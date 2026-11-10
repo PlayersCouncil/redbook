@@ -79,23 +79,40 @@ class SeedLibraryImporter
                 continue;
             }
 
+            // the library's own organization, when the manifest names one for it (Ketura, 2026-11-09)
+            $libraryOwner = $owner;
+            $ownName = trim((string) ($row['owner'] ?? ''));
+            if ($ownName !== '') {
+                try {
+                    $libraryOwner = $this->organizations->get($ownName, trim((string) ($row['ownerName'] ?? '')) ?: $ownName);
+                } catch (\RuntimeException $e) {
+                    throw new InvalidArgumentException($id . ': ' . $e->getMessage());
+                }
+            }
             $library = $this->em->getRepository(Library::class)->findOneBy(['seedSource' => $source, 'seedId' => $id]);
             if ($library === null) {
-                $library = $this->libraries->create($owner, (string) ($row['name'] ?? $id));
+                $library = $this->libraries->create($libraryOwner, (string) ($row['name'] ?? $id));
                 $library->setSeed($source, $id);
                 $report['created']++;
             } else {
-                $library->setUser($owner);
+                // who it's filed under and its curator are kept on a re-import, unless the
+                // manifest names them for it: an admin may have changed them on the site
+                // (Library Info), and they aren't in its history to restore
+                if ($ownName !== '') {
+                    $library->setUser($libraryOwner);
+                }
                 $report['updated']++;
             }
             $library->setOfficial(true);
             // the credit, when someone other than the PC curated it (a champion's own library)
-            $curatorName = trim((string) ($row['curator'] ?? ''));
-            $curator = $curatorName !== '' ? $this->em->getRepository(User::class)->findOneBy(['username' => $curatorName]) : null;
-            if ($curatorName !== '' && $curator === null) {
-                $report['missing'][] = $id . ': curator ' . $curatorName;
+            if (array_key_exists('curator', $row)) {
+                $curatorName = trim((string) ($row['curator'] ?? ''));
+                $curator = $curatorName !== '' ? $this->em->getRepository(User::class)->findOneBy(['username' => $curatorName]) : null;
+                if ($curatorName !== '' && $curator === null) {
+                    $report['missing'][] = $id . ': curator ' . $curatorName;
+                }
+                $library->setCurator($curator instanceof User ? $curator : null);
             }
-            $library->setCurator($curator instanceof User ? $curator : null);
             // naive on purpose (Ketura, 2026-11-09): a re-import overwrites the library, as a new
             // revision, so a mistaken one is undone from its history
             $this->libraries->change($library, null, LibraryRevision::SEED, fn () => $this->libraries->save($library, [

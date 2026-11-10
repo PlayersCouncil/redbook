@@ -337,6 +337,8 @@
         // back from a Restore: on the History tab
         if(window.location.hash === '#tab-pane-history') {
             $('#tab-header-history').tab('show');
+        } else if(window.location.hash === '#tab-pane-info') {
+            $('#tab-header-info').tab('show');
         }
 
         // up and down

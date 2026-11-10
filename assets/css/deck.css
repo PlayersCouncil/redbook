@@ -571,10 +571,14 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 .rb-pie-count { padding: 1px 6px; border-radius: 4px; background: var(--rb-selected); font-weight: 700; font-size: 0.75rem; line-height: 1.4; color: var(--rb-selected-ink); }
 
 /* A deck as it was published (Ketura, 2026-11-08): the deck side greyed, a banner with New
-   Revision above it; a change asks first (ui.deckedit) */
-.rb-builder.is-locked .rb-col-left { position: relative; }
-.rb-builder.is-locked .rb-col-left::after { content: ''; position: absolute; inset: 0; z-index: 5; background: rgba(110, 110, 110, .16); pointer-events: none; }
-.rb-builder.is-locked .rb-col-left > .rb-info, .rb-builder.is-locked .rb-col-left > .rb-deck { filter: grayscale(.6); }
+   Revision above it; a change asks first (ui.deckedit). Plain grey with a hair of blur, and
+   nothing under it answers the pointer (Ketura, 2026-11-09: half-faded read as broken, and
+   hovers made it look editable); Preview, More, who can see it, Publish, the view's options
+   and the sections' folding still work. A click on the rest shows the banner again. */
+.rb-builder.is-locked .rb-col-left > .rb-info > :not(.rb-actions):not(.rb-draft-banner),
+.rb-builder.is-locked .rb-col-left > .rb-deck { filter: grayscale(1) blur(.6px); pointer-events: none; user-select: none; }
+.rb-builder.is-locked .rb-col-left > .rb-deck-toolbar .rb-any-pick { filter: grayscale(1) blur(.6px); pointer-events: none; }
+.rb-builder.is-locked .rb-col-left > .rb-deck [data-collapse] { pointer-events: auto; }
 .rb-revision-banner { position: relative; z-index: 6; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 0 0 8px; padding: 8px 12px; border-radius: 8px; background: var(--rb-ink); color: var(--rb-page); font-size: 0.8125rem; }
 .rb-revision-banner > span:nth-child(2) { flex: 1 1 220px; }
 .rb-revision-banner .rb-btn { margin-left: auto; }
@@ -609,7 +613,9 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 /* a deck as published (Ketura, 2026-11-08): Build is closed until New Revision; a change
    attempted shows the banner again */
 .rb-builder.is-locked a[href="#tab-pane-build"] { opacity: .45; cursor: not-allowed; }
-.rb-builder.is-locked .rb-col-left :is(button, input, select, textarea, a[role=button]):not(#btn-preview):not(#btn-more):not(#btn-visibility):not(#btn-publish):not(.rb-opt):not([data-collapse]):not(.rb-menu *) { cursor: not-allowed; }
+.rb-builder.is-locked .rb-col-left :is(button, input, select, textarea, a[role=button]):not(#btn-preview):not(#btn-more):not(#btn-visibility):not(#btn-publish):not(.rb-opt):not([data-collapse]):not(.rb-menu *):not(.rb-revision-banner *) { cursor: not-allowed; }
+.rb-builder.is-locked .rb-col-left { cursor: not-allowed; }
+.rb-builder.is-locked .rb-revision-banner, .rb-builder.is-locked .rb-col-left .rb-actions { cursor: default; }
 @keyframes rb-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(212, 160, 23, 0); } 30% { box-shadow: 0 0 0 5px rgba(212, 160, 23, .75); } }
 .rb-revision-banner.is-pulse { animation: rb-pulse .7s ease-out 1; }
 

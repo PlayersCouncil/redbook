@@ -165,10 +165,12 @@ test('private until made public; then listed, and read one deck at a time', asyn
   publicUrl = await page.locator('#save-status a').getAttribute('href') ?? '';
   expect(publicUrl).toMatch(/\/library\/view\/\d+\//);
 
-  // User Libraries lists it, found by its tag; Libraries, the PC's official ones, doesn't
-  // (Ketura, 2026-11-09)
+  // User Libraries lists it, found by its tag; the official tabs don't (Ketura, 2026-11-09).
+  // Libraries opens on Sample Decks the first time, the search kept
   await voter.goto(`/libraries?tags[]=e2etag${runId}`);
-  await expect(voter.locator('.rb-library-tabs .rb-tab.is-active')).toHaveText('Libraries');
+  await expect(voter).toHaveURL(/\/libraries\/samples\?/);
+  await expect(voter.locator('.rb-library-tabs .rb-tab')).toHaveText(['Sample Decks', 'Sealed Reference', 'User Libraries']);
+  await expect(voter.locator('.rb-library-tabs .rb-tab.is-active')).toHaveText('Sample Decks');
   await expect(voter.locator('.rb-lib-cards .rb-deck-name')).toHaveCount(0);
   await voter.locator('.rb-library-tabs .rb-tab', { hasText: 'User Libraries' }).click();
   await expect(voter).toHaveURL(/\/libraries\/user\?/);
@@ -178,6 +180,10 @@ test('private until made public; then listed, and read one deck at a time', asyn
   await voter.locator('.rb-lib-cards .rb-deck-name').click();
   await expect(voter).toHaveURL(/\/library\/view\/\d+\//);
   await expect(voter.locator('.rb-library-title')).toHaveText(name);
+  // and the top bar's Libraries remembers the tab
+  await voter.locator('.rb-nav-primary a', { hasText: 'Libraries' }).click();
+  await expect(voter).toHaveURL(/\/libraries\/user$/);
+  await voter.goBack();
   await expect(voter.locator('.rb-lv-description strong')).toHaveText('testing');
   await expect(voter.locator('.rb-library-notes-body')).toContainText('Notes on the library as a whole.');
   await expect(voter.locator('#btn-edit-library')).toHaveCount(0);
@@ -276,20 +282,20 @@ test('seeded libraries: official, public, and updated in place on a second impor
   const decklistId = Number(decklistUrl.match(/\/decklist\/view\/(\d+)/)![1]);
   const manifest = (title: string) => JSON.stringify({
     schemaVersion: 1, source: 'e2e', owner: `E2EOrg${runId}`, ownerName: `E2E Org ${runId}`,
-    libraries: [{ id: `seeded-${runId}`, name: title, description: 'Seeded **for the test**.', tags: [`e2eseed${runId}`],
+    libraries: [{ id: `seeded-${runId}`, name: title, description: 'Seeded **for the test**.', tags: [`e2eseed${runId}`, 'sealed'],
       decks: [{ decklist: decklistId, annotation: 'From the manifest.' }, { decklist: 999999999 }] }],
   });
   const first = appConsole(['app:import:seed-libraries', '-'], manifest(`E2E seeded ${runId}`));
   expect(first).toContain('1 created');
   expect(first).toContain('1 decks not found');
-  // listed under Libraries, the PC's, marked as official
-  await page.goto(`/libraries?tags[]=e2eseed${runId}`);
+  // listed under Sealed Reference, by its tag, marked as official
+  await page.goto(`/libraries/sealed?tags[]=e2eseed${runId}`);
   await expect(page.locator('.rb-lib-cards .rb-deck-name')).toHaveText(`E2E seeded ${runId}`);
   await expect(page.locator('.rb-lib-cards .rb-official-mark')).toBeVisible();
   await expect(page.locator('.rb-lib-cards .rb-library-count')).toHaveText('1');
   // the same manifest again updates it, rather than making another
   expect(appConsole(['app:import:seed-libraries', '-'], manifest(`E2E seeded again ${runId}`))).toContain('1 updated');
-  await page.goto(`/libraries?tags[]=e2eseed${runId}`);
+  await page.goto(`/libraries/sealed?tags[]=e2eseed${runId}`);
   await expect(page.locator('.rb-lib-cards .rb-deck-name')).toHaveText(`E2E seeded again ${runId}`);
   // owned by an organization account, made for it (Ketura, 2026-11-09): nobody logs in as it
   await page.locator('.rb-lib-cards .rb-deck-name').click();
@@ -359,6 +365,22 @@ test('an admin makes a user library official: a copy owned by the PC, crediting 
   await admin.fill('#resume', `The Players Council, ${runId}.`);
   await admin.locator('form[action$="/user/profile_save"] button[type=submit]').click();
   await expect(admin.locator('.alert')).toContainText("Saved Players Council's profile.");
+
+  // Library Info (Ketura, 2026-11-09): an admin files the official library under another
+  // organization's account, made for it; Edit sits on the row of privileged buttons
+  await admin.goto(officialUrl);
+  await expect(admin.locator('.rb-reader-gated #btn-edit-library')).toBeVisible();
+  await admin.locator('#btn-edit-library').click();
+  await admin.click('#tab-header-info');
+  await admin.fill('#info-new-username', `E2EDecipher${runId}`);
+  await admin.fill('#info-new-name', `E2E Decipher ${runId}`);
+  await admin.click('#btn-library-info-save');
+  await expect(admin.locator('.alert')).toContainText(`filed under E2E Decipher ${runId}`);
+  await expect(admin.locator('#tab-pane-info')).toBeVisible();
+  await expect(admin.locator('#info-owner option:checked')).toContainText(`E2E Decipher ${runId}`);
+  await admin.goto(officialUrl);
+  await expect(admin.locator('.rb-reader-author')).toContainText(`E2E Decipher ${runId}`);
+  await expect(admin.locator('.rb-reader-author .rb-user-organization')).toBeVisible();
   await context.close();
 });
 

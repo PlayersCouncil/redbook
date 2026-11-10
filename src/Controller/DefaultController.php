@@ -48,6 +48,7 @@ class DefaultController extends AbstractController
         $decklistManager->setLimit(10);
         $popular = iterator_to_array($decklistManager->findDecklistsByPopularity());
         $recent = iterator_to_array($decklistManager->findDecklistsByAge());
+        $dotd = $decklistManager->findDeckOfTheDay(new \DateTimeImmutable('today'));
 
         $alerts = $this->managerRegistry->getRepository(BannerAlert::class)
             ->findBy(['active' => true], ['id' => 'DESC']);
@@ -60,6 +61,7 @@ class DefaultController extends AbstractController
                 'pagedescription' => $translator->trans('site.description'),
                 'popular_decklists' => $popular,
                 'recent_decklists' => $recent,
+                'dotd' => $dotd,
                 'banner_alerts' => $alerts,
                 'format_names' => array_map(fn ($f) => $f->getName(), $formats->findAllByCode()),
             ],

@@ -95,13 +95,42 @@ class LibraryController extends AbstractController
     }
 
     /**
-     * The public libraries, with the same search (Ketura, 2026-11-09): Libraries, the PC's
-     * official ones (seeded, or made official), and User Libraries, everyone else's, as tabs
+     * The public libraries' tabs (Ketura, 2026-11-09), each with the same search: the official
+     * libraries tagged as sample decks, those tagged sealed, and everyone else's. A tab: its
+     * route, the libraries it holds (LibraryRepository's kind) and the tag they carry.
+     */
+    public const TABS = [
+        'samples' => ['route' => 'libraries_samples', 'kind' => 'official', 'tag' => 'sample-decks'],
+        'sealed' => ['route' => 'libraries_sealed', 'kind' => 'official', 'tag' => 'sealed'],
+        'user' => ['route' => 'libraries_user', 'kind' => 'user', 'tag' => null],
+    ];
+    /** The cookie that remembers the tab last looked at (ui.libraries.js sets it) */
+    public const TAB_COOKIE = 'rb_libraries_tab';
+
+    /**
+     * Libraries in the top bar: the tab last looked at, the sample decks the first time, with
+     * whatever search came along
      */
     #[Route(path: '/libraries', name: 'libraries_list', methods: ['GET'])]
-    public function publicListAction(Request $request, PublishedDeckManager $pager, TranslatorInterface $translator): Response
+    public function publicListAction(Request $request): Response
     {
-        return $this->publicList($request, $pager, $translator, 'official');
+        $tab = self::TABS[(string) $request->cookies->get(self::TAB_COOKIE)] ?? self::TABS['samples'];
+        $response = $this->redirectToRoute($tab['route'], $request->query->all());
+        $response->setPrivate();
+        $response->headers->addCacheControlDirective('no-store');
+        return $response;
+    }
+
+    #[Route(path: '/libraries/samples', name: 'libraries_samples', methods: ['GET'])]
+    public function samplesListAction(Request $request, PublishedDeckManager $pager, TranslatorInterface $translator): Response
+    {
+        return $this->publicList($request, $pager, $translator, 'samples');
+    }
+
+    #[Route(path: '/libraries/sealed', name: 'libraries_sealed', methods: ['GET'])]
+    public function sealedListAction(Request $request, PublishedDeckManager $pager, TranslatorInterface $translator): Response
+    {
+        return $this->publicList($request, $pager, $translator, 'sealed');
     }
 
     #[Route(path: '/libraries/user', name: 'libraries_user', methods: ['GET'])]
@@ -110,23 +139,33 @@ class LibraryController extends AbstractController
         return $this->publicList($request, $pager, $translator, 'user');
     }
 
-    private function publicList(Request $request, PublishedDeckManager $pager, TranslatorInterface $translator, string $kind): Response
+    /** Where a library's tag leads: its own tab (sealed, else sample decks for an official one), searching for that tag */
+    public static function tabRouteFor(Library $library): string
+    {
+        if (!$library->isOfficial()) {
+            return self::TABS['user']['route'];
+        }
+        return in_array(self::TABS['sealed']['tag'], $library->getTagList(), true) ? self::TABS['sealed']['route'] : self::TABS['samples']['route'];
+    }
+
+    private function publicList(Request $request, PublishedDeckManager $pager, TranslatorInterface $translator, string $tab): Response
     {
         $response = $this->listResponse($request, $pager, null, [
-            'pagetitle' => $translator->trans($kind === 'official' ? 'library.list.title' : 'library.list.user_title'),
-            'list_route' => $kind === 'official' ? 'libraries_list' : 'libraries_user',
-            'list_kind' => $kind,
+            'pagetitle' => $translator->trans('library.list.tab.' . $tab),
+            'list_route' => self::TABS[$tab]['route'],
+            'list_kind' => $tab,
+            'list_tabs' => self::TABS,
             'mine' => false,
-        ], $kind);
+        ], self::TABS[$tab]['kind'], self::TABS[$tab]['tag']);
         $response->setPublic();
         $response->setMaxAge(60);
         return $response;
     }
 
-    private function listResponse(Request $request, PublishedDeckManager $pager, ?User $owner, array $params, ?string $kind = null): Response
+    private function listResponse(Request $request, PublishedDeckManager $pager, ?User $owner, array $params, ?string $kind = null, ?string $tag = null): Response
     {
         $filters = $this->libraries->getFilters($request, $owner !== null);
-        $query = $filters + ($kind ? ['kind' => $kind] : []);
+        $query = $filters + ($kind ? ['kind' => $kind] : []) + ($tag ? ['tab_tag' => $tag] : []);
         $limit = $filters['limit'] ?? PublishedDeckManager::DEFAULT_LIMIT;
         $page = max(1, (int) $request->query->get('page', 1));
         [$rows, $total] = $this->repo()->browse($query, $owner, $page, $limit);
@@ -239,7 +278,54 @@ class LibraryController extends AbstractController
             'library' => $library,
             'entries' => array_map(fn (LibraryEntry $entry) => $this->entryData($entry, $names), $library->getEntries()->toArray()),
             'is_owner' => $library->getUser()->getId() === $this->getUser()?->getId(),
+            // the Library Info tab, an admin's on an official library (Ketura, 2026-11-09)
+            'show_info' => $library->isOfficial() && $this->isGranted('ROLE_ADMIN'),
+            'organizations' => $library->isOfficial() && $this->isGranted('ROLE_ADMIN')
+                ? $this->managerRegistry->getRepository(User::class)->findBy(['organization' => true], ['username' => 'ASC']) : [],
         ] + $this->historyParams($library));
+    }
+
+    /**
+     * The Library Info tab's form (Ketura, 2026-11-09): an official library filed under another
+     * organization's account (Decipher's rather than the PC's), a new one made if asked, and
+     * its curator credit
+     */
+    #[Route(path: '/my/library/info/{library_uuid}', name: 'library_info', methods: ['POST'], requirements: ['library_uuid' => self::UUID])]
+    public function infoAction(Request $request, string $library_uuid, OrganizationAccounts $organizations, TranslatorInterface $translator): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        $library = $this->editable($library_uuid);
+        $this->requireToken($request);
+        $back = $this->generateUrl('library_edit', ['library_uuid' => $library->getUuid()]) . '#tab-pane-info';
+        if (!$library->isOfficial()) {
+            throw new NotFoundHttpException('Only an official library is filed under an organization.');
+        }
+        $users = $this->managerRegistry->getRepository(User::class);
+        try {
+            $newUsername = trim((string) $request->request->get('new_username'));
+            if ($newUsername !== '') {
+                $owner = $organizations->get($newUsername, trim((string) $request->request->get('new_name')) ?: $newUsername);
+            } else {
+                $owner = $users->find((int) $request->request->get('owner'));
+                if (!$owner instanceof User || (!$owner->isOrganization() && $owner->getId() !== $library->getUser()->getId())) {
+                    throw new \RuntimeException($translator->trans('library.info.not_organization'));
+                }
+            }
+        } catch (\RuntimeException $e) {
+            $this->addFlash('error', $e->getMessage());
+            return $this->redirect($back);
+        }
+        $curatorName = trim((string) $request->request->get('curator'));
+        $curator = $curatorName !== '' ? $users->findOneBy(['usernameCanonical' => mb_strtolower($curatorName)]) : null;
+        if ($curatorName !== '' && !$curator instanceof User) {
+            $this->addFlash('error', $translator->trans('library.info.no_curator', ['%name%' => $curatorName]));
+            return $this->redirect($back);
+        }
+        $library->setUser($owner);
+        $library->setCurator($curator);
+        $this->managerRegistry->getManager()->flush();
+        $this->addFlash('notice', $translator->trans('library.info.saved', ['%name%' => $owner->getDisplayName()]));
+        return $this->redirect($back);
     }
 
     /**
@@ -436,6 +522,7 @@ class LibraryController extends AbstractController
         return $this->render('Library/view.html.twig', [
             'pagetitle' => $library->getName(),
             'library' => $library,
+            'library_tab_route' => self::tabRouteFor($library),
             'entries' => $entries,
             'entry_data' => array_map(fn (LibraryEntry $e) => $this->decklistData($e->getDecklist(), $names), $entries),
             'can_edit' => $canEdit,

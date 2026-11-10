@@ -6,8 +6,8 @@
     Libraries, New Library and what can be done to the ones ticked on the right.
 
     Variables: rows (Library[]), total, filters (LibraryManager::getFilters), pager,
-    list_route (my_libraries, libraries_list or libraries_user), list_kind (official or user
-    on the public lists), mine, owner
+    list_route (my_libraries, or a public tab's route), list_kind (the public tab: samples,
+    sealed or user), list_tabs (LibraryController::TABS), mine, owner
     Its blocks browse_top, browse_fields, browse_results and browse_side are also sent alone
     as the filters change (ui.decklist_search.js).
 #}
@@ -28,13 +28,14 @@
     {% if mine %}
         <div class="rb-browse-title"><div class="rb-tabs"><h1 class="rb-tab-solo">{{ 'nav.mylibraries' | trans }}</h1></div></div>
     {% else %}
-        {# Libraries, the PC's official ones, and User Libraries, everyone else's (Ketura,
-           2026-11-09): tabs, as My Decks and My Favorites; each its own page, the filters kept #}
+        {# the public tabs (Ketura, 2026-11-09): Sample Decks and Sealed Reference, the official
+           libraries with those tags, and User Libraries, everyone else's; each its own page, the
+           filters kept. The one looked at is remembered for the top bar's Libraries. #}
         {% set query = app.request.query.all | filter((v, k) => k != 'page') %}
-        <div class="rb-browse-title rb-library-tabs">
+        <div class="rb-browse-title rb-library-tabs" data-tab="{{ list_kind }}">
             <div class="rb-tabs"><nav class="rb-tab-row" aria-label="{{ 'library.list.tabs' | trans }}">
-                {% for kind, route in {official: 'libraries_list', user: 'libraries_user'} %}
-                    <a href="{{ list_path(route, query) }}" class="rb-tab{{ list_kind == kind ? ' is-active' }}"{% if list_kind == kind %} aria-current="page"{% endif %}>{{ (kind == 'official' ? 'library.list.title' : 'library.list.user_title') | trans }}</a>
+                {% for tab, def in list_tabs %}
+                    <a href="{{ list_path(def.route, query) }}" class="rb-tab{{ list_kind == tab ? ' is-active' }}" data-tab="{{ tab }}"{% if list_kind == tab %} aria-current="page"{% endif %}>{{ ('library.list.tab.' ~ tab) | trans }}</a>
                 {% endfor %}
             </nav></div>
             <p class="rb-browse-intro">{{ 'library.list.intro' | trans | raw }} {{ ('library.list.intro_' ~ list_kind) | trans }}</p>

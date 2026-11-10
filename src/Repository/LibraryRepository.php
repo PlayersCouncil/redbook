@@ -58,6 +58,10 @@ class LibraryRepository extends EntityRepository
         foreach (array_values($filters['tags'] ?? []) as $i => $tag) {
             $qb->andWhere("CONCAT(' ', COALESCE(l.tags, ''), ' ') LIKE :tag$i")->setParameter("tag$i", '% ' . addcslashes($tag, '%_') . ' %');
         }
+        // a tab's own tag, not one of the search's (Ketura, 2026-11-09)
+        if (($filters['tab_tag'] ?? '') !== '') {
+            $qb->andWhere("CONCAT(' ', COALESCE(l.tags, ''), ' ') LIKE :tabtag")->setParameter('tabtag', '% ' . addcslashes($filters['tab_tag'], '%_') . ' %');
+        }
         foreach (array_values($filters['xtags'] ?? []) as $i => $tag) {
             $qb->andWhere("CONCAT(' ', COALESCE(l.tags, ''), ' ') NOT LIKE :xtag$i")->setParameter("xtag$i", '% ' . addcslashes($tag, '%_') . ' %');
         }

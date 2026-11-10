@@ -348,6 +348,26 @@ class PublishedDeckManager
         return new ArrayCollection([]);
     }
 
+    /**
+     * Deck of the Day (Ketura, 2026-11-09): one of the listed decks, picked by the date, the
+     * same all day; never a deck from the last week. Its date is the deck's own (an archive
+     * deck's, when it was played or posted), so an old deck brought in this week can be picked,
+     * a deck built this week can't.
+     */
+    public function findDeckOfTheDay(\DateTimeInterface $day): ?PublishedDeck
+    {
+        $qb = $this->doctrine->createQueryBuilder()->from(PublishedDeck::class, 'd');
+        $this->applyHomeFilters($qb);
+        $cutoff = \DateTimeImmutable::createFromInterface($day)->setTime(0, 0)->modify('-7 days');
+        $qb->andWhere('d.effectiveDate < :cutoff')->setParameter('cutoff', $cutoff);
+        $count = (int) (clone $qb)->select('COUNT(d.id)')->getQuery()->getSingleScalarResult();
+        if ($count === 0) {
+            return null;
+        }
+        $pick = crc32('deck-of-the-day:' . $day->format('Y-m-d')) % $count;
+        return $qb->select('d')->orderBy('d.id', 'ASC')->setFirstResult($pick)->setMaxResults(1)->getQuery()->getOneOrNullResult();
+    }
+
     public function findDecklistsByPopularity()
     {
         $qb = $this->getQueryBuilder();

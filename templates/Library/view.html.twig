@@ -45,7 +45,7 @@
                     <span class="rb-reader-version">{{ 'library.view.decks' | trans({'%count%': entries | length}) }}</span>
                     {% if library.tagList %}
                         <ul class="rb-reader-tags" aria-label="{{ 'decklist.reader.tags' | trans }}">
-                            {% for tag in library.tagList %}<li><a class="rb-tag-chip" href="{{ list_path(library.official ? 'libraries_list' : 'libraries_user', {tags: [tag]}) }}">{{ tag }}</a></li>{% endfor %}
+                            {% for tag in library.tagList %}<li><a class="rb-tag-chip" href="{{ list_path(library_tab_route, {tags: [tag]}) }}">{{ tag }}</a></li>{% endfor %}
                         </ul>
                     {% endif %}
                 </div>
@@ -55,6 +55,19 @@
                     </div>
                     <div class="rb-reader-buttons">
                         <button type="button" class="rb-btn" id="btn-back-to-top"><span class="fas fa-arrow-up" aria-hidden="true"></span> {{ 'library.view.back_to_top' | trans }}</button>
+                    </div>
+                </div>
+            </div>
+            {# the facts, and on the right what only some get: Edit, Make Official, Refresh from
+               Original, on a row of their own, as the decklist reader's (Ketura, 2026-11-09) #}
+            <div class="rb-reader-subrow">
+            <div class="rb-reader-meta">
+                <span class="rb-reader-author">{{ macros.username(library.user) }}</span>
+                {% if library.official %}<span class="rb-official-mark" title="{{ 'library.official_title' | trans }}">{{ 'library.official' | trans }}</span>{% endif %}
+                {% include 'Library/curator.html.twig' %}
+                <span>{{ 'library.view.updated' | trans }} <time datetime="{{ library.dateUpdate | date('Y-m-d') }}" data-absolute>{{ library.dateUpdate | date('M j, Y') }}</time></span>
+            </div>
+            <div class="rb-reader-buttons rb-reader-gated">
                         {% if can_edit %}
                             <a href="{{ path('library_edit', {library_uuid: library.uuid}) }}" class="rb-btn" id="btn-edit-library"><span class="fas fa-pencil-alt" aria-hidden="true"></span> {{ 'library.view.edit' | trans }}</a>
                         {% endif %}
@@ -75,14 +88,7 @@
                                 <button type="submit" class="rb-btn" id="btn-refresh"><span class="fas fa-sync-alt" aria-hidden="true"></span> {{ 'library.promote.refresh' | trans }}</button>
                             </form>
                         {% endif %}
-                    </div>
-                </div>
             </div>
-            <div class="rb-reader-meta">
-                <span class="rb-reader-author">{{ macros.username(library.user) }}</span>
-                {% if library.official %}<span class="rb-official-mark" title="{{ 'library.official_title' | trans }}">{{ 'library.official' | trans }}</span>{% endif %}
-                {% include 'Library/curator.html.twig' %}
-                <span>{{ 'library.view.updated' | trans }} <time datetime="{{ library.dateUpdate | date('Y-m-d') }}" data-absolute>{{ library.dateUpdate | date('M j, Y') }}</time></span>
             </div>
         </header>
 

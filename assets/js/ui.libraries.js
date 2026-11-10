@@ -19,6 +19,11 @@
 
     ui.on_dom_loaded = function on_dom_loaded()
     {
+        // the public tab looked at, for the top bar's Libraries next time (Ketura, 2026-11-09)
+        var tab = $('.rb-library-tabs').data('tab');
+        if(tab) {
+            document.cookie = 'rb_libraries_tab=' + encodeURIComponent(tab) + '; path=/; max-age=31536000; SameSite=Lax';
+        }
         ui.browse_setup();
         var results = $('#browse-results');
         // ticking rows and the With Selection section (shared: ui.browse_selection)

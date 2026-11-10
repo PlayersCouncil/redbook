@@ -67,7 +67,7 @@
 {% set _canonical = app.request.attributes.get('_canonical_route')|default(_route) %}
 {% set _section = {
     decklists_list: 'decklists', decklist_detail: 'decklists', decklist_edit: 'decklists',
-    libraries_list: 'libraries', libraries_user: 'libraries', library_view: 'libraries', library_tags: 'libraries',
+    libraries_list: 'libraries', libraries_samples: 'libraries', libraries_sealed: 'libraries', libraries_user: 'libraries', library_view: 'libraries', library_tags: 'libraries',
     decks_list: 'mydecks', deck_edit: 'mydecks', deck_view: 'mydecks', deck_publish_form: 'mydecks', deck_buildform: 'mydecks',
     my_libraries: 'mylibraries', library_new: 'mylibraries', library_edit: 'mylibraries', library_view_private: 'mylibraries',
 }[_canonical]|default('') %}

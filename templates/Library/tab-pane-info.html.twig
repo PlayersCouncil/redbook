@@ -1,0 +1,49 @@
+{#
+   The library editor's Library Info tab (Ketura, 2026-11-09), for admins on an official
+   library, as the deckbuilder's Archive info: which organization's account it's filed under
+   (Decipher's, the PC's, or a new one), who curated it, and where it came from.
+   Variables: library, organizations (the organization accounts)
+#}
+<form method="post" action="{{ path('library_info', {library_uuid: library.uuid}) }}" class="rb-library-info" id="library-info-form">
+    <input type="hidden" name="token" value="{{ csrf_token('library') }}">
+    <p class="text-muted small">{{ 'library.info.intro' | trans }}</p>
+    <div class="form-group">
+        <label for="info-owner">{{ 'library.info.owner' | trans }}</label>
+        <select class="form-control" id="info-owner" name="owner">
+            {% for org in organizations %}
+                <option value="{{ org.id }}"{% if org is same as(library.user) %} selected{% endif %}>{{ org.displayName }}{% if org.displayName != org.username %} ({{ org.username }}){% endif %}</option>
+            {% endfor %}
+            {% if not library.user.organization %}<option value="{{ library.user.id }}" selected>{{ library.user.displayName }}</option>{% endif %}
+        </select>
+    </div>
+    <fieldset class="rb-library-info-new">
+        <legend>{{ 'library.info.new_org' | trans }}</legend>
+        <p class="help-block">{{ 'library.info.new_org_help' | trans }}</p>
+        <div class="rb-library-info-row">
+            <div class="form-group">
+                <label for="info-new-username">{{ 'library.info.new_username' | trans }}</label>
+                <input type="text" class="form-control" id="info-new-username" name="new_username" maxlength="180" placeholder="Decipher">
+            </div>
+            <div class="form-group">
+                <label for="info-new-name">{{ 'library.info.new_name' | trans }}</label>
+                <input type="text" class="form-control" id="info-new-name" name="new_name" maxlength="100" placeholder="Decipher">
+            </div>
+        </div>
+    </fieldset>
+    <div class="form-group">
+        <label for="info-curator">{{ 'library.info.curator' | trans }}</label>
+        <input type="text" class="form-control" id="info-curator" name="curator" value="{{ library.curator ? library.curator.username }}" placeholder="{{ 'library.info.curator_placeholder' | trans }}">
+        <p class="help-block">{{ 'library.info.curator_help' | trans }}</p>
+    </div>
+    <dl class="rb-library-info-facts">
+        {% if library.seeded %}
+            <dt>{{ 'library.info.seed' | trans }}</dt><dd><code>{{ library.seedSource }}</code> / <code>{{ library.seedId }}</code></dd>
+        {% endif %}
+        {% if library.promotedFrom %}
+            <dt>{{ 'library.info.promoted_from' | trans }}</dt><dd><a href="{{ path('library_view', {public_id: library.promotedFrom.publicId, library_name: library.promotedFrom.nameCanonical}) }}">{{ library.promotedFrom.name }}</a></dd>
+        {% endif %}
+        <dt>{{ 'library.info.created' | trans }}</dt><dd>{{ library.dateCreation | date('Y-m-d H:i') }}</dd>
+    </dl>
+    {% if library.seeded %}<p class="help-block">{{ 'library.info.seed_help' | trans }}</p>{% endif %}
+    <button type="submit" class="rb-btn rb-btn-primary" id="btn-library-info-save">{{ 'library.info.save' | trans }}</button>
+</form>

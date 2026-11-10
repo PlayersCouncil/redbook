@@ -5,7 +5,8 @@
    the curator's commentary beside it (rearranged with the arrows or by dragging; X then the
    bin takes one out). On the right the Build tab, the decklists search with an Add button on
    each, and the Notes tab: tags, the description and general notes.
-   The History tab (Ketura, 2026-11-09) lists its revisions, each with a Restore.
+   The History tab (Ketura, 2026-11-09) lists its revisions, each with a Restore; an admin's
+   Library Info tab, on an official library, files it under an organization's account.
    Variables: library, entries (LibraryController::entryData), is_owner, revisions and
    revision_decklists (the History tab's); and the Build tab's
 #}
@@ -79,6 +80,7 @@
                     <li role="presentation" class="active"><a href="#tab-pane-build" aria-controls="tab-pane-build" role="tab" data-toggle="tab">{{ 'decks.edit.tabs.build' | trans }}</a></li>
                     <li role="presentation"><a href="#tab-pane-infos" aria-controls="tab-pane-infos" role="tab" data-toggle="tab">{{ 'decks.edit.tabs.notes' | trans }}</a></li>
                     <li role="presentation"><a href="#tab-pane-history" aria-controls="tab-pane-history" role="tab" data-toggle="tab" id="tab-header-history">{{ 'decks.edit.tabs.history' | trans }}</a></li>
+                    {% if show_info %}<li role="presentation"><a href="#tab-pane-info" aria-controls="tab-pane-info" role="tab" data-toggle="tab" id="tab-header-info">{{ 'library.info.tab' | trans }}</a></li>{% endif %}
                 </ul>
                 <div class="tab-content rb-tab-content">
                     <div role="tabpanel" class="tab-pane active rb-scroll-pane rb-browse rb-library-build-pane" id="tab-pane-build">
@@ -158,6 +160,11 @@
                     <div role="tabpanel" class="tab-pane rb-scroll-pane" id="tab-pane-history">
                         {% include 'Library/history.html.twig' %}
                     </div>
+                    {% if show_info %}
+                        <div role="tabpanel" class="tab-pane rb-scroll-pane" id="tab-pane-info">
+                            {% include 'Library/tab-pane-info.html.twig' %}
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>

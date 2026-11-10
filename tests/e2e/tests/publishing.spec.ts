@@ -99,7 +99,11 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   await page.click('a[href="#tab-pane-build"]', { force: true });
   await expect(page.locator('#tab-pane-build')).toBeHidden();
   const contentBefore = await page.evaluate(() => JSON.stringify((window as any).app.deck.get_content()));
-  await page.locator('#deck [data-qty]').first().click();
+  // greyed, and nothing on it answers the pointer (Ketura, 2026-11-09); New Revision is a
+  // plain button
+  await expect(page.locator('#deck')).toHaveCSS('pointer-events', 'none');
+  await expect(page.locator('#btn-new-revision')).toHaveCSS('cursor', 'pointer');
+  await page.locator('#deck [data-qty]').first().click({ force: true });
   await expect(page.locator('#revision-banner')).toHaveClass(/is-pulse/);
   expect(await page.evaluate(() => JSON.stringify((window as any).app.deck.get_content()))).toBe(contentBefore);
   await page.click('#btn-new-revision');
@@ -304,7 +308,8 @@ test('editing a published decklist: patches, the deck, and its private revision'
   await waitForCardData(page);
   await expect(page.locator('.rb-builder')).toHaveClass(/is-locked/);
   await expect(page.locator('#starting-notes')).toHaveValue(`Notes one ${runId}`);
-  await page.click('#deck-name');
+  // the name doesn't take the pointer while it's locked (Ketura, 2026-11-09)
+  await page.click('#deck-name', { force: true });
   await expect(page.locator('#deck-name')).not.toBeFocused();
   await page.click('#btn-new-revision');
   await expect(page.locator('#save-status')).toContainText('Private revision 2.1 started');
