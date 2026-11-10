@@ -72,8 +72,15 @@ class GempClient
         try {
             $response = $this->http->request($method, $path, $form === null ? [] : ['form_params' => $form]);
         } catch (ClientException $e) {
+            // Gemp refusing what it was sent answers with its {"error": ...}. Any other 4xx (a
+            // 404 from a Gemp without these endpoints, say) is Gemp not answering, not a verdict
+            // on the deck (Ketura, 2026-11-09: a whole import was marked invalid by a 404)
             $body = json_decode((string) $e->getResponse()->getBody(), true);
-            throw new GempRejectedException(is_array($body) && isset($body['error']) ? $body['error'] : $e->getMessage(), 0, $e);
+            if (is_array($body) && isset($body['error']) && is_string($body['error'])) {
+                throw new GempRejectedException($body['error'], 0, $e);
+            }
+            $this->logger->warning('Gemp unavailable: {message}', ['message' => $e->getMessage(), 'path' => $path]);
+            throw new GempUnavailableException($e->getMessage(), 0, $e);
         } catch (GuzzleException $e) {
             $this->logger->warning('Gemp unavailable: {message}', ['message' => $e->getMessage(), 'path' => $path]);
             throw new GempUnavailableException($e->getMessage(), 0, $e);

@@ -81,6 +81,14 @@ class GempClientTest extends TestCase
         $gemp->validate('fotr_block', 'x');
     }
 
+    public function testMissingEndpointIsUnavailableNotARejection(): void
+    {
+        // A Gemp without the JSON endpoints yet: a 404 page, not Gemp's {"error": ...}
+        $gemp = $this->client([new Response(404, ['Content-Type' => 'text/html'], '<html>Not Found</html>')]);
+        $this->expectException(GempUnavailableException::class);
+        $gemp->validate('fotr_block', '1_2');
+    }
+
     public function testServerErrorIsUnavailable(): void
     {
         $gemp = $this->client([new Response(500, [], 'oops')]);
