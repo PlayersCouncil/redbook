@@ -17,15 +17,46 @@
 
     /* ---- helpers ---- */
 
-    function post(url, data)
+    function state_url()
     {
-        return $.ajax(url, {type: 'POST', data: _.extend({token: state ? state.token : ''}, data)});
+        return Routing.generate('comment_state', {kind: section.data('kind'), id: section.data('id')});
     }
 
+    /**
+     * Posts with the page's token. A page left open long enough for its token to expire gets
+     * a fresh one and sends again by itself (Ketura, 2026-11-11: the viewer never has to reload).
+     * Resolves as $.ajax does.
+     */
+    function post(url, data)
+    {
+        var done = $.Deferred();
+        function attempt(again)
+        {
+            $.ajax(url, {type: 'POST', data: _.extend({token: state ? state.token : ''}, data)})
+                .done(function (answer, status, jqXHR) { done.resolve(answer, status, jqXHR); })
+                .fail(function (jqXHR) {
+                    if(again && jqXHR.getResponseHeader('X-Comment-Error') === 'expired') {
+                        $.getJSON(state_url()).done(function (fresh) {
+                            if(fresh && fresh.token) {
+                                state.token = fresh.token;
+                                return attempt(false);
+                            }
+                            done.reject(jqXHR);
+                        }).fail(function () { done.reject(jqXHR); });
+                        return;
+                    }
+                    done.reject(jqXHR);
+                });
+        }
+        attempt(true);
+        return done.promise();
+    }
+
+    /** What the server said was wrong, or that something was */
     function failed(jqXHR)
     {
-        var message = jqXHR && jqXHR.responseJSON && (jqXHR.responseJSON.detail || jqXHR.responseJSON.message);
-        alert(message || t('comment.error', {status: jqXHR ? jqXHR.status + ' ' + jqXHR.statusText : '?'}));
+        var message = jqXHR && jqXHR.responseJSON && jqXHR.responseJSON.message;
+        alert(message || t('comment.error', {status: jqXHR && jqXHR.status ? jqXHR.status + ' ' + jqXHR.statusText : '?'}));
     }
 
     function node_of(el)
@@ -78,8 +109,17 @@
         setTimeout(function () { tip.remove(); }, 1600);
     }
 
+    /**
+     * The comment as written, {markdown}. One from before the markdown was kept (data-legacy)
+     * has only what the page shows, so Copy Text and Quote take that as it reads; nothing is
+     * made back into markdown, and it can't be edited.
+     */
     function source(node)
     {
+        if(node.is('[data-legacy]')) {
+            var text = node.children('.rb-cmt-body').find('.rb-cmt-text')[0];
+            return $.Deferred().resolve({markdown: $.trim(text ? text.innerText : '')}).promise();
+        }
         return $.getJSON(Routing.generate('comment_source', {id: id_of(node)}));
     }
 
@@ -102,6 +142,7 @@
             set_reactions(node, {cheered: cheered, fired: fired}, mine);
             body.find('[data-act="reply"], [data-act="quote"]').prop('hidden', !logged);
             body.find('.rb-cmt-own').prop('hidden', !(mine || (logged && state.moderator)));
+            node.is('[data-legacy]') && body.find('.rb-cmt-editor').prop('hidden', true);
             body.find('.rb-cmt-hider').prop('hidden', !(logged && (state.owner || state.moderator)));
             body.find('.rb-cmt-other').prop('hidden', !logged || mine);
             body.find('.rb-cmt-report-label').text(t(reported ? 'comment.reported' : 'comment.report'));
@@ -471,7 +512,7 @@
             apply(section);
             return done.resolve().promise();
         }
-        $.getJSON(Routing.generate('comment_state', {kind: section.data('kind'), id: section.data('id')})).done(function (data) {
+        $.getJSON(state_url()).done(function (data) {
             state = data;
             apply(section);
             if(state) {

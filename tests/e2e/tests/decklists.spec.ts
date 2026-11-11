@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { test, expect, runId, snap, waitForCardData } from '../helpers/test';
-import { storageFor } from '../helpers/users';
+import { storageFor, loadUsers } from '../helpers/users';
 import { appConsole } from '../helpers/console';
 
 // Publishing a deck as a decklist, and what other users can do with it:
@@ -624,4 +624,40 @@ test('comments thread: reply, quote, cheers, edit, history, report, link, delete
   await snap(voter, 'a deleted comment keeps its place');
   // and someone else can't edit or delete another's
   await expect(voter.locator(`#comment-${topId} > .rb-cmt-replies > .rb-cmt > .rb-cmt-body li.rb-cmt-own`).first()).toHaveAttribute('hidden', '');
+});
+
+// A comment from before the markdown was kept has only its html (Ketura, 2026-11-11): nothing
+// is made back from that, so it can't be edited, and Quote takes it as it reads. And a page
+// whose token has expired gets a fresh one and sends again, without the viewer reloading.
+test('comments: an old comment, and a page left open past its token', async ({ pageAs }) => {
+  const voterName = loadUsers().voter.username;
+  appConsole(['dbal:run-sql', `INSERT INTO comment (user_id, published_deck_id, text, date_creation, is_hidden) SELECT id, ${decklistId}, '<p>From <strong>before</strong> markdown was kept</p>', NOW(), 0 FROM user WHERE username = '${voterName}'`]);
+  const voter = await pageAs('voter');
+  await voter.goto(decklistUrl);
+  const old = voter.locator('.rb-cmt[data-legacy]').filter({ hasText: 'markdown was kept' });
+  await expect(old).toHaveCount(1);
+  await expect(old.locator('> .rb-cmt-body [data-act="quote"]')).toBeVisible();
+  await expect(old.locator('> .rb-cmt-body li.rb-cmt-editor')).toHaveAttribute('hidden', '');
+  await expect(old.locator('> .rb-cmt-body li.rb-cmt-own').last()).not.toHaveAttribute('hidden', '');
+  await old.locator('> .rb-cmt-body [data-act="quote"]').click();
+  await expect(old.locator('> .rb-comment-form.is-reply textarea')).toHaveValue(/^> From before markdown was kept\n/);
+  await old.locator('> .rb-comment-form.is-reply .rb-comment-cancel').click();
+
+  // the first post meets an expired token: the page fetches a new one and posts again
+  let refused = false;
+  await voter.route('**/comment/post', async (route) => {
+    if (!refused) {
+      refused = true;
+      return route.fulfill({ status: 400, headers: { 'X-Comment-Error': 'expired', 'Content-Type': 'application/json' }, body: '{"message":"The page has expired."}' });
+    }
+    return route.continue();
+  });
+  const text = `Sent after the token expired ${runId}`;
+  await voter.locator('.rb-comment-form.is-main textarea').fill(text);
+  await Promise.all([
+    voter.waitForResponse((r) => r.url().includes('/comment/state')),
+    voter.locator('.rb-comment-form.is-main button[type=submit]').click(),
+  ]);
+  await expect(voter.locator('.rb-cmt-text').filter({ hasText: text })).toBeVisible();
+  expect(refused).toBe(true);
 });

@@ -50,7 +50,7 @@
                         <li><a href="#" data-act="copy-text"><span class="fas fa-copy fa-fw" aria-hidden="true"></span> {{ 'comment.copy_text' | trans }}</a></li>
                         <li><a href="#" data-act="history"><span class="fas fa-history fa-fw" aria-hidden="true"></span> {{ 'comment.history' | trans }}</a></li>
                         <li class="rb-cmt-own" hidden role="separator"><hr></li>
-                        <li class="rb-cmt-own" hidden><a href="#" data-act="edit"><span class="fas fa-pencil-alt fa-fw" aria-hidden="true"></span> {{ 'comment.edit' | trans }}</a></li>
+                        <li class="rb-cmt-own rb-cmt-editor" hidden><a href="#" data-act="edit"><span class="fas fa-pencil-alt fa-fw" aria-hidden="true"></span> {{ 'comment.edit' | trans }}</a></li>
                         <li class="rb-cmt-own" hidden><a href="#" data-act="delete"><span class="fas fa-trash-alt fa-fw" aria-hidden="true"></span> {{ 'comment.delete' | trans }}</a></li>
                         <li class="rb-cmt-hider" hidden><a href="#" data-act="hide"><span class="fas fa-eye-slash fa-fw" aria-hidden="true"></span> <span class="rb-cmt-hide-label" data-hide="{{ 'comment.hide' | trans }}" data-unhide="{{ 'comment.unhide' | trans }}">{{ (c.isHidden ? 'comment.unhide' : 'comment.hide') | trans }}</span></a></li>
                         <li class="rb-cmt-other" hidden role="separator"><hr></li>

@@ -8,7 +8,7 @@
 #}
 {% set c = node.comment %}
 <div class="rb-cmt{% if c.isHidden %} is-hidden{% endif %}{% if c.deleted %} is-deleted{% endif %}" id="comment-{{ c.id }}"
-     data-id="{{ c.id }}" data-author="{{ c.deleted ? '' : c.user.id }}" data-author-name="{{ c.deleted ? '' : c.user.username }}" data-depth="{{ depth }}" data-count="{{ node.count }}">
+     data-id="{{ c.id }}" data-author="{{ c.deleted ? '' : c.user.id }}" data-author-name="{{ c.deleted ? '' : c.user.username }}" data-depth="{{ depth }}" data-count="{{ node.count }}"{% if c.textMd is null %} data-legacy{% endif %}>
     {% include 'Comment/body.html.twig' with {comment: c, subject_url: subject_url} %}
     <div class="rb-cmt-replies{% if depth >= 4 %} is-flat{% endif %}">
         <button type="button" class="rb-cmt-line" title="{{ 'comment.fold' | trans }}" aria-label="{{ 'comment.fold' | trans }}"></button>

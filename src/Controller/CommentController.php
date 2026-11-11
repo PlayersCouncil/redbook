@@ -112,7 +112,7 @@ class CommentController extends AbstractController
         return $response;
     }
 
-    /** The markdown of a comment, for Edit, Copy Text and Quote */
+    /** The markdown of a comment, for Edit, Copy Text and Quote; null for one from before it was kept */
     #[Route(path: '/comment/{id}/source', name: 'comment_source', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function sourceAction(int $id): JsonResponse
     {
@@ -151,7 +151,8 @@ class CommentController extends AbstractController
             throw new AccessDeniedHttpException('You must be logged in.');
         }
         if (!$this->isCsrfTokenValid(CommentManager::TOKEN, (string) $request->request->get('token'))) {
-            throw new BadRequestHttpException('The page has expired; reload it and try again.');
+            // the page's script fetches a fresh token and sends it again
+            throw new BadRequestHttpException('The page has expired.', null, 0, ['X-Comment-Error' => 'expired']);
         }
         return $user;
     }

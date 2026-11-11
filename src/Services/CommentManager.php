@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Classes\CommentTree;
-use App\Classes\HtmlToMarkdown;
 use App\Entity\Comment;
 use App\Entity\CommentReaction;
 use App\Entity\CommentReport;
@@ -124,9 +123,16 @@ class CommentManager
         return $this->security->isGranted('ROLE_MODERATOR');
     }
 
-    public function canEdit(?User $user, Comment $comment): bool
+    /** Delete it: the author, or a moderator */
+    public function canDelete(?User $user, Comment $comment): bool
     {
         return $user !== null && !$comment->isDeleted() && ($comment->getUser() === $user || $this->isModerator());
+    }
+
+    /** Edit it: as for deleting, and only one whose markdown was kept */
+    public function canEdit(?User $user, Comment $comment): bool
+    {
+        return $this->canDelete($user, $comment) && $comment->getTextMd() !== null;
     }
 
     public function canHide(?User $user, Comment $comment): bool
@@ -182,8 +188,11 @@ class CommentManager
     /** New text, the old kept in its history */
     public function edit(Comment $comment, User $user, string $markdown): void
     {
-        if (!$this->canEdit($user, $comment)) {
+        if (!$this->canDelete($user, $comment)) {
             throw new AccessDeniedHttpException("You can't edit that comment.");
+        }
+        if ($comment->getTextMd() === null) {
+            throw new BadRequestHttpException('This comment is from before comments could be edited. Delete it and post it again instead.');
         }
         $markdown = $this->clean($markdown);
         if ($markdown === $this->markdownOf($comment)) {
@@ -200,7 +209,7 @@ class CommentManager
     /** Deleted: by its author, or a moderator. Replies to it stay where they are */
     public function delete(Comment $comment, User $user): void
     {
-        if (!$this->canEdit($user, $comment)) {
+        if (!$this->canDelete($user, $comment)) {
             throw new AccessDeniedHttpException("You can't delete that comment.");
         }
         $this->keepOriginal($comment);
@@ -281,10 +290,14 @@ class CommentManager
 
     /* ---- reading ---- */
 
-    /** What it says, as markdown: as written, or (from before that was kept) made from its html */
-    public function markdownOf(Comment $comment): string
+    /**
+     * What it says, as written: the markdown, kept since 2026-11-11 (text_md; the html in text
+     * is only its render). Null for a comment from before, which has only the render: nothing
+     * is made back from html (Ketura, 2026-11-11), so those can't be edited.
+     */
+    public function markdownOf(Comment $comment): ?string
     {
-        return $comment->getTextMd() ?? HtmlToMarkdown::convert((string) $comment->getText());
+        return $comment->getTextMd();
     }
 
     /**
