@@ -129,7 +129,8 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
     selection.addRange(range);
     return selection.toString().split('\n');
   });
-  expect(selected).toContain('1x Gimli, Dwarf of Erebor');
+  // (•: Gimli is unique since the card data fixed it, 2026-11-11)
+  expect(selected).toContainEqual(expect.stringMatching(/^1x •?Gimli, Dwarf of Erebor$/));
   expect(selected).toContain('2x Dwarven Armor');
   expect(selected).toContain('1 Bag End');
   expect(selected.filter((l: string) => /^\d+x$/.test(l))).toEqual([]);
@@ -149,7 +150,7 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await page.keyboard.press('ControlOrMeta+c');
   const pasted = (await page.evaluate(() => navigator.clipboard.readText())).split(/\r?\n/).map((l: string) => l.trim());
   expect(pasted).toContain('1 Bag End');
-  expect(pasted).toContain('1x Gimli, Dwarf of Erebor');
+  expect(pasted).toContainEqual(expect.stringMatching(/^1x •?Gimli, Dwarf of Erebor$/));
   expect(pasted).toContain('2x Dwarven Armor');
   // no count left on a line of its own (the Stats pane's axis numbers come along too: that's fine)
   expect(pasted.filter((l: string) => /^\d+x$/.test(l))).toEqual([]);
@@ -174,7 +175,7 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
     return data.getData('text/plain');
   });
   expect(copied).toMatch(/^Ring-bearer: Frodo, Son of Drogo$/m);
-  expect(copied).toMatch(/^1x Gimli, Dwarf of Erebor$/m);
+  expect(copied).toMatch(/^1x •?Gimli, Dwarf of Erebor$/m);
   expect(copied).toMatch(/^2x Axe Strike$|^1x Axe Strike$/m);
   // the deck's tags beside its version
   await expect(page.locator('.rb-reader-tags')).toContainText('dwarves');
@@ -190,7 +191,7 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await expect(page.locator('.rb-toast')).toHaveText('Copied to clipboard!');
   const list = await page.evaluate(() => navigator.clipboard.readText());
   expect(list).toContain('Format: Fellowship Block');
-  expect(list).toMatch(/^1x Gimli, Dwarf of Erebor$/m);
+  expect(list).toMatch(/^1x •?Gimli, Dwarf of Erebor$/m);
   expect(list).not.toMatch(/\(\d+_\d+\)|Gemp:/);
   // Download Text File: named for the account, then the deck
   const download = await page.request.get(await page.locator('.rb-reader-buttons-wide a[href*="/decklist/export/text/"]').getAttribute('href') as string);

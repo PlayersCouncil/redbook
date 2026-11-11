@@ -1,45 +1,117 @@
-{# Gemp's hall formats (phase3/04) #}
+{# The Formats page's Formats tab (Ketura, 2026-11-11): Gemp's Help > Format Definitions,
+   every hall format with its facts, other rules and card lists (App\Services\FormatDefinitions),
+   beside a list of them that stays in view and follows the reading, with a box that finds a
+   format by name or every format that lists a card (ui.formats.js). Each format is a
+   <section id="format-<code>">, as on Gemp, so a #format-<code> link goes to it.
+   Variables: formats, tab #}
 {% extends 'base.html.twig' %}
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('js/ui.formats.js') }}"></script>
+{% endblock %}
 {% block body %}
-    <div class="main white container">
-        {% include 'alerts.html.twig' %}
-        <h1>{{ 'nav.formats' | trans }}</h1>
-        <p>{{ 'formats.intro' | trans }}</p>
-        {% if formats is empty %}
-            <p class="text-muted">{{ 'formats.none' | trans }}</p>
-        {% else %}
-            <table class="table table-condensed formats-table">
-                <thead>
-                <tr>
-                    <th>{{ 'formats.name' | trans }}</th>
-                    <th>{{ 'formats.sets' | trans }}</th>
-                    <th>{{ 'formats.sites' | trans }}</th>
-                    <th>{{ 'formats.deck_size' | trans }}</th>
-                    <th>{{ 'formats.lists' | trans }}</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for format in formats %}
-                    <tr>
-                        <td>
-                            <a href="{{ path('format', {code: format.code}) }}">{{ format.name }}</a>
-                            {% if format.pcErrata %} <span class="label label-info">{{ 'formats.pc_errata' | trans }}</span>{% endif %}
-                            {% if format.playtest %} <span class="label label-warning">{{ 'formats.playtest' | trans }}</span>{% endif %}
-                        </td>
-                        <td>{{ format.setSummary }}</td>
-                        <td>{{ format.sites }}</td>
-                        <td>{{ format.minimumDeckSize }}+</td>
-                        <td>
-                            {% for name in ['banned', 'restricted', 'limit2', 'limit3'] %}
-                                {% set n = format.list(name) | length %}
-                                {% if n %}<span class="format-list-count">{{ ('formats.list.' ~ name) | trans }}: {{ n }}</span> {% endif %}
-                            {% endfor %}
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-            <p class="small text-muted">{{ 'formats.source' | trans({'%date%': formats[0].dateUpdate | date('Y-m-d H:i')}) }}</p>
-        {% endif %}
+<div class="main white container rb-formats">
+    {% include 'alerts.html.twig' %}
+    {% include 'Formats/_tabs.html.twig' %}
+    <div class="rb-fd-intro">
+        <p>{{ 'formats.intro' | trans }}
+            <button type="button" class="rb-fd-info" aria-expanded="false" aria-controls="rb-fd-help" title="{{ 'formats.help_title' | trans }}"><span class="fas fa-info-circle" aria-hidden="true"></span><span class="sr-only">{{ 'formats.help_title' | trans }}</span></button></p>
+        <div id="rb-fd-help" class="rb-fd-help" hidden>
+            <ul>
+                {% for key in ['banned', 'restricted', 'limits', 'valid', 'pc'] %}<li>{{ ('formats.help.' ~ key) | trans | raw }}</li>{% endfor %}
+            </ul>
+            <p>{{ 'formats.help.find' | trans }}</p>
+        </div>
     </div>
+    {% if formats is empty %}
+        <p class="rb-muted">{{ 'formats.none' | trans }}</p>
+    {% else %}
+    <div class="rb-fd-layout" id="format-definitions">
+        <aside class="rb-fd-side">
+            <div class="rb-fd-tools">
+                <input type="search" class="form-control rb-fd-filter" autocomplete="off" spellcheck="false" placeholder="{{ 'formats.find' | trans }}" aria-label="{{ 'formats.find_label' | trans }}">
+                <label class="rb-fd-images-toggle"><input type="checkbox" class="rb-fd-images"> {{ 'formats.images' | trans }}</label>
+                <div class="rb-fd-status" aria-live="polite"></div>
+            </div>
+            <ul class="rb-fd-nav">
+                {% for f in formats %}
+                    <li data-anchor="{{ f.anchor }}"><a href="#{{ f.anchor }}" data-anchor="{{ f.anchor }}">
+                        <span class="rb-fd-nav-name">{{ f.name }}</span>
+                        {% if f.banned or f.restricted %}
+                            <span class="rb-fd-nav-meta" title="{{ 'formats.nav_meta' | trans({'%banned%': f.banned, '%restricted%': f.restricted}) }}">{% if f.banned %}X{{ f.banned }}{% endif %}{% if f.banned and f.restricted %} {% endif %}{% if f.restricted %}R{{ f.restricted }}{% endif %}</span>
+                        {% endif %}
+                    </a></li>
+                {% endfor %}
+            </ul>
+        </aside>
+        <div class="rb-fd-main">
+            {% for f in formats %}
+                <section class="rb-fd-format" id="{{ f.anchor }}" data-format="{{ f.code }}">
+                    <header class="rb-fd-head">
+                        <h2 class="rb-fd-name">{{ f.name }}</h2>
+                        {% if f.errata.pc %}<span class="rb-fd-badge is-pc" title="{{ 'formats.pc_errata_title' | trans }}">{{ 'formats.pc_errata' | trans }}</span>{% endif %}
+                        {% if f.playtest %}<span class="rb-fd-badge is-playtest">{{ 'formats.playtest' | trans }}</span>{% endif %}
+                        <a class="rb-fd-permalink" href="#{{ f.anchor }}" data-anchor="{{ f.anchor }}" title="{{ 'formats.permalink' | trans }}">#</a>
+                    </header>
+                    {% if f.description %}<p class="rb-fd-description">{{ f.description }}</p>{% endif %}
+                    <dl class="rb-fd-facts">
+                        {% if f.sets %}<dt>{{ 'formats.sets' | trans }}</dt><dd>{{ f.sets }}</dd>{% endif %}
+                        {% if f.sites %}<dt>{{ 'formats.sites' | trans }}</dt><dd>{{ f.sites }}</dd>{% endif %}
+                        <dt>{{ 'formats.cancel' | trans }}</dt><dd>{{ (f.cancel ? 'formats.yes' : 'formats.no') | trans }}</dd>
+                        {% if f.errata.pc or f.errata.pcCardsLegal or f.errata.playtest %}
+                            <dt>{{ 'formats.errata' | trans }}</dt>
+                            <dd>
+                                {%- if f.errata.pc or f.errata.pcCardsLegal -%}
+                                    {# a format that plays the PC errata: Gemp's list of them, for this format; one where the
+                                       PC versions are only legal beside the originals (Anything Goes): the whole list #}
+                                    <a href="https://play.lotrtcgpc.net/gemp-lotr/hall.html#pc-errata{{ f.errata.pc ? '?format=' ~ f.code : '' }}" rel="noopener">{{ 'formats.pc_errata' | trans }}</a>
+                                    {%- if not f.errata.pc %} {{ 'formats.errata_alongside' | trans }}{% endif -%}
+                                {%- endif -%}
+                                {%- if f.errata.playtest %}{{ (f.errata.pc or f.errata.pcCardsLegal) ? ', ' ~ ('formats.errata_plus_playtest' | trans) : ('formats.errata_playtest' | trans) }}{% endif -%}
+                            </dd>
+                        {% endif %}
+                        {% if f.rules %}
+                            <dt>{{ 'formats.other_rules' | trans }}</dt>
+                            <dd><ul class="rb-fd-rules">{% for rule in f.rules %}<li>{{ rule | trans }}</li>{% endfor %}</ul></dd>
+                        {% endif %}
+                    </dl>
+                    <div class="rb-fd-lists">
+                        {% for list in f.lists %}
+                            <details class="rb-fd-list is-{{ list.key }}" data-list="{{ list.key }}" open>
+                                <summary><span class="rb-fd-list-title">{{ ('formats.list_title.' ~ list.key) | trans }}</span><span class="rb-fd-count">{{ list.count }}</span><span class="rb-fd-list-note">{{ ('formats.list_note.' ~ list.key) | trans }}</span></summary>
+                                <div class="rb-fd-list-body">
+                                    {% for row in list.rows %}
+                                        <div class="rb-fd-set-row">
+                                            <span class="rb-fd-set"{% if row.name %} title="{{ row.name }}"{% endif %}>{{ row.label }}</span>
+                                            <div class="rb-fd-chips">
+                                                {%- for card in row.cards -%}
+                                                    {% set tip = card.info ? card.name ~ ' (' ~ card.info ~ ')' : card.name %}
+                                                    {% if card.code %}
+                                                        <a class="rb-fd-chip card-tip" href="{{ path('cards_zoom', {card_code: card.code}) }}" data-code="{{ card.code }}" data-id="{{ card.id }}"{% if card.image %} data-image="{{ card.image }}"{% endif %} title="{{ tip }}">{{ card.name }}</a>
+                                                    {% else %}
+                                                        <span class="rb-fd-chip is-unknown" data-id="{{ card.id }}" title="{{ tip }}">{{ card.name }}</span>
+                                                    {% endif %}
+                                                {%- endfor -%}
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </details>
+                        {% endfor %}
+                        {% if f.restrictedNames %}
+                            <details class="rb-fd-list is-names" data-list="restrictedNames" open>
+                                <summary><span class="rb-fd-list-title">{{ 'formats.list_title.restricted_names' | trans }}</span><span class="rb-fd-count">{{ f.restrictedNames | length }}</span><span class="rb-fd-list-note">{{ 'formats.list_note.restricted_names' | trans }}</span></summary>
+                                <div class="rb-fd-list-body rb-fd-chips">{% for name in f.restrictedNames %}<span class="rb-fd-chip is-name">{{ name }}</span>{% endfor %}</div>
+                            </details>
+                        {% endif %}
+                        {% if not f.lists and not f.restrictedNames %}
+                            <p class="rb-fd-no-lists">{{ 'formats.no_lists_hall' | trans }}</p>
+                        {% endif %}
+                    </div>
+                </section>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
 {% endblock %}

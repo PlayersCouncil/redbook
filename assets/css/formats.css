@@ -1,0 +1,91 @@
+/* ==== The Formats page (Ketura, 2026-11-11; Formats/index.html.twig, ui.formats.js): Gemp's Help >
+   Format Definitions in Red Book's dress. A list of the formats (with a find box) that stays in
+   view beside one panel per format: its facts, then its card lists as name chips grouped by set,
+   or pictures with "Card images" on. ==== */
+.rb-formats { max-width: 1280px; }
+.rb-fd-intro p { max-width: 62em; margin: 4px 0 10px; color: var(--rb-ink-2); }
+.rb-fd-info { padding: 0 2px; border: 0; background: none; color: var(--rb-link); vertical-align: baseline; }
+.rb-fd-info[aria-expanded="true"] { color: var(--rb-ink); }
+.rb-fd-help { max-width: 62em; margin: 0 0 12px; padding: 8px 14px; border: 1px solid var(--rb-info-edge); border-radius: var(--rb-radius-panel); background: var(--rb-info-soft); font-size: 0.9375rem; }
+.rb-fd-help ul { margin: 0 0 6px; padding-left: 1.2em; }
+.rb-fd-help p { margin: 0; color: var(--rb-ink); }
+
+.rb-fd-layout { display: grid; grid-template-columns: 15em minmax(0, 1fr); gap: 18px; align-items: start; }
+
+/* the list: stays in view while the page scrolls (ui.formats.js sets --rb-fd-view-height) */
+.rb-fd-side { position: sticky; top: 10px; max-height: var(--rb-fd-view-height, 80vh); overflow-y: auto; border: 1px solid var(--rb-line-strong);
+    border-radius: var(--rb-radius-panel); background: var(--rb-leaf); box-shadow: var(--rb-shadow-1); }
+.rb-fd-tools { position: sticky; top: 0; z-index: 1; padding: 8px 8px 6px; border-bottom: 1px solid var(--rb-line); background: var(--rb-sunk); }
+.rb-fd-filter.form-control { height: var(--rb-control-h-sm); font-size: 0.875rem; }
+.rb-fd-images-toggle { display: block; margin: 6px 0 0; font-weight: 400; font-size: 0.8125rem; color: var(--rb-ink-2); cursor: pointer; }
+.rb-fd-status { font-size: 0.75rem; color: var(--rb-ink-3); }
+.rb-fd-status:empty { display: none; }
+.rb-fd-nav { margin: 0; padding: 4px 0; list-style: none; }
+.rb-fd-nav a { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 3px 10px 3px 8px; border-left: 3px solid transparent;
+    color: var(--rb-ink); font-size: 0.875rem; text-decoration: none; }
+.rb-fd-nav a:hover, .rb-fd-nav a:focus-visible { background: var(--rb-hover); color: var(--rb-ink); text-decoration: none; }
+.rb-fd-nav li.is-active a { border-left-color: var(--rb-primary); background: var(--rb-selected); color: var(--rb-selected-ink); }
+.rb-fd-nav-meta { flex: none; font-size: 0.75rem; color: var(--rb-ink-3); font-variant-numeric: tabular-nums; }
+.rb-fd-nav li.is-active .rb-fd-nav-meta { color: inherit; opacity: .8; }
+
+/* one format */
+.rb-fd-format { margin: 0 0 14px; padding: 10px 16px 12px; border: 1px solid var(--rb-line-strong); border-radius: var(--rb-radius-panel); background: var(--rb-leaf);
+    scroll-margin-top: 10px; transition: background-color .6s ease, box-shadow .6s ease; }
+.rb-fd-format.is-highlight { background: var(--rb-info-soft); box-shadow: 0 0 0 2px var(--rb-info-edge); }
+.rb-fd-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding-bottom: 5px; border-bottom: 1px solid var(--rb-line); }
+.rb-fd-name { margin: 0; font-family: var(--rb-font-title); font-size: 1.5rem; }
+.rb-fd-badge { padding: 0 9px; border: 1px solid; border-radius: 1em; font-size: 0.75rem; font-weight: 600; white-space: nowrap; }
+.rb-fd-badge.is-pc { border-color: var(--rb-warning-edge); background: var(--rb-warning-soft); color: var(--rb-warning); }
+.rb-fd-badge.is-playtest { border-color: var(--rb-info-edge); background: var(--rb-info-soft); color: var(--rb-info); }
+.rb-fd-permalink { margin-left: auto; color: var(--rb-ink-3); font-weight: 700; text-decoration: none; }
+.rb-fd-permalink:hover, .rb-fd-permalink:focus-visible { color: var(--rb-link); text-decoration: none; }
+.rb-fd-description { margin: 8px 0 0; color: var(--rb-ink-2); }
+.rb-fd-facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 3px 16px; margin: 10px 0 4px; }
+.rb-fd-facts dt { font-weight: 600; font-size: 0.875rem; color: var(--rb-ink-2); }
+.rb-fd-facts dd { margin: 0; }
+.rb-fd-rules { margin: 0; padding-left: 1.1em; }
+.rb-fd-no-lists { margin: 8px 0 0; font-size: 0.875rem; color: var(--rb-ink-3); }
+
+/* the card lists */
+.rb-fd-list { margin: 8px 0 0; padding-top: 6px; border-top: 1px dashed var(--rb-line); }
+.rb-fd-list > summary { margin-bottom: 4px; cursor: pointer; }
+.rb-fd-list-title { font-weight: 700; }
+.rb-fd-count { display: inline-block; min-width: 1.6em; margin: 0 8px 0 6px; padding: 0 6px; border-radius: 1em; background: var(--rb-ink-3); color: var(--rb-leaf);
+    font-size: 0.75rem; font-weight: 700; text-align: center; font-variant-numeric: tabular-nums; }
+.rb-fd-list.is-banned .rb-fd-count { background: var(--rb-danger); }
+.rb-fd-list.is-restricted .rb-fd-count, .rb-fd-list.is-names .rb-fd-count { background: var(--rb-warning); }
+.rb-fd-list-note { font-size: 0.8125rem; color: var(--rb-ink-3); }
+.rb-fd-set-row { display: flex; align-items: baseline; gap: 10px; margin: 3px 0; }
+.rb-fd-set { flex: 0 0 2.6em; text-align: right; font-size: 0.75rem; font-weight: 600; color: var(--rb-ink-3); font-variant-numeric: tabular-nums; cursor: default; }
+.rb-fd-chips { display: flex; flex-wrap: wrap; gap: 4px 5px; min-width: 0; }
+.rb-fd-chip { display: inline-block; padding: 0 8px; border: 1px solid var(--rb-control-edge); border-radius: var(--rb-radius); background: var(--rb-control);
+    color: var(--rb-ink); font-size: 0.875rem; line-height: 1.6; white-space: nowrap; }
+a.rb-fd-chip:hover, a.rb-fd-chip:focus-visible { border-color: var(--rb-line-strong); background: var(--rb-control-hover); color: var(--rb-ink); text-decoration: none; }
+.rb-fd-chip.is-unknown, .rb-fd-chip.is-name { color: var(--rb-ink-2); }
+.rb-fd-chip.is-hit, .rb-fd-thumb.is-hit .rb-fd-thumb-name { border-color: var(--rb-mark-ink); background: var(--rb-mark); color: var(--rb-mark-ink); }
+
+/* "Card images": pictures in place of the names */
+.rb-formats .is-images .rb-fd-set-row { display: none; }
+.rb-fd-thumbs { display: none; grid-template-columns: repeat(auto-fill, minmax(82px, 1fr)); gap: 10px 8px; padding: 4px 0 6px; }
+.rb-formats .is-images .rb-fd-thumbs { display: grid; }
+.rb-fd-thumb { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; color: var(--rb-ink-2); text-decoration: none; }
+.rb-fd-thumb:hover, .rb-fd-thumb:focus-visible { text-decoration: none; color: var(--rb-ink); }
+.rb-fd-thumb img, .rb-fd-thumb-blank { display: block; width: 82px; height: 114px; object-fit: cover; border-radius: 4px; background: var(--rb-sunk); box-shadow: var(--rb-shadow-1); }
+.rb-fd-thumb.is-hit img { outline: 3px solid var(--rb-mark-ink); }
+.rb-fd-thumb-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.6875rem; border: 1px solid transparent; border-radius: 3px; padding: 0 3px; }
+
+.rb-fd-timeline { max-width: 62em; padding: 6px 0 20px; }
+
+/* narrow: the list on top, wrapping */
+@media (max-width: 900px) {
+    .rb-fd-layout { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .rb-fd-side { position: static; max-height: none; }
+    .rb-fd-tools { position: static; }
+    .rb-fd-nav { display: flex; flex-wrap: wrap; gap: 2px 4px; padding: 6px; }
+    .rb-fd-nav a { padding: 2px 8px; border-left: 0; border-bottom: 2px solid transparent; }
+    .rb-fd-nav li.is-active a { border-bottom-color: var(--rb-primary); }
+    .rb-fd-nav-meta { display: none; }
+    .rb-fd-facts { grid-template-columns: minmax(0, 1fr); gap: 0; }
+    .rb-fd-facts dd { margin-bottom: 4px; }
+    .rb-fd-format { padding: 8px 12px 10px; }
+}

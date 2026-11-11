@@ -26,6 +26,10 @@ body { height: 100vh; height: 100dvh; display: flex; flex-direction: column; ove
 .rb-nav > li > a.is-soon, .rb-lang[disabled] { cursor: default; opacity: var(--rb-disabled, .5); }
 .rb-lang[disabled]:hover { background: none; }
 .rb-nav > li > a.is-soon:hover { color: var(--rb-on-leather-2); background: none; }
+/* the sections still to come as icons alone until there's room for their names (Ketura,
+   2026-11-11: the bar with Formats in it ran under the account's buttons); the menu of a narrow
+   window keeps the names */
+@media (min-width: 75.625em) and (max-width: 100em) { .rb-nav > li > a.is-soon .rb-nav-soon-label { display: none; } .rb-nav > li > a.is-soon { padding: 0 8px; } }
 .rb-nav .caret { margin-left: 2px; color: var(--rb-gilt); }
 #login > a.disabled { pointer-events: none; }
 .rb-lang .fas { color: var(--rb-gilt); }

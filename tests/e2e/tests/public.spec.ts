@@ -12,11 +12,11 @@ test('home page renders with navigation', async ({ page }) => {
   // the top bar (Ketura, 2026-11-06; the design, 2026-11-09); sections not built yet are
   // greyed out with no link
   await expect(bar.locator('.rb-nav-primary > li > a')).toHaveText(
-    ['Decklists', 'Libraries', 'Card Stats', 'Players', 'Events', 'Posts', /Links/, 'Feedback']);
+    ['Decklists', 'Libraries', 'Card Stats', 'Players', 'Events', 'Posts', 'Formats', /Links/, 'Feedback']);
   // the bug report form, boxed, right of Links (Ketura, 2026-11-09)
   await expect(bar.locator('.rb-nav-feedback > a')).toHaveCSS('border-top-style', 'solid');
-  // the footer: About and API (Ketura, 2026-11-09)
-  await expect(page.locator('.rb-footer-links a')).toHaveText(['About', 'API']);
+  // the footer: About and API (Ketura, 2026-11-09), Formats beside API (2026-11-11)
+  await expect(page.locator('.rb-footer-links a')).toHaveText(['About', 'API', 'Formats']);
   await expect(bar.locator('a.is-soon')).toHaveCount(5);
   await expect(bar.locator('a.is-soon[href]')).toHaveCount(0);
   // logged out, the right side is a Login or Register button (Ketura, 2026-11-11), the theme
@@ -91,11 +91,41 @@ test('a card page shows the card, its revisions and its errata', async ({ page }
   await snap(page, 'card 1_50');
 });
 
-test('formats are copied from Gemp, without the debug format', async ({ page, request }) => {
+test('the Formats page: Gemp\'s format definitions, and a Timeline tab', async ({ page, request }) => {
+  // (Ketura, 2026-11-11) every hall format, as Gemp's Help > Format Definitions
   await page.goto('/formats');
-  await expect(page.locator('body')).toContainText('Fellowship Block');
-  await page.goto('/formats/standard');
-  await expect(page.locator('body')).toContainText('Banned');
+  await expect(page.locator('.rb-tab.is-active')).toHaveText('Formats');
+  await expect(page.locator('#format-fotr_block .rb-fd-name')).toHaveText('Fellowship Block');
+  await expect(page.locator('.rb-fd-nav li')).toHaveCount(await page.locator('.rb-fd-format').count());
+  const standard = page.locator('#format-standard');
+  await expect(standard.locator('.rb-fd-list.is-banned .rb-fd-list-title')).toHaveText('X-list');
+  // a listed card is Red Book's card, with its page
+  await expect(standard.locator('.rb-fd-list.is-banned a.rb-fd-chip').first()).toHaveAttribute('href', /\/card\/\d+_\d+$/);
+  // the box finds formats by name, and every format listing a card
+  await page.fill('.rb-fd-filter', 'standard');
+  await expect(page.locator('.rb-fd-status')).toContainText('formats');
+  await expect(page.locator('#format-fotr_block')).toBeHidden();
+  await page.fill('.rb-fd-filter', '');
+  await expect(page.locator('#format-fotr_block')).toBeVisible();
+  // Card images: the lists as pictures
+  await page.locator('.rb-fd-images').check();
+  await expect(standard.locator('.rb-fd-thumbs').first()).toBeVisible();
+  await page.locator('.rb-fd-images').uncheck();
+  // the list goes to a format, and puts it in the address bar
+  await page.locator('.rb-fd-nav a[data-anchor="format-standard"]').click();
+  await expect(page.locator('.rb-fd-nav li.is-active')).toHaveAttribute('data-anchor', 'format-standard');
+  await expect(page).toHaveURL(/#format-standard$/);
+  await expect(standard).toBeInViewport();
+  // a format's own address goes to its place on the page, lit up
+  await page.goto('/formats/movie');
+  await expect(page).toHaveURL(/\/formats#format-movie$/);
+  await expect(page.locator('#format-movie')).toHaveClass(/is-highlight/);
+  await expect(page.locator('#format-movie')).toBeInViewport();
+  await snap(page, 'formats');
+  // the Timeline tab, still to come
+  await page.locator('.rb-tab', { hasText: 'Timeline' }).click();
+  await expect(page).toHaveURL(/\/formats\/timeline$/);
+  await expect(page.locator('.rb-tab.is-active')).toHaveText('Timeline');
   const formats = await (await request.get('/api/public/formats/')).json();
   expect(formats.length).toBeGreaterThan(10);
   expect(formats.map((f) => f.code)).not.toContain('debug');

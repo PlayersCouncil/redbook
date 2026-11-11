@@ -642,7 +642,60 @@ tournamentLegality:
 
 formats:
   description: "The Lord of the Rings TCG formats, as played on Gemp"
-  intro: "These are the formats Gemp offers in its game hall. Every deck on Red Book targets one of them, and Gemp checks the deck against it."
+  intro: "A 'format' is a shorthand for what cards are legal to use and what ruleset is being followed. Every format that can be played in Gemp's game hall is listed below, as Gemp has it; every deck on Red Book targets one of them, and Gemp checks the deck against it."
+  help_title: "What the lists mean"
+  help:
+    banned: "<b>X-list</b>: cards that can't be used in the format."
+    restricted: "<b>R-list</b>: cards a deck may hold no more than 1 copy of."
+    limits: "<b>Limit 2 / Limit 3</b>: cards a deck may hold at most two / three copies of."
+    valid: "<b>Also legal</b>: cards from outside the format's sets that it allows."
+    pc: "<b>PC errata</b>: the format plays the Player's Council's updated versions of some cards (listed on Gemp)."
+    find: "Point at a card to see it, or tick \"Card images\" to see the lists as pictures. The box above the list of formats finds a format by name, or every format that lists a card."
+  find: "Find a format or card"
+  find_label: "Find a format, or the formats that list a card"
+  images: "Card images"
+  status: "%shown% of %total% formats"
+  status_by_card: "%shown% of %total% formats (%cards% by a listed card)"
+  nav_meta: "%banned% X-listed, %restricted% R-listed"
+  permalink: "Link to this format"
+  pc_errata_title: "Uses the Player's Council errata"
+  cancel: "Ring-bearer skirmish cancel"
+  "yes": "Yes"
+  "no": "No"
+  errata: Errata
+  errata_alongside: "versions are legal alongside the originals"
+  errata_plus_playtest: "plus playtest errata"
+  errata_playtest: "Playtest errata"
+  other_rules: "Other rules"
+  rule:
+    winAtEndOfRegroup: "The game ends after Regroup actions are made (instead of at the start of Regroup)"
+    discardPileIsPublic: "Discard piles are public information for both sides"
+    usesMaps: "Each deck includes a Map"
+    winOnControlling5Sites: "A player who controls 5 sites wins"
+    ruleOfFour: "No rule of 4"
+    mulliganRule: "No mulligan"
+  list_title:
+    banned: X-list
+    restricted: R-list
+    limit2: Limit 2
+    limit3: Limit 3
+    valid: Also legal
+    restricted_names: "R-list by title"
+  list_note:
+    banned: "can't be used"
+    restricted: "no more than 1 copy per deck"
+    limit2: "up to two copies per deck"
+    limit3: "up to three copies per deck"
+    valid: "cards from outside the format's sets"
+    restricted_names: "one copy of any card with the title"
+  tabs:
+    label: "Formats and their history"
+    formats: Formats
+    timeline: Timeline
+  timeline:
+    description: "The Lord of the Rings TCG's rules, rulings and releases over the years"
+    intro: "Every rule, ruling and release over the game's life, and so when and how decks must have changed."
+    soon: "The timeline is being put together, and will be here soon."
   none: "No formats yet: Red Book hasn't been able to reach Gemp."
   source: "Copied from Gemp, last updated %date% UTC."
   name: Format
@@ -658,6 +711,7 @@ formats:
   playtest: Playtest
   retired: No longer on Gemp
   no_lists: "No banned or restricted cards."
+  no_lists_hall: "No X-, R- or limited cards: every card from its sets is legal."
   printing: "printing %code%"
   unknown_card: "(not in Red Book's card data)"
   list:

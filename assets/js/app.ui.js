@@ -121,6 +121,47 @@
         }
     });
 
+    /** What scrolls the page around an element: its nearest scrolling ancestor, or the page */
+    ui.scroller = function scroller(el)
+    {
+        for(var node = el.parentElement; node && node !== document.body; node = node.parentElement) {
+            var overflow = getComputedStyle(node).overflowY;
+            if((overflow === 'auto' || overflow === 'scroll') && node.scrollHeight > node.clientHeight) {
+                return node;
+            }
+        }
+        return document.scrollingElement || document.documentElement;
+    };
+
+    /**
+     * Scrolls an element to the top, as scrollIntoView does (its scroll-margin and all), but in
+     * GLIDE_MS, quicker than the browser's own smooth scroll (Ketura, 2026-11-11: a library's
+     * view twice as fast; shared with the Formats page). done() once it's there.
+     */
+    var GLIDE_MS = 250;
+    ui.glide = function glide(el, done)
+    {
+        var box = ui.scroller(el), from = box.scrollTop;
+        el.scrollIntoView({block: 'start', behavior: 'instant'});
+        var to = box.scrollTop, start = null;
+        box.scrollTop = from;
+        if(Math.abs(to - from) < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            box.scrollTop = to;
+            done && done();
+            return;
+        }
+        (function step(now) {
+            start = start === null ? now : start;
+            var p = Math.min(1, (now - start) / GLIDE_MS);
+            box.scrollTop = from + (to - from) * (1 - Math.pow(1 - p, 3));
+            if(p < 1) {
+                window.requestAnimationFrame(step);
+            } else if(done) {
+                done();
+            }
+        })(window.performance.now());
+    };
+
     // a menu marked .rb-dropdown-fit (the top bar's Account, My Drafts and New Draft; Ketura,
     // 2026-11-11) opens from its button's left edge, and from its right only when it would
     // otherwise run off the window

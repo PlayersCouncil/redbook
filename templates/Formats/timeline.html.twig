@@ -1,0 +1,13 @@
+{# The Formats page's Timeline tab (Ketura, 2026-11-11): every rule, ruling and release over the
+   years, and so when and how decks must have changed. Its data is still being put together. #}
+{% extends 'base.html.twig' %}
+{% block body %}
+<div class="main white container rb-formats">
+    {% include 'alerts.html.twig' %}
+    {% include 'Formats/_tabs.html.twig' %}
+    <div class="rb-fd-timeline">
+        <p>{{ 'formats.timeline.intro' | trans }}</p>
+        <p class="rb-muted">{{ 'formats.timeline.soon' | trans }}</p>
+    </div>
+</div>
+{% endblock %}

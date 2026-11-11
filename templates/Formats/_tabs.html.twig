@@ -1,0 +1,7 @@
+{# The Formats page's tabs (Ketura, 2026-11-11): Formats and Timeline. Variables: tab #}
+<div class="rb-browse-title"><div class="rb-tabs">
+    <nav class="rb-tab-row" aria-label="{{ 'formats.tabs.label' | trans }}">
+        <a href="{{ path('formats') }}" class="rb-tab{{ tab == 'formats' ? ' is-active' }}"{% if tab == 'formats' %} aria-current="page"{% endif %}>{{ 'formats.tabs.formats' | trans }}</a>
+        <a href="{{ path('formats_timeline') }}" class="rb-tab{{ tab == 'timeline' ? ' is-active' }}"{% if tab == 'timeline' %} aria-current="page"{% endif %}>{{ 'formats.tabs.timeline' | trans }}</a>
+    </nav>
+</div></div>

@@ -2,10 +2,10 @@
 
 namespace App\Controller;
 
-use App\Entity\Card;
 use App\Entity\Pack;
 use App\Repository\FormatRepository;
 use App\Services\CardsData;
+use App\Services\FormatDefinitions;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,29 +14,39 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
- * Gemp's formats as Red Book copies them (phase3/04). Replaces ThronesDB's
- * restricted-lists page.
+ * The Formats page (Ketura, 2026-11-11; it replaced the list of phase3/04): two tabs, Formats
+ * (Gemp's Help > Format Definitions, every hall format with its rules and card lists) and
+ * Timeline (the rules, rulings and releases over the years; to come). A format's own address
+ * goes to its place on the page; one that isn't in Gemp's hall keeps a page of its own.
  */
 class FormatsController extends AbstractController
 {
     public function __construct(
         private readonly FormatRepository $formats,
         private readonly EntityManagerInterface $em,
+        private readonly FormatDefinitions $definitions,
     ) {
     }
 
     #[Route(path: '/formats', name: 'formats', methods: ['GET'])]
     public function listAction(int $cacheExpiration, TranslatorInterface $translator): Response
     {
-        $response = new Response();
-        $response->setPublic();
-        $response->setMaxAge($cacheExpiration);
-
         return $this->render('Formats/index.html.twig', [
             'pagetitle' => $translator->trans('nav.formats'),
             'pagedescription' => $translator->trans('formats.description'),
-            'formats' => $this->formats->findSelectable(),
-        ], $response);
+            'formats' => $this->definitions->all(),
+            'tab' => 'formats',
+        ], $this->cached($cacheExpiration));
+    }
+
+    #[Route(path: '/formats/timeline', name: 'formats_timeline', methods: ['GET'], priority: 1)]
+    public function timelineAction(int $cacheExpiration, TranslatorInterface $translator): Response
+    {
+        return $this->render('Formats/timeline.html.twig', [
+            'pagetitle' => $translator->trans('formats.tabs.timeline'),
+            'pagedescription' => $translator->trans('formats.timeline.description'),
+            'tab' => 'timeline',
+        ], $this->cached($cacheExpiration));
     }
 
     #[Route(path: '/formats/{code}', name: 'format', methods: ['GET'], requirements: ['code' => '[\w-]+'])]
@@ -46,39 +56,29 @@ class FormatsController extends AbstractController
         if ($format === null) {
             throw new NotFoundHttpException("No format $code");
         }
-        $response = new Response();
-        $response->setPublic();
-        $response->setMaxAge($cacheExpiration);
+        // one on the Formats page: its place there
+        if ($format->isHall() && !$format->isRetired() && is_array($format->getRaw()['hall'] ?? null)) {
+            return $this->redirect($this->generateUrl('formats') . '#' . FormatDefinitions::anchor($format->getCode()), Response::HTTP_MOVED_PERMANENTLY);
+        }
 
         $packs = $this->em->getRepository(Pack::class)->findBy(['code' => $format->getSets()], ['position' => 'ASC']);
-
         $lists = [];
-        $alternates = null;
-        foreach (['banned', 'restricted', 'limit2', 'limit3', 'valid'] as $name) {
+        foreach (FormatDefinitions::LISTS as $name) {
             $codes = $format->getList($name);
             if (!$codes) {
                 continue;
             }
-            $cards = $this->em->getRepository(Card::class)->findBy(['code' => $codes]);
-            $found = array_map(fn (Card $card) => $card->getCode(), $cards);
-            // Gemp lists alternate printings (promos, foils) by their own blueprint ID;
-            // Red Book only has the base card, so show it with the printing's ID
-            $printings = [];
-            foreach (array_diff($codes, $found) as $code) {
-                $alternates ??= $this->alternatesMap();
-                $base = $alternates[$code] ?? null;
-                if ($base !== null) {
-                    $printings[$code] = $base;
-                } else {
-                    $lists[$name . '_unknown'][] = $code;
-                }
-            }
+            // Gemp lists alternate printings (promos, foils) by their own blueprint ID; Red Book
+            // has only the card they reprint, shown with the printing's ID
+            $cards = $this->definitions->resolveCards($codes);
             $rows = [];
-            foreach ($cards as $card) {
-                $rows[] = ['card' => $card, 'as' => null];
-            }
-            foreach ($printings as $code => $card) {
-                $rows[] = ['card' => $card, 'as' => $code];
+            foreach ($codes as $id) {
+                $card = $cards[$id] ?? null;
+                if ($card === null) {
+                    $lists[$name . '_unknown'][] = $id;
+                    continue;
+                }
+                $rows[] = ['card' => $card, 'as' => $card->getCode() === $id ? null : $id];
             }
             usort($rows, fn ($a, $b) => [$a['card']->getPack()->getPosition(), $a['card']->getPosition(), $a['as']]
                 <=> [$b['card']->getPack()->getPosition(), $b['card']->getPosition(), $b['as']]);
@@ -90,19 +90,14 @@ class FormatsController extends AbstractController
             'format' => $format,
             'packs' => $packs,
             'lists' => $lists,
-        ], $response);
+        ], $this->cached($cacheExpiration));
     }
 
-    /** @return array<string, Card> alternate printing blueprint ID => base card */
-    private function alternatesMap(): array
+    private function cached(int $cacheExpiration): Response
     {
-        $map = [];
-        $cards = $this->em->createQuery("SELECT c FROM App\\Entity\\Card c WHERE c.alternates IS NOT NULL AND c.alternates <> '[]'")->getResult();
-        foreach ($cards as $card) {
-            foreach ($card->getAlternates() ?? [] as $code) {
-                $map[$code] = $card;
-            }
-        }
-        return $map;
+        $response = new Response();
+        $response->setPublic();
+        $response->setMaxAge($cacheExpiration);
+        return $response;
     }
 }
