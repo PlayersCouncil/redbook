@@ -86,7 +86,7 @@
 .rb-cmt-body.is-editing > .rb-cmt-content > .rb-cmt-text,
 .rb-cmt-body.is-editing > .rb-cmt-content > .rb-cmt-actions { display: none; }
 .rb-comment-form-buttons { display: flex; gap: 8px; }
-.rb-cmt .rb-comment-form .rb-md-editor .md-editor > textarea, .rb-cmt .rb-comment-form .rb-md-editor .md-editor > .md-preview { height: 120px !important; }
+.rb-cmt .rb-comment-form .rb-md-editor .md-editor:not(.md-fullscreen-mode) > textarea, .rb-cmt .rb-comment-form .rb-md-editor .md-editor:not(.md-fullscreen-mode) > .md-preview { height: 120px !important; }
 .rb-cmts > .rb-comment-form.is-main { margin-top: 14px; }
 .rb-cmts-login { margin-top: 12px; }
 

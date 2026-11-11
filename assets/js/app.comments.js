@@ -193,8 +193,13 @@
         var sending = false;
         form.on('submit', function (event) {
             event.preventDefault();
-            var text = $.trim(form.find('textarea').val());
+            var area = form.find('textarea'), text = $.trim(area.val());
             if(sending || !text) {
+                return;
+            }
+            // over the limit: the counter under the box is red, and says by how much
+            if(app.md_editor.too_long(area)) {
+                area.trigger('focus');
                 return;
             }
             sending = true;
@@ -208,6 +213,7 @@
         });
         form.data('attach', function () {
             app.md_editor.attach('#' + id, {
+                max: parseInt(section.data('max-length'), 10) || 0,
                 users: section.data('commenters') || [],
                 footer: t('decklist.reader.comment_hint'),
                 deck: options.title || ''

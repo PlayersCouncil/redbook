@@ -64,7 +64,7 @@ body { height: 100vh; height: 100dvh; display: flex; flex-direction: column; ove
 .rb-feedback-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0 14px; }
 .rb-feedback-grid .rb-feedback-page { min-width: 0; }
 @media (max-width: 600px) { .rb-feedback-grid { grid-template-columns: minmax(0, 1fr); } }
-.rb-feedback-message .md-editor > textarea { height: 200px !important; }
+.rb-feedback-message .md-editor:not(.md-fullscreen-mode) > textarea { height: 200px !important; }
 .rb-hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .rb-feedback-status:empty { display: none; }
 .rb-feedback-status { margin: 10px 0 0; font-weight: 600; }

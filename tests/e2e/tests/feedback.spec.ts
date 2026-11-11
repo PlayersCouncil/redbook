@@ -18,6 +18,10 @@ test('the bug report form fills in the page and name, and emails the admins', as
   await expect(modal).toBeVisible();
   await expect(page.locator('#feedback-page')).toHaveValue(/\/decklists$/);
   await expect(page.locator('#feedback-name')).toHaveValue(users.voter.username);
+  // the browser and device, filled in and editable (Ketura, 2026-11-11)
+  await expect(page.locator('#feedback-browser')).toHaveValue(/Mozilla/);
+  await expect(page.locator('#feedback-device')).toHaveValue(/^(desktop|tablet|phone) \(\d+x\d+\)$/);
+  await page.fill('#feedback-device', 'desktop (1920x1080), two screens');
   // empty: not sent
   await modal.locator('button[type=submit]').click();
   await expect(modal.locator('.rb-feedback-status')).toHaveClass(/is-error/);
@@ -30,4 +34,6 @@ test('the bug report form fills in the page and name, and emails the admins', as
   expect(mail.text).toContain(runId);
   expect(mail.text).toContain('/decklists');
   expect(mail.text).toContain(users.voter.username);
+  expect(mail.text).toContain('Device:  desktop (1920x1080), two screens');
+  expect(mail.text).toMatch(/Browser: Mozilla/);
 });

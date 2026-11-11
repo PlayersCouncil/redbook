@@ -51,8 +51,9 @@
 .rb-publish .rb-notes, .rb-publish .rb-notes-section, .rb-publish .rb-md-editor { flex: none; }
 .rb-publish .rb-notes { padding: 0; margin: 4px 0 20px; gap: 14px; }
 /* fixed heights here: the scroll-past-the-end padding mustn't grow them */
-.rb-publish .rb-md-editor .md-editor > textarea, .rb-publish .rb-md-editor .md-editor > .md-preview { flex: none; height: 170px !important; }
-.rb-publish .rb-notes-desc .md-editor > textarea, .rb-publish .rb-notes-desc .md-editor > .md-preview { height: 170px !important; }
+/* a fixed height, except fullscreen (Ketura, 2026-11-11: it held the preview at 170px there) */
+.rb-publish .rb-md-editor .md-editor:not(.md-fullscreen-mode) > textarea, .rb-publish .rb-md-editor .md-editor:not(.md-fullscreen-mode) > .md-preview { flex: none; height: 170px !important; }
+.rb-publish .rb-notes-desc .md-editor:not(.md-fullscreen-mode) > textarea, .rb-publish .rb-notes-desc .md-editor:not(.md-fullscreen-mode) > .md-preview { height: 170px !important; }
 .rb-publish .rb-annot-list { flex: none; overflow: visible; }
 .rb-publish .rb-release-date input { max-width: 220px; }
 

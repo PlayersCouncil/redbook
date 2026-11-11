@@ -1,6 +1,7 @@
 {#
    The bug report form (Ketura, 2026-11-09), on every page: who's writing, how to reach them,
-   the page they were on (app.feedback fills it in, and the name for someone logged in), a
+   the page they were on, their device and browser (app.feedback fills those in, and the name
+   for someone logged in), a
    category, and the message in the site's markdown editor. Emailed to the admins
    (FeedbackController). The Website field is a trap for robots, never shown.
 #}
@@ -36,6 +37,15 @@
                             <div class="form-group rb-feedback-page">
                                 <label for="feedback-page">{{ 'feedback.field.page' | trans }}</label>
                                 <input type="text" class="form-control" id="feedback-page" name="page" maxlength="500">
+                            </div>
+                            {# the device and browser (Ketura, 2026-11-11): filled in, and theirs to correct #}
+                            <div class="form-group">
+                                <label for="feedback-device">{{ 'feedback.field.device' | trans }}</label>
+                                <input type="text" class="form-control" id="feedback-device" name="device" maxlength="100">
+                            </div>
+                            <div class="form-group">
+                                <label for="feedback-browser">{{ 'feedback.field.browser' | trans }}</label>
+                                <input type="text" class="form-control" id="feedback-browser" name="browser" maxlength="300">
                             </div>
                         </div>
                         <div class="form-group rb-md-editor rb-feedback-message">

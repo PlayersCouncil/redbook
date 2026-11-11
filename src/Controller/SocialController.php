@@ -457,7 +457,8 @@ class SocialController extends AbstractController
         // the rest of the notes: tags, the bid, starting notes and card annotations
         $tags = array_unique(array_filter(preg_split('/\s+/', strip_tags((string) $form->get('tags_')))));
         $decklist->setTags(mb_substr(implode(' ', $tags), 0, 4000) ?: null);
-        $decklist->setStartingBid(mb_substr(trim(strip_tags((string) $form->get('starting_bid_'))), 0, 30) ?: null);
+        // any bid but a blank one is kept, 0 included (Ketura, 2026-11-11; the setter trims and caps it)
+        $decklist->setStartingBid((string) $form->get('starting_bid_'));
         $decklist->setStartingNotes(trim((string) $form->get('starting_notes_')) ?: null);
         // the starting fellowship: companions the decklist holds (Ketura, 2026-11-07)
         $starting = json_decode((string) $form->get('starting_'), true);

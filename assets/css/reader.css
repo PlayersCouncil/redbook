@@ -191,7 +191,7 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 .rb-reader-tree .rb-tree-tables thead th:hover { background: color-mix(in srgb, var(--rb-highlight) 35%, transparent); }
 
 /* the comment box: the deckbuilder's editor, a fixed height (Ketura, 2026-11-08) */
-.rb-comment-form .rb-md-editor .md-editor > textarea, .rb-comment-form .rb-md-editor .md-editor > .md-preview { flex: none; height: 160px !important; }
+.rb-comment-form .rb-md-editor .md-editor:not(.md-fullscreen-mode) > textarea, .rb-comment-form .rb-md-editor .md-editor:not(.md-fullscreen-mode) > .md-preview { flex: none; height: 160px !important; }
 .rb-comment-form .btn { margin-top: 8px; }
 
 /* the comment box stands out from the column while it's idle (Ketura, 2026-11-08) */

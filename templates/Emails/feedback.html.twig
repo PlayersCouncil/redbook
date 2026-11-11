@@ -5,6 +5,8 @@
     <tr><th align="left">From</th><td>{{ name ?: '(not given)' }}</td></tr>
     <tr><th align="left">Contact</th><td>{{ contact ?: '(not given)' }}</td></tr>
     <tr><th align="left">Page</th><td>{% if page_is_url %}<a href="{{ page }}">{{ page }}</a>{% else %}{{ page ?: '(not given)' }}{% endif %}</td></tr>
+    <tr><th align="left">Device</th><td>{{ device ?: '(not given)' }}</td></tr>
+    <tr><th align="left">Browser</th><td>{{ browser ?: '(not given)' }}</td></tr>
     <tr><th align="left">Account</th><td>{% if account %}<a href="{{ url('user_profile_public', {user_id: account.id, user_name: account.username|e('url')}) }}">{{ account.username }}</a>{% else %}not logged in{% endif %}</td></tr>
 </table>
 <div style="padding:10px 14px;border-left:3px solid #ccc">{{ message_html | raw }}</div>

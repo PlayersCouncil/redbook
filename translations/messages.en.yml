@@ -991,6 +991,7 @@ deckbuilder.notes.tag_site: "{0} |{1} on 1 public deck|]1,Inf] on %count% public
 deckbuilder.notes.starting: Starting Notes
 deckbuilder.notes.bid: Bid
 deckbuilder.notes.bid_placeholder: "e.g. 2-3"
+deckbuilder.notes.bid_any: "[any]"
 deckbuilder.notes.starting_placeholder: "What to bid, which fellowship to start, what to do on the first turn…"
 deckbuilder.notes.starting_none: No starting companions
 deckbuilder.notes.starting_fellowship: "Starting fellowship:"
@@ -1637,6 +1638,8 @@ feedback.field.name: "Your name"
 feedback.field.contact: "How to reach you"
 feedback.field.contact_placeholder: "Email, Discord or forum name (optional)"
 feedback.field.page: "The page you were on"
+feedback.field.device: "Device"
+feedback.field.browser: "Browser"
 feedback.field.message: "What happened"
 feedback.category.bug: "Bug"
 feedback.category.feedback: "Feedback"
@@ -1723,3 +1726,4 @@ user.avatar_mode.culture: "Culture"
 user.avatar_mode.none: "None"
 user.avatar_search: "Find a card by name"
 user.avatar_none: "No card chosen yet"
+editor.characters: "%count% / %max% characters"

@@ -64,6 +64,8 @@ class FeedbackController extends AbstractController
         $name = $line('name', 100);
         $contact = $line('contact', 200);
         $page = $line('page', 500);
+        $device = $line('device', 100);
+        $browser = $line('browser', 300);
         $category = (string) $request->request->get('category');
         $message = mb_substr(trim((string) $request->request->get('message')), 0, 10000);
         if (!in_array($category, self::CATEGORIES, true)) {
@@ -86,6 +88,8 @@ class FeedbackController extends AbstractController
             'contact' => $contact,
             'page' => $page,
             'page_is_url' => (bool) preg_match('~^https?://~i', $page),
+            'device' => $device,
+            'browser' => $browser,
             'account' => $user instanceof User ? $user : null,
             'message_md' => $message,
             // Markdown made HTML and purified, as comments are

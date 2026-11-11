@@ -168,11 +168,42 @@
         });
     }
 
+    /** Characters as the server counts them: code points, not UTF-16 units */
+    function length_of(text)
+    {
+        return Array.from(text || '').length;
+    }
+
+    /** "XXX / YYY characters", shown from 90% of max, red over it */
+    function count_characters(textarea, box, max)
+    {
+        var count = $('<div class="rb-md-count" aria-live="polite" hidden></div>').insertBefore(box.find('.rb-md-done'));
+        textarea.data('rb-max', max);
+        function update()
+        {
+            var n = length_of(textarea.val());
+            count.text(t('editor.characters', {count: n.toLocaleString(), max: max.toLocaleString()}))
+                .prop('hidden', n < max * 0.9).toggleClass('is-over', n > max);
+        }
+        textarea.on('input change', update);
+        update();
+    }
+
+    /** Whether a box with a max (attach's) holds more than it takes */
+    editor.too_long = function too_long(textarea)
+    {
+        textarea = $(textarea);
+        var max = textarea.data('rb-max');
+        return !!max && length_of(textarea.val()) > max;
+    };
+
     /**
      * Makes the textarea a markdown editor. Its value and input events stay the textarea's,
      * so whatever listens to it keeps working. options (Ketura, 2026-11-08, for the reader's
      * comment box): users, names @ offers; footer, the hint under it; deck, the deck's name
-     * for the fullscreen heading when the page has no name field.
+     * for the fullscreen heading when the page has no name field; max (2026-11-11), the most
+     * characters it takes: "XXX / YYY characters" shows under it, fullscreen too, from 90% of
+     * that, red once over (editor.too_long tells whoever submits it).
      */
     editor.attach = function attach(selector, options)
     {
@@ -234,6 +265,9 @@
         $('<div class="rb-md-done"><button type="button" class="btn btn-primary">' + t('deckbuilder.notes.done') + '</button></div>')
             .appendTo(box)
             .on('click', 'button', function () { instance.setFullscreen(false); });
+        if(options.max) {
+            count_characters(textarea, box, options.max);
+        }
         textarea.on('keydown', function (event) {
             if(event.key === 'Escape' && box.hasClass('md-fullscreen-mode') && !box.find('.rb-sym-menu:not([hidden])').length) {
                 instance.setFullscreen(false);

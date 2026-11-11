@@ -426,3 +426,9 @@ html.pc-dark .rb-thumb, html.pc-dark .rb-tile-img, html.pc-dark .rb-pool-img, ht
 /* the pager's start and end half as wide again as the other buttons (Ketura, 2026-11-09) */
 .rb-page.rb-page-end { min-width: 48px; }
 @media (max-width: 767px) { .rb-page.rb-page-end { min-width: 60px; } }
+
+/* how much of its limit a box holds (Ketura, 2026-11-11): from 90%, red once over */
+.rb-md-count { padding: 3px 2px 0; text-align: right; font-size: 0.75rem; font-variant-numeric: tabular-nums; color: var(--rb-ink-2); }
+.rb-md-count[hidden] { display: none; }
+.rb-md-count.is-over { color: var(--rb-danger); font-weight: 700; }
+.rb-md-editor .md-editor.md-fullscreen-mode .rb-md-count { max-width: 100%; font-size: 0.875rem; }

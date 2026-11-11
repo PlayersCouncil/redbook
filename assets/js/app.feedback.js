@@ -9,6 +9,19 @@
 {
     function t(key, params) { return Translator.trans(key, params || {}); }
 
+    /**
+     * "desktop (1920x1080)", "tablet (820x1180)" or "phone (390x844)": the screen's size in
+     * CSS pixels, and a touch screen's kind by its shorter side
+     */
+    feedback.device = function device()
+    {
+        var w = window.screen ? window.screen.width : window.innerWidth,
+            h = window.screen ? window.screen.height : window.innerHeight,
+            touch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches,
+            kind = !touch ? 'desktop' : (Math.min(w, h) < 600 ? 'phone' : 'tablet');
+        return kind + ' (' + w + 'x' + h + ')';
+    };
+
     feedback.open = function open()
     {
         var modal = $('#feedback-modal');
@@ -17,6 +30,14 @@
         }
         var form = modal.find('form');
         form.find('[name=page]').val(window.location.href);
+        // the browser and the screen it's on (Ketura, 2026-11-11), theirs to correct
+        var browser = form.find('[name=browser]'), device = form.find('[name=device]');
+        if(!$.trim(browser.val())) {
+            browser.val(navigator.userAgent || '');
+        }
+        if(!$.trim(device.val())) {
+            device.val(feedback.device());
+        }
         var name = form.find('[name=name]');
         if(!$.trim(name.val()) && app.user && app.user.data) {
             name.val(app.user.data.display_name || app.user.data.name || '');

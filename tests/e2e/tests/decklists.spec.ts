@@ -197,6 +197,8 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
 
 test('the author edits the decklist from its page; nobody else gets Edit', async ({ page, pageAs }) => {
   await page.goto(decklistUrl);
+  // no bid given: it says so (Ketura, 2026-11-11)
+  await expect(page.locator('.rb-reader-bid')).toContainText('[any]');
   const edit = page.locator('.rb-reader-buttons .decklist-edit');
   await expect(edit).toBeVisible();
   // on a row of their own under the others, beside the facts (Ketura, 2026-11-09); the
@@ -221,10 +223,22 @@ test('the author edits the decklist from its page; nobody else gets Edit', async
   await expect(page.locator('#effective_date')).toBeDisabled();
   await expect(page.locator('#version-line')).toContainText('Version v1.0');
   await expect(page.locator('.rb-form-actions a')).toHaveAttribute('href', new URL(decklistUrl).pathname);
+  // a bid of 0 is a bid (Ketura, 2026-11-11)
+  await page.fill('#starting-bid', '0');
+  // fullscreen fills the screen, Preview too (it was held at 170px)
+  const desc = page.locator('.md-editor:has(#description)');
+  await desc.locator('.md-control-fullscreen').click();
+  await expect(desc).toHaveClass(/md-fullscreen-mode/);
+  await desc.locator('button[data-handler="bootstrap-markdown-cmdPreview"]').click();
+  expect((await desc.locator('.md-preview').boundingBox())!.height).toBeGreaterThan(400);
+  await desc.locator('button[data-handler="bootstrap-markdown-cmdPreview"]').click();
+  await desc.locator('.rb-md-done button').click();
+  await expect(desc).not.toHaveClass(/md-fullscreen-mode/);
   await page.fill('#description', 'Published by the **smoke test**, then edited. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]].');
   await page.click('.rb-form-actions button[form=decklist-form]:has-text("Save")');
   await expect(page).toHaveURL(new RegExp(`/decklist/view/${decklistId}/`));
   await expect(page.locator('body')).toContainText('Published by the smoke test, then edited.');
+  await expect(page.locator('.rb-reader-bid')).toHaveText(/Bid:\s*0$/);
   await snap(page, 'decklist edited');
   // what the description said before is kept
   expect(appConsole(['dbal:run-sql', `SELECT description_md FROM published_deck_revision WHERE published_deck_id = ${decklistId}`]))
@@ -642,6 +656,22 @@ test('comments: an old comment, and a page left open past its token', async ({ p
   await old.locator('> .rb-cmt-body [data-act="quote"]').click();
   await expect(old.locator('> .rb-comment-form.is-reply textarea')).toHaveValue(/^> From before markdown was kept\n/);
   await old.locator('> .rb-comment-form.is-reply .rb-comment-cancel').click();
+
+  // the counter: from 90% of the limit, red over it, and nothing sent then (Ketura, 2026-11-11)
+  const main = voter.locator('.rb-comment-form.is-main');
+  await main.locator('textarea').fill('x'.repeat(100));
+  await expect(main.locator('.rb-md-count')).toBeHidden();
+  await main.locator('textarea').fill('x'.repeat(18500));
+  await expect(main.locator('.rb-md-count')).toHaveText('18,500 / 20,000 characters');
+  await expect(main.locator('.rb-md-count')).not.toHaveClass(/is-over/);
+  await main.locator('textarea').fill('x'.repeat(20001));
+  await expect(main.locator('.rb-md-count')).toHaveClass(/is-over/);
+  let sent = false;
+  voter.on('request', (r) => { if (r.url().includes('/comment/post')) sent = true; });
+  await main.locator('button[type=submit]').click();
+  await voter.waitForTimeout(500);
+  expect(sent).toBe(false);
+  await main.locator('textarea').fill('');
 
   // the first post meets an expired token: the page fetches a new one and posts again
   let refused = false;
