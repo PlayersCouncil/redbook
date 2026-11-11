@@ -98,14 +98,14 @@ class ImportCardsCommand extends Command
 
         $this->loadLookups();
         $faction = $this->placeholderFaction();
-        $packs = $this->importSets($this->readJson("$dir/sets.json"));
+        $setList = $this->readJson("$dir/sets.json");
+        $packs = $this->importSets($setList);
         $this->importBatches($this->readJson("$dir/errata-batches.json"));
         $this->em->flush();
 
         $seen = [];
         $errataLinks = [];
-        $files = glob("$dir/cards/*.json");
-        usort($files, fn ($a, $b) => (int) basename($a) <=> (int) basename($b));
+        $files = $this->cardFiles($dir, $setList);
         $created = $updated = 0;
         $repo = $this->em->getRepository(Card::class);
         $existing = [];
@@ -147,6 +147,26 @@ class ImportCardsCommand extends Command
         }
         $io->success(sprintf('%d cards created, %d updated', $created, $updated));
         return Command::SUCCESS;
+    }
+
+    /**
+     * The per-set card files, in sets.json's order: each set names its file (Ketura,
+     * 2026-11-11: 01.json, E01.json, V01.json), so nothing is guessed from the names. Data
+     * from before sets.json named them: every file in cards/, by set number.
+     * @return string[]
+     */
+    private function cardFiles(string $dir, array $sets): array
+    {
+        $named = array_values(array_filter(array_map(fn (array $set) => $set['file'] ?? null, $sets)));
+        if (!$named) {
+            $files = glob("$dir/cards/*.json") ?: [];
+            usort($files, fn ($a, $b) => (int) basename($a) <=> (int) basename($b));
+            return $files;
+        }
+        if (count($named) < count($sets)) {
+            throw new RuntimeException('sets.json names a file for some sets but not all');
+        }
+        return array_map(fn (string $file) => "$dir/$file", $named);
     }
 
     private function readJson(string $path): array
