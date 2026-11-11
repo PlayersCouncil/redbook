@@ -107,7 +107,7 @@ class SyncArchiveDecklistsCommand extends Command
             'cards' => [$listCards, $deckCards],
             'name' => [trim((string) $decklist['name']), trim((string) $deck['name']) ?: 'Untitled'],
             'description' => [(string) $decklist['description_md'], (string) $deck['description_md']],
-            'starting' => [array_values($json($decklist['starting_fellowship'])), array_values($json($deck['starting_fellowship']))],
+            'starting' => [\App\Classes\StartingGroups::normalize($json($decklist['starting_fellowship'])), \App\Classes\StartingGroups::normalize($json($deck['starting_fellowship']))],
             'bid' => [(string) $decklist['starting_bid'], (string) $deck['starting_bid']],
             'starting notes' => [(string) $decklist['starting_notes'], (string) $deck['starting_notes']],
             'annotations' => [$json($decklist['annotations']), $json($deck['annotations'])],

@@ -457,12 +457,32 @@ a.rb-starting-card:hover, a.rb-starting-card:focus { text-decoration: underline;
 /* the starting companions (Ketura, 2026-11-07): + to pick one from the deck, pills with x to take one off */
 .rb-starting-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .rb-starting-fields { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 4px; }
-.rb-starting-bid { width: 120px; height: 28px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 0.8125rem; }
+.rb-starting-bid { flex: 1 1 auto; width: auto; max-width: 420px; height: 28px; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 0.8125rem; }
 .rb-notes .rb-btn.rb-start-pick { width: 28px; height: 28px; padding: 0; justify-content: center; font-size: 1.125rem; font-weight: 700; line-height: 1; }
 .rb-starting-pill { display: inline-flex; align-items: center; gap: 2px; padding: 1px 9px 1px 4px; border-radius: 12px; background: var(--rb-highlight); }
 .rb-starting-pill .rb-starting-card { padding: 0; background: none; }
 .rb-starting-remove { width: 18px; height: 18px; padding: 0; border: 0; border-radius: 50%; background: none; color: var(--rb-warning); font-size: 0.9375rem; line-height: 1; cursor: pointer; }
 .rb-starting-remove:hover { background: var(--rb-leaf); color: var(--rb-danger); }
+/* the starting fellowships, a row each (Ketura, 2026-11-11): its name, +, the companions, their
+   twilight, and − with more than one; the active row (where + and S go) outlined */
+.rb-starting-groups { display: flex; flex-direction: column; gap: 4px; }
+.rb-starting-group { display: grid; grid-template-columns: minmax(120px, 190px) auto minmax(0, 1fr) auto auto; align-items: center; gap: 6px;
+    padding: 4px 6px; border: 1px solid transparent; border-radius: 6px; }
+.rb-starting-group.is-active { border-color: var(--rb-highlight); background: color-mix(in srgb, var(--rb-highlight) 12%, transparent); }
+.rb-starting-name { height: 28px; min-width: 0; padding: 0 8px; border: 1px solid var(--rb-line-strong); border-radius: 6px; font-size: 0.8125rem; font-weight: 600;
+    background: var(--rb-field-rest, var(--rb-leaf)); color: var(--rb-ink); }
+.rb-starting-name:focus { background: var(--rb-leaf); }
+.rb-starting-name::placeholder { color: var(--rb-ink-2); opacity: 1; }
+.rb-starting-group .rb-starting-cost { font-size: 0.75rem; color: var(--rb-ink-2); white-space: nowrap; }
+.rb-starting-drop { width: 24px; height: 24px; padding: 0; border: 1px solid var(--rb-line-strong); border-radius: 50%; background: var(--rb-control); color: var(--rb-ink-2);
+    font-size: 1rem; font-weight: 700; line-height: 1; }
+.rb-starting-drop:hover { border-color: var(--rb-danger-edge); color: var(--rb-danger); }
+.rb-starting-drop[hidden] { display: none; }
+.rb-notes .rb-btn.rb-starting-add { align-self: flex-start; gap: 6px; }
+@media (max-width: 700px) {
+    .rb-starting-group { grid-template-columns: minmax(0, 1fr) auto auto; }
+    .rb-starting-group .rb-starting-list { grid-column: 1 / -1; grid-row: 2; }
+}
 #deck.rb-picking-start .rb-pick-off { opacity: .3; filter: grayscale(1); cursor: not-allowed; }
 #deck.rb-picking-start .rb-pick-off, #deck.rb-picking-start .rb-pick-off:hover { outline: none; }
 .rb-annot-pick { margin-left: auto; }

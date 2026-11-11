@@ -19,7 +19,21 @@
         validation = null,
         validation_available = true,
         validate_timer = null,
-        validate_request = null;
+        validate_request = null,
+        // the starting fellowship picks and S clicks go to (Ketura, 2026-11-11); not saved
+        active_group = 0;
+
+    /** Starting fellowships as groups [{name, codes}]: the one list of before is one group */
+    function norm_groups(raw)
+    {
+        if(!raw || !raw.length) {
+            return [];
+        }
+        if(typeof raw[0] === 'string') {
+            return [{name: '', codes: raw.slice()}];
+        }
+        return _.map(raw, function (g) { return {name: (g && g.name) || '', codes: ((g && g.codes) || []).slice()}; });
+    }
 
     deck.ROLES = ['ring_bearer', 'ring', 'site', 'draw', 'map'];
 
@@ -53,6 +67,8 @@
     deck.init = function init(json)
     {
         data = json || {};
+        data.starting_groups = norm_groups(data.starting_groups || data.starting);
+        active_group = 0;
         content = _.extend({}, data.slots || {});
         pending = {};
         validation = data.validation || null;
@@ -85,13 +101,63 @@
     deck.get_annotations = function () { return _.map(data.annotations || [], _.clone); };
     deck.set_annotations = function (rows) { data.annotations = _.map(rows || [], _.clone); };
 
-    /* ---- the starting fellowship (Ketura, 2026-11-03): optional marks on companions ---- */
-    deck.get_starting = function () { return (data.starting || []).slice(); };
-    deck.is_starting = function (code) { return _.contains(data.starting || [], code); };
+    /*
+     * ---- the starting fellowships (Ketura, 2026-11-03; several, each named, 2026-11-11):
+     * groups of companions, [{name, codes}]. One is active: picking a companion in the Notes
+     * tab and clicking an S in the deck list go to it. The S shows on a companion in any group.
+     */
+    deck.get_starting_groups = function () { return norm_groups(data.starting_groups); };
+    deck.set_starting_groups = function (groups)
+    {
+        data.starting_groups = norm_groups(groups);
+        active_group = Math.max(0, Math.min(active_group, data.starting_groups.length - 1));
+        deck.changed();
+    };
+    /** Every companion that starts in any group, once */
+    deck.get_starting = function () { return _.uniq(_.flatten(_.pluck(data.starting_groups || [], 'codes'))); };
+    deck.is_starting = function (code) { return _.some(data.starting_groups || [], function (g) { return _.contains(g.codes, code); }); };
+    deck.get_active_group = function () { return active_group; };
+    deck.set_active_group = function (i) { active_group = Math.max(0, Math.min(i, (data.starting_groups || []).length - 1)); };
+    /** The active group's companions (a test draw's starting fellowship) */
+    deck.get_active_starting = function () { var g = (data.starting_groups || [])[active_group]; return g ? g.codes.slice() : []; };
+    /** In or out of the active group (made, if there is none yet) */
     deck.toggle_starting = function toggle_starting(code)
     {
-        data.starting = deck.is_starting(code) ? _.without(data.starting, code) : (data.starting || []).concat([code]);
+        var groups = data.starting_groups = data.starting_groups || [];
+        if(!groups.length) {
+            groups.push({name: '', codes: []});
+            active_group = 0;
+        }
+        var group = groups[active_group];
+        group.codes = _.contains(group.codes, code) ? _.without(group.codes, code) : group.codes.concat([code]);
         deck.changed();
+    };
+    /** A name for a group: not a change to the deck list, so no redraw */
+    deck.rename_starting_group = function (i, name)
+    {
+        if((data.starting_groups || [])[i]) {
+            data.starting_groups[i].name = name;
+            $(document).trigger('deck.notes_changed');
+        }
+    };
+    /**
+     * Where a companion sorts among the starting ones (Ketura, 2026-11-11): those only in the
+     * first group, then those it shares with the second, those only in the second, and so on;
+     * then the rest
+     */
+    deck.starting_rank = function starting_rank(code)
+    {
+        var groups = data.starting_groups || [], first = -1, also_next = false;
+        for(var i = 0; i < groups.length; i++) {
+            if(_.contains(groups[i].codes, code)) {
+                if(first === -1) {
+                    first = i;
+                } else if(i === first + 1) {
+                    also_next = true;
+                }
+            }
+        }
+        return first === -1 ? 9999 : first * 2 + (also_next ? 1 : 0);
     };
     deck.get_format_code = function () { return data.target_format; };
     deck.set_format_code = function (code) { data.target_format = code; };
@@ -106,7 +172,7 @@
             description_md: data.description_md,
             tags: data.tags,
             historic: data.historic || null,
-            starting: (data.starting || []).slice().sort(),
+            starting: _.map(norm_groups(data.starting_groups), function (g) { return {name: g.name, codes: g.codes.slice().sort()}; }),
             starting_bid: data.starting_bid || '',
             starting_notes: data.starting_notes || '',
             annotations: _.map(data.annotations || [], _.clone),
@@ -124,7 +190,8 @@
         data.description_md = state.description_md;
         data.tags = state.tags;
         data.historic = state.historic || null;
-        data.starting = (state.starting || []).slice();
+        data.starting_groups = norm_groups(state.starting_groups || state.starting);
+        active_group = Math.max(0, Math.min(active_group, data.starting_groups.length - 1));
         data.starting_bid = state.starting_bid || '';
         data.starting_notes = state.starting_notes || '';
         data.annotations = _.map(state.annotations || [], _.clone);
@@ -450,7 +517,21 @@
                 deck.display_validation('#deck-validation');
             },
             complete: function () {
-                validate_request = null;
+                validate_request = null,
+        // the starting fellowship picks and S clicks go to (Ketura, 2026-11-11); not saved
+        active_group = 0;
+
+    /** Starting fellowships as groups [{name, codes}]: the one list of before is one group */
+    function norm_groups(raw)
+    {
+        if(!raw || !raw.length) {
+            return [];
+        }
+        if(typeof raw[0] === 'string') {
+            return [{name: '', codes: raw.slice()}];
+        }
+        return _.map(raw, function (g) { return {name: (g && g.name) || '', codes: ((g && g.codes) || []).slice()}; });
+    }
                 $('#deck-validation').removeClass('deck-validation-pending');
             }
         });

@@ -30,14 +30,18 @@ trait LotrDeckTrait
     protected ?DateTimeInterface $validatedAt = null;
 
     /**
-     * Companions marked as the starting fellowship (Ketura, 2026-11-03): blueprint IDs
-     * of draw-deck companions. Optional bookkeeping; Gemp doesn't see it.
+     * The starting fellowships (Ketura, 2026-11-03; several, each named, since 2026-11-11):
+     * groups of draw-deck companions, [{name, codes}] (App\Classes\StartingGroups). Optional
+     * bookkeeping; Gemp doesn't see it.
      */
     #[ORM\Column(name: 'starting_fellowship', type: 'json', nullable: true)]
     protected ?array $starting = null;
 
-    /** Starting notes (Ketura, 2026-11-03): the bid, as written ("2", "2-3") */
-    #[ORM\Column(name: 'starting_bid', type: 'string', length: 30, nullable: true)]
+    /**
+     * Starting notes (Ketura, 2026-11-03): the bid, as written ("2", "2-3", "1 if X,
+     * otherwise 4"; 100 characters since 2026-11-11)
+     */
+    #[ORM\Column(name: 'starting_bid', type: 'string', length: 100, nullable: true)]
     protected ?string $startingBid = null;
 
     /** Starting notes: what to bid, who to start, the first turn (Markdown) */
@@ -95,17 +99,27 @@ trait LotrDeckTrait
             : ($validation->isValid() ? self::COMPLETENESS_COMPLETE : self::COMPLETENESS_INCOMPLETE);
     }
 
-    /** @return string[] */
+    /** @return string[] every companion that starts in any of its groups, once (the S in the deck list) */
     public function getStarting(): array
     {
-        return $this->starting ?? [];
+        return \App\Classes\StartingGroups::union($this->starting ?? []);
     }
 
-    /** @param string[]|null $codes */
+    /** One group of companions, unnamed: as the starting fellowship was before there could be more */
     public function setStarting(?array $codes): void
     {
-        $codes = array_values(array_unique(array_filter(array_map('strval', $codes ?? []), fn ($c) => preg_match('/^\d+_\d+$/', $c))));
-        $this->starting = $codes ?: null;
+        $this->setStartingGroups($codes ? [['name' => '', 'codes' => $codes]] : []);
+    }
+
+    /** @return array<array{name: string, codes: string[]}> */
+    public function getStartingGroups(): array
+    {
+        return \App\Classes\StartingGroups::normalize($this->starting ?? []);
+    }
+
+    public function setStartingGroups(?array $groups): void
+    {
+        $this->starting = \App\Classes\StartingGroups::normalize($groups ?? []) ?: null;
     }
 
     public function getStartingBid(): ?string
@@ -115,7 +129,7 @@ trait LotrDeckTrait
 
     public function setStartingBid(?string $bid): void
     {
-        $bid = $bid === null ? null : mb_substr(trim(strip_tags($bid)), 0, 30);
+        $bid = $bid === null ? null : mb_substr(trim(strip_tags($bid)), 0, 100);
         $this->startingBid = $bid === '' ? null : $bid;
     }
 
@@ -170,7 +184,9 @@ trait LotrDeckTrait
             'validation' => $this->validation,
             'validated_at' => $this->validatedAt?->format('c'),
             'completeness' => $this->getCompleteness(),
+            // every companion that starts in any group, as before there were groups; and the groups
             'starting' => $this->getStarting(),
+            'starting_groups' => $this->getStartingGroups(),
             'starting_bid' => $this->startingBid,
             'starting_notes' => $this->startingNotes,
             'annotations' => $this->getAnnotations(),

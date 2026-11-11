@@ -200,13 +200,14 @@
                         {# the bid first, on its own line (Ketura, 2026-11-08), exactly as written: 0 is a bid #}
                         <p class="rb-reader-bid"><span class="rb-starting-label">{{ 'deckbuilder.notes.bid' | trans }}:</span>
                             {% if reader.bid is not null and reader.bid != '' %}{{ reader.bid }}{% else %}<span class="rb-bid-any">{{ 'deckbuilder.notes.bid_any' | trans }}</span>{% endif %}</p>
-                        {% if reader.starting %}
+                        {# one line for each starting fellowship (Ketura, 2026-11-11), by its name, or its place #}
+                        {% for group in reader.groups %}
                             <p class="rb-starting-list">
-                                <span class="rb-starting-label">{{ 'deckbuilder.notes.starting_fellowship' | trans }}</span>
-                                {% for card in reader.starting %}<a href="{{ card.href }}" class="rb-starting-card card-tip" data-code="{{ card.code }}"{% if card.generic ?? false %} data-generic="1"{% endif %}>{{ card.label }}</a>{% endfor %}
-                                <span class="rb-starting-cost">{{ 'deckbuilder.notes.starting_twilight' | trans({'%cost%': reader.twilight}) }}</span>
+                                <span class="rb-starting-label">{{ group.name ?: (loop.first ? 'deckbuilder.notes.starting_fellowship' | trans : 'deckbuilder.notes.starting_fellowship_n' | trans({'%number%': loop.index})) }}:</span>
+                                {% for card in group.cards %}<a href="{{ card.href }}" class="rb-starting-card card-tip" data-code="{{ card.code }}"{% if card.generic ?? false %} data-generic="1"{% endif %}>{{ card.label }}</a>{% endfor %}
+                                {% if group.cards %}<span class="rb-starting-cost">{{ 'deckbuilder.notes.starting_twilight' | trans({'%cost%': group.twilight}) }}</span>{% endif %}
                             </p>
-                        {% endif %}
+                        {% endfor %}
                         {% if reader.starting_html %}<div class="rb-reader-text">{{ reader.starting_html | raw }}</div>{% endif %}
                 </div>
                 <div id="deck-description" class="rb-reader-text">{{ reader.description_html | raw }}</div>

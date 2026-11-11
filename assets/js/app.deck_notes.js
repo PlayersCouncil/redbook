@@ -39,33 +39,82 @@
 
     /* ---- starting notes ---- */
 
-    /**
-     * The starting companions as pills, each with an x to take it off; + adds one from the
-     * deck (Ketura, 2026-11-07). #starting-field carries them for the decklist form.
-     */
-    function render_starting()
+    /** A group's name, or its place: "Starting Fellowship", "Starting Fellowship 2" */
+    function default_name(i)
     {
-        var codes = app.deck.get_starting(),
-            list = $('#starting-list');
-        $('#starting-field').val(JSON.stringify(codes));
-        if(!app.data.cards) {
-            return;
-        }
+        return i === 0 ? t('deckbuilder.notes.starting_fellowship') : t('deckbuilder.notes.starting_fellowship_n', {number: i + 1});
+    }
+
+    /** One group's companions as pills, each with an x to take it off */
+    function pills_html(codes, i)
+    {
         if(!codes.length) {
-            list.html('<span class="rb-hint">' + t('deckbuilder.notes.starting_none') + '</span>');
-            return;
+            return '<span class="rb-hint">' + t('deckbuilder.notes.starting_none') + '</span>';
         }
-        var cards = _.compact(_.map(codes, function (code) { return app.data.cards.findById(code); })),
-            content = app.deck.get_content ? app.deck.get_content() : {};
-        list.html(_.map(cards, function (card) {
+        var content = app.deck.get_content ? app.deck.get_content() : {},
+            cards = _.compact(_.map(codes, function (code) { return app.data.cards.findById(code); }));
+        return _.map(cards, function (card) {
             // a companion any version will do for reads as in the list, its hover split (Ketura, 2026-11-08)
             var generic = !!content['any:' + card.code],
                 label = generic ? app.card_versions.label(card) : card.label,
                 split = generic && app.deck_editor.split_attr ? app.deck_editor.split_attr({generic: true, card: card}) : '';
-            return '<span class="rb-starting-pill"><button type="button" class="rb-starting-remove" data-unstart="' + card.code + '" aria-label="'
+            return '<span class="rb-starting-pill"><button type="button" class="rb-starting-remove" data-unstart="' + card.code + '" data-group="' + i + '" aria-label="'
                 + t('deckbuilder.notes.start_remove', {card: _.escape(label)}) + '">&times;</button>'
                 + '<a href="' + card.url + '" class="rb-starting-card card-tip" data-code="' + card.code + '"' + split + '>' + _.escape(label) + '</a></span>';
-        }).join(''));
+        }).join('');
+    }
+
+    function twilight_of(codes)
+    {
+        return _.reduce(codes, function (sum, code) {
+            var card = app.data.cards.findById(code);
+            return sum + (card && card.twilight ? parseInt(card.twilight, 10) || 0 : 0);
+        }, 0);
+    }
+
+    /**
+     * The starting fellowships (Ketura, 2026-11-07; several, each named, 2026-11-11): a row
+     * each, its name, + to pick a companion from the deck, its companions as pills, their
+     * twilight, and − to take the row away (with more than one). The active row (the one
+     * clicked last) is where + and the deck list's S go. #starting-field carries them all
+     * for the decklist form. A row's name box isn't redrawn while it's being typed in.
+     */
+    function render_starting()
+    {
+        var groups = app.deck.get_starting_groups(),
+            box = $('#starting-groups');
+        $('#starting-field').val(JSON.stringify(groups));
+        if(!app.data.cards || !box.length) {
+            return;
+        }
+        // always one row to put companions in
+        var shown = groups.length ? groups : [{name: '', codes: []}],
+            active = app.deck.get_active_group(),
+            rows = box.children('.rb-starting-group');
+        if(rows.length !== shown.length) {
+            box.html(_.map(shown, function (group, i) {
+                return '<div class="rb-starting-group" data-group="' + i + '">'
+                    + '<input type="text" class="rb-starting-name" maxlength="60" autocomplete="off" aria-label="' + _.escape(t('deckbuilder.notes.starting_name')) + '">'
+                    + '<button type="button" class="rb-btn rb-btn-small rb-start-pick" aria-pressed="false" title="' + _.escape(t('deckbuilder.notes.start_pick')) + '" aria-label="' + _.escape(t('deckbuilder.notes.start_pick')) + '">+</button>'
+                    + '<div class="rb-starting-list"></div>'
+                    + '<span class="rb-starting-cost"></span>'
+                    + '<button type="button" class="rb-starting-drop" title="' + _.escape(t('deckbuilder.notes.starting_remove_group')) + '" aria-label="' + _.escape(t('deckbuilder.notes.starting_remove_group')) + '">&minus;</button>'
+                    + '</div>';
+            }).join(''));
+            rows = box.children('.rb-starting-group');
+        }
+        rows.each(function (i) {
+            var row = $(this), group = shown[i], name = row.find('.rb-starting-name');
+            name.attr('placeholder', default_name(i));
+            if(!name.is(':focus')) {
+                name.val(group.name);
+            }
+            row.find('.rb-starting-list').html(pills_html(group.codes, i));
+            row.find('.rb-starting-cost').text(group.codes.length ? t('deckbuilder.notes.starting_twilight', {cost: twilight_of(group.codes)}) : '');
+            row.toggleClass('is-active', shown.length > 1 && i === active).attr('title', shown.length > 1 && i === active ? t('deckbuilder.notes.starting_active') : null);
+            row.find('.rb-starting-drop').prop('hidden', shown.length < 2);
+            row.find('.rb-start-pick').attr('aria-pressed', picking === 'start' && i === active ? 'true' : 'false');
+        });
     }
 
     /* ---- card annotations ---- */
@@ -170,14 +219,17 @@
     {
         picking = mode || false;
         $('#annot-pick').attr('aria-pressed', picking === 'annot' ? 'true' : 'false');
-        $('#start-pick').attr('aria-pressed', picking === 'start' ? 'true' : 'false');
+        $('#starting-groups .rb-start-pick').each(function () {
+            $(this).attr('aria-pressed', picking === 'start' && $(this).closest('.rb-starting-group').data('group') === app.deck.get_active_group() ? 'true' : 'false');
+        });
         $('#deck').toggleClass('rb-picking', !!picking).toggleClass('rb-picking-start', picking === 'start');
         mark_pickable();
     }
 
+    /** Into the active group, unless it's there already */
     function add_starting(code)
     {
-        if(!app.deck.is_starting(code)) {
+        if(!_.contains(app.deck.get_active_starting(), code)) {
             app.deck.toggle_starting(code);
             on_edit();
         }
@@ -190,7 +242,7 @@
             return;
         }
         var target = $(event.target);
-        if(target.closest('#annot-pick, #start-pick').length) {
+        if(target.closest('#annot-pick, .rb-start-pick').length) {
             return;
         }
         var item = target.closest('#deck .rb-line[data-code], #deck .rb-tile[data-code]');
@@ -254,15 +306,62 @@
         root.on('click', '#annot-pick', function () {
             set_picking(picking === 'annot' ? false : 'annot');
         });
-        root.on('click', '#start-pick', function () {
-            set_picking(picking === 'start' ? false : 'start');
+        // the starting fellowships: a click in a row makes it the active one
+        function activate(row)
+        {
+            var i = row.data('group');
+            if(i !== app.deck.get_active_group()) {
+                app.deck.set_active_group(i);
+                render_starting();
+                // a test draw starts with the active group
+                $(document).trigger('deck.starting_active');
+            }
+        }
+        root.on('mousedown focusin', '.rb-starting-group', function () { activate($(this)); });
+        root.on('click', '.rb-start-pick', function () {
+            var row = $(this).closest('.rb-starting-group'), was = picking === 'start' && row.data('group') === app.deck.get_active_group();
+            activate(row);
+            set_picking(was ? false : 'start');
         });
         root.on('click', '[data-unstart]', function () {
-            var code = $(this).data('unstart') + '';
-            if(app.deck.is_starting(code)) {
-                app.deck.toggle_starting(code);
+            var groups = app.deck.get_starting_groups(), i = $(this).data('group'), code = $(this).data('unstart') + '';
+            if(groups[i]) {
+                groups[i].codes = _.without(groups[i].codes, code);
+                app.deck.set_starting_groups(groups);
                 on_edit();
             }
+        });
+        root.on('input', '.rb-starting-name', function () {
+            var i = $(this).closest('.rb-starting-group').data('group'), groups = app.deck.get_starting_groups();
+            if(!groups[i]) {
+                // naming the one empty row makes it
+                groups[i] = {name: '', codes: []};
+                app.deck.set_starting_groups(groups);
+            }
+            app.deck.rename_starting_group(i, $(this).val());
+            $('#starting-field').val(JSON.stringify(app.deck.get_starting_groups()));
+            on_edit();
+        });
+        root.on('click', '#starting-add', function () {
+            var groups = app.deck.get_starting_groups();
+            if(!groups.length) {
+                groups.push({name: '', codes: []});
+            }
+            groups.push({name: '', codes: []});
+            app.deck.set_starting_groups(groups);
+            app.deck.set_active_group(groups.length - 1);
+            render_starting();
+            $('#starting-groups .rb-starting-group').last().find('.rb-starting-name').trigger('focus');
+            on_edit();
+        });
+        root.on('click', '.rb-starting-drop', function () {
+            var i = $(this).closest('.rb-starting-group').data('group'), groups = app.deck.get_starting_groups();
+            groups.splice(i, 1);
+            if(app.deck.get_active_group() >= i) {
+                app.deck.set_active_group(Math.max(0, app.deck.get_active_group() - 1));
+            }
+            app.deck.set_starting_groups(groups);
+            on_edit();
         });
         // the deck redrawn while picking keeps its greyed-out cards
         $(document).on('deck.rendered', mark_pickable);

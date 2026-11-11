@@ -200,10 +200,11 @@ class DeckManager
 
         $this->setSlots($deck, $content, $cards);
         if (array_key_exists('starting', $data) && $deck instanceof Deck) {
-            // only companions the deck holds can start
-            $starting = is_string($data['starting']) ? json_decode($data['starting'], true) : $data['starting'];
-            $deck->setStarting(array_filter((array) ($starting ?? []), fn ($code) => isset($content[$code], $cards[$code])
-                && $cards[$code]->getType()->getCode() === 'companion'));
+            // the starting fellowships (several since 2026-11-11): only companions the deck holds can start
+            $deck->setStartingGroups(\App\Classes\StartingGroups::filter(
+                \App\Classes\StartingGroups::normalize($data['starting']),
+                fn ($code) => isset($content[$code], $cards[$code]) && $cards[$code]->getType()->getCode() === 'companion'
+            ));
         }
         // its thumbnail (Ketura, 2026-11-09): one of its cards, sites included, or none for the
         // cultures; a framing only for that card. Not a revision of the deck on its own.
@@ -279,7 +280,7 @@ class DeckManager
             'starting_notes' => fn () => $deck->setStartingNotes($decklist->getStartingNotes()),
             'annotations' => fn () => $deck->setAnnotations($decklist->getAnnotations()),
             // only companions the deck still holds start
-            'starting' => fn () => $deck->setStarting(array_values(array_filter($decklist->getStarting(), fn ($code) => isset($content[$code])))),
+            'starting' => fn () => $deck->setStartingGroups(\App\Classes\StartingGroups::filter($decklist->getStartingGroups(), fn ($code) => isset($content[$code]))),
             'precedent' => fn () => $deck->setParent($decklist->getPrecedent()),
         ];
         foreach ($parts as $part) {
@@ -337,7 +338,7 @@ class DeckManager
             'content' => $decklist->getSlots()->getContent(),
             'target_format' => $decklist->getTargetFormat(),
             'effective_date' => $decklist->getEffectiveDate(),
-            'starting' => $decklist->getStarting(),
+            'starting' => $decklist->getStartingGroups(),
             'starting_bid' => $decklist->getStartingBid(),
             'starting_notes' => $decklist->getStartingNotes(),
             'annotations' => $decklist->getAnnotations(),
@@ -355,7 +356,7 @@ class DeckManager
             'description' => (string) $deck->getDescriptionMd(),
             'tags' => (string) $deck->getTags(),
             'format' => (string) $deck->getTargetFormat(),
-            'starting' => json_encode(array_values($deck->getStarting())),
+            'starting' => json_encode($deck->getStartingGroups()),
             'bid' => (string) $deck->getStartingBid(),
             'starting_notes' => (string) $deck->getStartingNotes(),
             'annotations' => json_encode($deck->getAnnotations()),
@@ -450,7 +451,7 @@ class DeckManager
             'content' => $source->getSlots()->getContent(),
             'target_format' => $source->getTargetFormat(),
             'effective_date' => $source->getEffectiveDate(),
-            'starting' => $source instanceof Deck || $source instanceof \App\Entity\PublishedDeck ? $source->getStarting() : [],
+            'starting' => $source instanceof Deck || $source instanceof \App\Entity\PublishedDeck ? $source->getStartingGroups() : [],
             'starting_bid' => $source instanceof Deck || $source instanceof \App\Entity\PublishedDeck ? $source->getStartingBid() : null,
             'starting_notes' => $source instanceof Deck || $source instanceof \App\Entity\PublishedDeck ? $source->getStartingNotes() : null,
             'annotations' => [],
@@ -474,7 +475,7 @@ class DeckManager
             'target_format' => $decklist->getTargetFormat(),
             'effective_date' => $decklist->getEffectiveDate(),
             'decklist_id' => $decklist->getId(),
-            'starting' => $decklist->getStarting(),
+            'starting' => $decklist->getStartingGroups(),
             'starting_bid' => $decklist->getStartingBid(),
             'starting_notes' => $decklist->getStartingNotes(),
         ]);

@@ -108,7 +108,7 @@ class PublishedDeckFactory
         $kind = $decklist->getKind();
         $decklist->setHalf($kind === 'whole' ? null : $kind);
         if ($deck instanceof Deck) {
-            $decklist->setStarting($deck->getStarting());
+            $decklist->setStartingGroups($deck->getStartingGroups());
         }
     }
 

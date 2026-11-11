@@ -994,7 +994,12 @@ deckbuilder.notes.bid_placeholder: "e.g. 2-3"
 deckbuilder.notes.bid_any: "[any]"
 deckbuilder.notes.starting_placeholder: "What to bid, which fellowship to start, what to do on the first turn…"
 deckbuilder.notes.starting_none: No starting companions
-deckbuilder.notes.starting_fellowship: "Starting fellowship:"
+deckbuilder.notes.starting_fellowship: "Starting Fellowship"
+deckbuilder.notes.starting_fellowship_n: "Starting Fellowship %number%"
+deckbuilder.notes.starting_name: "Name for this starting fellowship"
+deckbuilder.notes.starting_add: "Add a Starting Fellowship"
+deckbuilder.notes.starting_remove_group: "Remove this starting fellowship"
+deckbuilder.notes.starting_active: "Picked companions, and clicks on S in the deck, go to this one"
 deckbuilder.notes.starting_twilight: "(twilight %cost%)"
 deckbuilder.notes.preview: Preview
 deckbuilder.notes.annotations: Card Annotations

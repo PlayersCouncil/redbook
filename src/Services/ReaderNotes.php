@@ -24,15 +24,17 @@ class ReaderNotes
     }
 
     /**
-     * @return array{starting: array<array{code: string, label: string, href: string}>, twilight: int,
+     * @return array{groups: array<array{name: string, cards: array<array{code: string, label: string, href: string}>, twilight: int}>,
      *     bid: ?string, starting_html: ?string, notes: array<array{code: string, label: string, href: string, in_deck: bool, html: string}>,
      *     description_html: string, posted_by: string}
+     *     groups: the starting fellowships (Ketura, 2026-11-11), each with its companions and their twilight;
+     *     a name left blank is the view's to give ("Starting Fellowship", "Starting Fellowship 2")
      */
     public function build(PublishedDeck|Deck $decklist): array
     {
-        $starting = $decklist->getStarting();
+        $groups = $decklist->getStartingGroups();
         $annotations = $decklist->getAnnotations();
-        $cards = $this->cards(array_merge($starting, array_column($annotations, 'code')));
+        $cards = $this->cards(array_merge($decklist->getStarting(), array_column($annotations, 'code')));
         $inDeck = [];
         $generic = [];
         foreach ($decklist->getSlots() as $slot) {
@@ -43,20 +45,24 @@ class ReaderNotes
         }
 
         $view = [
-            'starting' => [], 'twilight' => 0, 'bid' => $decklist->getStartingBid(), 'starting_html' => null, 'notes' => [],
+            'groups' => [], 'bid' => $decklist->getStartingBid(), 'starting_html' => null, 'notes' => [],
             'description_html' => $decklist instanceof PublishedDeck ? (string) $decklist->getDescriptionHtml() : $this->texts->markdown((string) $decklist->getDescriptionMd()),
             'posted_by' => $this->postedBy($decklist),
         ];
-        foreach ($starting as $code) {
-            if (isset($cards[$code])) {
-                // a companion any version will do for reads as in the list: "Legolas (any)" (Ketura, 2026-11-08)
-                $view['starting'][] = isset($generic[$code])
-                    ? ['label' => CardVersions::genericLabel($cards[$code]), 'generic' => true] + $this->card($cards[$code])
-                    : $this->card($cards[$code]);
-                $view['twilight'] += (int) $cards[$code]->getTwilight();
+        foreach ($groups as $group) {
+            $row = ['name' => $group['name'], 'cards' => [], 'twilight' => 0];
+            foreach ($group['codes'] as $code) {
+                if (isset($cards[$code])) {
+                    // a companion any version will do for reads as in the list: "Legolas (any)" (Ketura, 2026-11-08)
+                    $row['cards'][] = isset($generic[$code])
+                        ? ['label' => CardVersions::genericLabel($cards[$code]), 'generic' => true] + $this->card($cards[$code])
+                        : $this->card($cards[$code]);
+                    $row['twilight'] += (int) $cards[$code]->getTwilight();
+                }
             }
+            $view['groups'][] = $row;
         }
-        if ($decklist->getStartingNotes()) {
+        if ((string) $decklist->getStartingNotes() !== '') {
             $view['starting_html'] = $this->texts->markdown($decklist->getStartingNotes());
         }
         foreach ($annotations as $row) {

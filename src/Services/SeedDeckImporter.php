@@ -361,10 +361,15 @@ class SeedDeckImporter
     private function fillNotes(PublishedDeck|Deck $deck, array $source, array $content): void
     {
         $starting = $source['starting'] ?? [];
-        $fellowship = array_map(fn ($code) => is_string($code) ? $this->ref($code) : null, (array) ($starting['fellowship'] ?? []));
-        $deck->setStarting(array_values(array_filter($fellowship, fn ($code) => $code !== null && (isset($content[$code]) || isset($content[DeckContent::ANY_PREFIX . $code])))));
+        // one fellowship (fellowship: [cards]), or several, each named (fellowships:
+        // [{name, cards}]; Ketura, 2026-11-11)
+        $groups = isset($starting['fellowships']) && is_array($starting['fellowships'])
+            ? array_map(fn ($g) => ['name' => is_array($g) ? (string) ($g['name'] ?? '') : '', 'codes' => is_array($g) ? (array) ($g['cards'] ?? []) : []], $starting['fellowships'])
+            : [['name' => '', 'codes' => (array) ($starting['fellowship'] ?? [])]];
+        $groups = array_map(fn ($g) => ['name' => $g['name'], 'codes' => array_map(fn ($code) => is_string($code) ? (string) $this->ref($code) : '', $g['codes'])], $groups);
+        $deck->setStartingGroups(\App\Classes\StartingGroups::filter($groups, fn ($code) => isset($content[$code]) || isset($content[DeckContent::ANY_PREFIX . $code])));
         $bid = trim((string) ($starting['bid'] ?? ''));
-        $deck->setStartingBid($bid === '' ? null : mb_substr($bid, 0, 30));
+        $deck->setStartingBid($bid === '' ? null : $bid);
         $notes = self::toMarkdown((string) ($starting['notes'] ?? ''), $starting['notesFormat'] ?? 'text');
         $deck->setStartingNotes($notes === '' ? null : $notes);
 
@@ -454,7 +459,7 @@ class SeedDeckImporter
         // the decklist carries its own copy (Ketura, 2026-11-07)
         $decklist->setTags($private->getTags() ?: null);
         $private->setValidation($decklist->getValidation());
-        $private->setStarting($decklist->getStarting());
+        $private->setStartingGroups($decklist->getStartingGroups());
         $private->setStartingBid($decklist->getStartingBid());
         $private->setStartingNotes($decklist->getStartingNotes());
         $private->setAnnotations($decklist->getAnnotations());

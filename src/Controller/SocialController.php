@@ -459,8 +459,9 @@ class SocialController extends AbstractController
         $decklist->setTags(mb_substr(implode(' ', $tags), 0, 4000) ?: null);
         // any bid but a blank one is kept, 0 included (Ketura, 2026-11-11; the setter trims and caps it)
         $decklist->setStartingBid((string) $form->get('starting_bid_'));
-        $decklist->setStartingNotes(trim((string) $form->get('starting_notes_')) ?: null);
-        // the starting fellowship: companions the decklist holds (Ketura, 2026-11-07)
+        $notes = trim((string) $form->get('starting_notes_'));
+        $decklist->setStartingNotes($notes !== '' ? $notes : null);
+        // the starting fellowships (Ketura, 2026-11-07; several since 2026-11-11): companions the decklist holds
         $starting = json_decode((string) $form->get('starting_'), true);
         if (is_array($starting)) {
             $companions = [];
@@ -469,7 +470,7 @@ class SocialController extends AbstractController
                     $companions[$slot->getCard()->getCode()] = true;
                 }
             }
-            $decklist->setStarting(array_values(array_filter($starting, fn ($code) => is_string($code) && isset($companions[$code]))));
+            $decklist->setStartingGroups(\App\Classes\StartingGroups::filter($starting, fn ($code) => isset($companions[$code])));
         }
         $annotations = json_decode((string) $form->get('annotations_'), true);
         if (is_array($annotations)) {

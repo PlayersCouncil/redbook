@@ -400,10 +400,13 @@
         return i === -1 ? 99 : i;
     }
 
-    /** Starting companions before the rest; otherwise no different */
+    /**
+     * Starting companions before the rest (Ketura, 2026-11-11, with several fellowships): the
+     * first group's, those shared with the second, the second's, and so on
+     */
     function start_rank(slot)
     {
-        return app.deck.is_starting(slot.card.code) ? 0 : 1;
+        return app.deck.starting_rank(slot.card.code);
     }
 
     function by_cost(a, b)

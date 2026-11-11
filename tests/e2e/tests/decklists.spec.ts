@@ -48,15 +48,21 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await expect(page.locator('#deck.rb-readonly')).toContainText('Gimli');
   await expect(page.locator('#release-note')).toContainText('three days');
   // the deck's notes came with it, in the Notes tab's own editor
-  await expect(page.locator('#starting-list')).toContainText('Gimli, Dwarf of Erebor');
+  await expect(page.locator('#starting-groups .rb-starting-list').first()).toContainText('Gimli, Dwarf of Erebor');
   await expect(page.locator('#starting-notes')).toHaveValue('Start [[Gimli, Dwarf of Erebor]] and bid low.');
   await expect(page.locator('#tag-input .rb-tag-chip')).toContainText('dwarves');
   // the starting fellowship can be changed here too, picking from the deck on the left
-  await page.locator('#starting-list [data-unstart="1_12"]').click();
-  await expect(page.locator('#starting-list')).toHaveText('No starting companions');
-  await page.click('#start-pick');
+  await page.locator('#starting-groups [data-unstart="1_12"]').click();
+  await expect(page.locator('#starting-groups .rb-starting-list').first()).toHaveText('No starting companions');
+  await page.locator('#starting-groups .rb-start-pick').first().click();
   await page.locator('#deck .rb-line[data-code="1_12"]').click();
-  await expect(page.locator('#starting-list .rb-starting-pill')).toHaveText(/Gimli, Dwarf of Erebor/);
+  await expect(page.locator('#starting-groups .rb-starting-group').first().locator('.rb-starting-pill')).toHaveText(/Gimli, Dwarf of Erebor/);
+  // a second, named, starting fellowship, chosen on the form too (Ketura, 2026-11-11)
+  await page.click('#starting-add');
+  await page.keyboard.type('vs. Ringwraith');
+  await page.locator('#starting-groups .rb-starting-group').nth(1).locator('.rb-start-pick').click();
+  await page.locator('#deck .rb-line[data-code="1_12"]').click();
+  await expect(page.locator('#starting-groups .rb-starting-group').nth(1).locator('.rb-starting-pill')).toHaveText(/Gimli/);
   await page.fill('#name', decklistName);
   // [[card]] links resolve when the text is saved (Ketura, 2026-11-03)
   await page.fill('#description', 'Published by the **smoke test**. Lead with [[Aragorn HTTWC]], errata [[3_38.1]], not [[Gandalf]] or [[Nobody At All]]. Beware [Moria] at 3T for (X).');
@@ -102,6 +108,12 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   await expect(page.locator('.rb-cardlink.is-missing')).toHaveText('[[Nobody At All]]');
   await expect(page.locator('.deck-validation')).toContainText('Legal in Fellowship Block');
   await expect(page.locator('#reader-notes')).toContainText('The only companion.');
+  // both starting fellowships, a line each: the first by its place, the second by its name
+  const startLines = page.locator('#reader-starting .rb-starting-list');
+  await expect(startLines).toHaveCount(2);
+  await expect(startLines.nth(0).locator('.rb-starting-label')).toHaveText('Starting Fellowship:');
+  await expect(startLines.nth(1).locator('.rb-starting-label')).toHaveText('vs. Ringwraith:');
+  await expect(startLines.nth(1)).toContainText('Gimli, Dwarf of Erebor');
   // the reader: the deckbuilder's deck, read-only, "4x Card" lines
   await expect(page.locator('#deck.rb-readonly')).toContainText('Ring-bearer');
   await expect(page.locator('#deck .rb-qty-text').first()).toHaveText(/^\dx$/);
@@ -147,7 +159,7 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   // which come with the page rather than after the card data (Ketura, 2026-11-04)
   await expect(page.locator('#deck .rb-line[data-code="1_12"] .rb-start-mark')).toHaveCount(1);
   await expect(page.locator('#deck .rb-start-mark')).toHaveCount(1);
-  await expect(page.locator('#reader-starting .rb-starting-card')).toHaveText('Gimli, Dwarf of Erebor');
+  await expect(page.locator('#reader-starting .rb-starting-card').first()).toHaveText('Gimli, Dwarf of Erebor');
   await expect(page.locator('#reader-starting a.rb-cardlink[data-code="1_12"]')).toBeVisible();
   // copying the deck gives "2x Card" lines, Gemp's import format
   const copied = await page.evaluate(() => {

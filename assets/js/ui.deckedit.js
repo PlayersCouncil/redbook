@@ -91,7 +91,7 @@
         _.each(_.keys(state.content || {}).sort(), function (k) { sorted[k] = state.content[k]; });
         return {
             name: state.name || '', target_format: state.target_format || '', description_md: state.description_md || '',
-            tags: state.tags || '', historic: state.historic || null, starting: (state.starting || []).slice().sort(), content: sorted,
+            tags: state.tags || '', historic: state.historic || null, starting: JSON.stringify(state.starting || []), content: sorted,
             starting_bid: state.starting_bid || '', starting_notes: state.starting_notes || '', annotations: state.annotations || [], pending: (state.pending || []).slice().sort(),
             thumbnail: state.thumbnail || '', thumbnail_crop: state.thumbnail_crop || null
         };
@@ -154,7 +154,7 @@
             description: app.deck.get_description_md() || '',
             tags: app.deck.get_tags() || '',
             historic: historic ? JSON.stringify(historic) : '',
-            starting: JSON.stringify(app.deck.get_starting()),
+            starting: JSON.stringify(app.deck.get_starting_groups()),
             starting_bid: app.deck.get_starting_bid(),
             starting_notes: app.deck.get_starting_notes(),
             annotations: JSON.stringify(app.deck.get_annotations()),

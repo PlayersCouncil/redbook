@@ -204,19 +204,53 @@ test('deck notes, stats and history: starting fellowship, tags, annotations, tes
   await page.locator('#deck [data-start="1_50"]').click();
 
   await page.click('a[href="#tab-pane-infos"]');
-  await expect(page.locator('#starting-list')).toContainText('Legolas');
+  await expect(page.locator('#starting-groups .rb-starting-list').first()).toContainText('Legolas');
   // + then a companion in the deck starts it too; the other cards are greyed out and
   // can't be picked; x on a pill takes it off again (Ketura, 2026-11-07)
   const line = (code: string) => page.locator(`#deck .rb-line[data-code="${code}"], #deck .rb-tile[data-code="${code}"]`).first();
-  await page.click('#start-pick');
+  await page.locator('#starting-groups .rb-start-pick').first().click();
   await expect(line('1_178')).toHaveClass(/rb-pick-off/);
   await line('1_178').click();
-  await expect(page.locator('#start-pick')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#starting-groups .rb-start-pick').first()).toHaveAttribute('aria-pressed', 'true');
   await line('1_12').click();
-  await expect(page.locator('#starting-list .rb-starting-pill')).toHaveCount(2);
+  await expect(page.locator('#starting-groups .rb-starting-group').first().locator('.rb-starting-pill')).toHaveCount(2);
   await expect(page.locator('#deck .rb-pick-off')).toHaveCount(0);
-  await page.locator('#starting-list [data-unstart="1_12"]').click();
-  await expect(page.locator('#starting-list .rb-starting-pill')).toHaveCount(1);
+  await page.locator('#starting-groups [data-unstart="1_12"]').click();
+  await expect(page.locator('#starting-groups .rb-starting-group').first().locator('.rb-starting-pill')).toHaveCount(1);
+  // several starting fellowships, each named (Ketura, 2026-11-11): the first is "Starting
+  // Fellowship" until named; a new row is numbered, and is where + and S go once clicked
+  const groups = page.locator('#starting-groups .rb-starting-group');
+  await expect(groups).toHaveCount(1);
+  await expect(groups.first().locator('.rb-starting-name')).toHaveAttribute('placeholder', 'Starting Fellowship');
+  await expect(groups.first().locator('.rb-starting-drop')).toBeHidden();
+  await page.click('#starting-add');
+  await expect(groups).toHaveCount(2);
+  await expect(groups.nth(1).locator('.rb-starting-name')).toHaveAttribute('placeholder', 'Starting Fellowship 2');
+  await expect(groups.nth(1)).toHaveClass(/is-active/);
+  await page.keyboard.type('Going second');
+  // S in the deck list goes to the active row; Legolas (the first's) sorts before Gimli (the second's)
+  await page.locator('#deck [data-start="1_12"]').click();
+  await expect(groups.nth(1).locator('.rb-starting-pill')).toHaveText(/Gimli/);
+  await expect(groups.nth(1).locator('.rb-starting-cost')).toHaveText('(twilight 2)');
+  // (the list sorts by culture first, so the rank is checked rather than the order)
+  expect(await page.evaluate(() => (window as any).app.deck.starting_rank('1_50'))).toBe(0);
+  expect(await page.evaluate(() => (window as any).app.deck.starting_rank('1_12'))).toBe(2);
+  expect(await page.evaluate(() => (window as any).app.deck.starting_rank('1_178'))).toBeGreaterThan(2);
+  // a long bid fits (Ketura, 2026-11-11)
+  await page.fill('#starting-bid', '1 if going first, otherwise 4 if they bid high');
+  await page.click('#btn-save');
+  await expect(page.locator('#save-status')).toContainText('Saved as version');
+  await page.reload();
+  await waitForCardData(page);
+  await page.click('a[href="#tab-pane-infos"]');
+  await expect(groups).toHaveCount(2);
+  await expect(groups.nth(1).locator('.rb-starting-name')).toHaveValue('Going second');
+  await expect(groups.nth(1).locator('.rb-starting-pill')).toHaveText(/Gimli/);
+  await expect(page.locator('#starting-bid')).toHaveValue('1 if going first, otherwise 4 if they bid high');
+  // − takes the row away
+  await groups.nth(1).locator('.rb-starting-drop').click();
+  await expect(groups).toHaveCount(1);
+  await expect(groups.first().locator('.rb-starting-pill')).toHaveText(/Legolas/);
   await page.fill('#starting-bid', '2-3');
   await page.fill('#starting-notes', 'Mulligan without **Gimli**');
   // the markdown editor's Preview (Ketura, 2026-11-07), shared with the decklist form
@@ -315,8 +349,9 @@ test('deck notes, stats and history: starting fellowship, tags, annotations, tes
   await expect.poll(async () => (await twilight()).bands).toBe(0);
 
   await page.click('#tab-header-history');
-  await expect(page.locator('#tab-pane-history .rb-history-saved')).toHaveCount(2);
-  await expect(page.locator('#tab-pane-history .rb-history-saved').first()).toContainText('Goblin Runner');
+  // three saves: the starting fellowships' (Ketura, 2026-11-11) came between the others
+  await expect(page.locator('#tab-pane-history .rb-history-saved')).toHaveCount(3);
+  await expect(page.locator('#tab-pane-history .rb-history-saved').filter({ hasText: 'Goblin Runner' })).toHaveCount(1);
 
   await page.click('#btn-more');
   await page.locator('#menu-more [data-action=delete]').click();

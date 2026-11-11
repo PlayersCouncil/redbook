@@ -69,7 +69,8 @@
 
     function draw_pile()
     {
-        var starting = app.deck.get_starting(),
+        // the starting fellowship the Notes tab has active (Ketura, 2026-11-11: there can be several)
+        var starting = app.deck.get_active_starting ? app.deck.get_active_starting() : app.deck.get_starting(),
             pile = [];
         _.each(app.deck.get_draw_deck(), function (card) {
             var copies = card.indeck - (_.contains(starting, card.code) ? 1 : 0);

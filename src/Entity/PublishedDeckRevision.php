@@ -65,7 +65,7 @@ class PublishedDeckRevision
             'description' => trim((string) $decklist->getDescriptionMd()),
             'tags' => trim((string) $decklist->getTags()),
             'bid' => (string) $decklist->getStartingBid(),
-            'starting' => json_encode(array_values($decklist->getStarting())),
+            'starting' => json_encode($decklist->getStartingGroups()),
             'starting_notes' => (string) $decklist->getStartingNotes(),
             'annotations' => json_encode($decklist->getAnnotations() ?: null),
             'precedent' => implode(',', array_map(fn ($p) => $p->getId(), $decklist->getPrecedents())),

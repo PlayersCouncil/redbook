@@ -21,19 +21,19 @@
 
     <section class="rb-notes-section rb-notes-start" aria-labelledby="starting-title">
         <div class="rb-notes-head"><h3 id="starting-title">{{ 'deckbuilder.notes.starting' | trans }}</h3></div>
-        {# the bid, then the starting companions: + then a companion in the deck, the others
-           greyed out; x on a pill takes it off (Ketura, 2026-11-07) #}
+        {# the bid, then the starting fellowships (Ketura, 2026-11-07; several since 2026-11-11):
+           one row each, its name (blank: "Starting Fellowship", then numbered), + then a
+           companion in the deck, the others greyed out; x on a pill takes it off; − takes the
+           row away. The row clicked last is the one + and the deck list's S go to.
+           app.deck_notes draws the rows. #}
         <div class="rb-starting-fields">
             <div class="rb-starting-row">
                 <label class="rb-starting-label" for="starting-bid">{{ 'deckbuilder.notes.bid' | trans }}:</label>
-                <input type="text" class="rb-starting-bid" id="starting-bid" name="starting_bid_" maxlength="30" autocomplete="off" placeholder="{{ 'deckbuilder.notes.bid_placeholder' | trans }}">
+                <input type="text" class="rb-starting-bid" id="starting-bid" name="starting_bid_" maxlength="100" autocomplete="off" placeholder="{{ 'deckbuilder.notes.bid_placeholder' | trans }}">
             </div>
-            <div class="rb-starting-row">
-                <span class="rb-starting-label">{{ 'deckbuilder.notes.starting_fellowship' | trans }}</span>
-                <button type="button" class="rb-btn rb-btn-small rb-start-pick" id="start-pick" aria-pressed="false"
-                        title="{{ 'deckbuilder.notes.start_pick' | trans }}" aria-label="{{ 'deckbuilder.notes.start_pick' | trans }}">+</button>
-                <div class="rb-starting-list" id="starting-list"></div>
-            </div>
+            <div class="rb-starting-groups" id="starting-groups"
+                 data-default-name="{{ 'deckbuilder.notes.starting_fellowship' | trans }}" data-default-name-n="{{ 'deckbuilder.notes.starting_fellowship_n' | trans({'%number%': '#'}) }}"></div>
+            <button type="button" class="rb-btn rb-btn-small rb-starting-add" id="starting-add"><span class="fas fa-plus" aria-hidden="true"></span> {{ 'deckbuilder.notes.starting_add' | trans }}</button>
         </div>
         <input type="hidden" name="starting_" id="starting-field">
         <div class="rb-md-editor">

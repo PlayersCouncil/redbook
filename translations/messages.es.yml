@@ -629,6 +629,12 @@ decklist.form.release_note: "Esto hará pública tu lista. Tendrás <strong>tres
 decklist.form.version: Versión
 deckbuilder.notes.editor_hint: "Escribe # para insertar el nombre de una carta."
 deckbuilder.notes.starting_none: Sin compañeros iniciales
+deckbuilder.notes.starting_fellowship: "Comunidad inicial"
+deckbuilder.notes.starting_fellowship_n: "Comunidad inicial %number%"
+deckbuilder.notes.starting_name: "Nombre de esta comunidad inicial"
+deckbuilder.notes.starting_add: "Añadir una comunidad inicial"
+deckbuilder.notes.starting_remove_group: "Quitar esta comunidad inicial"
+deckbuilder.notes.starting_active: "Los compañeros elegidos, y los clics en S en el mazo, van a esta"
 deckbuilder.notes.start_pick: "Añadir un compañero inicial: haz clic en uno del mazo"
 deckbuilder.notes.start_remove: "Quitar %card% de la comunidad inicial"
 deckbuilder.notes.editing: "Editando %field% de %deck%"
