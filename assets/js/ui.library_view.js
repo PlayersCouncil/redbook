@@ -131,39 +131,9 @@
         $('#social-favorite').on('click', function () { app.social.toggle(this, Routing.generate('library_favorite'), post); });
         $('#social-comment').on('click', function (event) {
             event.preventDefault();
-            var text = $('#comment-form-text');
-            (text.length ? text : $('#library-comments'))[0].scrollIntoView({block: 'center', behavior: 'smooth'});
-            text.trigger('focus');
+            app.comments.focus_form();
         });
-        if(!$('#social-favorite').length) {
-            return;   // logged out
-        }
-        comment_form(post);
-        if(view.is('[data-owner]')) {
-            app.social.comment_hiding('#library-comments', function (id, hidden) {
-                return Routing.generate('library_comment_hide', {comment_id: id, hidden: hidden});
-            });
-        }
-    }
-
-    /** The comment form; a posted comment joins the list, and a fresh form follows */
-    function comment_form(post)
-    {
-        $('#comment-form').nextAll('.rb-comment-form').remove();
-        app.social.comment_form('#comment-form', {
-            url: Routing.generate('library_comment'),
-            fields: post,
-            users: view.data('commenters') || [],
-            title: $.trim($('.rb-library-title').text()),
-            posted: function (row) {
-                var count = $('#library-comments tbody tr').length + 1;
-                $('#library-comments tbody').append(row);
-                $('#library-comments .rb-comments-count').text(Translator.transChoice('decklist.view.comments.count', count, {count: count}));
-                $('#social-comment .num').text(count);
-                app.social.set_pressed('#social-comment', true);
-                comment_form(post);
-            }
-        });
+        app.comments.setup({title: $.trim($('.rb-library-title').text())});
     }
 
     ui.on_dom_loaded = function on_dom_loaded()

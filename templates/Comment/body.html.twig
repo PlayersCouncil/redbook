@@ -1,0 +1,63 @@
+{#
+   One comment's own part (Ketura, 2026-11-11), the replies aside: the author's avatar, their
+   name, when (a link to the comment itself; once edited, "edited" and when that was), the
+   text, and the actions. Who may use which action is the page script's to show
+   (app.comments, from /comment/state), so the page is the same for everyone.
+   A deleted comment keeps its place (and its link) while replies stand under it, its text gone.
+   A hidden one (by the owner of what it's on, or a moderator) is folded away; a click opens it.
+   Variables: comment, subject_url (the page it's on, for the link)
+#}
+{% import "macros.html.twig" as macros %}
+{% set c = comment %}
+{% set link = subject_url ~ '#comment-' ~ c.id %}
+<div class="rb-cmt-body">
+    {% if c.deleted %}
+        <span class="rb-avatar" aria-hidden="true"><span class="rb-thumb rb-thumb-empty"><span class="fas fa-comment-slash"></span></span></span>
+        <div class="rb-cmt-content">
+            <div class="rb-cmt-head">
+                <span class="rb-cmt-deleted">{{ (c.removed ? 'comment.removed' : 'comment.deleted') | trans }}</span>
+                <a class="rb-cmt-time" href="{{ link }}"><time data-absolute datetime="{{ c.dateCreation | date('c') }}">{{ c.dateCreation | date('Y-m-d H:i') }}</time></a>
+            </div>
+        </div>
+    {% else %}
+        {% include 'Comment/avatar.html.twig' with {user: c.user} %}
+        <div class="rb-cmt-content">
+            <div class="rb-cmt-head">
+                <span class="rb-cmt-author">{{ macros.username(c.user) }}</span>
+                <a class="rb-cmt-time" href="{{ link }}" title="{{ 'comment.posted' | trans({'%date%': c.dateCreation | date('Y-m-d H:i')}) }}{% if c.dateEdited %} · {{ 'comment.edited_on' | trans({'%date%': c.dateEdited | date('Y-m-d H:i')}) }}{% endif %}">
+                    {%- if c.dateEdited -%}
+                        {{ 'comment.edited' | trans }} <time data-absolute datetime="{{ c.dateEdited | date('c') }}">{{ c.dateEdited | date('Y-m-d H:i') }}</time>
+                    {%- else -%}
+                        <time data-absolute datetime="{{ c.dateCreation | date('c') }}">{{ c.dateCreation | date('Y-m-d H:i') }}</time>
+                    {%- endif -%}
+                </a>
+                <span class="rb-cmt-hidden-note"{% if not c.isHidden %} hidden{% endif %}>{{ 'comment.hidden' | trans }} <button type="button" class="btn btn-link btn-xs rb-cmt-unfold">{{ 'comment.show' | trans }}</button></span>
+            </div>
+            <div class="rb-cmt-text">{{ c.text | raw }}</div>
+            <div class="rb-cmt-actions">
+                <span class="rb-cmt-react">
+                    <button type="button" class="rb-react rb-react-sm r-cheers" data-act="cheer" aria-pressed="false" title="{{ 'comment.cheers' | trans }}" disabled>
+                        <svg class="rb-ri" aria-hidden="true"><use href="#ri-cheers"/></svg><span class="num">{{ c.nbCheers }}</span></button>
+                    <button type="button" class="rb-react rb-react-sm r-fire{{ c.nbFires ? '' : ' is-tucked' }}" data-act="fire" aria-pressed="false" title="{{ 'comment.fire_locked' | trans }}" disabled>
+                        <svg class="rb-ri" aria-hidden="true"><use href="#ri-fire"/></svg><span class="num">{{ c.nbFires }}</span></button>
+                </span>
+                <button type="button" class="rb-cmt-act" data-act="reply" hidden><span class="fas fa-reply" aria-hidden="true"></span> {{ 'comment.reply' | trans }}</button>
+                <button type="button" class="rb-cmt-act" data-act="quote" hidden><span class="fas fa-quote-left" aria-hidden="true"></span> {{ 'comment.quote' | trans }}</button>
+                <span class="dropdown rb-cmt-more">
+                    <button type="button" class="rb-cmt-act dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" title="{{ 'comment.more' | trans }}" aria-label="{{ 'comment.more' | trans }}"><span class="fas fa-ellipsis-h" aria-hidden="true"></span></button>
+                    <ul class="dropdown-menu dropdown-menu-right">
+                        <li><a href="#" data-act="copy-link"><span class="fas fa-link fa-fw" aria-hidden="true"></span> {{ 'comment.copy_link' | trans }}</a></li>
+                        <li><a href="#" data-act="copy-text"><span class="fas fa-copy fa-fw" aria-hidden="true"></span> {{ 'comment.copy_text' | trans }}</a></li>
+                        <li><a href="#" data-act="history"><span class="fas fa-history fa-fw" aria-hidden="true"></span> {{ 'comment.history' | trans }}</a></li>
+                        <li class="rb-cmt-own" hidden role="separator"><hr></li>
+                        <li class="rb-cmt-own" hidden><a href="#" data-act="edit"><span class="fas fa-pencil-alt fa-fw" aria-hidden="true"></span> {{ 'comment.edit' | trans }}</a></li>
+                        <li class="rb-cmt-own" hidden><a href="#" data-act="delete"><span class="fas fa-trash-alt fa-fw" aria-hidden="true"></span> {{ 'comment.delete' | trans }}</a></li>
+                        <li class="rb-cmt-hider" hidden><a href="#" data-act="hide"><span class="fas fa-eye-slash fa-fw" aria-hidden="true"></span> <span class="rb-cmt-hide-label" data-hide="{{ 'comment.hide' | trans }}" data-unhide="{{ 'comment.unhide' | trans }}">{{ (c.isHidden ? 'comment.unhide' : 'comment.hide') | trans }}</span></a></li>
+                        <li class="rb-cmt-other" hidden role="separator"><hr></li>
+                        <li class="rb-cmt-other" hidden><a href="#" data-act="report"><span class="fas fa-flag fa-fw" aria-hidden="true"></span> <span class="rb-cmt-report-label">{{ 'comment.report' | trans }}</span></a></li>
+                    </ul>
+                </span>
+            </div>
+        </div>
+    {% endif %}
+</div>

@@ -170,7 +170,7 @@ a.rb-social-btn, a.rb-social-btn:hover, a.rb-social-btn:focus { color: var(--rb-
 .rb-reader-note.is-short .rb-note-body { flex: 1 1 auto; min-width: 0; }
 .rb-reader-note-card { font-weight: 600; font-size: 0.8125rem; }
 .rb-reader-note .rb-reader-text p:last-child { margin-bottom: 0; }
-.rb-reader-comments .table { margin-bottom: 10px; }
+.rb-reader-comments .rb-archive-comments { margin-bottom: 10px; }
 .rb-reader-tree .table { margin-bottom: 8px; font-size: 0.8125rem; }
 .rb-reader-tree { margin-bottom: 6px; }
 /* the note-to-card line: over everything, catching nothing */

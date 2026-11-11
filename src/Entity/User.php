@@ -111,6 +111,22 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
     protected ?string $displayName = null;
 
     /**
+     * The avatar (Ketura, 2026-11-11): a card, framed by hand or by its template, or one
+     * culture's banner; neither, the default. Drawn by Decklist/thumbnail.html.twig (getAvatar).
+     */
+    #[ORM\ManyToOne(targetEntity: Card::class)]
+    #[ORM\JoinColumn(name: 'avatar_card_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    protected ?Card $avatarCard = null;
+
+    /** @var array{code: string, w: float, l: float, t: float}|null */
+    #[ORM\Column(name: 'avatar_crop', type: 'json', nullable: true)]
+    protected ?array $avatarCrop = null;
+
+    #[ORM\ManyToOne(targetEntity: Culture::class)]
+    #[ORM\JoinColumn(name: 'avatar_culture_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
+    protected ?Culture $avatarCulture = null;
+
+    /**
      * A historic account: the author of archived decks, who can't log in until they
      * claim it (the claim merges it into their own account).
      */
@@ -755,5 +771,29 @@ class User extends BaseUser implements UserInterface, LegacyPasswordAuthenticate
     public function getMaxNbDecks()
     {
         return self::MAX_DECKS;
+    }
+
+    public function getAvatarCard(): ?Card { return $this->avatarCard; }
+    public function getAvatarCrop(): ?array { return $this->avatarCrop; }
+    public function getAvatarCulture(): ?Culture { return $this->avatarCulture; }
+
+    /** A card (with its framing, or null for the card's template), or a culture, or neither */
+    public function setAvatar(?Card $card, ?array $crop, ?Culture $culture): void
+    {
+        $this->avatarCard = $culture ? null : $card;
+        $this->avatarCrop = $this->avatarCard && $crop && ($crop['code'] ?? null) === $this->avatarCard->getCode() ? $crop : null;
+        $this->avatarCulture = $culture;
+    }
+
+    /** card, culture, or none */
+    public function getAvatarMode(): string
+    {
+        return $this->avatarCulture ? 'culture' : ($this->avatarCard ? 'card' : 'none');
+    }
+
+    /** What Decklist/thumbnail.html.twig draws for the avatar */
+    public function getAvatar(): \App\Classes\UserAvatar
+    {
+        return new \App\Classes\UserAvatar($this);
     }
 }

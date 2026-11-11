@@ -1,0 +1,63 @@
+{#
+   A thumbnail chooser (Ketura, 2026-11-08/09 for libraries; a component since 2026-11-11, for
+   avatars too): any card, found by name and framed by hand with the crop editor; or a banner
+   of cultures (up to max_cultures, any combination, the first top left); or whatever else
+   the subject falls back to. app.thumbnail.chooser runs it.
+   Variables:
+   - subject: what the preview starts as (App\Classes\ThumbnailSubject)
+   - modes: the choices, in order, from card, cultures, and a fallback (auto, none)
+   - labels: translation key prefix for the modes' names (prefix ~ mode)
+   - title: its heading's translation key; heading_id for aria
+   - cultures: every culture (the buttons); max_cultures: 1 or 2
+   - crop: the card's framing now, or null
+   - fallback: what the preview shows for the fallback mode (html)
+   - hints: optional {search, none, cultures, fallback}: translation keys
+   - empty_icon: optional, as Decklist/thumbnail.html.twig's
+#}
+{% import 'Decklist/macros.html.twig' as m %}
+{% set hints = hints ?? {} %}
+<div class="rb-thumb-chooser" data-max-cultures="{{ max_cultures }}">
+    <div class="rb-lib-thumb-row">
+        <div class="rb-thumb-preview">
+            <span class="rb-lib-thumb-preview rb-chooser-preview">{% include 'Decklist/thumbnail.html.twig' with {decklist: subject, empty_icon: empty_icon ?? 'fa-book'} %}</span>
+            {% include 'Thumbnail/edit-button.html.twig' %}
+        </div>
+        <div class="rb-lib-thumb-pick">
+            <div class="rb-seg rb-lib-thumb-modes" role="radiogroup" aria-labelledby="{{ heading_id ?? '' }}">
+                {% for mode in modes %}
+                    <button type="button" role="radio" data-thumb-mode="{{ mode }}">{{ (labels ~ mode) | trans }}</button>
+                {% endfor %}
+            </div>
+            {% if 'card' in modes %}
+                <div class="rb-lib-thumb-panel" data-thumb-panel="card">
+                    <input type="search" class="form-control input-sm rb-chooser-search" autocomplete="off" placeholder="{{ (hints.search ?? 'library.edit.thumbnail_search') | trans }}" aria-label="{{ (hints.search ?? 'library.edit.thumbnail_search') | trans }}">
+                    <span class="rb-lib-thumb-name rb-chooser-name" data-none="{{ (hints.none ?? 'library.edit.thumbnail_none') | trans }}"></span>
+                </div>
+            {% endif %}
+            {% for mode in modes | filter(m => m == 'cultures' or m == 'culture') %}
+                <div class="rb-lib-thumb-panel" data-thumb-panel="{{ mode }}">
+                    <div class="rb-lib-cultures" role="group" aria-label="{{ (labels ~ mode) | trans }}">
+                        {% for side, sided in cultures | cultures_by_side %}
+                            {% if not loop.first %}<span class="rb-culture-sep" aria-hidden="true"></span>{% endif %}
+                            {% for culture in sided %}
+                                <button type="button" class="rb-lib-culture" data-culture="{{ culture.code }}" data-name="{{ culture.name }}" data-side="{{ culture.side }}" aria-pressed="false" title="{{ culture.name }}">
+                                    {{ m.culture_icon(culture, null, '#111') }}<span class="rb-lib-culture-order"></span>
+                                </button>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                    {% if hints.cultures ?? false %}
+                        <span class="rb-lib-thumb-name">{{ hints.cultures | trans }}{% if max_cultures > 1 %} <button type="button" class="btn btn-link btn-xs rb-chooser-swap">{{ 'library.edit.thumbnail_swap' | trans }}</button>{% endif %}</span>
+                    {% endif %}
+                </div>
+            {% endfor %}
+            {% for mode in modes | filter(m => m != 'card' and m != 'cultures' and m != 'culture') %}
+                <div class="rb-lib-thumb-panel" data-thumb-panel="{{ mode }}">
+                    {% if hints.fallback ?? false %}<span class="rb-lib-thumb-name">{{ hints.fallback | trans }}</span>{% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <input type="hidden" class="rb-chooser-crop" id="thumb-crop-field" value="{{ crop ? crop | json_encode : '' }}">
+    <template class="rb-chooser-fallback">{{ fallback | raw }}</template>
+</div>

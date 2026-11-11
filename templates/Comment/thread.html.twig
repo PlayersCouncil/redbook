@@ -1,0 +1,22 @@
+{#
+   A decklist's or library's comments (Ketura, 2026-11-11; shared by both): the count, the
+   threads, then the place the comment form goes. app.comments (app.comments.js) runs it: the
+   actions each viewer may use, the reply and edit forms, History, Copy, Report, and going to
+   the comment a link names (#comment-N).
+   Variables: kind (decklist, library), subject (the PublishedDeck or Library), threads (CommentManager::threads),
+   commenters (usernames, for @), login_note (optional: what a visitor sees instead of the form)
+#}
+{% set subject_url = kind == 'library'
+    ? (subject.publicId and subject.public ? path('library_view', {public_id: subject.publicId, library_name: subject.nameCanonical}) : path('library_view_private', {library_uuid: subject.uuid}))
+    : path('decklist_detail', {decklist_id: subject.id, decklist_name: subject.nameCanonical}) %}
+<section class="rb-cmts" data-kind="{{ kind }}" data-id="{{ kind == 'library' ? subject.uuid : subject.id }}" data-owner="{{ subject.user.id }}"
+         data-commenters="{{ (commenters ?? []) | json_encode }}" data-logged-in="{{ app.user ? 1 : 0 }}">
+    <h3 class="rb-cmts-head"><span class="fas fa-comment" aria-hidden="true"></span> <span class="rb-comments-count">{{ 'decklist.view.comments.count' | trans({'%count%': subject.nbComments}) }}</span></h3>
+    <div class="rb-cmt-list">
+        {% for node in threads %}
+            {% include 'Comment/node.html.twig' with {node: node, depth: 0, subject_url: subject_url} only %}
+        {% endfor %}
+    </div>
+    <a id="comment-form"></a>
+    {% if not app.user %}<p class="rb-muted rb-cmts-login"><a href="{{ path('fos_user_security_login') }}">{{ (login_note ?? 'comment.login') | trans }}</a></p>{% endif %}
+</section>

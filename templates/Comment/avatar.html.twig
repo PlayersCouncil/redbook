@@ -1,0 +1,5 @@
+{# A user's avatar (Ketura, 2026-11-11): their card or culture as a thumbnail tile, or a figure.
+   Shared: comments now, other places later. Variables: user; size (optional class: sm) #}
+<span class="rb-avatar{% if size ?? false %} rb-avatar-{{ size }}{% endif %}" aria-hidden="true">
+    {%- include 'Decklist/thumbnail.html.twig' with {decklist: user.avatar, empty_icon: 'fa-user'} only -%}
+</span>

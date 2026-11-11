@@ -1,0 +1,15 @@
+{# A new comment, to someone who asked to hear of it (Ketura, 2026-11-11; one mail for every
+   reason, decklists' and libraries'). Variables: username, kind (decklist, library),
+   subject_name, url (the comment's own), comment (its html), profile, why (reply, mention,
+   author, commenter) #}
+{% set what = kind == 'library' ? 'library' : 'decklist' %}
+<p><b>{{ username }}</b>
+    {%- if why == 'reply' %} replied to your comment on the {{ what }}
+    {%- elseif why == 'mention' %} mentioned you in a comment on the {{ what }}
+    {%- elseif why == 'author' %} commented on your {{ what }}
+    {%- else %} also commented on the {{ what }}{% endif %}
+    <b><a href="{{ url }}">{{ subject_name }}</a></b></p>
+<div style="font-family:sans-serif;border:1px solid lightgray;border-width:1px 0px">
+    {{ comment|raw }}
+</div>
+<p style="color:gray;font-size:0.8em">To stop these, change your <a href="{{ profile }}">account settings</a>.</p>

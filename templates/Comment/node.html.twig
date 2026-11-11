@@ -1,0 +1,20 @@
+{#
+   A comment and the replies under it (Ketura, 2026-11-11), each reply just after what it
+   answers. Each level is set in a little, with a line down the left to trace who is answering
+   whom (a click on the line folds the thread away); from the fifth level on, replies stop
+   moving right, as on RoyalRoad.
+   Variables: node ({comment, replies, count}: App\Classes\CommentTree), depth (0 at the top),
+   subject_url
+#}
+{% set c = node.comment %}
+<div class="rb-cmt{% if c.isHidden %} is-hidden{% endif %}{% if c.deleted %} is-deleted{% endif %}" id="comment-{{ c.id }}"
+     data-id="{{ c.id }}" data-author="{{ c.deleted ? '' : c.user.id }}" data-author-name="{{ c.deleted ? '' : c.user.username }}" data-depth="{{ depth }}" data-count="{{ node.count }}">
+    {% include 'Comment/body.html.twig' with {comment: c, subject_url: subject_url} %}
+    <div class="rb-cmt-replies{% if depth >= 4 %} is-flat{% endif %}">
+        <button type="button" class="rb-cmt-line" title="{{ 'comment.fold' | trans }}" aria-label="{{ 'comment.fold' | trans }}"></button>
+        {% for reply in node.replies %}
+            {% include 'Comment/node.html.twig' with {node: reply, depth: depth + 1, subject_url: subject_url} only %}
+        {% endfor %}
+    </div>
+    <button type="button" class="rb-cmt-unfold-thread" hidden></button>
+</div>

@@ -59,9 +59,9 @@ test('a new library from My Libraries, filled from the Build tab', async ({ page
   // its own thumbnail (Ketura, 2026-11-08/09): any card found by name, framed by hand with the
   // crop editor the decklist form shares...
   await page.click('[data-thumb-mode="card"]');
-  await page.fill('#thumb-search', 'Gandalf, The Grey Wizard');
+  await page.fill('.rb-chooser-search.tt-input', 'Gandalf, The Grey Wizard');
   await page.locator('.tt-suggestion').first().click();
-  await expect(page.locator('#library-thumb-preview .rb-thumb-card img')).toBeVisible();
+  await expect(page.locator('.rb-chooser-preview .rb-thumb-card img')).toBeVisible();
   await page.locator('#thumb-edit').click();
   await expect(page.locator('#thumb-crop')).toBeVisible();
   // framed once the card has loaded
@@ -71,8 +71,8 @@ test('a new library from My Libraries, filled from the Build tab', async ({ page
   await page.keyboard.press('ArrowRight');
   await page.click('#thumb-crop .rb-crop-confirm');
   await expect(page.locator('#thumb-crop')).toBeHidden();
-  await expect(page.locator('#library-thumb-crop')).toHaveValue(/"w":/);
-  await expect(page.locator('#library-thumb-preview .rb-thumb-card img')).toHaveAttribute('style', /width/);
+  await expect(page.locator('.rb-chooser-crop')).toHaveValue(/"w":/);
+  await expect(page.locator('.rb-chooser-preview .rb-thumb-card img')).toHaveAttribute('style', /width/);
   // ...or a banner of one or two cultures, in any combination: a third replaces the first
   await page.click('[data-thumb-mode="cultures"]');
   for (const code of ['shire', 'moria', 'sauron']) {
@@ -80,10 +80,10 @@ test('a new library from My Libraries, filled from the Build tab', async ({ page
   }
   await expect(page.locator('.rb-lib-culture[aria-pressed="true"]')).toHaveCount(2);
   await expect(page.locator('.rb-lib-culture[data-culture="moria"] .rb-lib-culture-order')).toHaveText('1');
-  await expect(page.locator('#library-thumb-preview .rb-thumb-part')).toHaveCount(2);
-  await expect(page.locator('#library-thumb-preview .rb-thumb-fp')).toHaveClass(/rb-thumb-c-moria/);
-  await page.click('#thumb-swap');
-  await expect(page.locator('#library-thumb-preview .rb-thumb-fp')).toHaveClass(/rb-thumb-c-sauron/);
+  await expect(page.locator('.rb-chooser-preview .rb-thumb-part')).toHaveCount(2);
+  await expect(page.locator('.rb-chooser-preview .rb-thumb-fp')).toHaveClass(/rb-thumb-c-moria/);
+  await page.click('.rb-chooser-swap');
+  await expect(page.locator('.rb-chooser-preview .rb-thumb-fp')).toHaveClass(/rb-thumb-c-sauron/);
 
   await page.click('#btn-save');
   await expect(page.locator('#save-status')).toHaveText('Saved');
@@ -97,7 +97,7 @@ test('a new library from My Libraries, filled from the Build tab', async ({ page
   await expect(entries.nth(1).locator('textarea[data-annotation]')).toHaveValue('The first deck. [[Gimli, Dwarf of Erebor]] starts.');
   await expect(page.locator('#library-tags')).toHaveValue(`e2etag${runId}`);
   await expect(page.locator('[data-thumb-mode="cultures"]')).toHaveAttribute('aria-checked', 'true');
-  await expect(page.locator('#library-thumb-preview .rb-thumb-shadow')).toHaveClass(/rb-thumb-c-moria/);
+  await expect(page.locator('.rb-chooser-preview .rb-thumb-shadow')).toHaveClass(/rb-thumb-c-moria/);
 });
 
 test('the History tab: each save a revision, and Restore puts an earlier one back', async ({ page }) => {
@@ -227,14 +227,14 @@ test('private until made public; then listed, and read one deck at a time', asyn
   await expect(fav).toHaveAttribute('aria-pressed', 'true');
   await expect(fav.locator('.num')).toHaveText('1');
   await voter.locator('#social-comment').click();
-  await voter.locator('#comment-form-text').fill(`A good set for run ${runId}`);
-  await voter.locator('.rb-comment-form button[type=submit]').click();
-  await expect(voter.locator('#library-comments .comment-text')).toHaveText(`A good set for run ${runId}`);
+  await voter.locator('.rb-comment-form.is-main textarea').fill(`A good set for run ${runId}`);
+  await voter.locator('.rb-comment-form.is-main button[type=submit]').click();
+  await expect(voter.locator('#library-comments .rb-cmt-text')).toHaveText(`A good set for run ${runId}`);
   await expect(voter.locator('#social-comment .num')).toHaveText('1');
   // kept: on a fresh load, pressed and counted; the list shows the counts
   await voter.reload();
   await expect(like).toHaveAttribute('aria-pressed', 'true');
-  await expect(voter.locator('#library-comments .comment-text')).toHaveCount(1);
+  await expect(voter.locator('#library-comments .rb-cmt-text')).toHaveCount(1);
   await voter.goto(`/libraries/user?tags[]=e2etag${runId}`);
   await expect(voter.locator('.rb-lib-cards .rb-votes .v-cheers')).toHaveText('1');
   await expect(voter.locator('.rb-lib-cards .rb-lib-card-description')).toContainText('testing');

@@ -103,24 +103,15 @@
         toggle($(this), 'decklist_favorite');
     };
 
-    ui.setup_comment_form = function setup_comment_form()
+    /** The comments (app.comments); the Comment button goes to the form */
+    ui.setup_comments = function setup_comments()
     {
-        // the deckbuilder's markdown editor (Ketura, 2026-11-08): its toolbar, Preview,
-        // fullscreen, symbols and # for cards, with @ for the people in the conversation
-        app.social.comment_form('#comment-form', {
-            url: Routing.generate('decklist_comment'),
-            fields: {id: app.deck.get_id()},
-            users: Commenters,
-            title: $.trim($('.decklist-name').text())
-        });
-
         $('#social-comment').on('click', function (event)
         {
             event.preventDefault();
-            $('#comment-form-text').trigger('focus')[0].scrollIntoView({block: 'nearest', behavior: 'smooth'});
+            app.comments.focus_form();
         });
-
-
+        return app.comments.setup({title: $.trim($('.decklist-name').text())});
     };
 
     /** The buttons show what the user has done; an author can't like their own deck */
@@ -196,15 +187,6 @@
             $('.decklist-delete').show();
         } else {
             $('.decklist-delete').remove();
-        }
-    };
-
-    ui.setup_comment_hide = function setup_comment_hide()
-    {
-        if(app.user.data && app.user.data.is_author) {
-            app.social.comment_hiding('.rb-reader-comments', function (id, hidden) {
-                return Routing.generate('decklist_comment_hide', {comment_id: id, hidden: hidden});
-            });
         }
     };
 
@@ -377,14 +359,10 @@
                 if(!$('#comment-form').length) {
                     return;
                 }
+                ui.setup_comments();
                 app.user.loaded.done(function ()
                 {
-                    ui.setup_comment_form();
                     ui.add_author_actions();
-                    ui.setup_comment_hide();
-                }).fail(function ()
-                {
-                    $('<p>You must be logged in to post comments.</p>').insertAfter('#comment-form');
                 });
             }
         ]);

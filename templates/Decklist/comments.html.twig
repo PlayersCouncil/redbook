@@ -1,1 +1,1 @@
-{% include 'Social/comments.html.twig' with {comments: decklist.comments, count: decklist.nbComments} %}
+{% include 'Comment/thread.html.twig' with {kind: 'decklist', subject: decklist, threads: comment_threads, commenters: commenters ?? []} %}

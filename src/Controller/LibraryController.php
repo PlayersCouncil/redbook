@@ -5,7 +5,7 @@ namespace App\Controller;
 use App\Entity\Card;
 use App\Entity\Culture;
 use App\Entity\Library;
-use App\Entity\LibraryComment;
+use App\Entity\Comment;
 use App\Entity\LibraryEntry;
 use App\Entity\LibraryRevision;
 use App\Entity\PublishedDeck;
@@ -40,6 +40,7 @@ class LibraryController extends AbstractController
     public function __construct(
         private readonly ManagerRegistry $managerRegistry,
         private readonly LibraryManager $libraries,
+        private readonly \App\Services\CommentManager $commentManager,
     ) {
     }
 
@@ -542,11 +543,12 @@ class LibraryController extends AbstractController
             'social' => [
                 'liked' => $user !== null && $library->getVotes()->contains($user),
                 'favorite' => $user !== null && $library->getFavorites()->contains($user),
-                'commented' => $user !== null && $library->getComments()->exists(fn ($i, LibraryComment $c) => $c->getUser() === $user),
+                'commented' => $user !== null && $library->getComments()->exists(fn ($i, Comment $c) => $c->getUser() === $user && !$c->isDeleted()),
             ],
             // an admin's Make Official, or the official copy already made of it
             'official_copy' => $library->isOfficial() ? null : $this->libraries->officialCopyOf($library),
-            'commenters' => array_values(array_unique(array_map(fn (LibraryComment $c) => $c->getUser()->getUsername(), $library->getComments()->toArray()))),
+            'comment_threads' => $this->commentManager->threads($library),
+            'commenters' => array_values(array_unique(array_map(fn (Comment $c) => $c->getUser()->getUsername(), $library->getComments()->filter(fn (Comment $c) => !$c->isDeleted())->toArray()))),
         ]);
     }
 
@@ -628,35 +630,6 @@ class LibraryController extends AbstractController
         $on = $library->toggleFavorite($user);
         $this->managerRegistry->getManager()->flush();
         return new JsonResponse(['count' => $library->getNbFavorites(), 'on' => $on]);
-    }
-
-    /** A comment; answers the comment as the list shows it, to add to the page */
-    #[Route(path: '/library/comment', name: 'library_comment', methods: ['POST'])]
-    public function commentAction(Request $request, Texts $texts): Response
-    {
-        [$library, $user] = $this->socialTarget($request);
-        $text = trim((string) $request->request->get('comment'));
-        if ($text === '') {
-            throw new BadRequestHttpException('The comment is empty.');
-        }
-        $comment = new LibraryComment($user, $texts->comment($text));
-        $library->addComment($comment);
-        $this->managerRegistry->getManager()->flush();
-        return $this->render('Social/comment.html.twig', ['comment' => $comment]);
-    }
-
-    /** The curator hides a comment for everyone, or shows it again */
-    #[Route(path: '/library/comment/hide/{comment_id}/{hidden}', name: 'library_comment_hide', methods: ['POST'], requirements: ['comment_id' => '\d+', 'hidden' => '[01]'])]
-    public function hideCommentAction(int $comment_id, int $hidden): JsonResponse
-    {
-        $user = $this->requireUser();
-        $comment = $this->managerRegistry->getRepository(LibraryComment::class)->find($comment_id) ?? throw new NotFoundHttpException();
-        if ($comment->getLibrary()->getUser() !== $user) {
-            return new JsonResponse("You can't hide comments on this library.");
-        }
-        $comment->setIsHidden((bool) $hidden);
-        $this->managerRegistry->getManager()->flush();
-        return new JsonResponse(true);
     }
 
     /** One decklist of a library, opened in its view: the deck, rendered when it's opened */

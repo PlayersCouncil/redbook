@@ -1,0 +1,103 @@
+/* Comments as threads (Ketura, 2026-11-11), decklists' and libraries' alike
+   (templates/Comment/): each comment with its author's avatar beside it, replies under what
+   they answer, set in a little with a line down the left to trace the thread (a click on the
+   line folds it). From the fifth level on, replies stop moving right. */
+
+.rb-cmts { --rb-cmt-avatar: 36px; --rb-cmt-indent: 14px; margin-top: 4px; }
+.rb-cmts-head { margin: 4px 0 12px; font-family: var(--rb-font-ui); font-size: 1rem; font-weight: 700; color: var(--rb-ink); }
+.rb-cmts-head .fa-comment { color: var(--rb-ink-3); }
+.rb-cmt-list { display: flex; flex-direction: column; gap: 4px; }
+
+.rb-cmt { position: relative; }
+.rb-cmt-body { display: grid; grid-template-columns: var(--rb-cmt-avatar) minmax(0, 1fr); gap: 10px; padding: 8px 6px 6px; border-radius: var(--rb-radius-panel); }
+.rb-cmt-content { min-width: 0; }
+
+/* the avatar: a thumbnail tile, smaller */
+.rb-avatar { display: block; width: var(--rb-cmt-avatar, 36px); }
+.rb-avatar .rb-thumb { width: 100%; border-radius: 5px; }
+.rb-avatar .rb-thumb-empty { display: flex; align-items: center; justify-content: center; color: var(--rb-ink-3); font-size: 1.05rem; }
+.rb-avatar .rb-thumb-cultures { border-width: 1px; }
+
+.rb-cmt-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; font-size: 0.875rem; line-height: 1.35; }
+.rb-cmt-author { font-weight: 700; }
+.rb-cmt-author .rb-rep { margin-left: 2px; }
+.rb-cmt-time { margin-left: auto; color: var(--rb-ink-2); font-size: 0.8125rem; white-space: nowrap; }
+.rb-cmt-time:hover, .rb-cmt-time:focus { color: var(--rb-link); }
+.rb-cmt-deleted { font-style: italic; color: var(--rb-ink-2); }
+.rb-cmt-hidden-note { color: var(--rb-ink-2); font-style: italic; }
+.rb-cmt-hidden-note .btn-link { padding: 0 2px; font-style: normal; vertical-align: baseline; }
+.rb-cmt-text { margin-top: 3px; font-size: 0.9375rem; overflow-wrap: anywhere; }
+.rb-cmt-text p:last-child, .rb-cmt-text ul:last-child, .rb-cmt-text ol:last-child { margin-bottom: 0; }
+.rb-cmt-text blockquote { margin: 4px 0 8px; padding: 2px 0 2px 10px; border-left: 3px solid var(--rb-line-strong); font-size: inherit; color: var(--rb-ink-2); }
+
+/* hidden: the text and actions folded away until opened */
+.rb-cmt.is-hidden:not(.is-open) > .rb-cmt-body .rb-cmt-text,
+.rb-cmt.is-hidden:not(.is-open) > .rb-cmt-body .rb-cmt-actions { display: none; }
+.rb-cmt.is-hidden > .rb-cmt-body { opacity: .85; }
+
+/* the actions: Cheers and fire, Reply, Quote, then the rest in a menu */
+.rb-cmt-actions { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 6px; }
+.rb-cmt-react { display: inline-flex; align-items: center; }
+.rb-react.rb-react-sm { height: var(--rb-control-h-sm); gap: 4px; padding: 0 8px; font-size: 0.8125rem; }
+.rb-react.rb-react-sm .rb-ri { width: 15px; height: 15px; }
+.rb-react.rb-react-sm[disabled] { cursor: default; }
+.rb-react.rb-react-sm.r-cheers[disabled] .rb-ri { filter: grayscale(.4); }
+/* the fire waits behind Cheers until there's a cheers to set on fire, or some fire already */
+.rb-cmt-react .r-fire { max-width: 80px; margin-left: 4px; overflow: hidden; transition: max-width .35s ease, opacity .3s ease, margin .35s ease, padding .35s ease; }
+.rb-cmt-react .r-fire[disabled] .rb-ri { filter: grayscale(1); }
+.rb-cmt-react .r-fire[disabled] { opacity: var(--rb-disabled, .5); }
+.rb-cmt-react .r-fire.is-tucked { max-width: 0; margin-left: 0; padding-left: 0; padding-right: 0; border-width: 0; opacity: 0; pointer-events: none; }
+.rb-cmt-react .processing { opacity: .6; }
+.rb-cmt-act { display: inline-flex; align-items: center; gap: 5px; height: var(--rb-control-h-sm); padding: 0 8px; border: 0; border-radius: var(--rb-radius);
+    background: none; color: var(--rb-ink-2); font-size: 0.8125rem; font-weight: 600; }
+.rb-cmt-act:hover, .rb-cmt-act:focus-visible, .rb-cmt-more.open > .rb-cmt-act { background: var(--rb-control-hover); color: var(--rb-ink); }
+.rb-cmt-act[hidden] { display: none; }
+.rb-cmt-more .dropdown-menu { min-width: 170px; font-size: 0.875rem; }
+.rb-cmt-more .dropdown-menu > li[role="separator"] { margin: 4px 0; }
+.rb-cmt-more .dropdown-menu > li[role="separator"] hr { margin: 0; border-color: var(--rb-line); }
+.rb-cmt-more .dropdown-menu > li[hidden] { display: none; }
+.rb-cmt-flash { position: absolute; right: 0; top: -2px; padding: 2px 8px; border-radius: 4px; background: var(--rb-leaf); border: 1px solid var(--rb-success-edge);
+    color: var(--rb-success); font-size: 0.75rem; font-weight: 700; box-shadow: 0 1px 4px rgba(0, 0, 0, .15); }
+
+/* the replies: a little in, with the thread's line down the left (a button: it folds the
+   thread). Past the fifth level they stop moving in (is-flat) and the line stops too. */
+.rb-cmt-replies { position: relative; display: flex; flex-direction: column; gap: 2px; margin-left: calc(var(--rb-cmt-avatar) / 2 + 5px); padding-left: var(--rb-cmt-indent); }
+.rb-cmt-replies:not(:has(> .rb-cmt)) { display: none; }
+.rb-cmt-replies.is-flat { margin-left: 0; padding-left: 0; }
+.rb-cmt-line { position: absolute; left: -7px; top: 0; bottom: 6px; width: 16px; padding: 0; border: 0; background: none; cursor: pointer; }
+.rb-cmt-line::before { content: ''; position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--rb-line-strong); transition: background .15s; }
+.rb-cmt-line:hover::before, .rb-cmt-line:focus-visible::before { background: var(--rb-link); }
+.rb-cmt-replies.is-flat > .rb-cmt-line { display: none; }
+.rb-cmt.is-folded > .rb-cmt-replies { display: none; }
+.rb-cmt-unfold-thread { margin: 0 0 4px calc(var(--rb-cmt-avatar) + 16px); padding: 1px 10px; border: 1px solid var(--rb-line-strong); border-radius: 999px;
+    background: var(--rb-control); color: var(--rb-link); font-size: 0.75rem; font-weight: 700; }
+.rb-cmt-unfold-thread:hover { background: var(--rb-control-hover); }
+.rb-cmt-unfold-thread[hidden] { display: none; }
+
+/* the comment a link names, lit for a moment */
+.rb-cmt.is-target > .rb-cmt-body { animation: rb-cmt-target 2.4s ease-out; }
+@keyframes rb-cmt-target {
+    0%, 30% { background: color-mix(in srgb, var(--rb-highlight, #F3DDA2) 70%, transparent); box-shadow: inset 3px 0 0 var(--rb-focus); }
+    100% { background: transparent; box-shadow: inset 3px 0 0 transparent; }
+}
+
+/* the forms: at the end, a reply under what it answers, an edit in place of the text */
+.rb-cmt > .rb-comment-form.is-reply { margin: 2px 0 10px calc(var(--rb-cmt-avatar) + 16px); }
+.rb-cmt-body.is-editing > .rb-cmt-content > .rb-cmt-text,
+.rb-cmt-body.is-editing > .rb-cmt-content > .rb-cmt-actions { display: none; }
+.rb-comment-form-buttons { display: flex; gap: 8px; }
+.rb-cmt .rb-comment-form .rb-md-editor .md-editor > textarea, .rb-cmt .rb-comment-form .rb-md-editor .md-editor > .md-preview { height: 120px !important; }
+.rb-cmts > .rb-comment-form.is-main { margin-top: 14px; }
+.rb-cmts-login { margin-top: 12px; }
+
+/* History */
+.rb-cmt-versions { margin: 0; padding: 0; list-style: none; }
+.rb-cmt-version + .rb-cmt-version { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--rb-line); }
+.rb-cmt-version-head { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; margin-bottom: 4px; font-size: 0.875rem; }
+.rb-cmt-version-head time { color: var(--rb-ink-2); }
+.rb-cmt-version-text p:last-child { margin-bottom: 0; }
+
+@media (max-width: 600px) {
+    .rb-cmts { --rb-cmt-avatar: 28px; --rb-cmt-indent: 10px; }
+    .rb-cmt-body { gap: 8px; }
+}

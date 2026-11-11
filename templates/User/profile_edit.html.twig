@@ -1,5 +1,22 @@
 {% extends 'base.html.twig' %}
 
+{# the avatar's chooser (Ketura, 2026-11-11): the shared one, which the library editor uses too #}
+{% block javascripts %}
+    {{ parent() }}
+    <script type="text/javascript">
+      $(function () {
+          var chooser = app.thumbnail.chooser('#avatar-field .rb-thumb-chooser', {{ {
+              mode: user.avatarMode,
+              card: user.avatarCard ? {code: user.avatarCard.code, image: user.avatarCard.imageUrl, template: user.avatarCard.thumbnailTemplate, label: user.avatarCard.fullName} : null,
+              cultures: user.avatarCulture ? [{code: user.avatarCulture.code, name: user.avatarCulture.name, side: user.avatarCulture.side}] : []
+          } | json_encode | raw }});
+          $('#avatar-field').closest('form').on('submit', function () {
+              $('#avatar').val(JSON.stringify(chooser.value()));
+          });
+      });
+    </script>
+{% endblock %}
+
 {% block body %}
 
     <div class="container">
@@ -42,6 +59,18 @@
                                 <p class="help-block">{{ 'user.display_name_help' | trans }}</p>
                             </div>
 
+                            <div class="form-group rb-avatar-field" id="avatar-field">
+                                <label id="avatar-title">{{ 'user.avatar' | trans }}</label>
+                                {% include 'Thumbnail/chooser.html.twig' with {
+                                    subject: user.avatar, modes: ['card', 'culture', 'none'], labels: 'user.avatar_mode.',
+                                    heading_id: 'avatar-title', cultures: cultures, max_cultures: 1, crop: user.avatarCrop,
+                                    fallback: '<span class="rb-thumb rb-thumb-empty" aria-hidden="true"><span class="fas fa-user"></span></span>',
+                                    hints: {search: 'user.avatar_search', none: 'user.avatar_none'}, empty_icon: 'fa-user'
+                                } %}
+                                <input type="hidden" name="avatar" id="avatar" value="">
+                                <p class="help-block">{{ 'user.avatar_help' | trans }}</p>
+                            </div>
+
                             {% if not user.organization %}
                             <div class="form-group">
                                 <label for="email">Email</label>
@@ -78,7 +107,7 @@
                                 <label>
                                     <input type="checkbox" name="notif_mention" value="1"
                                            {% if user.isNotifMention %}checked{% endif %}>
-                                    Be notified when a user mentions you in a comment
+                                    Be notified when a user mentions you in a comment or replies to yours
                                 </label>
                             </div>
 
@@ -116,5 +145,6 @@
             </div>
         </div>
     </div> <!-- .container -->
+    {% include 'Thumbnail/crop-dialog.html.twig' %}
 
 {% endblock %}

@@ -85,6 +85,28 @@ class UserController extends AbstractController
         return $target;
     }
 
+    /** A card with a picture (and its framing), or a culture with banner art, or neither */
+    private function applyAvatar(User $user, array $avatar): void
+    {
+        $em = $this->managerRegistry->getManager();
+        $mode = (string) ($avatar['mode'] ?? 'none');
+        if ($mode === 'card') {
+            $card = $em->getRepository(\App\Entity\Card::class)->findOneBy(['code' => (string) ($avatar['card'] ?? '')]);
+            if ($card && $card->getImageUrl()) {
+                $user->setAvatar($card, \App\Classes\ThumbnailCrop::sanitize($avatar['crop'] ?? null, [$card->getCode()]), null);
+                return;
+            }
+        } elseif ($mode === 'culture') {
+            $code = (string) (((array) ($avatar['cultures'] ?? []))[0] ?? '');
+            $culture = $code !== '' ? $em->getRepository(\App\Entity\Culture::class)->findOneBy(['code' => $code]) : null;
+            if ($culture && $culture->getSide()) {
+                $user->setAvatar(null, null, $culture);
+                return;
+            }
+        }
+        $user->setAvatar(null, null, null);
+    }
+
     private function profileEditUrl(User $user): string
     {
         return $user->isOrganization()
@@ -101,7 +123,9 @@ class UserController extends AbstractController
 
         return $this->render('User/profile_edit.html.twig', array(
                 'user' => $user,
-                'factions' => $factions
+                'factions' => $factions,
+                // the avatar's culture buttons (Ketura, 2026-11-11)
+                'cultures' => $this->managerRegistry->getRepository(\App\Entity\Culture::class)->findBy([], ['name' => 'ASC']),
         ));
     }
 
@@ -145,6 +169,12 @@ class UserController extends AbstractController
             return $this->redirect($back);
         }
         $user->setDisplayName($displayName);
+
+        // the avatar (Ketura, 2026-11-11): {mode: card|culture|none, card, crop, cultures}
+        $avatar = json_decode((string) $request->request->get('avatar'), true);
+        if (is_array($avatar)) {
+            $this->applyAvatar($user, $avatar);
+        }
 
         $resume = filter_var($request->get('resume'), FILTER_SANITIZE_STRING);
         $faction_code = filter_var($request->get('user_faction_code'), FILTER_SANITIZE_STRING);

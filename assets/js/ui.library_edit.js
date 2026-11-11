@@ -92,115 +92,15 @@
      * editor; a banner of one or two cultures, the first top left; or the first deck's ----
      */
 
-    var thumb = {mode: 'auto', card: null, cultures: []};
-
-    function render_thumbnail()
-    {
-        var preview = $('#library-thumb-preview'), crop = app.thumbnail.parse_crop($('#library-thumb-crop').val());
-        if(thumb.mode === 'card' && thumb.card) {
-            preview.html(app.thumbnail.card_html(thumb.card, crop));
-        } else if(thumb.mode === 'cultures' && thumb.cultures.length) {
-            preview.html(app.thumbnail.cultures_html(app.thumbnail.culture_parts(thumb.cultures)));
-        } else {
-            preview.html($('#thumb-fallback').html());
-        }
-        $('#thumb-edit').prop('hidden', !(thumb.mode === 'card' && thumb.card));
-        $('[data-thumb-mode]').each(function () {
-            var on = $(this).data('thumb-mode') === thumb.mode;
-            $(this).toggleClass('active', on).attr('aria-checked', on ? 'true' : 'false');
-        });
-        $('[data-thumb-panel]').each(function () {
-            $(this).prop('hidden', $(this).data('thumb-panel') !== thumb.mode);
-        });
-        $('#thumb-name').text(thumb.card ? thumb.card.label : t('library.edit.thumbnail_none'));
-        var codes = _.pluck(thumb.cultures, 'code');
-        $('.rb-lib-culture').each(function () {
-            var at = codes.indexOf($(this).data('culture'));
-            $(this).attr('aria-pressed', at !== -1 ? 'true' : 'false').find('.rb-lib-culture-order').text(at !== -1 && codes.length > 1 ? at + 1 : '');
-        });
-        $('#thumb-swap').prop('hidden', codes.length < 2);
-    }
-
-    function set_card(card)
-    {
-        if(!thumb.card || thumb.card.code !== card.code) {
-            // a framing is for one card
-            $('#library-thumb-crop').val('');
-        }
-        thumb.card = card;
-        thumb.mode = 'card';
-        render_thumbnail();
-        changed();
-    }
-
-    /** A click adds a culture, or takes it off; a third replaces the first */
-    function toggle_culture(button)
-    {
-        var code = button.data('culture'), at = _.pluck(thumb.cultures, 'code').indexOf(code);
-        if(at !== -1) {
-            thumb.cultures.splice(at, 1);
-        } else {
-            thumb.cultures.push({code: code, name: button.data('name'), side: button.data('side')});
-            if(thumb.cultures.length > 2) {
-                thumb.cultures.shift();
-            }
-        }
-        render_thumbnail();
-        changed();
-    }
+    var chooser = null;
 
     function setup_thumbnail()
     {
-        thumb.mode = page.thumbnail.mode;
-        thumb.card = page.thumbnail.card;
-        thumb.cultures = (page.thumbnail.cultures || []).slice(0, 2);
-        render_thumbnail();
-        $('[data-thumb-mode]').on('click', function () {
-            thumb.mode = $(this).data('thumb-mode');
-            render_thumbnail();
-            changed();
-            if(thumb.mode === 'card' && !thumb.card) {
-                $('#thumb-search').trigger('focus');
-            }
-        });
-        $('.rb-lib-culture').on('click', function () { toggle_culture($(this)); });
-        $('#thumb-swap').on('click', function () {
-            thumb.cultures.reverse();
-            render_thumbnail();
-            changed();
-        });
-        app.thumbnail.crop_editor({
-            dialog: '#thumb-crop',
-            field: '#library-thumb-crop',
-            pencil: '#thumb-edit',
-            current: function () { return thumb.mode === 'card' ? thumb.card : null; },
-            applied: function () {
-                render_thumbnail();
-                changed();
-            }
-        });
-    }
-
-    function setup_thumbnail_search()
-    {
-        var input = $('#thumb-search');
-        if(!input.length || input.data('ready')) {
-            return;
-        }
-        input.data('ready', true);
-        input.typeahead({hint: true, highlight: true, minLength: 2}, {
-            name: 'thumbcards',
-            displayKey: 'label',
-            source: function (q, cb)
-            {
-                var regexp = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
-                cb(_.filter(app.data.cards.find({label: regexp}, {$orderBy: {label: 1}}), function (card) { return !!card.image_url; }).slice(0, 12));
-            }
-        });
-        input.on('typeahead:selected typeahead:autocompleted', function (event, card)
-        {
-            input.typeahead('val', '');
-            set_card({code: card.code, image: card.image_url, template: app.thumbnail.template(card.type_code), label: card.label});
+        chooser = app.thumbnail.chooser('.rb-thumb-chooser', {
+            mode: page.thumbnail.mode,
+            card: page.thumbnail.card,
+            cultures: page.thumbnail.cultures || [],
+            changed: changed
         });
     }
 
@@ -213,12 +113,7 @@
             description: $('#library-description').val(),
             notes: $('#library-notes-text').val(),
             tags: tags().join(' '),
-            thumbnail: {
-                mode: thumb.mode,
-                card: thumb.card ? thumb.card.code : '',
-                crop: app.thumbnail.parse_crop($('#library-thumb-crop').val()),
-                cultures: _.pluck(thumb.cultures, 'code')
-            },
+            thumbnail: chooser ? chooser.value() : null,
             // one marked for removal goes when it's saved
             entries: $('#library-entries .rb-lib-entry').not('.is-pending').map(function () {
                 return {decklist: $(this).data('decklist'), annotation: $(this).find('textarea[data-annotation]').val()};
@@ -466,7 +361,6 @@
     ui.on_data_loaded = function on_data_loaded()
     {
         ui.browse_data_loaded();
-        setup_thumbnail_search();
     };
 
     ui.on_all_loaded = function on_all_loaded()

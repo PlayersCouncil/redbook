@@ -17,7 +17,9 @@ security:
         ROLE_HISTORIAN:   ROLE_USER
         # Librarians look after public libraries (Ketura, 2026-11-08)
         ROLE_LIBRARIAN:   ROLE_USER
-        ROLE_ADMIN:       [ROLE_USER, ROLE_HISTORIAN, ROLE_LIBRARIAN]
+        # Moderators edit, delete and hide anyone's comments (Ketura, 2026-11-11)
+        ROLE_MODERATOR:   ROLE_USER
+        ROLE_ADMIN:       [ROLE_USER, ROLE_HISTORIAN, ROLE_LIBRARIAN, ROLE_MODERATOR]
         ROLE_SUPER_ADMIN: ROLE_ADMIN
 
     providers:

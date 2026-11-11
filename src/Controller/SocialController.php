@@ -7,7 +7,6 @@ use Doctrine\Persistence\ManagerRegistry;
 use App\Classes\FormMode;
 use App\Entity\Card;
 use App\Entity\Comment;
-use App\Entity\CommentInterface;
 use App\Entity\Deck;
 use App\Entity\PublishedDeck;
 use App\Entity\PublishedDeckInterface;
@@ -612,7 +611,7 @@ class SocialController extends AbstractController
      * @return Response
      */
     #[Route(path: '/decklist/view/{decklist_id}/{decklist_name}', name: 'decklist_detail', methods: ['GET'], defaults: ['decklist_name' => null], requirements: ['decklist_id' => '\d+'])]
-    public function viewAction(TranslatorInterface $translator, int $cacheExpiration, FormatRepository $formats, \App\Services\ReaderNotes $readerNotes, \App\Services\DecklistHistory $history, $decklist_id)
+    public function viewAction(TranslatorInterface $translator, int $cacheExpiration, FormatRepository $formats, \App\Services\ReaderNotes $readerNotes, \App\Services\DecklistHistory $history, \App\Services\CommentManager $comments, $decklist_id)
     {
         $response = new Response();
         $response->setPublic();
@@ -648,12 +647,11 @@ class SocialController extends AbstractController
             $duplicate = null;
         }
 
-        $commenters = array_map(
-            function (CommentInterface $comment) {
-                return $comment->getUser()->getUserIdentifier();
-            },
-            $decklist->getComments()->getValues()
-        );
+        // for @ in the comment box (Ketura, 2026-11-11: not the deleted)
+        $commenters = array_values(array_unique(array_map(
+            fn (Comment $comment) => $comment->getUser()->getUserIdentifier(),
+            array_filter($decklist->getComments()->getValues(), fn (Comment $c) => !$c->isDeleted())
+        )));
 
         $versions = $decklistRepo->findVersions($decklist);
         $precedent = $decklist->getPrecedent();
@@ -665,6 +663,7 @@ class SocialController extends AbstractController
                 'decklist' => $decklist,
                 'duplicate' => $duplicate,
                 'commenters' => $commenters,
+                'comment_threads' => $comments->threads($decklist),
                 'versions' => $versions,
                 'newer' => $decklistRepo->findNewerVersion($decklist),
                 // what it came from and led to, leaving out withdrawn decklists
@@ -791,159 +790,6 @@ class SocialController extends AbstractController
         $this->managerRegistry->getManager()->flush();
 
         return new Response($decklist->getNbFavorites());
-    }
-
-    /**
-     * Records a user's comment.
-     *
-     *
-     * @param Request $request
-     * @param Texts $texts
-     * @param MailerInterface $mailer
-     * @param string $emailSenderAddress
-     * @return RedirectResponse
-     */
-    #[Route(path: '/user/comment', name: 'decklist_comment', methods: ['POST'])]
-    public function commentAction(
-        Request $request,
-        Texts $texts,
-        MailerInterface $mailer,
-        string $emailSenderAddress
-    ) {
-        /* @var UserInterface $user */
-        $user = $this->getUser();
-        if (!$user) {
-            throw new UnauthorizedHttpException('You must be logged in to comment.');
-        }
-
-        $decklist_id = filter_var($request->get('id'), FILTER_SANITIZE_NUMBER_INT);
-        $decklist = $this->managerRegistry
-            ->getRepository(PublishedDeck::class)
-            ->find($decklist_id);
-
-        $comment_text = trim($request->get('comment'));
-        if ($decklist && !$decklist->isWithdrawn() && !empty($comment_text)) {
-            $mentioned_usernames = [];
-            $matches = [];
-            if (preg_match_all('/`@([\w_]+)`/', $comment_text, $matches, PREG_PATTERN_ORDER)) {
-                $mentioned_usernames = array_unique($matches[1]);
-            }
-
-            $comment_html = $texts->comment($comment_text);
-
-            $now = new DateTime();
-
-            $comment = new Comment();
-            $comment->setText($comment_html);
-            $comment->setDateCreation($now);
-            $comment->setUser($user);
-            $comment->setDecklist($decklist);
-            $comment->setIsHidden(false);
-
-            $this->managerRegistry
-                ->getManager()
-                ->persist($comment);
-            $decklist->setDateUpdate($now);
-            $decklist->setNbcomments($decklist->getNbcomments() + 1);
-
-            $this->managerRegistry
-                ->getManager()
-                ->flush();
-
-            // send emails
-            $spool = [];
-            if ($decklist->getUser()->getIsNotifAuthor()) {
-                if (!isset($spool[$decklist->getUser()->getEmail()])) {
-                    $spool[$decklist->getUser()->getEmail()] = 'Emails/newcomment_author.html.twig';
-                }
-            }
-            foreach ($decklist->getComments() as $comment) {
-                /* @var CommentInterface $comment */
-                $commenter = $comment->getUser();
-                if ($commenter && $commenter->getIsNotifCommenter()) {
-                    if (!isset($spool[$commenter->getEmail()])) {
-                        $spool[$commenter->getEmail()] = 'Emails/newcomment_commenter.html.twig';
-                    }
-                }
-            }
-            foreach ($mentioned_usernames as $mentioned_username) {
-                /* @var UserInterface $mentioned_user */
-                $mentioned_user = $this->managerRegistry
-                    ->getRepository(User::class)
-                    ->findOneBy(array('username' => $mentioned_username));
-                if ($mentioned_user && $mentioned_user->getIsNotifMention()) {
-                    if (!isset($spool[$mentioned_user->getEmail()])) {
-                        $spool[$mentioned_user->getEmail()] = 'Emails/newcomment_mentionned.html.twig';
-                    }
-                }
-            }
-            unset($spool[$user->getEmail()]);
-
-            $email_data = array(
-                'username' => $user->getUserIdentifier(),
-                'decklist_name' => $decklist->getName(),
-                'url' => $this->generateUrl(
-                    'decklist_detail',
-                    array(
-                            'decklist_id' => $decklist->getId(),
-                            'decklist_name' => $decklist->getNameCanonical(),
-                        ),
-                    UrlGeneratorInterface::ABSOLUTE_URL
-                ) . '#' . $comment->getId(),
-                'comment' => $comment_html,
-                'profile' => $this->generateUrl('user_profile_edit', [], UrlGeneratorInterface::ABSOLUTE_URL),
-            );
-            foreach ($spool as $email => $view) {
-                $message = (new Email())
-                    ->subject("[thronesdb] New comment")
-                    ->from(new Address($emailSenderAddress, $user->getUserIdentifier()))
-                    ->to($email)
-                    ->html($this->renderView($view, $email_data));
-                $mailer->send($message);
-            }
-        }
-
-        return $this->redirectToRoute('decklist_detail', array(
-            'decklist_id' => $decklist_id,
-            'decklist_name' => $decklist->getNameCanonical(),
-        ));
-    }
-
-    /**
-     * Hides a comment, or if $hidden is false, unhide a comment.
-     *
-     *
-     * @param string $comment_id
-     * @param string $hidden
-     * @return Response
-     * @throws ORMException
-     * @throws OptimisticLockException
-     */
-    #[Route(path: '/user/hidecomment/{comment_id}/{hidden}', name: 'decklist_comment_hide', methods: ['POST'])]
-    public function hidecommentAction($comment_id, $hidden)
-    {
-        /* @var UserInterface $user */
-        $user = $this->getUser();
-        if (!$user) {
-            throw new UnauthorizedHttpException('You must be logged in to comment.');
-        }
-
-        /* @var $em EntityManager */
-        $em = $this->managerRegistry->getManager();
-
-        $comment = $em->getRepository(Comment::class)->find($comment_id);
-        if (!$comment) {
-            throw new BadRequestHttpException('Unable to find comment');
-        }
-
-        if ($comment->getDecklist()->getUser()->getId() !== $user->getId()) {
-            return new Response(json_encode("You don't have permission to edit this comment."));
-        }
-
-        $comment->setIsHidden((bool)$hidden);
-        $em->flush();
-
-        return new Response(json_encode(true));
     }
 
     /**
@@ -1224,8 +1070,8 @@ class SocialController extends AbstractController
                 d.name_canonical decklist_name_canonical
                 from comment c
                 join published_deck d on c.published_deck_id=d.id
-                where c.user_id=?
-                order by date_creation desc
+                where c.user_id=? and c.date_deleted is null
+                order by c.date_creation desc
                 limit $start, $limit",
             array(
                 $user->getId(),
@@ -1322,7 +1168,8 @@ class SocialController extends AbstractController
                 from comment c
                 join published_deck d on c.published_deck_id=d.id
                 join user u on c.user_id=u.id
-                order by date_creation desc
+                where c.date_deleted is null and c.is_hidden=0
+                order by c.date_creation desc
                 limit $start, $limit",
             []
         )->fetchAllAssociative();

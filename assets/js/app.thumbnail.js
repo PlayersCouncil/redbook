@@ -565,4 +565,139 @@
         });
     };
 
+    /**
+     * A thumbnail chooser (Ketura, 2026-11-11; Thumbnail/chooser.html.twig, from the library
+     * editor's): a card found by name and framed with the crop editor, a banner of cultures,
+     * or the subject's fallback. options: mode, card ({code, image, template, label} or null),
+     * cultures ([{code, name, side}]), changed() after any change. Returns {value()}:
+     * {mode, card (code or ''), crop, cultures (codes)}.
+     */
+    thumb.chooser = function chooser(root, options)
+    {
+        root = $(root);
+        var max = parseInt(root.data('max-cultures'), 10) || 2,
+            changed = options.changed || function () {},
+            crop_field = root.find('.rb-chooser-crop'),
+            state = {mode: options.mode, card: options.card || null, cultures: (options.cultures || []).slice(0, max)};
+
+        function render()
+        {
+            var preview = root.find('.rb-chooser-preview'), crop = thumb.parse_crop(crop_field.val());
+            if(state.mode === 'card' && state.card) {
+                preview.html(thumb.card_html(state.card, crop));
+            } else if((state.mode === 'cultures' || state.mode === 'culture') && state.cultures.length) {
+                preview.html(thumb.cultures_html(thumb.culture_parts(state.cultures)));
+            } else {
+                preview.html(root.find('.rb-chooser-fallback').html());
+            }
+            $('#thumb-edit').prop('hidden', !(state.mode === 'card' && state.card));
+            root.find('[data-thumb-mode]').each(function () {
+                var on = $(this).data('thumb-mode') === state.mode;
+                $(this).toggleClass('active', on).attr('aria-checked', on ? 'true' : 'false');
+            });
+            root.find('[data-thumb-panel]').each(function () {
+                $(this).prop('hidden', $(this).data('thumb-panel') !== state.mode);
+            });
+            var name = root.find('.rb-chooser-name');
+            name.text(state.card ? state.card.label : name.data('none'));
+            var codes = _.pluck(state.cultures, 'code');
+            root.find('.rb-lib-culture').each(function () {
+                var at = codes.indexOf($(this).data('culture'));
+                $(this).attr('aria-pressed', at !== -1 ? 'true' : 'false').find('.rb-lib-culture-order').text(at !== -1 && codes.length > 1 ? at + 1 : '');
+            });
+            root.find('.rb-chooser-swap').prop('hidden', codes.length < 2);
+        }
+
+        function set_card(card)
+        {
+            if(!state.card || state.card.code !== card.code) {
+                crop_field.val('');   // a framing is for one card
+            }
+            state.card = card;
+            state.mode = 'card';
+            render();
+            changed();
+        }
+
+        /** A click adds a culture, or takes it off; one past the most replaces the first */
+        function toggle_culture(button)
+        {
+            var code = button.data('culture'), at = _.pluck(state.cultures, 'code').indexOf(code);
+            if(at !== -1) {
+                state.cultures.splice(at, 1);
+            } else {
+                state.cultures.push({code: code, name: button.data('name'), side: button.data('side')});
+                if(state.cultures.length > max) {
+                    state.cultures.shift();
+                }
+            }
+            render();
+            changed();
+        }
+
+        render();
+        root.find('[data-thumb-mode]').on('click', function () {
+            state.mode = $(this).data('thumb-mode');
+            render();
+            changed();
+            if(state.mode === 'card' && !state.card) {
+                root.find('.rb-chooser-search').trigger('focus');
+            }
+        });
+        root.find('.rb-lib-culture').on('click', function () { toggle_culture($(this)); });
+        root.find('.rb-chooser-swap').on('click', function () {
+            state.cultures.reverse();
+            render();
+            changed();
+        });
+        thumb.crop_editor({
+            dialog: '#thumb-crop',
+            field: crop_field,
+            pencil: '#thumb-edit',
+            current: function () { return state.mode === 'card' ? state.card : null; },
+            applied: function () {
+                render();
+                changed();
+            }
+        });
+
+        // the card search, once the cards are here
+        var input = root.find('.rb-chooser-search');
+        function setup_search()
+        {
+            if(!input.length || input.data('ready') || !app.data.cards) {
+                return;
+            }
+            input.data('ready', true);
+            input.typeahead({hint: true, highlight: true, minLength: 2}, {
+                name: 'thumbcards',
+                displayKey: 'label',
+                source: function (q, cb)
+                {
+                    var regexp = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+                    cb(_.filter(app.data.cards.find({label: regexp}, {$orderBy: {label: 1}}), function (card) { return !!card.image_url; }).slice(0, 12));
+                }
+            });
+            input.on('typeahead:selected typeahead:autocompleted', function (event, card)
+            {
+                input.typeahead('val', '');
+                set_card({code: card.code, image: card.image_url, template: thumb.template(card.type_code), label: card.label});
+            });
+        }
+        setup_search();
+        $(document).on('data.app', setup_search);
+
+        return {
+            value: function value()
+            {
+                return {
+                    mode: state.mode,
+                    card: state.card ? state.card.code : '',
+                    crop: thumb.parse_crop(crop_field.val()),
+                    cultures: _.pluck(state.cultures, 'code')
+                };
+            }
+        };
+    };
+
 })(app.thumbnail = {}, jQuery);

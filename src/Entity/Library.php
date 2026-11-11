@@ -151,8 +151,8 @@ class Library implements \App\Classes\ThumbnailSubject
     #[ORM\JoinTable(name: 'library_favorite', joinColumns: [new ORM\JoinColumn(name: 'library_id', referencedColumnName: 'id', onDelete: 'CASCADE')], inverseJoinColumns: [new ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', onDelete: 'CASCADE')])]
     protected Collection $favorites;
 
-    /** @var Collection<int, LibraryComment> */
-    #[ORM\OneToMany(targetEntity: LibraryComment::class, mappedBy: 'library', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    /** @var Collection<int, Comment> */
+    #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'library', cascade: ['persist', 'remove'], orphanRemoval: true)]
     #[ORM\OrderBy(['dateCreation' => 'ASC'])]
     protected Collection $comments;
 
@@ -174,8 +174,9 @@ class Library implements \App\Classes\ThumbnailSubject
     public function getVotes(): Collection { return $this->votes; }
     /** @return Collection<int, User> */
     public function getFavorites(): Collection { return $this->favorites; }
-    /** @return Collection<int, LibraryComment> */
+    /** @return Collection<int, Comment> */
     public function getComments(): Collection { return $this->comments; }
+    public function setNbComments(int $count): void { $this->nbComments = max(0, $count); }
 
     /** Like or unlike; true if the user likes it now */
     public function toggleVote(User $user): bool
@@ -202,11 +203,10 @@ class Library implements \App\Classes\ThumbnailSubject
         return true;
     }
 
-    public function addComment(LibraryComment $comment): void
+    public function addComment(Comment $comment): void
     {
         $comment->setLibrary($this);
         $this->comments->add($comment);
-        $this->nbComments++;
     }
     public function getUuid() { return $this->uuid; }
     public function setUuid($uuid): void { $this->uuid = $uuid; }

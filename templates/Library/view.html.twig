@@ -121,8 +121,7 @@
                 </div>
             {% endif %}
             <section class="rb-lv-comments rb-reader-comments" id="library-comments">
-                {% include 'Social/comments.html.twig' with {comments: library.comments | filter(c => not c.isHidden or (app.user and app.user is same as(library.user))), count: library.nbComments} %}
-                {% if not app.user %}<p class="rb-muted"><a href="{{ path('fos_user_security_login') }}">{{ 'library.view.login_to_comment' | trans }}</a></p>{% endif %}
+                {% include 'Comment/thread.html.twig' with {kind: 'library', subject: library, threads: comment_threads, commenters: commenters, login_note: 'library.view.login_to_comment'} %}
             </section>
         </div>
 

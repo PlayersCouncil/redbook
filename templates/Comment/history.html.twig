@@ -1,0 +1,14 @@
+{# A comment's History (Ketura, 2026-11-11), for its popup: every version, newest first, with
+   when and (if not its author) who changed it. Variables: comment, versions (CommentManager::history) #}
+<ol class="rb-cmt-versions" reversed>
+    {% for v in versions %}
+        <li class="rb-cmt-version">
+            <div class="rb-cmt-version-head">
+                <strong>{{ loop.last ? 'comment.history_posted' | trans : (loop.first and not comment.deleted ? 'comment.history_current' | trans : 'comment.history_edit' | trans) }}</strong>
+                <time datetime="{{ v.date | date('c') }}">{{ v.date | date('Y-m-d H:i') }}</time>
+                {% if v.edited_by_other and v.user %}<span class="rb-muted">{{ 'comment.history_by' | trans({'%name%': v.user.displayName}) }}</span>{% endif %}
+            </div>
+            <div class="rb-cmt-version-text">{{ v.html | raw }}</div>
+        </li>
+    {% endfor %}
+</ol>

@@ -270,15 +270,17 @@ test('another user likes, favourites and comments on it', async ({ pageAs }) => 
   const comment = `Nice list from run ${runId}`;
   const box = page.locator('.rb-comment-form .md-editor');
   await expect(box.locator('.md-footer')).toContainText('@ to mention');
-  await page.locator('#comment-form-text').pressSequentially(comment);
+  await page.locator('.rb-comment-form.is-main textarea').pressSequentially(comment);
   await box.locator('button[data-handler="bootstrap-markdown-cmdPreview"]').click();
   await expect(box.locator('.md-preview')).toContainText(comment);
   await box.locator('button[data-handler="bootstrap-markdown-cmdPreview"]').click();
   await Promise.all([
-    page.waitForResponse((r) => r.url().includes('/user/comment') && r.request().method() === 'POST'),
-    page.locator('form:has(#comment-form-text) button[type=submit]').click(),
+    page.waitForResponse((r) => r.url().includes('/comment/post') && r.request().method() === 'POST'),
+    page.locator('.rb-comment-form.is-main button[type=submit]').click(),
   ]);
-  await expect(page.locator('.alert-success[role=alert]')).toContainText('comment has been posted');
+  // it joins the thread straight away (Ketura, 2026-11-11), and the form is ready for another
+  await expect(page.locator('.rb-cmt-text').filter({ hasText: comment })).toBeVisible();
+  await expect(page.locator('.rb-comment-form.is-main textarea')).toHaveValue('');
   await snap(page, 'liked, favourited, comment posted');
 
   // The counts are stored, not just updated in the page
@@ -300,7 +302,7 @@ test('another user likes, favourites and comments on it', async ({ pageAs }) => 
   await expect(page.locator('#social-like .num')).toHaveText('1');
   await expect(page.locator('#social-fire')).toBeEnabled();
   await expect(page.locator('#social-fire')).not.toHaveClass(/is-on/);
-  await expect(page.locator('.comment-text').filter({ hasText: comment })).toBeVisible();
+  await expect(page.locator('.rb-cmt-text').filter({ hasText: comment })).toBeVisible();
   await snap(page, 'after reload: counts and comment kept');
 });
 
@@ -493,4 +495,133 @@ test('tags excluded: Retired and Shireposting by default, taken off to show them
   // Reset brings the default back
   await page.goto('/decklists');
   await expect(excluded).toHaveCount(2);
+});
+
+// Comments as threads (Ketura, 2026-11-11): replies under what they answer, Quote, Cheers and
+// fire, Edit with its History, Report, links to a comment, folding, deleting; and avatars
+test('comments thread: reply, quote, cheers, edit, history, report, link, delete; avatars', async ({ page, pageAs }) => {
+  const voter = await pageAs('voter');
+  const first = `Nice list from run ${runId}`;
+
+  // the voter's avatar: a culture, chosen on the profile page
+  await voter.goto('/user/profile_edit');
+  await voter.locator('#avatar-field [data-thumb-mode="culture"]').click();
+  await voter.locator('#avatar-field .rb-lib-culture[data-culture="gandalf"]').click();
+  await expect(voter.locator('#avatar-field .rb-chooser-preview .rb-thumb-c-gandalf')).toBeVisible();
+  await voter.locator('#avatar-field').locator('xpath=ancestor::form').locator('button[type=submit]').click();
+  await expect(voter.locator('#avatar-field .rb-chooser-preview .rb-thumb-c-gandalf')).toBeVisible();
+
+  // the author's: a card, found by name
+  await page.goto('/user/profile_edit');
+  await waitForCardData(page);
+  await page.locator('#avatar-field [data-thumb-mode="card"]').click();
+  await page.locator('#avatar-field .rb-chooser-search.tt-input').fill('Gimli, Dwarf of Erebor');
+  await page.locator('#avatar-field .tt-suggestion').first().click();
+  await expect(page.locator('#avatar-field .rb-chooser-preview .rb-thumb-card img')).toBeVisible();
+  await page.locator('#avatar-field').locator('xpath=ancestor::form').locator('button[type=submit]').click();
+  await expect(page.locator('#avatar-field .rb-chooser-preview .rb-thumb-card img')).toBeVisible();
+
+  // the author replies to the voter's comment: it goes under it, a level in
+  await page.goto(decklistUrl);
+  const top = page.locator('.rb-cmt-list > .rb-cmt').filter({ has: page.locator('.rb-cmt-text', { hasText: first }) });
+  await expect(top.locator('> .rb-cmt-body .rb-avatar .rb-thumb-c-gandalf')).toBeVisible();
+  await top.locator('> .rb-cmt-body [data-act="reply"]').click();
+  const replyText = `Thanks, from the author ${runId}`;
+  await top.locator('> .rb-comment-form.is-reply textarea').fill(replyText);
+  await top.locator('> .rb-comment-form.is-reply button[type=submit]').click();
+  const reply = top.locator('> .rb-cmt-replies > .rb-cmt');
+  await expect(reply.locator('.rb-cmt-text')).toHaveText(replyText);
+  await expect(reply.locator('> .rb-cmt-body .rb-avatar .rb-thumb-card img')).toBeVisible();
+  await expect(page.locator('.rb-comments-count')).toHaveText('2 Comments');
+
+  // Cheers on the voter's comment, then the fire it unlocks; not on your own
+  const cheer = top.locator('> .rb-cmt-body [data-act="cheer"]'), fire = top.locator('> .rb-cmt-body [data-act="fire"]');
+  await expect(fire).toHaveClass(/is-tucked/);
+  await cheer.click();
+  await expect(cheer.locator('.num')).toHaveText('1');
+  await expect(fire).not.toHaveClass(/is-tucked/);
+  await fire.click();
+  await expect(fire.locator('.num')).toHaveText('1');
+  await expect(fire).toHaveAttribute('aria-pressed', 'true');
+  await expect(reply.locator('> .rb-cmt-body [data-act="cheer"]')).toBeDisabled();
+
+  // the author reports it; it waits in the table for the moderators
+  await top.locator('> .rb-cmt-body .rb-cmt-more > button').click();
+  await top.locator('> .rb-cmt-body [data-act="report"]').click();
+  await page.locator('#rb-cmt-modal textarea').fill('Testing reports');
+  await page.locator('#rb-cmt-modal .btn-primary').click();
+  await expect(page.locator('#rb-cmt-modal .modal-body')).toContainText('moderators will look');
+  await page.locator('#rb-cmt-modal [data-dismiss="modal"]').last().click();
+  await expect(page.locator('#rb-cmt-modal')).toBeHidden();
+  const topId = await top.getAttribute('data-id');
+  expect(appConsole(['dbal:run-sql', `SELECT reason FROM comment_report WHERE comment_id = ${topId}`])).toContain('Testing reports');
+  await snap(page, 'a reply, cheers and fire');
+
+  // the voter quotes the reply: the quote starts the box, and the answer goes a level further in
+  await voter.goto(decklistUrl);
+  const vTop = voter.locator(`#comment-${topId}`);
+  const vReply = vTop.locator('> .rb-cmt-replies > .rb-cmt');
+  await vReply.locator('> .rb-cmt-body [data-act="quote"]').click();
+  const quoteBox = vReply.locator('> .rb-comment-form.is-reply textarea');
+  await expect(quoteBox).toHaveValue(new RegExp(`^> ${replyText}`));
+  await quoteBox.press('End');
+  await quoteBox.pressSequentially('Quoting you back');
+  await vReply.locator('> .rb-comment-form.is-reply button[type=submit]').click();
+  const deep = vReply.locator('> .rb-cmt-replies > .rb-cmt');
+  await expect(deep.locator('.rb-cmt-text blockquote')).toContainText(replyText);
+  await expect(deep).toHaveAttribute('data-depth', '2');
+
+  // the voter edits their first comment: the time says "edited", and History has both
+  await vTop.locator('> .rb-cmt-body .rb-cmt-more > button').click();
+  await vTop.locator('> .rb-cmt-body [data-act="edit"]').click();
+  const editBox = vTop.locator('> .rb-cmt-body .rb-comment-form.is-edit textarea');
+  await expect(editBox).toHaveValue(first);
+  await editBox.fill(`${first} (edited)`);
+  await vTop.locator('> .rb-cmt-body .rb-comment-form.is-edit button[type=submit]').click();
+  await expect(vTop.locator('> .rb-cmt-body .rb-cmt-text')).toHaveText(`${first} (edited)`);
+  await expect(vTop.locator('> .rb-cmt-body .rb-cmt-time')).toContainText('edited');
+  await vTop.locator('> .rb-cmt-body .rb-cmt-more > button').click();
+  await vTop.locator('> .rb-cmt-body [data-act="history"]').click();
+  await expect(voter.locator('#rb-cmt-modal .rb-cmt-version')).toHaveCount(2);
+  await expect(voter.locator('#rb-cmt-modal .rb-cmt-version').last()).toContainText(first);
+  await snap(voter, 'a comment history');
+  await expect(voter.locator('#rb-cmt-modal')).toHaveClass(/\bin\b/);
+  await expect(voter.locator('#rb-cmt-modal')).toBeFocused();
+  await voter.keyboard.press('Escape');
+  await expect(voter.locator('#rb-cmt-modal')).toBeHidden();
+
+  // folding the thread by its line, and opening it again
+  await vTop.locator('> .rb-cmt-replies > .rb-cmt-line').click();
+  await expect(vReply).toBeHidden();
+  await vTop.locator('> .rb-cmt-unfold-thread').click();
+  await expect(vReply).toBeVisible();
+
+  // a link to the quote reply opens on it, lit; its time is that link
+  const deepId = await deep.getAttribute('data-id');
+  await vTop.locator('> .rb-cmt-replies > .rb-cmt-line').click();
+  await voter.goto(`${decklistUrl}#comment-${deepId}`);
+  await voter.reload();
+  await expect(voter.locator(`#comment-${deepId}`)).toHaveClass(/is-target/);
+  await expect(voter.locator(`#comment-${deepId}`)).toBeInViewport();
+  await expect(voter.locator(`#comment-${deepId} > .rb-cmt-body .rb-cmt-time`)).toHaveAttribute('href', new RegExp(`#comment-${deepId}$`));
+
+  // deleting: the first comment, with replies under it, keeps its place; the leaf goes
+  voter.on('dialog', (d) => d.accept());
+  await vTop.locator('> .rb-cmt-body .rb-cmt-more > button').click();
+  await vTop.locator('> .rb-cmt-body [data-act="delete"]').click();
+  await expect(vTop).toHaveClass(/is-deleted/);
+  await expect(vTop.locator('> .rb-cmt-body')).toContainText('Comment deleted');
+  await expect(vReply.locator('> .rb-cmt-body .rb-cmt-text')).toHaveText(replyText);
+  await expect(voter.locator('.rb-comments-count')).toHaveText('2 Comments');
+  await deep.locator('> .rb-cmt-body .rb-cmt-more > button').click();
+  await deep.locator('> .rb-cmt-body [data-act="delete"]').click();
+  await expect(deep).toHaveCount(0);
+  await expect(voter.locator('.rb-comments-count')).toHaveText('1 Comment');
+  // kept on a fresh load: the deleted one stands over the author's reply
+  await voter.reload();
+  await expect(voter.locator(`#comment-${topId}`)).toHaveClass(/is-deleted/);
+  await expect(voter.locator(`#comment-${topId} > .rb-cmt-replies > .rb-cmt .rb-cmt-text`)).toHaveText(replyText);
+  await snap(voter, 'a deleted comment keeps its place');
+  // and someone else can't edit or delete another's
+  await expect(voter.locator(`#comment-${topId} > .rb-cmt-replies > .rb-cmt > .rb-cmt-body li.rb-cmt-own`).first()).toHaveAttribute('hidden', '');
 });

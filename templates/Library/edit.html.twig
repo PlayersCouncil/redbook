@@ -95,42 +95,12 @@
                             #}
                             <section class="rb-notes-section rb-lib-thumb-field" aria-labelledby="thumb-title">
                                 <div class="rb-notes-head"><h3 id="thumb-title">{{ 'library.edit.thumbnail' | trans }}</h3></div>
-                                <div class="rb-lib-thumb-row">
-                                    <div class="rb-thumb-preview">
-                                        <span class="rb-lib-thumb-preview" id="library-thumb-preview">{% include 'Decklist/thumbnail.html.twig' with {decklist: library} %}</span>
-                                        {% include 'Thumbnail/edit-button.html.twig' %}
-                                    </div>
-                                    <div class="rb-lib-thumb-pick">
-                                        <div class="rb-seg rb-lib-thumb-modes" role="radiogroup" aria-label="{{ 'library.edit.thumbnail' | trans }}">
-                                            {% for mode in ['card', 'cultures', 'auto'] %}
-                                                <button type="button" role="radio" data-thumb-mode="{{ mode }}">{{ ('library.edit.thumbnail_mode.' ~ mode) | trans }}</button>
-                                            {% endfor %}
-                                        </div>
-                                        <div class="rb-lib-thumb-panel" data-thumb-panel="card">
-                                            <input type="search" class="form-control input-sm" id="thumb-search" autocomplete="off" placeholder="{{ 'library.edit.thumbnail_search' | trans }}" aria-label="{{ 'library.edit.thumbnail_search' | trans }}">
-                                            <span class="rb-lib-thumb-name" id="thumb-name"></span>
-                                        </div>
-                                        <div class="rb-lib-thumb-panel" data-thumb-panel="cultures">
-                                            {% import 'Decklist/macros.html.twig' as m %}
-                                            <div class="rb-lib-cultures" role="group" aria-label="{{ 'library.edit.thumbnail_mode.cultures' | trans }}">
-                                                {% for side, sided in cultures | cultures_by_side %}
-                                                    {% if not loop.first %}<span class="rb-culture-sep" aria-hidden="true"></span>{% endif %}
-                                                    {% for culture in sided %}
-                                                        <button type="button" class="rb-lib-culture" data-culture="{{ culture.code }}" data-name="{{ culture.name }}" data-side="{{ culture.side }}" aria-pressed="false" title="{{ culture.name }}">
-                                                            {{ m.culture_icon(culture, null, '#111') }}<span class="rb-lib-culture-order"></span>
-                                                        </button>
-                                                    {% endfor %}
-                                                {% endfor %}
-                                            </div>
-                                            <span class="rb-lib-thumb-name">{{ 'library.edit.thumbnail_cultures_hint' | trans }} <button type="button" class="btn btn-link btn-xs" id="thumb-swap">{{ 'library.edit.thumbnail_swap' | trans }}</button></span>
-                                        </div>
-                                        <div class="rb-lib-thumb-panel" data-thumb-panel="auto">
-                                            <span class="rb-lib-thumb-name">{{ 'library.edit.thumbnail_auto_hint' | trans }}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <input type="hidden" id="library-thumb-crop" value="{{ library.thumbnailCrop ? library.thumbnailCrop | json_encode : '' }}">
-                                <template id="thumb-fallback">{% if library.firstAvailableDecklist %}{% include 'Decklist/thumbnail.html.twig' with {decklist: library.firstAvailableDecklist} %}{% else %}<span class="rb-thumb rb-thumb-empty" aria-hidden="true"><span class="fas fa-book"></span></span>{% endif %}</template>
+                                {% set fallback %}{% if library.firstAvailableDecklist %}{% include 'Decklist/thumbnail.html.twig' with {decklist: library.firstAvailableDecklist} %}{% else %}<span class="rb-thumb rb-thumb-empty" aria-hidden="true"><span class="fas fa-book"></span></span>{% endif %}{% endset %}
+                                {% include 'Thumbnail/chooser.html.twig' with {
+                                    subject: library, modes: ['card', 'cultures', 'auto'], labels: 'library.edit.thumbnail_mode.',
+                                    heading_id: 'thumb-title', cultures: cultures, max_cultures: 2, crop: library.thumbnailCrop, fallback: fallback,
+                                    hints: {cultures: 'library.edit.thumbnail_cultures_hint', fallback: 'library.edit.thumbnail_auto_hint'}
+                                } %}
                             </section>
                             <div class="rb-notes-tags">
                                 <label for="tag-entry">{{ 'decks.edit.notes.tags.label' | trans }}</label>
