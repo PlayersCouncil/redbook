@@ -74,6 +74,9 @@ html.rb-onepage .rb-main { flex: 1 1 auto; min-height: 0; overflow: hidden; disp
 .rb-theme-switch button + button { border-left: 1px solid rgba(243,221,162,.2); }
 .rb-theme-switch button:hover { color: var(--rb-gilt-hi); }
 .rb-theme-switch button[aria-pressed="true"] { background: var(--rb-gilt); color: #3A1009; }
+/* one button for the theme (Ketura, 2026-11-11): the icon is the theme in use */
+.rb-theme-switch .rb-theme-cycle { width: 32px; color: var(--rb-gilt-hi); }
+.rb-theme-switch .rb-theme-cycle:hover { color: #fff; background: rgba(243,221,162,.12); }
 .rb-lang { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px; border: 1px solid rgba(243,221,162,.35); border-radius: var(--rb-radius);
     background: rgba(0,0,0,.18); color: var(--rb-on-leather); font: 600 0.8125rem var(--rb-font-ui); cursor: pointer; }
 .rb-burger { display: none; width: 40px; height: 40px; border: 1px solid rgba(243,221,162,.35); border-radius: var(--rb-radius); background: rgba(0,0,0,.18); color: var(--rb-gilt); font-size: 1.125rem; }
@@ -332,3 +335,18 @@ a.rb-deck-name:hover { color: var(--rb-link); text-decoration: none; }
     h1 { font-size: 1.75rem; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* the account (Ketura, 2026-11-11): logged out, a Login or Register button; logged in, the
+   username, opening the account menu */
+.rb-nav > li > a.rb-login-btn { gap: 7px; height: 32px; margin: 0 4px; padding: 0 12px; align-self: center; border: 1px solid var(--rb-gilt); border-radius: var(--rb-radius);
+    background: linear-gradient(var(--rb-gilt-hi), var(--rb-gilt)); color: #3A1009; font-weight: 700; box-shadow: 0 1px 2px rgba(0, 0, 0, .35); text-decoration: none; }
+.rb-nav > li > a.rb-login-btn:hover, .rb-nav > li > a.rb-login-btn:focus { background: var(--rb-gilt-hi); color: #3A1009; text-decoration: none; }
+.rb-nav > li > a.rb-login-btn .fa-user-circle { font-size: 1.05rem; }
+.rb-nav > li > a.rb-account-btn { gap: 7px; }
+.rb-account-name { max-width: 14em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 600px) {
+    .rb-nav > li > a.rb-login-btn { padding: 0 9px; font-size: 0.8125rem; }
+    .rb-account-name { max-width: 7em; }
+}
+.rb-nav > li > a.rb-login-btn > .fas { color: #3A1009; opacity: 1; }
+#login { display: flex; align-items: center; }

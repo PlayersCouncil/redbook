@@ -100,6 +100,7 @@ export function buildAppJs() {
       "assets/js/app.theme_switch.js",
       "assets/js/app.social.js",
       "assets/js/app.comments.js",
+      "assets/js/app.sortable.js",
       "assets/js/app.splitter.js",
       "assets/js/app.thumbnail.js",
       "assets/js/app.tag_input.js",

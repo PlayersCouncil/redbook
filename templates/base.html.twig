@@ -53,11 +53,13 @@
    The top bar is the design's (Ketura, 2026-11-09): leather, the public sections on the
    left, the user's own and the theme and language on the right. Sections not built yet show
    greyed out, with no link. Below 1100px the sections fold into the menu button. #}
+{# the theme: one button, each click the next of Auto, Dark, Light (Ketura, 2026-11-11);
+   app.theme_switch.js shows the one in use #}
 {% macro theme_switch() %}
-    <div class="rb-theme-switch" role="group" aria-label="{{ 'nav.theme.label' | trans }}">
-        <button type="button" data-theme-set="light" title="{{ 'nav.theme.light' | trans }}"><span class="fas fa-sun"></span></button>
-        <button type="button" data-theme-set="auto" title="{{ 'nav.theme.auto' | trans }}"><span class="fas fa-adjust"></span></button>
-        <button type="button" data-theme-set="dark" title="{{ 'nav.theme.dark' | trans }}"><span class="fas fa-moon"></span></button>
+    <div class="rb-theme-switch">
+        <button type="button" class="rb-theme-cycle" data-theme-cycle aria-label="{{ 'nav.theme.label' | trans }}"
+                data-label-auto="{{ 'nav.theme.auto' | trans }}" data-label-dark="{{ 'nav.theme.dark' | trans }}" data-label-light="{{ 'nav.theme.light' | trans }}"
+                data-next="{{ 'nav.theme.next' | trans }}"><span class="fas fa-adjust" aria-hidden="true"></span></button>
     </div>
 {% endmacro %}
 {# the language menu, switched off for now (Ketura, 2026-11-09): the translations aren't
@@ -73,8 +75,8 @@
 {% set _section = {
     decklists_list: 'decklists', decklist_detail: 'decklists', decklist_edit: 'decklists',
     libraries_list: 'libraries', libraries_samples: 'libraries', libraries_sealed: 'libraries', libraries_user: 'libraries', library_view: 'libraries', library_tags: 'libraries',
-    decks_list: 'mydecks', deck_edit: 'mydecks', deck_view: 'mydecks', deck_publish_form: 'mydecks', deck_buildform: 'mydecks',
-    my_libraries: 'mylibraries', library_new: 'mylibraries', library_edit: 'mylibraries', library_view_private: 'mylibraries',
+    decks_list: 'drafts', deck_edit: 'drafts', deck_view: 'drafts', deck_publish_form: 'drafts', deck_buildform: 'new', deck_import: 'new',
+    my_libraries: 'drafts', library_new: 'new', library_edit: 'drafts', library_view_private: 'drafts',
 }[_canonical]|default('') %}
 <header class="rb-topbar rb-leather {% block topbar_edge %}rb-tooled-bottom{% endblock %} hidden-print">
     <div class="rb-bar-inner">
@@ -109,12 +111,32 @@
                 <ul class="rb-nav rb-nav-user">
                     {# the user's own things, shown by app.user.js once logged in (Ketura, 2026-11-06) #}
                     <li class="rb-nav-private hidden"><a class="is-soon" aria-disabled="true" title="{{ 'nav.notifications' | trans }} ({{ 'nav.notyet' | trans }})"><span class="fas fa-bell"></span><span class="sr-only">{{ 'nav.notifications' | trans }}</span></a></li>
-                    {# filled in by app.user.js: My Account, Admin, Logout #}
+                    {# filled in by app.user.js (Ketura, 2026-11-11): logged out, a Login or Register
+                       button; logged in, the username, opening My Account, Admin, Logout #}
                     <li id="login" class="dropdown">
-                        <a href="#" class="disabled" title="{{ 'nav.account' | trans }}"><span class="fas fa-user-circle"></span><span class="sr-only">{{ 'nav.account' | trans }}</span></a>
+                        <a href="{{ path('fos_user_security_login') }}" class="rb-account" title="{{ 'nav.account' | trans }}"><span class="fas fa-user-circle"></span><span class="sr-only">{{ 'nav.account' | trans }}</span></a>
                     </li>
-                    <li class="rb-nav-private hidden"><a href="{{ path('decks_list') }}" title="{{ 'nav.mydecks' | trans }}"{% if _section == 'mydecks' %} class="active" aria-current="page"{% endif %}><span class="fas fa-layer-group"></span><span class="rb-nav-label">{{ 'nav.mydecks' | trans }}</span></a></li>
-                    <li class="rb-nav-private hidden"><a href="{{ path('my_libraries') }}" title="{{ 'nav.mylibraries' | trans }}"{% if _section == 'mylibraries' %} class="active" aria-current="page"{% endif %}><span class="fas fa-book-open"></span><span class="rb-nav-label">{{ 'nav.mylibraries' | trans }}</span></a></li>
+                    {# the user's drafts, and new ones (Ketura, 2026-11-11: decks are drafts until published);
+                       events and posts aren't built yet #}
+                    <li class="rb-nav-private hidden dropdown">
+                        <a href="#" class="dropdown-toggle{% if _section == 'drafts' %} active{% endif %}" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" id="nav-drafts" title="{{ 'nav.mydrafts' | trans }}"><span class="fas fa-layer-group"></span><span class="rb-nav-label">{{ 'nav.mydrafts' | trans }}</span> <span class="caret"></span></a>
+                        <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="nav-drafts">
+                            <li><a href="{{ path('decks_list') }}"><span class="fas fa-layer-group fa-fw"></span> {{ 'nav.mydeckdrafts' | trans }}</a></li>
+                            <li><a href="{{ path('my_libraries') }}"><span class="fas fa-book-open fa-fw"></span> {{ 'nav.mylibrarydrafts' | trans }}</a></li>
+                            <li class="disabled"><a aria-disabled="true" title="{{ 'nav.notyet' | trans }}"><span class="fas fa-calendar-alt fa-fw"></span> {{ 'nav.myeventdrafts' | trans }}</a></li>
+                            <li class="disabled"><a aria-disabled="true" title="{{ 'nav.notyet' | trans }}"><span class="fas fa-scroll fa-fw"></span> {{ 'nav.mypostdrafts' | trans }}</a></li>
+                        </ul>
+                    </li>
+                    <li class="rb-nav-private hidden dropdown">
+                        <a href="#" class="dropdown-toggle{% if _section == 'new' %} active{% endif %}" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" id="nav-new" title="{{ 'nav.newdraft' | trans }}"><span class="fas fa-plus"></span><span class="rb-nav-label">{{ 'nav.newdraft' | trans }}</span> <span class="caret"></span></a>
+                        <ul class="dropdown-menu dropdown-menu-right" aria-labelledby="nav-new">
+                            <li><a href="{{ path('deck_buildform') }}"><span class="fas fa-layer-group fa-fw"></span> {{ 'nav.new.deck' | trans }}</a></li>
+                            <li><a href="{{ path('deck_import') }}"><span class="fas fa-file-import fa-fw"></span> {{ 'nav.new.import' | trans }}</a></li>
+                            <li><a href="{{ path('library_new') }}"><span class="fas fa-book-open fa-fw"></span> {{ 'nav.new.library' | trans }}</a></li>
+                            <li class="disabled"><a aria-disabled="true" title="{{ 'nav.notyet' | trans }}"><span class="fas fa-calendar-alt fa-fw"></span> {{ 'nav.new.event' | trans }}</a></li>
+                            <li class="disabled"><a aria-disabled="true" title="{{ 'nav.notyet' | trans }}"><span class="fas fa-scroll fa-fw"></span> {{ 'nav.new.post' | trans }}</a></li>
+                        </ul>
+                    </li>
                 </ul>
                 {{ shell.theme_switch() }}
                 {% if _route is not empty %}{{ shell.language_menu(_route, _route_params|merge(_get_params), true) }}{% endif %}

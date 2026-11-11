@@ -679,31 +679,44 @@ class BuilderController extends AbstractController
         ]);
     }
 
+    /** Where My Decks was (Ketura, 2026-11-11), and its favourites tab: now on the decklists page */
+    #[Route(path: '/decks', name: 'decks_list_old', methods: ['GET'])]
+    public function oldListAction(Request $request): Response
+    {
+        $query = $request->query->all();
+        if (($query['tab'] ?? null) === 'favorites') {
+            return $this->redirectToRoute('decklists_list', ['favorites' => 1], Response::HTTP_MOVED_PERMANENTLY);
+        }
+        return $this->redirectToRoute('decks_list', $query, Response::HTTP_MOVED_PERMANENTLY);
+    }
+
     /**
-     * My Decks (Ketura, 2026-11-07): the decklists page's search and filters beside the user's
-     * decks, which can also be narrowed to who can see them, and the decklists they favourited.
-     * As on the decklists page, its own requests as the filters change get the parts it swaps in.
+     * My Deck Drafts (Ketura, 2026-11-07, as My Decks; drafts, at /drafts/decks, since
+     * 2026-11-11): the decklists page's search and filters beside the user's decks, which can
+     * also be narrowed to who can see them. Their favourite decklists moved to the decklists
+     * page's My Favorites tab. As on the decklists page, its own requests as the filters
+     * change get the parts it swaps in.
      */
-    #[Route(path: '/decks', name: 'decks_list', methods: ['GET'])]
+    #[Route(path: '/drafts/decks', name: 'decks_list', methods: ['GET'])]
     public function listAction(Request $request, MyDecks $myDecks, PublishedDeckManager $pager, TranslatorInterface $translator): Response
     {
         $user = $this->requireUser();
+        if ($request->query->get('tab') === 'favorites') {
+            return $this->redirectToRoute('decklists_list', ['favorites' => 1]);
+        }
         $decks = $myDecks->deckRows($user);
         $tournaments = $this->managerRegistry->getRepository(Tournament::class)->findBy([], ['description' => 'DESC']);
         $filters = $myDecks->getFilters($request);
 
-        // someone with favourites but no decks yet gets the page, for its favourites tab
-        $favorites = $myDecks->favoriteRows($user);
-        if (!$decks && !$favorites && !$request->isXmlHttpRequest()) {
+        if (!$decks && !$request->isXmlHttpRequest()) {
             return $this->render('Builder/no-decks.html.twig', [
-                'pagetitle' => $translator->trans('nav.mydecks'),
+                'pagetitle' => $translator->trans('nav.mydeckdrafts'),
                 'nbmax' => $user->getMaxNbDecks(),
                 'tournaments' => $tournaments,
             ]);
         }
 
-        $all = array_merge($decks, $favorites);
-        $rows = $myDecks->filter($all, $filters);
+        $rows = $myDecks->filter($decks, $filters);
         $limit = $filters['limit'] ?? PublishedDeckManager::DEFAULT_LIMIT;
         $page = max(1, (int) $request->query->get('page', 1));
         $pager->setLimit($limit);
@@ -712,12 +725,12 @@ class BuilderController extends AbstractController
 
         $allFormats = $this->formats->findAllByCode();
         $usedFormats = [];
-        foreach ($myDecks->countFormats($all) as $code => $count) {
+        foreach ($myDecks->countFormats($decks) as $code => $count) {
             $usedFormats[] = ['code' => $code, 'name' => isset($allFormats[$code]) ? $allFormats[$code]->getName() : $code, 'count' => $count];
         }
 
         $params = [
-            'pagetitle' => $translator->trans('nav.mydecks'),
+            'pagetitle' => $translator->trans('nav.mydeckdrafts'),
             'pagedescription' => 'Create custom decks with the help of a powerful deckbuilder.',
             'rows' => array_slice($rows, ($page - 1) * $limit, $limit),
             'total' => count($rows),

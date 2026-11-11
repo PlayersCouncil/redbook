@@ -15,10 +15,23 @@ nav:
   theme:
     label: Tema de color
     light: Claro
-    auto: Según el sistema
+    auto: Automático (según el sistema)
     dark: Oscuro
+    next: "Tema: %current%. Haz clic para %next%."
   mydecks: Mis mazos
   mylibraries: Mis bibliotecas
+  mydrafts: Mis borradores
+  mydeckdrafts: Mis borradores de mazos
+  mylibrarydrafts: Mis borradores de bibliotecas
+  myeventdrafts: Mis borradores de eventos
+  mypostdrafts: Mis borradores de publicaciones
+  newdraft: Nuevo borrador
+  new:
+    deck: Nuevo mazo
+    import: Importar mazo
+    library: Nueva biblioteca
+    event: Nuevo evento
+    post: Nueva publicación
   decklists: Mazos
   libraries: Bibliotecas
   cardstats: Estadísticas de cartas
@@ -613,7 +626,7 @@ decklist.state.no_deck: "El mazo desde el que se publicó ya no existe, así que
 decklist.state.withdrawn_help: "Retirada: solo tú puedes ver esta lista. Corrige el mazo en el constructor, reemplaza aquí las cartas y publícala de nuevo en la misma dirección, con otros tres días para deshacerlo."
 decklist.state.grace_help: "Hasta el %date% puedes deshacer la publicación si necesitas corregir el contenido del mazo."
 decklist.state.fixed_help: "<strong>Una vez publicada una lista, no puedes cambiar sus cartas</strong> (pero sí los detalles y el comentario de abajo). Si quieres publicar una versión nueva de este mazo, %link%, donde puedes editar la lista y volver a publicarla como una versión nueva."
-decklist.state.fixed_link: "haz clic aquí para abrir la revisión privada en Mis mazos"
+decklist.state.fixed_link: "haz clic aquí para abrir la revisión privada en Mis borradores de mazos"
 decklist.state.withdrawn_note: "Retirada: solo tú puedes ver esta lista."
 decklist.state.gone_title: Lista Retirada
 decklist.state.gone_text: "Su autor ha retirado esta lista, quizá para corregirla. Puede que vuelva pronto a esta dirección."
@@ -1117,3 +1130,8 @@ user.avatar_search: "Busca una carta por nombre"
 user.avatar_none: "Aún no has elegido carta"
 deckbuilder.notes.bid_any: "[cualquiera]"
 editor.characters: "%count% / %max% caracteres"
+deckbuilder.notes.starting_drag: "Arrastra para subir o bajar esta comunidad inicial"
+moderation.reason: "Motivo para eliminarlo (obligatorio)"
+moderation.reason_placeholder: "Se guarda con tu nombre para los demás moderadores; el autor no lo ve"
+comment.delete_title: "Eliminar comentario"
+decklist.list.tabs: "Mazos publicados y tus favoritos"

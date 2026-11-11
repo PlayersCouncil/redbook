@@ -78,6 +78,7 @@ security:
         - { path: ^/deck/view/, roles: PUBLIC_ACCESS }
         - { path: ^/deck/, roles: ROLE_USER }
         - { path: ^/decks, roles: ROLE_USER }
+        - { path: ^/drafts/, roles: ROLE_USER }
         - { path: ^/user/, roles: ROLE_USER }
 
 when@test:

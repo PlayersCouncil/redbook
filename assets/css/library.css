@@ -18,7 +18,7 @@
 .rb-lib-controls { display: flex; flex-direction: column; gap: 1px; flex: 0 0 auto; }
 .rb-lib-controls button { width: 24px; height: 22px; padding: 0; border: 1px solid transparent; border-radius: 4px; background: none; color: var(--rb-ink-2); font-size: 0.6875rem; }
 .rb-lib-controls button:hover, .rb-lib-controls button:focus { border-color: var(--rb-line-strong); color: var(--rb-ink); }
-.rb-lib-drag { cursor: grab; }
+.rb-lib-drag { cursor: grab; touch-action: none; }
 .rb-lib-num { flex: 0 0 22px; padding-top: 2px; font-weight: 700; color: var(--rb-ink-2); text-align: right; }
 .rb-lib-thumb .rb-thumb { width: 84px; }
 .rb-lib-meta { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }

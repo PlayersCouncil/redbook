@@ -19,7 +19,9 @@ let publicUrl = '';
 
 test('a new library from My Libraries, filled from the Build tab', async ({ page }) => {
   await page.goto('/my/libraries');
-  await expect(page.locator('h1')).toHaveText('My Libraries');
+  // My Library Drafts since 2026-11-11, and the old address leads there
+  await expect(page).toHaveURL(/\/drafts\/libraries$/);
+  await expect(page.locator('h1')).toHaveText('My Library Drafts');
   await page.click('#btn-new-library');
   await expect(page).toHaveURL(/\/library\/new$/);
   await page.fill('#name', name);
@@ -265,7 +267,7 @@ test('Add to Library from the decklists page: to a library, or a new one made in
   await page.keyboard.press('Escape');
   await expect(drawer).toHaveCount(0);
 
-  await page.goto(`/my/libraries?name=${encodeURIComponent('E2E drawer library ' + runId)}`);
+  await page.goto(`/drafts/libraries?name=${encodeURIComponent('E2E drawer library ' + runId)}`);
   await expect(page.locator('.rb-library-table tbody tr')).toHaveCount(1);
   await expect(page.locator('.rb-library-table .rb-library-count')).toHaveText('1');
   await expect(page.locator('.rb-library-table .rb-vis')).toContainText('Private');
@@ -419,7 +421,7 @@ test('My Decks: published decks can go in a library, the rest say to publish fir
 });
 
 test('deleting a library from My Libraries leaves its decks alone', async ({ page }) => {
-  await page.goto(`/my/libraries?name=${encodeURIComponent('E2E drawer library ' + runId)}`);
+  await page.goto(`/drafts/libraries?name=${encodeURIComponent('E2E drawer library ' + runId)}`);
   await page.locator('.btn-delete-library').click();
   await expect(page.locator('#delete-library-modal')).toBeVisible();
   await page.click('#delete-library-confirm');

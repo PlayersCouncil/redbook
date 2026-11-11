@@ -122,7 +122,9 @@
            deck): shown so they can be seen and dropped (Ketura, 2026-11-06) #}
         {% set also = [] %}
         {% if f.event is defined %}{% set also = also | merge([{name: 'event', value: f.event, label: 'decklist.browse.also_event' | trans({'%name%': f.event})}]) %}{% endif %}
-        {% for key in ['played', 'legal', 'mine', 'favorites'] | filter(k => f[k] is defined) %}
+        {# favourites are the My Favorites tab now (Ketura, 2026-11-11): kept, not shown #}
+        {% if f.favorites is defined %}<input type="hidden" name="favorites" value="1">{% endif %}
+        {% for key in ['played', 'legal', 'mine'] | filter(k => f[k] is defined) %}
             {% set also = also | merge([{name: key, value: 1, label: ('decklist.browse.also_' ~ key) | trans}]) %}
         {% endfor %}
         {% if also %}

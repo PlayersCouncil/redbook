@@ -19,9 +19,10 @@ test('home page renders with navigation', async ({ page }) => {
   await expect(page.locator('.rb-footer-links a')).toHaveText(['About', 'API']);
   await expect(bar.locator('a.is-soon')).toHaveCount(5);
   await expect(bar.locator('a.is-soon[href]')).toHaveCount(0);
-  // logged out, the right side is just the account menu, the theme and the language
+  // logged out, the right side is a Login or Register button (Ketura, 2026-11-11), the theme
+  // and the language
   await expect(bar.locator('.rb-nav-user > li:visible > a')).toHaveCount(1);
-  await expect(bar.locator('.rb-nav-user > li:visible > a')).toHaveAttribute('title', 'Account');
+  await expect(bar.locator('.rb-nav-user > li:visible > a')).toHaveText('Login or Register');
   await expect(bar.locator('.rb-bar-tools .rb-lang')).toContainText('EN');
   const links = bar.locator('.dropdown-menu a', { hasText: /Gemp|Wiki|Forums|Discord/ });
   await expect(links).toHaveText(['Play on Gemp', 'LOTR-TCG Wiki', 'PC Forums', 'PC Discord']);
@@ -53,25 +54,25 @@ test('the front page: the cover, the decks feed and its tabs, the feeds still to
   }
 });
 
-test('the theme switch: light, the system theme, or dark, kept across pages', async ({ page }) => {
+test('the theme: kept across pages, and Auto follows the system', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' });
   await page.goto('/');
   const html = page.locator('html');
-  const button = (mode: string) => page.locator(`.rb-bar-tools [data-theme-set=${mode}]`);
-  // nothing chosen: the system's, which here is light
-  await expect(button('auto')).toHaveAttribute('aria-pressed', 'true');
+  const button = page.locator('.rb-bar-tools [data-theme-cycle]');
+  // nothing chosen: the system's, which here is light; one click, dark
   await expect(html).not.toHaveClass(/pc-dark/);
-  await button('dark').click();
+  await button.click();
   await expect(html).toHaveClass(/pc-dark/);
-  await expect(button('dark')).toHaveAttribute('aria-pressed', 'true');
   // set before the page paints, on the next page too
   await page.goto('/decklists');
   await expect(html).toHaveClass(/pc-dark/);
-  await button('auto').click();
-  await expect(html).not.toHaveClass(/pc-dark/);
+  // Light, then Auto, which follows the system
+  await button.click();
+  await button.click();
+  await expect(button).toHaveAttribute('data-mode', 'auto');
   await page.emulateMedia({ colorScheme: 'dark' });
   await expect(html).toHaveClass(/pc-dark/);
-  await button('light').click();
+  await page.emulateMedia({ colorScheme: 'light' });
   await expect(html).not.toHaveClass(/pc-dark/);
 });
 
@@ -125,9 +126,30 @@ test('decklist listings load; the old list addresses are gone', async ({ page })
   }
 });
 
-test('anonymous users are sent to the login page for their decks', async ({ page }) => {
-  await page.goto('/decks');
+test('anonymous users are sent to the login page for their drafts', async ({ page }) => {
+  await page.goto('/drafts/decks');
   await expect(page).toHaveURL(/\/login/);
+  await page.goto('/drafts/libraries');
+  await expect(page).toHaveURL(/\/login/);
+});
+
+// the theme: one button, each click the next of Auto, Dark, Light (Ketura, 2026-11-11)
+test('the theme button cycles Auto, Dark, Light', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/decklists');
+  const button = page.locator('.rb-bar-tools [data-theme-cycle]');
+  await expect(button).toHaveAttribute('data-mode', 'auto');
+  await expect(button).toHaveAttribute('title', 'Theme: Auto (match system). Click for Dark.');
+  await button.click();
+  await expect(button).toHaveAttribute('data-mode', 'dark');
+  await expect(page.locator('html')).toHaveClass(/pc-dark/);
+  await button.click();
+  await expect(button).toHaveAttribute('data-mode', 'light');
+  await expect(page.locator('html')).not.toHaveClass(/pc-dark/);
+  await page.reload();
+  await expect(button).toHaveAttribute('data-mode', 'light');
+  await button.click();
+  await expect(button).toHaveAttribute('data-mode', 'auto');
 });
 
 test('public card API returns the card pool', async ({ request }) => {

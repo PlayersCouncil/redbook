@@ -64,20 +64,14 @@
         }).join('');
     }
 
-    function twilight_of(codes)
-    {
-        return _.reduce(codes, function (sum, code) {
-            var card = app.data.cards.findById(code);
-            return sum + (card && card.twilight ? parseInt(card.twilight, 10) || 0 : 0);
-        }, 0);
-    }
-
     /**
      * The starting fellowships (Ketura, 2026-11-07; several, each named, 2026-11-11): a row
-     * each, its name, + to pick a companion from the deck, its companions as pills, their
-     * twilight, and − to take the row away (with more than one). The active row (the one
-     * clicked last) is where + and the deck list's S go. #starting-field carries them all
-     * for the decklist form. A row's name box isn't redrawn while it's being typed in.
+     * each, a handle to drag it up or down (with more than one), its name, + to pick a
+     * companion from the deck, its companions as pills in the order they're played (dragged to
+     * change it), and − to take the row away (with more than one). No twilight total: game
+     * text discounts make it wrong just where it matters (Ketura, 2026-11-11). The active row
+     * (the one clicked last) is where + and the deck list's S go. #starting-field carries them
+     * all for the decklist form. A row's name box isn't redrawn while it's being typed in.
      */
     function render_starting()
     {
@@ -94,14 +88,25 @@
         if(rows.length !== shown.length) {
             box.html(_.map(shown, function (group, i) {
                 return '<div class="rb-starting-group" data-group="' + i + '">'
+                    + '<span class="rb-starting-handle" title="' + _.escape(t('deckbuilder.notes.starting_drag')) + '" aria-hidden="true"><span class="fas fa-grip-vertical"></span></span>'
                     + '<input type="text" class="rb-starting-name" maxlength="60" autocomplete="off" aria-label="' + _.escape(t('deckbuilder.notes.starting_name')) + '">'
                     + '<button type="button" class="rb-btn rb-btn-small rb-start-pick" aria-pressed="false" title="' + _.escape(t('deckbuilder.notes.start_pick')) + '" aria-label="' + _.escape(t('deckbuilder.notes.start_pick')) + '">+</button>'
                     + '<div class="rb-starting-list"></div>'
-                    + '<span class="rb-starting-cost"></span>'
                     + '<button type="button" class="rb-starting-drop" title="' + _.escape(t('deckbuilder.notes.starting_remove_group')) + '" aria-label="' + _.escape(t('deckbuilder.notes.starting_remove_group')) + '">&minus;</button>'
                     + '</div>';
             }).join(''));
             rows = box.children('.rb-starting-group');
+            // the companions in each, dragged into the order they're played
+            rows.find('.rb-starting-list').each(function () {
+                app.sortable.attach(this, {items: '.rb-starting-pill', axis: 'x', ignore: '.rb-starting-remove', done: function (pill) {
+                    var list = pill.closest('.rb-starting-list'), i = list.closest('.rb-starting-group').data('group'), groups = app.deck.get_starting_groups();
+                    if(groups[i]) {
+                        groups[i].codes = list.find('.rb-starting-card').map(function () { return $(this).data('code') + ''; }).get();
+                        app.deck.set_starting_groups(groups);
+                        on_edit();
+                    }
+                }});
+            });
         }
         rows.each(function (i) {
             var row = $(this), group = shown[i], name = row.find('.rb-starting-name');
@@ -110,9 +115,9 @@
                 name.val(group.name);
             }
             row.find('.rb-starting-list').html(pills_html(group.codes, i));
-            row.find('.rb-starting-cost').text(group.codes.length ? t('deckbuilder.notes.starting_twilight', {cost: twilight_of(group.codes)}) : '');
             row.toggleClass('is-active', shown.length > 1 && i === active).attr('title', shown.length > 1 && i === active ? t('deckbuilder.notes.starting_active') : null);
             row.find('.rb-starting-drop').prop('hidden', shown.length < 2);
+            row.toggleClass('is-sortable', shown.length > 1);
             row.find('.rb-start-pick').attr('aria-pressed', picking === 'start' && i === active ? 'true' : 'false');
         });
     }
@@ -342,6 +347,17 @@
             $('#starting-field').val(JSON.stringify(app.deck.get_starting_groups()));
             on_edit();
         });
+        // the rows themselves, by the handle on the left
+        app.sortable.attach('#starting-groups', {items: '.rb-starting-group', handle: '.rb-starting-handle', axis: 'y', done: function (moved) {
+            var groups = app.deck.get_starting_groups(),
+                order = $('#starting-groups .rb-starting-group').map(function () { return $(this).data('group'); }).get();
+            app.deck.set_starting_groups(_.compact(_.map(order, function (i) { return groups[i]; })));
+            app.deck.set_active_group(order.indexOf(moved.data('group')));
+            // redrawn whole: each row's place has changed
+            $('#starting-groups').empty();
+            render_starting();
+            on_edit();
+        }});
         root.on('click', '#starting-add', function () {
             var groups = app.deck.get_starting_groups();
             if(!groups.length) {

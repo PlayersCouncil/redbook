@@ -229,7 +229,7 @@ test('the author edits the decklist from its page; nobody else gets Edit', async
   // under it, always (Ketura, 2026-11-09): a new version starts from the deck
   const fixed = page.locator('.rb-state-fixed');
   await expect(fixed).toContainText('Once you publish a decklist, you cannot edit the cards');
-  await expect(fixed.locator('a', { hasText: 'click here to open the private revision in My Decks' })).toHaveAttribute('href', /\/deck\/edit\//);
+  await expect(fixed.locator('a', { hasText: 'click here to open the private revision in My Deck Drafts' })).toHaveAttribute('href', /\/deck\/edit\//);
   // the deck greyed, on a darker panel, since its cards can't change here (Ketura, 2026-11-09)
   await expect(page.locator('.rb-col-left')).toHaveClass(/is-fixed/);
   await expect(page.locator('#effective_date')).toBeDisabled();
@@ -351,7 +351,9 @@ test('the decklist shows up in search and in the favourites list', async ({ page
   const voter = await pageAs('voter');
   await voter.goto('/decklists?favorites=1');
   await expect(voter.getByRole('link', { name: decklistName })).toBeVisible();
-  await expect(voter.locator('.rb-browse-also')).toContainText('My Favourites');
+  // the My Favorites tab (Ketura, 2026-11-11), not a chip
+  await expect(voter.locator('.rb-browse-title .rb-tab[data-list-tab=favorites]')).toHaveClass(/is-active/);
+  await expect(voter.locator('.rb-browse-also')).toHaveCount(0);
   await snap(voter, "voter's favourites");
 });
 
@@ -406,27 +408,26 @@ test("My Decks: the decklists page's filters, who can see each deck, and favouri
   await expect(page.locator('#btn-compare')).toBeDisabled();
   await snap(page, 'my decks');
 
-  // the favourites tab: the same filters, the favourites; removing one takes it off
+  // My Favorites: a tab of the decklists page now (Ketura, 2026-11-11), with the same search;
+  // the old tab's address leads there
   const voter = await pageAs('voter');
-  await voter.goto('/decks');
-  await expect(voter.locator('#decks tr').filter({ hasText: decklistName })).toHaveCount(0);
+  await voter.goto('/decks?tab=favorites');
+  await expect(voter).toHaveURL(/\/decklists\?favorites=1$/);
+  await expect(voter.locator('.rb-browse-title .rb-tab[data-list-tab=favorites]')).toHaveClass(/is-active/);
   await voter.fill('#browse-fields input[name=name]', decklistName);
   await voter.press('#browse-fields input[name=name]', 'Enter');
-  await voter.click('#browse-tabs .rb-tab[data-tab=favorites]');
-  await expect(voter).toHaveURL(/tab=favorites/);
-  await expect(voter.locator('#browse-tabs .rb-tab[data-tab=favorites]')).toHaveClass(/is-active/);
-  await expect(voter.locator('#browse-fields input[name=name]')).toHaveValue(decklistName);
-  await expect(voter.locator('.rb-field-include')).toHaveClass(/is-off/);
-  const favorite = voter.locator('#decks tr').filter({ hasText: decklistName });
+  await expect(voter).toHaveURL(/favorites=1/);
+  const favorite = voter.locator('.rb-decks tbody tr').filter({ hasText: decklistName });
   await expect(favorite).toHaveCount(1);
-  await expect(voter.locator('.rb-my-decks-table thead th')).toHaveText(['', '', 'Size', 'Deck', 'Format', 'Tags', 'Actions']);
-  await expect(favorite.locator('a[href*="/deck/copy/"]')).toBeVisible();
-  // a favourite can't be edited, so its row opens it: no Preview
-  await expect(favorite.locator('.fa-eye')).toHaveCount(0);
-  await expect(voter.locator('#btn-unfavorite-selected')).toBeDisabled();
   await snap(voter, 'my favorites');
-  await favorite.locator('button.btn-unfavorite').click();
-  await expect(favorite).toHaveCount(0);
+  // the Decklists tab keeps the search, without the favourites
+  await Promise.all([voter.waitForURL((u) => !u.search.includes('favorites')), voter.click('.rb-browse-title .rb-tab[data-list-tab=all]')]);
+  await expect(voter.locator('.rb-browse-title .rb-tab[data-list-tab=all]')).toHaveClass(/is-active/);
+  // taken off on its page, it's gone from the tab
+  await voter.goto(decklistUrl);
+  await voter.locator('#social-favorite').click();
+  await expect(voter.locator('#social-favorite')).toHaveAttribute('aria-pressed', 'false');
+  await voter.goto(`/decklists?favorites=1&name=${encodeURIComponent(decklistName)}`);
   await expect(voter.locator('.rb-results-none')).toBeVisible();
 });
 
@@ -702,4 +703,24 @@ test('comments: an old comment, and a page left open past its token', async ({ p
   ]);
   await expect(voter.locator('.rb-cmt-text').filter({ hasText: text })).toBeVisible();
   expect(refused).toBe(true);
+
+  // a moderator deleting someone else's comment must say why, kept with who did it (Ketura, 2026-11-11)
+  appConsole(['fos:user:promote', loadUsers().author.username, 'ROLE_MODERATOR']);
+  const mod = await pageAs('author');
+  await mod.goto(decklistUrl);
+  const theirs = mod.locator('.rb-cmt').filter({ has: mod.locator('> .rb-cmt-body .rb-cmt-text', { hasText: text }) });
+  const theirId = await theirs.getAttribute('data-id');
+  await theirs.locator('> .rb-cmt-body .rb-cmt-more > button').click();
+  await theirs.locator('> .rb-cmt-body [data-act="delete"]').click();
+  const box = mod.locator('#rb-cmt-modal');
+  await expect(box.locator('.modal-title')).toHaveText('Delete Comment');
+  await box.locator('.btn-danger').click();
+  await expect(box.locator('textarea')).toBeFocused();
+  await expect(theirs).toHaveCount(1);
+  await box.locator('textarea').fill('Testing moderation');
+  await box.locator('.btn-danger').click();
+  await expect(box).toBeHidden();
+  await expect(mod.locator(`#comment-${theirId}`)).toHaveCount(0);
+  expect(appConsole(['dbal:run-sql', `SELECT action, reason, summary FROM moderation_action WHERE subject_id = ${theirId} AND subject_type = 'comment'`]))
+    .toMatch(/comment\.delete.*Testing moderation.*Sent after the token expired/s);
 });

@@ -16,10 +16,23 @@ nav:
   theme:
     label: Colour theme
     light: Light
-    auto: Match system
+    auto: Auto (match system)
     dark: Dark
+    next: "Theme: %current%. Click for %next%."
   mydecks: My Decks
   mylibraries: My Libraries
+  mydrafts: My Drafts
+  mydeckdrafts: My Deck Drafts
+  mylibrarydrafts: My Library Drafts
+  myeventdrafts: My Event Drafts
+  mypostdrafts: My Post Drafts
+  newdraft: New Draft
+  new:
+    deck: New Deck
+    import: Import Deck
+    library: New Library
+    event: New Event
+    post: New Post
   decklists: Decklists
   libraries: Libraries
   cardstats: Card Stats
@@ -45,7 +58,7 @@ nav:
   advancedsearch: Advanced Search
   cardsearch: Card Search
   user:
-    loginregister: Login or register
+    loginregister: Login or Register
     myaccount: My Account
     admin: Admin
     editaccount: Edit account
@@ -779,7 +792,7 @@ decklist.browse.also_title: "Set by the link that brought you here; × to drop i
 decklist.browse.also_event: "Event: %name%"
 decklist.browse.also_played: Played at an Event
 decklist.browse.also_legal: Gemp Legal
-decklist.browse.also_mine: My Decks
+decklist.browse.also_mine: My Deck Drafts
 decklist.browse.also_favorites: My Favourites
 decklist.browse.sort: Sort
 decklist.browse.sorts.new: Newest
@@ -1256,7 +1269,7 @@ decklist.state.no_deck: "The deck it was published from is gone, so its cards ca
 decklist.state.withdrawn_help: "Withdrawn: only you can see this decklist. Fix the deck in the deckbuilder, replace the cards with it here, then publish it again at the same address, with a fresh three days to undo it."
 decklist.state.grace_help: "Until %date% you can undo publishing if you need to fix the deck contents."
 decklist.state.fixed_help: "<strong>Once you publish a decklist, you cannot edit the cards</strong> (but you can edit the details and commentary below). If you want to publish a new version of this deck, %link%, where you may edit the list and then republish a new version of this deck."
-decklist.state.fixed_link: "click here to open the private revision in My Decks"
+decklist.state.fixed_link: "click here to open the private revision in My Deck Drafts"
 decklist.state.withdrawn_note: "Withdrawn: only you can see this decklist."
 decklist.state.gone_title: Decklist Withdrawn
 decklist.state.gone_text: "Its author has withdrawn this decklist, perhaps to fix it. It may be back at this address soon."
@@ -1299,9 +1312,9 @@ decks.browse.pick: "Select %name%"
 decks.browse.published_as: "published as %version%"
 decks.browse.slots_title: "Your decks, of the most you can keep"
 decks.browse.tabs.label: Your decks and favorites
-decks.browse.tabs.decks: My Decks
+decks.browse.tabs.decks: My Deck Drafts
 decks.browse.tabs.favorites: My Favorites
-decks.browse.include_off: Applies to My Decks
+decks.browse.include_off: Applies to My Deck Drafts
 decks.browse.count_favorites: "{0} No favorites match|{1} 1 favorite|]1,Inf[ %n% favorites"
 decks.browse.none_favorites: Nothing matches. Add decklists to your favorites from their pages, or try removing a filter.
 decks.browse.col.visibility: Visibility
@@ -1310,7 +1323,7 @@ decks.browse.do.preview: Preview
 decks.browse.do.publish: Publish
 decks.browse.do.clone: Clone
 decks.browse.do.delete: Delete
-decks.browse.do.copy: Copy to My Decks
+decks.browse.do.copy: Copy to My Deck Drafts
 decks.browse.do.unfavorite: Remove from Favorites
 decks.browse.side.selection: With Selection
 decks.browse.side.selection_none: Tick decks in the list to act on them.
@@ -1732,3 +1745,8 @@ user.avatar_mode.none: "None"
 user.avatar_search: "Find a card by name"
 user.avatar_none: "No card chosen yet"
 editor.characters: "%count% / %max% characters"
+deckbuilder.notes.starting_drag: "Drag to move this starting fellowship up or down"
+moderation.reason: "Reason for deleting it (required)"
+moderation.reason_placeholder: "Kept with your name for the other moderators; not shown to the author"
+comment.delete_title: "Delete Comment"
+decklist.list.tabs: "Decklists and your favorites"

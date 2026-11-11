@@ -28,7 +28,7 @@
         return '<div class="rb-lib-entry rb-kind-' + _.escape(d.kind) + '" data-decklist="' + d.id + '">'
             + '<div class="rb-lib-deck">'
             + '<div class="rb-lib-controls">'
-            + '<button type="button" class="rb-lib-drag" draggable="true" aria-label="' + _.escape(t('library.edit.drag')) + '" title="' + _.escape(t('library.edit.drag')) + '"><span class="fas fa-grip-vertical" aria-hidden="true"></span></button>'
+            + '<button type="button" class="rb-lib-drag" aria-label="' + _.escape(t('library.edit.drag')) + '" title="' + _.escape(t('library.edit.drag')) + '"><span class="fas fa-grip-vertical" aria-hidden="true"></span></button>'
             + '<button type="button" class="rb-lib-move" data-move="-1" aria-label="' + _.escape(t('library.edit.up')) + '"><span class="fas fa-chevron-up" aria-hidden="true"></span></button>'
             + '<button type="button" class="rb-lib-move" data-move="1" aria-label="' + _.escape(t('library.edit.down')) + '"><span class="fas fa-chevron-down" aria-hidden="true"></span></button>'
             + '</div>'
@@ -248,39 +248,11 @@
             changed();
             $(this).trigger('focus');
         });
-        // dragging by the handle
-        var dragged = null;
-        entries.on('dragstart', '.rb-lib-drag', function (event) {
-            dragged = $(this).closest('.rb-lib-entry').addClass('is-dragging');
-            event.originalEvent.dataTransfer.effectAllowed = 'move';
-            event.originalEvent.dataTransfer.setData('text/plain', String(dragged.data('decklist')));
-            event.originalEvent.dataTransfer.setDragImage(dragged[0], 20, 20);
-        });
-        entries.on('dragover', '.rb-lib-entry', function (event) {
-            if(!dragged) {
-                return;
-            }
-            event.preventDefault();
-            var row = $(this);
-            if(row.is(dragged)) {
-                return;
-            }
-            var rect = this.getBoundingClientRect();
-            if(event.originalEvent.clientY < rect.top + rect.height / 2) {
-                row.before(dragged);
-            } else {
-                row.after(dragged);
-            }
-        });
-        entries.on('drop dragend', function (event) {
-            if(dragged) {
-                event.preventDefault();
-                dragged.removeClass('is-dragging');
-                dragged = null;
-                renumber();
-                changed();
-            }
-        });
+        // dragging by the handle (app.sortable, shared: a mouse or a finger; Ketura, 2026-11-11)
+        app.sortable.attach(entries, {items: '.rb-lib-entry', handle: '.rb-lib-drag', axis: 'y', done: function () {
+            renumber();
+            changed();
+        }});
         // X, then the bin; Keep takes it back (as the deckbuilder's cards: Ketura, 2026-11-08)
         entries.on('click', '.rb-x', function () {
             var row = $(this).closest('.rb-lib-entry').addClass('is-pending');

@@ -52,6 +52,7 @@ class CommentManager
         private readonly MailerInterface $mailer,
         private readonly Environment $twig,
         private readonly LoggerInterface $logger,
+        private readonly ModerationLog $moderation,
         private readonly string $emailSenderAddress,
     ) {
     }
@@ -206,11 +207,17 @@ class CommentManager
         $this->em->flush();
     }
 
-    /** Deleted: by its author, or a moderator. Replies to it stay where they are */
-    public function delete(Comment $comment, User $user): void
+    /**
+     * Deleted: by its author, or a moderator, who must say why (kept in the moderation log;
+     * Ketura, 2026-11-11). Replies to it stay where they are.
+     */
+    public function delete(Comment $comment, User $user, ?string $reason = null): void
     {
         if (!$this->canDelete($user, $comment)) {
             throw new AccessDeniedHttpException("You can't delete that comment.");
+        }
+        if (ModerationLog::needsReason($user, $comment->getUser())) {
+            $this->moderation->deletedComment($user, $comment, (string) $reason);
         }
         $this->keepOriginal($comment);
         $comment->delete($user);

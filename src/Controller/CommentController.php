@@ -60,7 +60,7 @@ class CommentController extends AbstractController
     {
         $user = $this->writer($request);
         $comment = $this->comments->find($id, $user);
-        $this->comments->delete($comment, $user);
+        $this->comments->delete($comment, $user, (string) $request->request->get('reason'));
         return new JsonResponse([
             'count' => $comment->getSubject()->getNbComments(),
             'body' => $this->renderView('Comment/body.html.twig', ['comment' => $comment, 'subject_url' => $this->comments->url($comment->getSubject())]),

@@ -83,13 +83,23 @@ class LibraryController extends AbstractController
 
     /* ---- the lists ---- */
 
-    /** My Libraries: the user's libraries, searched as My Decks is, and what can be done to them */
-    #[Route(path: '/my/libraries', name: 'my_libraries', methods: ['GET'])]
+    /** Where My Libraries was (Ketura, 2026-11-11) */
+    #[Route(path: '/my/libraries', name: 'my_libraries_old', methods: ['GET'])]
+    public function oldMyListAction(Request $request): Response
+    {
+        return $this->redirectToRoute('my_libraries', $request->query->all(), Response::HTTP_MOVED_PERMANENTLY);
+    }
+
+    /**
+     * My Library Drafts (My Libraries until 2026-11-11, at /drafts/libraries since): the user's
+     * libraries, searched as their deck drafts are, and what can be done to them
+     */
+    #[Route(path: '/drafts/libraries', name: 'my_libraries', methods: ['GET'])]
     public function myListAction(Request $request, PublishedDeckManager $pager, TranslatorInterface $translator): Response
     {
         $user = $this->requireUser();
         return $this->listResponse($request, $pager, $user, [
-            'pagetitle' => $translator->trans('nav.mylibraries'),
+            'pagetitle' => $translator->trans('nav.mylibrarydrafts'),
             'list_route' => 'my_libraries',
             'mine' => true,
         ]);

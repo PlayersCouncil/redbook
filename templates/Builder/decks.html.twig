@@ -60,16 +60,12 @@
 {% endblock %}
 
 {#
-   The tabs (Ketura, 2026-11-07): the same filters, the user's decks or their favourites; the
-   one not shown greyed out
+   The title (Ketura, 2026-11-07, with a favourites tab; My Deck Drafts alone since
+   2026-11-11: the favourites are the decklists page's My Favorites tab)
 #}
 {% block browse_tabs %}
-{% set tab = filters.tab ?? 'decks' %}
-{% set query = app.request.query.all | filter((v, k) => k != 'page') %}
-    <nav class="rb-tab-row" aria-label="{{ 'decks.browse.tabs.label' | trans }}">
-        <a href="{{ list_path('decks_list', query | filter((v, k) => k != 'tab')) }}" class="rb-tab{{ tab == 'decks' ? ' is-active' }}"{% if tab == 'decks' %} aria-current="page"{% endif %} data-tab="decks">{{ 'decks.browse.tabs.decks' | trans }}</a>
-        <a href="{{ list_path('decks_list', query | merge({tab: 'favorites'})) }}" class="rb-tab{{ tab == 'favorites' ? ' is-active' }}"{% if tab == 'favorites' %} aria-current="page"{% endif %} data-tab="favorites">{{ 'decks.browse.tabs.favorites' | trans }}</a>
-    </nav>
+{% set tab = 'decks' %}
+    <h1 class="rb-tab-solo">{{ 'nav.mydeckdrafts' | trans }}</h1>
     {# the most decks someone can keep, shown only as they near it (Ketura, 2026-11-07) #}
     {% if tab == 'decks' and nbdecks >= nbmax * 0.9 %}
         <span class="rb-slot-count{% if cannotcreate %} is-full{% endif %}" title="{{ 'decks.browse.slots_title' | trans }}">{{ 'decks.slotcount' | trans({'%max%': nbmax, '%current%': nbdecks}) }}</span>

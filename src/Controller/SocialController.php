@@ -513,17 +513,25 @@ class SocialController extends AbstractController
 
     /**
      * Deleting a decklist is for moderators (Ketura, 2026-11-07): once published it
-     * stays, and its author withdraws it within the grace period instead.
+     * stays, and its author withdraws it within the grace period instead. Someone else's
+     * needs a reason, kept with who deleted it (Ketura, 2026-11-11).
      */
     #[Route(path: '/decklist/delete/{decklist_id}', name: 'decklist_delete', methods: ['POST'], requirements: ['decklist_id' => '\d+'])]
-    public function deleteAction($decklist_id, Request $request)
+    public function deleteAction($decklist_id, Request $request, \App\Services\ModerationLog $moderation)
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isCsrfTokenValid('decklist_delete', (string) $request->request->get('_token'))) {
+            throw new BadRequestHttpException('The page has expired; open it again.');
+        }
         $em = $this->managerRegistry->getManager();
 
         /* @var PublishedDeckInterface $decklist */
         $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id)
             ?? throw $this->createNotFoundException("Published deck not found");
+        $user = $this->getUser();
+        if ($user instanceof User && \App\Services\ModerationLog::needsReason($user, $decklist->getUser())) {
+            $moderation->deletedDecklist($user, $decklist, (string) $request->request->get('reason'));
+        }
 
         $precedent = $decklist->getPrecedent();
         foreach ($decklist->getChildren() as $children_deck) {

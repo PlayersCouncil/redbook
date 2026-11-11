@@ -90,7 +90,14 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   await expect(page.locator('.rb-builder')).toHaveClass(/is-locked/);
   await expect(page.locator('#revision-banner')).toContainText('v1.0');
   await expect(page.locator('#revision-banner')).toContainText('A new private revision can be started to prepare the next deck version.');
-  await expect(page.locator('#tab-pane-infos')).toBeVisible();
+  // Stats first: Notes waits for New Revision (Ketura, 2026-11-11), and the visibility reads
+  // Published, not to be changed
+  await expect(page.locator('#tab-pane-stats')).toBeVisible();
+  await expect(page.locator('a[href="#tab-pane-infos"]')).toHaveAttribute('aria-disabled', 'true');
+  await page.click('a[href="#tab-pane-infos"]', { force: true });
+  await expect(page.locator('#tab-pane-infos')).toBeHidden();
+  await expect(page.locator('#btn-visibility')).toHaveText(/Published/);
+  await expect(page.locator('#btn-visibility')).toBeDisabled();
   await expect(page.locator('#btn-publish')).toBeDisabled();
   await expect(page.locator('#btn-publish')).toHaveText(/Published as 1\.0/);
   await page.click('a[href="#tab-pane-stats"]');
@@ -109,6 +116,11 @@ test('publishing a deck again defaults to its next version', async ({ page }) =>
   await page.click('#btn-new-revision');
   await expect(page.locator('.rb-builder')).not.toHaveClass(/is-locked/);
   await expect(page.locator('#save-status')).toContainText('Private revision 1.1 started');
+  // the visibility as a draft again, to change; Notes open
+  await expect(page.locator('#btn-visibility')).toBeEnabled();
+  await expect(page.locator('#btn-visibility')).not.toHaveText(/Published/);
+  await page.click('a[href="#tab-pane-infos"]');
+  await expect(page.locator('#tab-pane-infos')).toBeVisible();
   // Private and Hidden are who sees the deck as it stands; publishing is its own button
   await page.click('#btn-visibility');
   await expect(page.locator('#menu-visibility [data-visibility]')).toHaveCount(2);

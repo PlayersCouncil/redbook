@@ -319,9 +319,13 @@
                 'private': '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>',
                 hidden: '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5l3-3M5 8l-1.5 1.5a2.1 2.1 0 0 0 3 3L8 11M11 8l1.5-1.5a2.1 2.1 0 0 0-3-3L8 5"/></svg>'
             };
-        // who can see the deck as it stands; its publications are public anyway (Ketura, 2026-11-08)
-        $('#btn-visibility').html(icons[visibility] + ' <span>' + t('deckbuilder.visibility.' + visibility) + '</span> <span aria-hidden="true">&#9662;</span>')
-            .attr('title', t('deckbuilder.visibility.label'));
+        icons.published = '<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c1.8 1.7 2.6 3.7 2.6 6S9.8 12.3 8 14M8 2C6.2 3.7 5.4 5.7 5.4 8s.8 4.3 2.6 6"/></svg>';
+        // who can see the deck as it stands; its publications are public anyway (Ketura, 2026-11-08).
+        // As it was published, until New Revision: Published, and not to be changed (2026-11-11)
+        var shown = locked ? 'published' : visibility;
+        $('#btn-visibility').html(icons[shown] + ' <span>' + t('deckbuilder.visibility.' + shown) + '</span>' + (locked ? '' : ' <span aria-hidden="true">&#9662;</span>'))
+            .attr('title', t(locked ? 'deckbuilder.visibility.published_hint' : 'deckbuilder.visibility.label'))
+            .prop('disabled', locked).toggleClass('is-fixed', locked);
         $('#menu-visibility [data-visibility]').each(function () {
             var on = $(this).data('visibility') === visibility;
             $(this).attr('aria-checked', on).toggleClass('active', on);
@@ -397,7 +401,7 @@
      */
     var locked = false,
         EDITS = '#deck-info input, #deck-info select, #deck-info textarea, #deck-info button, #deck [data-qty], #deck [data-start], #deck [data-find], '
-            + '#deck-toolbar .rb-any-pick, #pool [data-add], #pool [data-rb], a[href="#tab-pane-build"], '
+            + '#deck-toolbar .rb-any-pick, #pool [data-add], #pool [data-rb], a[href="#tab-pane-build"], a[href="#tab-pane-infos"], '
             + '#tab-pane-infos input, #tab-pane-infos textarea, #tab-pane-infos select, #tab-pane-infos button, '
             + '#tab-pane-history a[role=button], #tab-pane-archive button, #tab-pane-archive input, #tab-pane-archive select, #tab-pane-archive textarea',
         NOT_EDITS = '#btn-preview, #btn-more, #btn-visibility, #btn-publish, .rb-menu, #revision-banner, .rb-opt, [data-collapse]';
@@ -439,6 +443,9 @@
         locked = false;
         $('.rb-builder').removeClass('is-locked');
         $('#revision-banner').remove();
+        // the visibility it has as a draft, and the Notes tab, back (Ketura, 2026-11-11)
+        $('a[href="#tab-pane-infos"]').closest('li').removeClass('disabled').end().removeAttr('aria-disabled');
+        show_visibility();
     }
 
     function start_revision()
@@ -473,8 +480,11 @@
         }
         locked = true;
         $('.rb-builder').addClass('is-locked');
-        // what there is to read first: the notes (Ketura, 2026-11-08)
-        $('a[href="#tab-pane-infos"]').tab('show');
+        // the Notes tab waits for New Revision too (Ketura, 2026-11-11): Stats to look at first,
+        // and the visibility reads Published
+        $('a[href="#tab-pane-infos"]').attr('aria-disabled', 'true').closest('li').addClass('disabled');
+        $('#tab-header-stats').tab('show');
+        show_visibility();
         _.each(['mousedown', 'click', 'focusin', 'keydown'], function (type) {
             document.addEventListener(type, guard, true);
         });

@@ -1,4 +1,4 @@
-/* global moment, Translator, app */
+/* global moment, Translator, app, _ */
 
 (function app_user(user, $)
 {
@@ -85,7 +85,9 @@
     user.anonymous = function anonymous()
     {
         user.wipe();
-        user.dropdown('<ul class="dropdown-menu"><li><a href="' + Routing.generate('fos_user_security_login') + '">' + Translator.trans('nav.user.loginregister') + '</a></li></ul>');
+        // a button of its own, not a menu (Ketura, 2026-11-11)
+        $('#login').removeClass('dropdown').html('<a href="' + Routing.generate('fos_user_security_login') + '" class="rb-login-btn"><span class="fas fa-user-circle" aria-hidden="true"></span><span>'
+            + _.escape(Translator.trans('nav.user.loginregister')) + '</span></a>');
     };
 
     /**
@@ -108,9 +110,14 @@
                 + '" onclick="app.user.wipe()">' + Translator.trans('nav.user.logout') + '</a></li></ul>');
     };
 
+    /** The account menu, under the username (Ketura, 2026-11-11) */
     user.dropdown = function dropdown(list)
     {
-        $('#login a').append('<span class="caret"></span>').removeClass('disabled').addClass('dropdown-toggle').attr('data-toggle', 'dropdown').after(list);
+        var name = user.data && user.data.name ? user.data.name : '';
+        $('#login a').first().attr('href', '#').removeClass('disabled').addClass('dropdown-toggle rb-account-btn').attr({'data-toggle': 'dropdown', role: 'button', 'aria-haspopup': 'true', 'aria-expanded': 'false'})
+            .html('<span class="fas fa-user-circle" aria-hidden="true"></span><span class="rb-account-name">' + _.escape(name) + '</span> <span class="caret"></span>')
+            .after(list);
+        $('#login .dropdown-menu').addClass('dropdown-menu-right');
     };
 
 

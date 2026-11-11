@@ -185,6 +185,8 @@
         }
         if(data.can_delete) {
             $('.decklist-delete').show();
+            // deleting someone else's decklist needs a reason (Ketura, 2026-11-11)
+            $('#delete-reason').prop('required', !data.is_author).closest('.rb-delete-reason').prop('hidden', !!data.is_author);
         } else {
             $('.decklist-delete').remove();
         }

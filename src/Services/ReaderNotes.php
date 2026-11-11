@@ -24,10 +24,10 @@ class ReaderNotes
     }
 
     /**
-     * @return array{groups: array<array{name: string, cards: array<array{code: string, label: string, href: string}>, twilight: int}>,
+     * @return array{groups: array<array{name: string, cards: array<array{code: string, label: string, href: string}>}>,
      *     bid: ?string, starting_html: ?string, notes: array<array{code: string, label: string, href: string, in_deck: bool, html: string}>,
      *     description_html: string, posted_by: string}
-     *     groups: the starting fellowships (Ketura, 2026-11-11), each with its companions and their twilight;
+     *     groups: the starting fellowships (Ketura, 2026-11-11), each with its companions in the order they're played;
      *     a name left blank is the view's to give ("Starting Fellowship", "Starting Fellowship 2")
      */
     public function build(PublishedDeck|Deck $decklist): array
@@ -50,14 +50,13 @@ class ReaderNotes
             'posted_by' => $this->postedBy($decklist),
         ];
         foreach ($groups as $group) {
-            $row = ['name' => $group['name'], 'cards' => [], 'twilight' => 0];
+            $row = ['name' => $group['name'], 'cards' => []];
             foreach ($group['codes'] as $code) {
                 if (isset($cards[$code])) {
                     // a companion any version will do for reads as in the list: "Legolas (any)" (Ketura, 2026-11-08)
                     $row['cards'][] = isset($generic[$code])
                         ? ['label' => CardVersions::genericLabel($cards[$code]), 'generic' => true] + $this->card($cards[$code])
                         : $this->card($cards[$code]);
-                    $row['twilight'] += (int) $cards[$code]->getTwilight();
                 }
             }
             $view['groups'][] = $row;

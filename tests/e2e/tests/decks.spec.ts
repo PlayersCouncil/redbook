@@ -231,11 +231,34 @@ test('deck notes, stats and history: starting fellowship, tags, annotations, tes
   // S in the deck list goes to the active row; Legolas (the first's) sorts before Gimli (the second's)
   await page.locator('#deck [data-start="1_12"]').click();
   await expect(groups.nth(1).locator('.rb-starting-pill')).toHaveText(/Gimli/);
-  await expect(groups.nth(1).locator('.rb-starting-cost')).toHaveText('(twilight 2)');
   // (the list sorts by culture first, so the rank is checked rather than the order)
   expect(await page.evaluate(() => (window as any).app.deck.starting_rank('1_50'))).toBe(0);
   expect(await page.evaluate(() => (window as any).app.deck.starting_rank('1_12'))).toBe(2);
   expect(await page.evaluate(() => (window as any).app.deck.starting_rank('1_178'))).toBeGreaterThan(2);
+  // the rows reorder by their handles, and a row's companions by dragging them, in the order
+  // they're played (Ketura, 2026-11-11)
+  const dragTo = async (from: any, to: any, below = false) => {
+    const a = (await from.boundingBox())!, b = (await to.boundingBox())!;
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(a.x + a.width / 2 + 8, a.y + a.height / 2 + 2, { steps: 2 });
+    await page.mouse.move(b.x + (below ? b.width - 3 : 3), b.y + (below ? b.height - 3 : 3), { steps: 6 });
+    await page.mouse.up();
+  };
+  await dragTo(groups.nth(1).locator('.rb-starting-handle'), groups.nth(0), false);
+  await expect(groups.nth(0).locator('.rb-starting-name')).toHaveValue('Going second');
+  await expect(groups.nth(0)).toHaveClass(/is-active/);
+  await page.locator('#deck [data-start="1_50"]').click();
+  const pills = groups.nth(0).locator('.rb-starting-pill');
+  await expect(pills).toHaveText([/Gimli/, /Legolas/]);
+  await dragTo(pills.nth(1), pills.nth(0), false);
+  await expect(pills).toHaveText([/Legolas/, /Gimli/]);
+  expect(await page.evaluate(() => (window as any).app.deck.get_starting_groups()[0].codes)).toEqual(['1_50', '1_12']);
+  // back as it was for what follows: Going second second, with Gimli only
+  await page.locator('#starting-groups [data-unstart="1_50"]').first().click();
+  await dragTo(groups.nth(0).locator('.rb-starting-handle'), groups.nth(1), true);
+  await expect(groups.nth(1).locator('.rb-starting-name')).toHaveValue('Going second');
+  await expect(groups.nth(1).locator('.rb-starting-pill')).toHaveText([/Gimli/]);
   // a long bid fits (Ketura, 2026-11-11)
   await page.fill('#starting-bid', '1 if going first, otherwise 4 if they bid high');
   await page.click('#btn-save');

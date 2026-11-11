@@ -326,15 +326,42 @@
         }).fail(failed);
     }
 
+    /**
+     * Delete: one's own after a confirm; someone else's (a moderator's) with a reason, which
+     * is required and kept with who deleted it (Ketura, 2026-11-11)
+     */
     function remove(node)
     {
-        if(!confirm(t('comment.delete_confirm'))) {
+        var mine = state && String(node.data('author')) === String(state.user),
+            send = function (reason) {
+                return post(Routing.generate('comment_delete', {id: id_of(node)}), reason ? {reason: reason} : {}).done(function (data) {
+                    set_count(data.count);
+                    settle(node, data.body);
+                });
+            };
+        if(mine) {
+            if(confirm(t('comment.delete_confirm'))) {
+                send().fail(failed);
+            }
             return;
         }
-        post(Routing.generate('comment_delete', {id: id_of(node)})).done(function (data) {
-            set_count(data.count);
-            settle(node, data.body);
-        }).fail(failed);
+        var area = $('<textarea class="form-control" rows="3" maxlength="2000" required></textarea>').attr('placeholder', t('moderation.reason_placeholder')),
+            go = $('<button type="button" class="btn btn-danger"></button>').text(t('comment.delete')),
+            content = $('<div></div>').append($('<p></p>').text(t('comment.delete_confirm')), $('<label class="rb-modal-label"></label>').text(t('moderation.reason')), area),
+            box = modal(t('comment.delete_title'), content, [$('<button type="button" class="btn btn-default" data-dismiss="modal"></button>').text(t('comment.cancel')), go]);
+        box.one('shown.bs.modal', function () { area.trigger('focus'); });
+        go.on('click', function () {
+            var reason = $.trim(area.val());
+            if(!reason) {
+                area.trigger('focus');
+                return;
+            }
+            go.prop('disabled', true);
+            send(reason).done(function () { box.modal('hide'); }).fail(function (jqXHR) {
+                go.prop('disabled', false);
+                failed(jqXHR);
+            });
+        });
     }
 
     /** A deleted comment stays while replies stand under it; one with none goes, and so on up */

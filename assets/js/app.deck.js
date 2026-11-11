@@ -172,7 +172,8 @@
             description_md: data.description_md,
             tags: data.tags,
             historic: data.historic || null,
-            starting: _.map(norm_groups(data.starting_groups), function (g) { return {name: g.name, codes: g.codes.slice().sort()}; }),
+            // in order: the order a fellowship's companions are played in matters (Ketura, 2026-11-11)
+            starting: norm_groups(data.starting_groups),
             starting_bid: data.starting_bid || '',
             starting_notes: data.starting_notes || '',
             annotations: _.map(data.annotations || [], _.clone),
