@@ -290,3 +290,27 @@
     .rb-my-decks-table td.rb-col-actions { grid-area: acts; }
     .rb-my-decks-table .rb-col-tags { min-width: 0; width: auto; }
 }
+
+/* ---- the decklists page's actions (Ketura, 2026-11-11): tick boxes for someone logged in,
+   with a bar of what can be done to the ticked; Favourite, Clone, Download and Add to Library
+   on each row ---- */
+body:not(.rb-can-pick) #decklists-table .rb-col-pick { display: none; }
+#decklists-table td.rb-col-pick, #decklists-table th.rb-col-pick { width: 28px; padding: 6px 2px 6px 4px; cursor: default; }
+.rb-pick-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 0 0 8px; padding: 6px 10px; border: 1px solid var(--rb-warning-edge);
+    border-radius: var(--rb-radius-panel); background: var(--rb-warning-soft); }
+.rb-pick-bar[hidden] { display: none; }
+.rb-pick-count { margin-right: 4px; font-weight: 700; font-size: 0.875rem; color: var(--rb-ink); }
+.rb-pick-bar .rb-btn .rb-ri { width: 15px; height: 15px; }
+.rb-icon-btn.rb-fav-btn .rb-ri { width: 16px; height: 16px; filter: grayscale(1); opacity: .7; }
+.rb-icon-btn.rb-fav-btn.is-on .rb-ri { filter: none; opacity: 1; }
+.rb-icon-btn.rb-fav-btn.is-on { border-color: color-mix(in srgb, var(--rb-fav) 40%, transparent); background: color-mix(in srgb, var(--rb-fav) 10%, transparent); }
+.rb-icon-btn.processing { opacity: .5; }
+@media (max-width: 767px) {
+    #decklists-table tr { grid-template-columns: auto auto auto auto minmax(0, 1fr);
+        grid-template-areas: "pick thumb score size fmt" "pick thumb deck deck deck" "pick thumb tags tags tags" "pick thumb acts acts acts"; }
+    #decklists-table td.rb-col-pick { grid-area: pick; width: auto; padding: 0 2px 0 0; align-self: start; }
+    #decklists-table td.rb-col-actions { grid-area: acts; text-align: left; }
+    /* the buttons start at the row's left edge here: their tooltips above, not off the screen */
+    #decklists-table .rb-icon-btn[data-tip]:hover::after, #decklists-table .rb-icon-btn[data-tip]:focus-visible::after {
+        right: auto; left: 0; top: auto; bottom: calc(100% + 5px); transform: none; }
+}

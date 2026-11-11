@@ -719,27 +719,93 @@ class SocialController extends AbstractController
         }
     }
 
-    /** Decklists out of the user's favourites, from My Decks' favourites tab (Ketura, 2026-11-07) */
+    /**
+     * The user's favourites among the decklists on a page of the list (Ketura, 2026-11-11), with
+     * the token its Favourite buttons post: the list itself is the same for everyone
+     */
+    #[Route(path: '/decklists/favorites/state', name: 'decklists_favorites_state', methods: ['GET'])]
+    public function favoritesStateAction(Request $request): JsonResponse
+    {
+        $user = $this->getUser();
+        if (!$user instanceof User) {
+            return new JsonResponse(null);
+        }
+        $ids = array_slice(array_map('intval', (array) ($request->query->all()['ids'] ?? [])), 0, 200);
+        $favorites = $ids ? array_map('intval', $this->managerRegistry->getConnection()->executeQuery(
+            'SELECT published_deck_id FROM favorite WHERE user_id = ? AND published_deck_id IN (?)',
+            [$user->getId(), $ids],
+            [\Doctrine\DBAL\ParameterType::INTEGER, \Doctrine\DBAL\ArrayParameterType::INTEGER]
+        )->fetchFirstColumn()) : [];
+        $response = new JsonResponse(['favorites' => $favorites, 'token' => $this->container->get('security.csrf.token_manager')->getToken('my_favorites')->getValue()]);
+        $response->setPrivate();
+        $response->setMaxAge(0);
+        return $response;
+    }
+
+    /**
+     * Decklists into the user's favourites, one or several from the decklists page (Ketura,
+     * 2026-11-11); as Favourite on a decklist's own page, five to its author's reputation
+     */
+    #[Route(path: '/user/favorites/add', name: 'decklists_favorite_add', methods: ['POST'])]
+    public function addFavoritesAction(Request $request): JsonResponse
+    {
+        $user = $this->favoritesUser($request);
+        $counts = [];
+        foreach ($this->postedDecklists($request) as $decklist) {
+            if (!$decklist->isWithdrawn() && !$user->getFavorites()->contains($decklist)) {
+                $decklist->setNbfavorites($decklist->getNbFavorites() + 1);
+                $user->addFavorite($decklist);
+                $decklist->setDateUpdate(new DateTime());
+                $author = $decklist->getUser();
+                if ($author->getId() != $user->getId()) {
+                    $author->setReputation($author->getReputation() + 5);
+                }
+            }
+            $counts[$decklist->getId()] = $decklist->getNbFavorites();
+        }
+        $this->managerRegistry->getManager()->flush();
+        return new JsonResponse(['counts' => $counts]);
+    }
+
+    /**
+     * Decklists out of the user's favourites (Ketura, 2026-11-07, from My Decks' favourites
+     * tab; the decklists page's rows and selection since 2026-11-11)
+     */
     #[Route(path: '/user/favorites/remove', name: 'decklists_unfavorite', methods: ['POST'])]
     public function unfavoriteAction(Request $request): JsonResponse
     {
+        $user = $this->favoritesUser($request);
+        $removed = 0;
+        $counts = [];
+        foreach ($this->postedDecklists($request) as $decklist) {
+            if ($user->getFavorites()->contains($decklist)) {
+                $this->dropFavorite($user, $decklist);
+                $removed++;
+            }
+            $counts[$decklist->getId()] = $decklist->getNbFavorites();
+        }
+        $this->managerRegistry->getManager()->flush();
+        return new JsonResponse(['removed' => $removed, 'counts' => $counts]);
+    }
+
+    /** The logged-in user, for the favourites' bulk actions, with their token */
+    private function favoritesUser(Request $request): User
+    {
         $user = $this->getUser();
-        if (!$user) {
+        if (!$user instanceof User) {
             throw new UnauthorizedHttpException('You must be logged in.');
         }
         if (!$this->isCsrfTokenValid('my_favorites', (string) $request->request->get('token'))) {
             throw new BadRequestHttpException('The page is out of date; reload it.');
         }
-        $ids = array_map('intval', (array) ($request->request->all()['ids'] ?? []));
-        $removed = 0;
-        foreach ($this->managerRegistry->getRepository(PublishedDeck::class)->findBy(['id' => $ids]) as $decklist) {
-            if ($user->getFavorites()->contains($decklist)) {
-                $this->dropFavorite($user, $decklist);
-                $removed++;
-            }
-        }
-        $this->managerRegistry->getManager()->flush();
-        return new JsonResponse(['removed' => $removed]);
+        return $user;
+    }
+
+    /** @return PublishedDeck[] the decklists posted as ids[], at most 200 */
+    private function postedDecklists(Request $request): array
+    {
+        $ids = array_slice(array_map('intval', (array) ($request->request->all()['ids'] ?? [])), 0, 200);
+        return $ids ? $this->managerRegistry->getRepository(PublishedDeck::class)->findBy(['id' => $ids]) : [];
     }
 
     /**

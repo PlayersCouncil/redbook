@@ -411,33 +411,42 @@
     };
 
     /**
-     * Ticking rows, on My Decks and My Libraries (Ketura, 2026-11-07; shared 2026-11-09): the
-     * box in the header ticks them all, a click anywhere in a box's cell ticks it, and the With
-     * Selection section stays greyed out until some are ticked; a button with data-needs wants
-     * exactly that many. Returns the function that brings the section up to date.
+     * Ticking rows, on My Decks and My Libraries (Ketura, 2026-11-07; shared 2026-11-09; the
+     * decklists page too, 2026-11-11): the box in the header ticks them all, a click anywhere in
+     * a box's cell ticks it, and the With Selection section stays greyed out until some are
+     * ticked (or, with hide, hidden); a button with data-needs wants exactly that many.
+     * options: table (#decks), section (#btn-group-selection), all (the header's box,
+     * .toggle_all), hide, count(n) (the count's text, "(n)"). Returns the function that brings
+     * the section up to date.
      */
-    ui.browse_selection = function browse_selection()
+    ui.browse_selection = function browse_selection(options)
     {
+        options = _.extend({table: '#decks', section: '#btn-group-selection', all: '.toggle_all', hide: false,
+            count: function (n) { return n ? '(' + n + ')' : ''; }}, options || {});
         var results = $('#browse-results');
         function update()
         {
-            var boxes = $('#decks').find('input[type=checkbox]'), n = boxes.filter(':checked').length,
-                section = $('#btn-group-selection').toggleClass('is-off', !n);
-            section.find('.rb-selected-count').text(n ? '(' + n + ')' : '');
+            var boxes = $(options.table).find('input[type=checkbox]').not(options.all),
+                n = boxes.filter(':checked').length,
+                section = $(options.section).toggleClass('is-off', !n);
+            if(options.hide) {
+                section.prop('hidden', !n);
+            }
+            section.find('.rb-selected-count, .rb-pick-count').text(options.count(n));
             section.find('button').each(function ()
             {
                 var needs = $(this).data('needs');
                 $(this).prop('disabled', needs ? n !== needs : !n);
             });
-            results.find('.toggle_all').prop('checked', boxes.length > 0 && n === boxes.length);
+            results.find(options.all).prop('checked', boxes.length > 0 && n === boxes.length);
         }
-        results.on('click', '.toggle_all', function ()
+        results.on('click', options.all, function ()
         {
-            $('#decks input[type=checkbox]').prop('checked', this.checked);
+            $(options.table).find('input[type=checkbox]').not(options.all).prop('checked', this.checked);
             update();
         });
-        results.on('click', '#decks input[type=checkbox]', update);
-        results.on('click', 'td.rb-col-pick', function (event)
+        results.on('click', options.table + ' input[type=checkbox]:not(' + options.all + ')', update);
+        results.on('click', options.table + ' td.rb-col-pick', function (event)
         {
             if(event.target === this) {
                 $(this).find('input').trigger('click');

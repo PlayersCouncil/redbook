@@ -131,6 +131,7 @@ export function copyPageSpecificJs() {
       "assets/js/ui.decklist_form.js",
       "assets/js/ui.decklist.js",
       "assets/js/ui.decklist_search.js",
+      "assets/js/ui.decklists_actions.js",
       "assets/js/ui.libraries.js",
       "assets/js/ui.library_edit.js",
       "assets/js/ui.library_view.js",

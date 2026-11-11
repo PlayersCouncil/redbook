@@ -341,7 +341,8 @@ test('the decklist shows up in search and in the favourites list', async ({ page
   await expect(row.locator('.rb-size')).toHaveText('30/30');
   // the columns in Ketura's order, and the upload date beside the author as written
   // (the cultures gave their room to the tags, Ketura 2026-11-07; Actions for Add to Library, 2026-11-08)
-  await expect(page.locator('.rb-decks thead th')).toHaveText(['', 'Score', 'Size', 'Deck', 'Format', 'Tags', 'Actions']);
+  // (a tick box first, for someone logged in, 2026-11-11)
+  await expect(page.locator('.rb-decks thead th')).toHaveText(['', '', 'Score', 'Size', 'Deck', 'Format', 'Tags', 'Actions']);
   await expect(row.locator('.rb-deck-by time')).toHaveText(/^[A-Z][a-z]{2} \d{1,2}, \d{4}$/);
   await expect(row.locator('.rb-row-tags')).toContainText('dwarves');
   await expect(row.locator('.rb-thumb-card img')).toHaveAttribute('alt', 'Gimli, Dwarf of Erebor');
@@ -423,12 +424,38 @@ test("My Decks: the decklists page's filters, who can see each deck, and favouri
   // the Decklists tab keeps the search, without the favourites
   await Promise.all([voter.waitForURL((u) => !u.search.includes('favorites')), voter.click('.rb-browse-title .rb-tab[data-list-tab=all]')]);
   await expect(voter.locator('.rb-browse-title .rb-tab[data-list-tab=all]')).toHaveClass(/is-active/);
-  // taken off on its page, it's gone from the tab
-  await voter.goto(decklistUrl);
-  await voter.locator('#social-favorite').click();
-  await expect(voter.locator('#social-favorite')).toHaveAttribute('aria-pressed', 'false');
+  // each row's actions (Ketura, 2026-11-11): Favourite (pressed, as it's a favourite), Clone, Download
+  const listed = voter.locator('.rb-decks tbody tr').filter({ hasText: decklistName });
+  const fav = listed.locator('[data-favorite]');
+  await expect(fav).toHaveAttribute('aria-pressed', 'true');
+  await expect(listed.locator('a[href*="/deck/copy/"]')).toBeVisible();
+  await expect(listed.locator(`a[href$="/decklist/export/text/${decklistId}"]`)).toBeVisible();
+  // ticked: the bar of what can be done to them
+  const pickBar = voter.locator('#decklist-selection');
+  await expect(pickBar).toBeHidden();
+  await listed.locator('td.rb-col-pick input').check();
+  await expect(pickBar).toBeVisible();
+  await expect(pickBar.locator('.rb-pick-count')).toHaveText('1 decklist selected');
+  await pickBar.locator('[data-pick-act=unfavorite]').click();
+  await expect(fav).toHaveAttribute('aria-pressed', 'false');
+  await listed.locator('td.rb-col-pick input').check();
+  await pickBar.locator('[data-pick-act=favorite]').click();
+  await expect(fav).toHaveAttribute('aria-pressed', 'true');
+  await pickBar.locator('[data-pick-act=clear]').click();
+  await expect(pickBar).toBeHidden();
+  // on My Favorites, Favourite off takes it out of the list
   await voter.goto(`/decklists?favorites=1&name=${encodeURIComponent(decklistName)}`);
+  await expect(voter.locator('.rb-decks tbody tr').filter({ hasText: decklistName })).toHaveCount(1);
+  await voter.locator('.rb-decks tbody tr').filter({ hasText: decklistName }).locator('[data-favorite]').click();
   await expect(voter.locator('.rb-results-none')).toBeVisible();
+  // logged out, no tick boxes, and Favourite leads to the login page
+  const anon = await page.context().browser()!.newContext({ storageState: { cookies: [], origins: [] } });
+  await anon.addCookies([{ name: 'cookieconsent_status', value: 'dismiss', url: new URL(page.url()).origin }]);
+  const visitor = await anon.newPage();
+  await visitor.goto(`/decklists?name=${encodeURIComponent(decklistName)}`);
+  await expect(visitor.locator('.rb-decks td.rb-col-pick').first()).toBeHidden();
+  await Promise.all([visitor.waitForURL(/\/login/), visitor.locator('.rb-decks [data-favorite]').first().click()]);
+  await visitor.context().close();
 });
 
 test('the decklists page filters by card, kind and culture', async ({ page }) => {
