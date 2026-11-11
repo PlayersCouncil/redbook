@@ -99,6 +99,7 @@ export function buildAppJs() {
       "assets/js/app.ui.js",
       "assets/js/app.theme_switch.js",
       "assets/js/app.social.js",
+      "assets/js/app.reactions.js",
       "assets/js/app.comments.js",
       "assets/js/app.sortable.js",
       "assets/js/app.splitter.js",

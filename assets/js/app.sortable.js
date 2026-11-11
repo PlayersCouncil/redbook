@@ -59,6 +59,8 @@
             drag.item.addClass('is-dragging');
             container.addClass('is-sorting');
             $('body').addClass('rb-sorting');
+            // no card hovers while dragging: they'd cover where it's going (Ketura, 2026-11-11)
+            app.tip && app.tip.dismiss && app.tip.dismiss();
         }
 
         function finish(cancel)

@@ -245,12 +245,9 @@ class UserController extends AbstractController
 
                     $dbh = $this->managerRegistry->getConnection();
 
-                    $content['is_liked'] = (bool) $dbh->executeQuery("SELECT
-                        count(*)
-                        from published_deck d
-                        join vote v on v.published_deck_id=d.id
-                        where v.user_id=?
-                        and d.id=?", array($user_id, $decklist_id))->fetchOne();
+                    // how far up the user has taken it: 1 Cheers, 2 on fire, 3 crowned (Ketura, 2026-11-11)
+                    $content['reaction'] = (int) $dbh->executeQuery('SELECT level FROM vote WHERE user_id = ? AND published_deck_id = ?', [$user_id, $decklist_id])->fetchOne();
+                    $content['is_liked'] = $content['reaction'] > 0;
 
                     $content['is_favorite'] = (bool) $dbh->executeQuery("SELECT
                         count(*)
@@ -258,9 +255,6 @@ class UserController extends AbstractController
                         join favorite f on f.published_deck_id=d.id
                         where f.user_id=?
                         and d.id=?", array($user_id, $decklist_id))->fetchOne();
-
-                    $content['is_fired'] = (bool) $dbh->executeQuery("SELECT count(*) from fire f where f.user_id=? and f.published_deck_id=?",
-                        array($user_id, $decklist_id))->fetchOne();
 
                     $content['is_author'] = ($user_id == $decklist->getUser()->getId());
 

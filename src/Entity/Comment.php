@@ -19,7 +19,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Entity]
 #[ORM\Table(name: 'comment')]
 #[ORM\Index(name: 'comment_parent_idx', columns: ['parent_id'])]
-class Comment implements CommentInterface
+class Comment implements CommentInterface, Reactable
 {
     #[ORM\Column(name: 'id', type: 'integer')]
     #[ORM\Id]
@@ -71,12 +71,15 @@ class Comment implements CommentInterface
     #[ORM\JoinColumn(name: 'parent_id', referencedColumnName: 'id', nullable: true, onDelete: 'SET NULL')]
     protected ?Comment $parent = null;
 
-    /** Cheers, and of those the fires (CommentReaction) */
+    /** Cheers, and of those the fires and crowns (CommentReaction's level) */
     #[ORM\Column(name: 'nb_cheers', type: 'integer', options: ['default' => 0])]
     protected int $nbCheers = 0;
 
     #[ORM\Column(name: 'nb_fires', type: 'integer', options: ['default' => 0])]
     protected int $nbFires = 0;
+
+    #[ORM\Column(name: 'nb_crowns', type: 'integer', options: ['default' => 0])]
+    protected int $nbCrowns = 0;
 
     public function __construct()
     {
@@ -107,6 +110,14 @@ class Comment implements CommentInterface
     public function setNbCheers(int $n): void { $this->nbCheers = max(0, $n); }
     public function getNbFires(): int { return $this->nbFires; }
     public function setNbFires(int $n): void { $this->nbFires = max(0, $n); }
+    public function getNbCrowns(): int { return $this->nbCrowns; }
+    public function getReactionCounts(): array { return [$this->nbCheers, $this->nbFires, $this->nbCrowns]; }
+    public function setReactionCounts(int $cheers, int $fires, int $crowns): void
+    {
+        $this->nbCheers = max(0, $cheers);
+        $this->nbFires = max(0, $fires);
+        $this->nbCrowns = max(0, $crowns);
+    }
 
     public function isDeleted(): bool { return $this->dateDeleted !== null; }
     public function getDateDeleted(): ?DateTimeInterface { return $this->dateDeleted; }

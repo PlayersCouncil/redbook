@@ -36,10 +36,7 @@
             <div class="rb-cmt-text">{{ c.text | raw }}</div>
             <div class="rb-cmt-actions">
                 <span class="rb-cmt-react">
-                    <button type="button" class="rb-react rb-react-sm r-cheers" data-act="cheer" aria-pressed="false" title="{{ 'comment.cheers' | trans }}" disabled>
-                        <svg class="rb-ri" aria-hidden="true"><use href="#ri-cheers"/></svg><span class="num">{{ c.nbCheers }}</span></button>
-                    <button type="button" class="rb-react rb-react-sm r-fire{{ c.nbFires ? '' : ' is-tucked' }}" data-act="fire" aria-pressed="false" title="{{ 'comment.fire_locked' | trans }}" disabled>
-                        <svg class="rb-ri" aria-hidden="true"><use href="#ri-fire"/></svg><span class="num">{{ c.nbFires }}</span></button>
+                    {% include 'Social/reactions.html.twig' with {counts: c.reactionCounts, size: 'sm', cheers_title: 'comment.cheers'} only %}
                 </span>
                 <button type="button" class="rb-cmt-act" data-act="reply" hidden><span class="fas fa-reply" aria-hidden="true"></span> {{ 'comment.reply' | trans }}</button>
                 <button type="button" class="rb-cmt-act" data-act="quote" hidden><span class="fas fa-quote-left" aria-hidden="true"></span> {{ 'comment.quote' | trans }}</button>

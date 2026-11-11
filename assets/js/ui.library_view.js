@@ -24,7 +24,7 @@
         // the deck drawn makes the page longer: a scroll that ran short can finish now
         if(scroll_wanted && scroll_wanted.is(row)) {
             scroll_wanted = null;
-            row[0].scrollIntoView({block: 'start', behavior: 'smooth'});
+            glide(row[0]);
         }
     }
 
@@ -68,11 +68,11 @@
         var done = false, go = function () {
             if(!done) {
                 done = true;
-                row[0].scrollIntoView({block: 'start', behavior: 'smooth'});
+                glide(row[0]);
             }
         };
         row.find('.rb-lv-body').one('transitionend', go);
-        setTimeout(go, 400);
+        setTimeout(go, 200);
     }
 
     /** What scrolls the page around an element: its nearest scrolling ancestor, or the page */
@@ -85,6 +85,31 @@
             }
         }
         return document.scrollingElement || document.documentElement;
+    }
+
+    /**
+     * Scrolls an element to the top, as scrollIntoView does (its scroll-margin and all), but in
+     * GLIDE_MS, quicker than the browser's own smooth scroll (Ketura, 2026-11-11: twice as fast)
+     */
+    var GLIDE_MS = 250;
+    function glide(el)
+    {
+        var box = scroller(el), from = box.scrollTop;
+        el.scrollIntoView({block: 'start', behavior: 'instant'});
+        var to = box.scrollTop, start = null;
+        box.scrollTop = from;
+        if(Math.abs(to - from) < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            box.scrollTop = to;
+            return;
+        }
+        (function step(now) {
+            start = start === null ? now : start;
+            var p = Math.min(1, (now - start) / GLIDE_MS);
+            box.scrollTop = from + (to - from) * (1 - Math.pow(1 - p, 3));
+            if(p < 1) {
+                window.requestAnimationFrame(step);
+            }
+        })(window.performance.now());
     }
 
     /**
@@ -127,7 +152,10 @@
     function setup_social()
     {
         var post = {id: view.data('id'), token: view.data('token')};
-        $('#social-like').on('click', function () { app.social.toggle(this, Routing.generate('library_like'), post); });
+        // Cheers, fire and crown (app.reactions; Ketura, 2026-11-11)
+        app.reactions.bind('.rb-social', function (group, level) {
+            return $.post(Routing.generate('library_react'), _.extend({level: level}, post));
+        });
         $('#social-favorite').on('click', function () { app.social.toggle(this, Routing.generate('library_favorite'), post); });
         $('#social-comment').on('click', function (event) {
             event.preventDefault();
@@ -149,7 +177,7 @@
             if(!row.is(open_row)) {
                 open(row, true, true);
             } else {
-                row[0].scrollIntoView({block: 'start', behavior: 'smooth'});
+                glide(row[0]);
             }
         }
         // a click on a deck's head does what its line in the contents does (Ketura, 2026-11-09)
@@ -168,7 +196,7 @@
             go_to($('#' + $(this).data('row')));
         });
         $('#btn-back-to-top').on('click', function () {
-            $('#library-intro')[0].scrollIntoView({block: 'start', behavior: 'smooth'});
+            glide($('#library-intro')[0]);
         });
         setup_social();
         var wanted = window.location.hash && list.find(window.location.hash.replace(/[^#\w-]/g, ''));

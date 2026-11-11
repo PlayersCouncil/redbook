@@ -117,7 +117,7 @@
         $('#login a').first().attr('href', '#').removeClass('disabled').addClass('dropdown-toggle rb-account-btn').attr({'data-toggle': 'dropdown', role: 'button', 'aria-haspopup': 'true', 'aria-expanded': 'false'})
             .html('<span class="fas fa-user-circle" aria-hidden="true"></span><span class="rb-account-name">' + _.escape(name) + '</span> <span class="caret"></span>')
             .after(list);
-        $('#login .dropdown-menu').addClass('dropdown-menu-right');
+        $('#login .dropdown-menu').addClass('rb-dropdown-fit');
     };
 
 

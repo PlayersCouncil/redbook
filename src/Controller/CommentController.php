@@ -15,7 +15,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * Comments on decklists and libraries (Ketura, 2026-11-11), one set of actions for both:
- * post and reply, edit, delete, hide, History, Cheers and fire, report, and what the viewer
+ * post and reply, edit, delete, hide, History, Cheers, fire and crown, report, and what the viewer
  * has done to a page's comments. The writing ones answer the comment as the page draws it, or
  * JSON. App\Services\CommentManager does the work and decides who may.
  */
@@ -76,18 +76,12 @@ class CommentController extends AbstractController
         return new JsonResponse(['hidden' => $comment->getIsHidden()]);
     }
 
-    #[Route(path: '/comment/{id}/cheer', name: 'comment_cheer', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function cheerAction(int $id, Request $request): JsonResponse
+    /** Cheers, fire and crown: the viewer's level taken to `level` (0 to 3); answers {level, cheers, fires, crowns} */
+    #[Route(path: '/comment/{id}/react', name: 'comment_react', methods: ['POST'], requirements: ['id' => '\d+'])]
+    public function reactAction(int $id, Request $request): JsonResponse
     {
         $user = $this->writer($request);
-        return new JsonResponse($this->comments->cheer($this->comments->find($id, $user), $user));
-    }
-
-    #[Route(path: '/comment/{id}/fire', name: 'comment_fire', methods: ['POST'], requirements: ['id' => '\d+'])]
-    public function fireAction(int $id, Request $request): JsonResponse
-    {
-        $user = $this->writer($request);
-        return new JsonResponse($this->comments->fire($this->comments->find($id, $user), $user));
+        return new JsonResponse($this->comments->react($this->comments->find($id, $user), $user, (int) $request->request->get('level')));
     }
 
     #[Route(path: '/comment/{id}/report', name: 'comment_report', methods: ['POST'], requirements: ['id' => '\d+'])]

@@ -51,9 +51,11 @@ class AccountMerger
 
         // join tables: keep the surviving account's own row where both have one
         $connection = $this->em->getConnection();
-        foreach (['favorite' => 'published_deck_id', 'vote' => 'published_deck_id', 'reviewvote' => 'review_id'] as $table => $column) {
+        // (a vote keeps its level: Cheers, fire or crown, Ketura 2026-11-11)
+        foreach (['favorite' => ['published_deck_id'], 'vote' => ['published_deck_id', 'level'], 'reviewvote' => ['review_id'], 'library_vote' => ['library_id', 'level']] as $table => $columns) {
+            $kept = implode(', ', $columns);
             $connection->executeStatement(
-                "INSERT IGNORE INTO $table ($column, user_id) SELECT $column, ? FROM $table WHERE user_id = ?",
+                "INSERT IGNORE INTO $table (user_id, $kept) SELECT ?, $kept FROM $table WHERE user_id = ?",
                 [$into->getId(), $from->getId()]
             );
             $connection->executeStatement("DELETE FROM $table WHERE user_id = ?", [$from->getId()]);

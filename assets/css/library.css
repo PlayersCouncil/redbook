@@ -81,16 +81,16 @@
 .rb-lv-meta { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
 .rb-lv-meta .rb-deck-name { font-weight: 700; color: var(--rb-ink); }
 .rb-lv-has-notes { color: var(--rb-ink-2); }
-.rb-lv-chevron { color: var(--rb-ink-2); transition: transform .25s; }
+.rb-lv-chevron { color: var(--rb-ink-2); transition: transform .12s; }
 .rb-lv-entry.is-open .rb-lv-chevron { transform: rotate(180deg); }
 .rb-lv-entry.is-gone > .rb-lv-head { opacity: .55; }
 /* opening and closing slide (Ketura, 2026-11-09): the row's height eases between none and all */
-.rb-lv-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s ease; }
+.rb-lv-body { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .15s ease; }
 .rb-lv-entry.is-open > .rb-lv-body { grid-template-rows: 1fr; }
 .rb-lv-entry.no-anim > .rb-lv-body, .rb-lv-entry.no-anim .rb-lv-chevron { transition: none; }
 .rb-lv-body-inner { min-height: 0; overflow: hidden; display: grid; grid-template-columns: minmax(0, 1fr) var(--rb-desc-width, 40%); }
 .rb-lv-entry.is-open .rb-lv-body-inner { border-top: 2px solid var(--rb-divide); }
-.rb-lv-entry:not(.is-open) .rb-lv-body-inner { visibility: hidden; transition: visibility 0s .3s; }
+.rb-lv-entry:not(.is-open) .rb-lv-body-inner { visibility: hidden; transition: visibility 0s .15s; }
 @media (prefers-reduced-motion: reduce) { .rb-lv-body, .rb-lv-chevron { transition: none; } }
 .rb-lv-deck { min-width: 0; background: var(--rb-leaf); }
 .rb-lv-flags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 14px 0; }

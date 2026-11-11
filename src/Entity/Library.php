@@ -23,7 +23,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'library')]
 #[ORM\Index(name: 'library_visibility_idx', columns: ['visibility', 'date_update'])]
 #[ORM\UniqueConstraint(name: 'library_seed_idx', columns: ['seed_source', 'seed_id'])]
-class Library implements \App\Classes\ThumbnailSubject
+class Library implements \App\Classes\ThumbnailSubject, Reactable
 {
     public const PRIVATE = 'private';
     public const HIDDEN = 'hidden';
@@ -135,6 +135,13 @@ class Library implements \App\Classes\ThumbnailSubject
     #[ORM\Column(name: 'nb_votes', type: 'integer', options: ['default' => 0])]
     protected int $nbVotes = 0;
 
+    /** The steps up from a Cheers (Ketura, 2026-11-11), counted in library_vote's level */
+    #[ORM\Column(name: 'nb_fires', type: 'integer', options: ['default' => 0])]
+    protected int $nbFires = 0;
+
+    #[ORM\Column(name: 'nb_crowns', type: 'integer', options: ['default' => 0])]
+    protected int $nbCrowns = 0;
+
     #[ORM\Column(name: 'nb_favorites', type: 'integer', options: ['default' => 0])]
     protected int $nbFavorites = 0;
 
@@ -168,6 +175,18 @@ class Library implements \App\Classes\ThumbnailSubject
 
     public function getId(): ?int { return $this->id; }
     public function getNbVotes(): int { return $this->nbVotes; }
+    public function getNbFires(): int { return $this->nbFires; }
+    public function getNbCrowns(): int { return $this->nbCrowns; }
+    public function getScore(): int { return $this->nbVotes + self::POINTS[self::FIRE] * $this->nbFires + self::POINTS[self::CROWN] * $this->nbCrowns; }
+    /** As getScore, for DQL on Library l */
+    public const SCORE_DQL = '(l.nbVotes + ' . self::POINTS[self::FIRE] . ' * l.nbFires + ' . self::POINTS[self::CROWN] . ' * l.nbCrowns)';
+    public function getReactionCounts(): array { return [$this->nbVotes, $this->nbFires, $this->nbCrowns]; }
+    public function setReactionCounts(int $cheers, int $fires, int $crowns): void
+    {
+        $this->nbVotes = max(0, $cheers);
+        $this->nbFires = max(0, $fires);
+        $this->nbCrowns = max(0, $crowns);
+    }
     public function getNbFavorites(): int { return $this->nbFavorites; }
     public function getNbComments(): int { return $this->nbComments; }
     /** @return Collection<int, User> */
@@ -177,12 +196,6 @@ class Library implements \App\Classes\ThumbnailSubject
     /** @return Collection<int, Comment> */
     public function getComments(): Collection { return $this->comments; }
     public function setNbComments(int $count): void { $this->nbComments = max(0, $count); }
-
-    /** Like or unlike; true if the user likes it now */
-    public function toggleVote(User $user): bool
-    {
-        return $this->toggle($this->votes, $user, $this->nbVotes);
-    }
 
     /** Favourite or unfavourite; true if it is the user's favourite now */
     public function toggleFavorite(User $user): bool

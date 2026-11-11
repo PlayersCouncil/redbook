@@ -17,7 +17,7 @@ use stdClass;
 #[ORM\Index(name: 'published_deck_format_idx', columns: ['target_format', 'completeness', 'half'])]
 #[ORM\Index(name: 'published_deck_review_idx', columns: ['review_status', 'reviewed_at'])]
 #[ORM\UniqueConstraint(name: 'published_deck_line_version', columns: ['line_id', 'version'])]
-class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDeckInterface, \App\Classes\ThumbnailSubject
+class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDeckInterface, \App\Classes\ThumbnailSubject, Reactable
 {
     /**
      * How long after publishing the author can still withdraw a decklist to fix it
@@ -26,11 +26,8 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
      */
     public const GRACE_HOURS = 72;
 
-    /** A fire counts as this many more likes in the popularity sorts (Ketura, 2026-11-04) */
-    public const FIRE_WEIGHT = 2;
-
-    /** The likes with each fire weighed in, for DQL on PublishedDeck d */
-    public const SCORE_DQL = '(d.nbVotes + ' . self::FIRE_WEIGHT . ' * d.nbFires)';
+    /** The Cheers with each fire and crown weighed in (Reactable::POINTS), for DQL on PublishedDeck d */
+    public const SCORE_DQL = '(d.nbVotes + ' . self::POINTS[self::FIRE] . ' * d.nbFires + ' . self::POINTS[self::CROWN] . ' * d.nbCrowns)';
 
     use LotrDeckTrait;
 
@@ -136,11 +133,14 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     protected $nbVotes;
 
     /**
-     * Fires (Ketura, 2026-11-04): a liker's super-upvote, worth FIRE_WEIGHT more likes in
-     * the popularity sorts. Only someone who has liked the deck can set it on fire.
+     * Fires (Ketura, 2026-11-04) and crowns (2026-11-11): the steps up from a Cheers, each
+     * counted in the vote table's level (App\Services\Reactions)
      */
     #[ORM\Column(name: 'nb_fires', type: 'integer', options: ['default' => 0])]
     protected int $nbFires = 0;
+
+    #[ORM\Column(name: 'nb_crowns', type: 'integer', options: ['default' => 0])]
+    protected int $nbCrowns = 0;
 
     /**
      * @var int
@@ -312,11 +312,6 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
     #[ORM\JoinTable(name: 'vote', joinColumns: [new ORM\JoinColumn(name: 'published_deck_id', referencedColumnName: 'id')], inverseJoinColumns: [new ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id')])]
     protected $votes;
 
-    /** The users who set the deck on fire; each of them has liked it too */
-    #[ORM\ManyToMany(targetEntity: User::class)]
-    #[ORM\JoinTable(name: 'fire', joinColumns: [new ORM\JoinColumn(name: 'published_deck_id', referencedColumnName: 'id', onDelete: 'CASCADE')], inverseJoinColumns: [new ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', onDelete: 'CASCADE')])]
-    protected $fires;
-
     /**
      * Constructor
      */
@@ -329,7 +324,6 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
         $this->children = new ArrayCollection();
         $this->favorites = new ArrayCollection();
         $this->votes = new ArrayCollection();
-        $this->fires = new ArrayCollection();
         $this->cultures = new ArrayCollection();
         $this->plays = new ArrayCollection();
     }
@@ -711,9 +705,27 @@ class PublishedDeck extends CommonDeck implements JsonSerializable, PublishedDec
         $this->nbFires = max(0, $nbFires);
     }
 
-    public function getFires(): Collection
+    public function getNbCrowns(): int
     {
-        return $this->fires;
+        return $this->nbCrowns;
+    }
+
+    /** The Cheers with each fire and crown weighed in, as SCORE_DQL */
+    public function getScore(): int
+    {
+        return (int) $this->nbVotes + self::POINTS[self::FIRE] * $this->nbFires + self::POINTS[self::CROWN] * $this->nbCrowns;
+    }
+
+    public function getReactionCounts(): array
+    {
+        return [(int) $this->nbVotes, $this->nbFires, $this->nbCrowns];
+    }
+
+    public function setReactionCounts(int $cheers, int $fires, int $crowns): void
+    {
+        $this->nbVotes = max(0, $cheers);
+        $this->nbFires = max(0, $fires);
+        $this->nbCrowns = max(0, $crowns);
     }
 
     /**

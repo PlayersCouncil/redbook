@@ -7,8 +7,8 @@ use DateTimeInterface;
 use Doctrine\ORM\Mapping as ORM;
 
 /**
- * One user's Cheers on a comment (Ketura, 2026-11-11), and whether they set it on fire too: a
- * fire goes with a cheers, as on a decklist
+ * One user's Cheers on a comment (Ketura, 2026-11-11), and how far up they took it: level 1 a
+ * Cheers, 2 on fire, 3 crowned, as on a decklist (App\Services\Reactions)
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'comment_reaction')]
@@ -29,8 +29,8 @@ class CommentReaction
     #[ORM\JoinColumn(name: 'user_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     protected User $user;
 
-    #[ORM\Column(name: 'fire', type: 'boolean', options: ['default' => false])]
-    protected bool $fire = false;
+    #[ORM\Column(name: 'level', type: 'smallint', options: ['default' => 1])]
+    protected int $level = 1;
 
     #[ORM\Column(name: 'date_creation', type: 'datetime')]
     protected DateTimeInterface $dateCreation;
@@ -45,6 +45,5 @@ class CommentReaction
     public function getComment(): Comment { return $this->comment; }
     public function getUser(): User { return $this->user; }
     public function setUser(User $user): void { $this->user = $user; }
-    public function isFire(): bool { return $this->fire; }
-    public function setFire(bool $fire): void { $this->fire = $fire; }
+    public function getLevel(): int { return $this->level; }
 }

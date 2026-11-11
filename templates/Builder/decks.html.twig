@@ -190,10 +190,10 @@
                             {% else %}
                                 <a href="{{ path('deck_publish_form', {deck_uuid: deck.uuid}) }}" class="rb-icon-btn" data-tip="{{ 'decks.browse.do.publish' | trans }}" aria-label="{{ 'decks.browse.do.publish' | trans }}"><span class="fas fa-share fa-fw"></span></a>
                             {% endif %}
-                            <a href="{{ path('deck_clone', {deck_uuid: deck.uuid}) }}" class="rb-icon-btn" data-tip="{{ 'decks.browse.do.clone' | trans }}" aria-label="{{ 'decks.browse.do.clone' | trans }}"><span class="fas fa-clone fa-fw"></span></a>
+                            <a href="{{ path('deck_clone', {deck_uuid: deck.uuid}) }}" class="rb-icon-btn" data-tip="{{ 'decks.browse.do.clone' | trans }}" aria-label="{{ 'decks.browse.do.clone' | trans }}"><span class="fas fa-code-branch fa-fw"></span></a>
                             <button type="button" class="rb-icon-btn rb-icon-danger btn-delete-deck" data-tip="{{ 'decks.browse.do.delete' | trans }}" aria-label="{{ 'decks.browse.do.delete' | trans }}"><span class="fas fa-trash-alt fa-fw"></span></button>
                         {% else %}
-                            <a href="{{ path('deck_copy', {decklist_id: row.decklist.id}) }}" class="rb-icon-btn" data-tip="{{ 'decks.browse.do.copy' | trans }}" aria-label="{{ 'decks.browse.do.copy' | trans }}"><span class="fas fa-copy fa-fw"></span></a>
+                            <a href="{{ path('deck_copy', {decklist_id: row.decklist.id}) }}" class="rb-icon-btn" data-tip="{{ 'decks.browse.do.copy' | trans }}" aria-label="{{ 'decks.browse.do.copy' | trans }}"><span class="fas fa-code-branch fa-fw"></span></a>
                             <button type="button" class="rb-icon-btn rb-icon-danger btn-unfavorite" data-tip="{{ 'decks.browse.do.unfavorite' | trans }}" aria-label="{{ 'decks.browse.do.unfavorite' | trans }}"><span class="fas fa-heart-broken fa-fw"></span></button>
                         {% endif %}
                     </td>

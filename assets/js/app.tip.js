@@ -204,7 +204,8 @@
 
     function on_enter(event)
     {
-        if(Date.now() - last_touch < 800 || $(this).hasClass('no-popup')) {
+        // none while something is being dragged into place (app.sortable; Ketura, 2026-11-11)
+        if(Date.now() - last_touch < 800 || $(this).hasClass('no-popup') || document.body.classList.contains('rb-sorting')) {
             return;
         }
         var element = this,
@@ -220,6 +221,9 @@
             return;
         }
         hover_timer = setTimeout(function () {
+            if(document.body.classList.contains('rb-sorting')) {
+                return;
+            }
             hover_valid = true;
             tip.show(element, card);
         }, HOVER_DELAY);
@@ -238,7 +242,7 @@
         cooldown_timer = setTimeout(function () { hover_valid = false; }, COOLDOWN);
     }
 
-    /** A click, scroll or resize: hide now, and the next hover waits again */
+    /** A click, scroll or resize, or a drag starting: hide now, and the next hover waits again */
     function dismiss()
     {
         clearTimeout(hover_timer);
@@ -304,6 +308,7 @@
     });
 
     // kept for pages that call them
+    tip.dismiss = dismiss;
     tip.set_mode = function () {};
     tip.set_hide_event = function () {};
     tip.display = function (event) { on_enter.call(this, event); };

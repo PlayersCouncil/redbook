@@ -15,6 +15,7 @@ use App\Repository\LibraryRepository;
 use App\Services\LibraryManager;
 use App\Services\OrganizationAccounts;
 use App\Services\PublishedDeckManager;
+use App\Services\Reactions;
 use App\Services\Texts;
 use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -41,6 +42,7 @@ class LibraryController extends AbstractController
         private readonly ManagerRegistry $managerRegistry,
         private readonly LibraryManager $libraries,
         private readonly \App\Services\CommentManager $commentManager,
+        private readonly Reactions $reactions,
     ) {
     }
 
@@ -551,7 +553,7 @@ class LibraryController extends AbstractController
             'private_view' => $private,
             // what this viewer has done, for the Cheers, Favourite and Comment buttons
             'social' => [
-                'liked' => $user !== null && $library->getVotes()->contains($user),
+                'level' => $this->reactions->level($library, $user),
                 'favorite' => $user !== null && $library->getFavorites()->contains($user),
                 'commented' => $user !== null && $library->getComments()->exists(fn ($i, Comment $c) => $c->getUser() === $user && !$c->isDeleted()),
             ],
@@ -619,17 +621,15 @@ class LibraryController extends AbstractController
         return [$library, $user];
     }
 
-    /** Like or unlike (Cheers); a curator can't like their own. Answers {count, on} */
-    #[Route(path: '/library/like', name: 'library_like', methods: ['POST'])]
-    public function likeAction(Request $request): JsonResponse
+    /**
+     * Cheers, fire and crown (Ketura, 2026-11-11): the user's level taken to `level` (0 to 3),
+     * as App\Services\Reactions allows. Answers {level, cheers, fires, crowns}
+     */
+    #[Route(path: '/library/react', name: 'library_react', methods: ['POST'])]
+    public function reactAction(Request $request): JsonResponse
     {
         [$library, $user] = $this->socialTarget($request);
-        if ($library->getUser() === $user) {
-            throw new AccessDeniedHttpException("You can't like your own library.");
-        }
-        $on = $library->toggleVote($user);
-        $this->managerRegistry->getManager()->flush();
-        return new JsonResponse(['count' => $library->getNbVotes(), 'on' => $on]);
+        return new JsonResponse($this->reactions->set($library, $user, (int) $request->request->get('level')));
     }
 
     /** Favourite or unfavourite. Answers {count, on} */

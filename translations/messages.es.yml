@@ -352,6 +352,8 @@ decklist:
     social:
       like: Me gusta
       favorite: Favorito
+      fire: En llamas
+      crown: Coronada
       comment: Comentario
       version: Versión
     derived:
@@ -842,7 +844,6 @@ decklist.publish.gate.republish_blocked: "No se puede volver a publicar tal como
 # Libraries (Ketura, 2026-11-08)
 library.view.social.like: "Me gusta: una biblioteca que vale la pena"
 library.view.social.favorite: "Favorita: guárdala en tus favoritas"
-library.view.social.own: "Esta biblioteca es tuya"
 library.view.back_to_top: "Volver arriba"
 library.view.contents: "Mazos"
 library.view.login_to_comment: "Inicia sesión para comentar"
@@ -1084,10 +1085,6 @@ comment.removed: "Retirado por un moderador"
 comment.hidden: "Oculto."
 comment.show: "Mostrar"
 comment.cheers: "Me gusta"
-comment.fire: "Prenderle fuego"
-comment.fire_out: "Apagar el fuego"
-comment.fire_locked: "Marca Me gusta primero para prenderle fuego"
-comment.own: "No puedes marcar Me gusta en tu propio comentario"
 comment.reply: "Responder"
 comment.quote: "Citar"
 comment.more: "Más"
@@ -1141,3 +1138,16 @@ decklist.browse.do.download: "Descargar"
 decklist.browse.do.clear: "Quitar selección"
 decklist.browse.do.unfavorite: "Quitar de favoritos"
 decklist.browse.picked: "{1} 1 mazo seleccionado | ]1,Inf] %count% mazos seleccionados"
+
+# Cheers, fire and crown (Ketura, 2026-11-11), on decklists, libraries and comments
+reactions.cheers: "Me gusta"
+reactions.cheers_off: "Quitar tu Me gusta"
+reactions.cheers_own: "Tu propio Me gusta: todo empieza con el de su autor. Haz clic para quitarlo"
+reactions.fire: "Prenderle fuego: cuenta %count% más"
+reactions.fire_off: "Apagar tu fuego (y tu corona con él)"
+reactions.fire_locked: "Marca Me gusta primero para prenderle fuego"
+reactions.fire_own: "Fuegos (no en lo tuyo)"
+reactions.crown: "Esto es de lo mejor de todos los tiempos"
+reactions.crown_off: "Quitar tu corona"
+reactions.crown_locked: "Préndele fuego primero para coronarlo"
+reactions.crown_own: "Coronas (no en lo tuyo)"

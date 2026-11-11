@@ -17,6 +17,7 @@ use App\Entity\User;
 use App\Services\PublishedDeckFactory;
 use App\Services\PublishGate;
 use App\Services\PublishedDeckManager;
+use App\Services\Reactions;
 use App\Services\Texts;
 use DateTime;
 use Doctrine\ORM\NonUniqueResultException;
@@ -869,105 +870,23 @@ class SocialController extends AbstractController
     }
 
     /**
-     * Records a user's vote.
-     *
-     *
-     * @param Request $request
-     * @return Response
-     * @throws Exception
+     * Cheers, fire and crown on a decklist (Ketura, 2026-11-04 for fire; one ladder with the
+     * crown, 2026-11-11): the user's level taken to `level` (0 to 3), as App\Services\Reactions
+     * allows. Answers {level, cheers, fires, crowns}.
      */
-    #[Route(path: '/user/like', name: 'decklist_like', methods: ['POST'])]
-    public function voteAction(Request $request)
-    {
-        /* @var EntityManager $em */
-        $em = $this->managerRegistry->getManager();
-
-        /* @var UserInterface $user */
-        $user = $this->getUser();
-        if (!$user) {
-            throw new UnauthorizedHttpException('You must be logged in to comment.');
-        }
-
-        $decklist_id = filter_var($request->get('id'), FILTER_SANITIZE_NUMBER_INT);
-
-        $decklist = $em->getRepository(PublishedDeck::class)->find($decklist_id);
-        if (!$decklist || $decklist->isWithdrawn()) {
-            throw new NotFoundHttpException('Wrong id');
-        }
-
-        if ($decklist->getUser()->getId() != $user->getId()) {
-            $query = $em->getRepository(PublishedDeck::class)
-                ->createQueryBuilder('d')
-                ->innerJoin('d.votes', 'u')
-                ->where('d.id = :decklist_id')
-                ->andWhere('u.id = :user_id')
-                ->setParameter('decklist_id', $decklist_id)
-                ->setParameter('user_id', $user->getId())
-                ->getQuery();
-
-            $result = $query->getResult();
-            if (empty($result)) {
-                $user->addVote($decklist);
-                $author = $decklist->getUser();
-                $author->setReputation($author->getReputation() + 1);
-                $decklist->setDateUpdate(new DateTime());
-                $decklist->setNbVotes($decklist->getNbVotes() + 1);
-                $this->managerRegistry->getManager()->flush();
-            } else {
-                $user->removeVote($decklist);
-                $author = $decklist->getUser();
-                $author->setReputation($author->getReputation() - 1);
-                // a fire goes with the like it was added to (Ketura, 2026-11-04)
-                if ($decklist->getFires()->contains($user)) {
-                    $decklist->getFires()->removeElement($user);
-                    $decklist->setNbFires($decklist->getNbFires() - 1);
-                    $author->setReputation($author->getReputation() - PublishedDeck::FIRE_WEIGHT);
-                }
-                $decklist->setDateUpdate(new DateTime());
-                $decklist->setNbVotes($decklist->getNbVotes() - 1);
-                $this->managerRegistry->getManager()->flush();
-            }
-        }
-
-        return new Response($decklist->getNbVotes());
-    }
-
-    /**
-     * Sets a decklist on fire, or puts the fire out (Ketura, 2026-11-04): a super-upvote,
-     * open to someone who has liked the deck and isn't its author. It counts as
-     * PublishedDeck::FIRE_WEIGHT more likes in the popularity sorts, and in the author's
-     * reputation. Answers {fires, on}.
-     */
-    #[Route(path: '/user/fire', name: 'decklist_fire', methods: ['POST'])]
-    public function fireAction(Request $request): JsonResponse
+    #[Route(path: '/user/react', name: 'decklist_react', methods: ['POST'])]
+    public function reactAction(Request $request, Reactions $reactions): JsonResponse
     {
         $user = $this->getUser();
-        if (!$user) {
-            throw new UnauthorizedHttpException('You must be logged in to set a deck on fire.');
+        if (!$user instanceof User) {
+            throw new UnauthorizedHttpException('You must be logged in to cheer a decklist.');
         }
-        $em = $this->managerRegistry->getManager();
         /** @var PublishedDeck|null $decklist */
-        $decklist = $em->getRepository(PublishedDeck::class)->find((int) $request->get('id'));
+        $decklist = $this->managerRegistry->getRepository(PublishedDeck::class)->find((int) $request->request->get('id'));
         if (!$decklist || $decklist->isWithdrawn()) {
             throw new NotFoundHttpException('Wrong id');
         }
-        $author = $decklist->getUser();
-        $on = $decklist->getFires()->contains($user);
-        if ($author->getId() === $user->getId() || (!$on && !$decklist->getVotes()->contains($user))) {
-            return new JsonResponse(['fires' => $decklist->getNbFires(), 'on' => $on], Response::HTTP_FORBIDDEN);
-        }
-        if ($on) {
-            $decklist->getFires()->removeElement($user);
-            $decklist->setNbFires($decklist->getNbFires() - 1);
-            $author->setReputation($author->getReputation() - PublishedDeck::FIRE_WEIGHT);
-        } else {
-            $decklist->getFires()->add($user);
-            $decklist->setNbFires($decklist->getNbFires() + 1);
-            $author->setReputation($author->getReputation() + PublishedDeck::FIRE_WEIGHT);
-        }
-        $decklist->setDateUpdate(new DateTime());
-        $em->flush();
-        return new JsonResponse(['fires' => $decklist->getNbFires(), 'on' => !$on]);
+        return new JsonResponse($reactions->set($decklist, $user, (int) $request->request->get('level')));
     }
 
     /**

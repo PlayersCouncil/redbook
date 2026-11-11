@@ -221,10 +221,16 @@ test('private until made public; then listed, and read one deck at a time', asyn
   await expect(voter.locator('.rb-lv-description')).toBeInViewport();
 
   // Cheers, Favourite and Comment (Ketura, 2026-11-09)
+  // (Cheers counts its curator's own already, Ketura 2026-11-11; libraries go on fire and get crowned too)
   const like = voter.locator('#social-like'), fav = voter.locator('#social-favorite');
+  await expect(like.locator('.num')).toHaveText('1');
   await like.click();
   await expect(like).toHaveAttribute('aria-pressed', 'true');
-  await expect(like.locator('.num')).toHaveText('1');
+  await expect(like.locator('.num')).toHaveText('2');
+  await voter.locator('#social-fire').click();
+  await expect(voter.locator('#social-fire')).toHaveAttribute('aria-pressed', 'true');
+  await voter.locator('#social-crown').click();
+  await expect(voter.locator('#social-crown .num')).toHaveText('1');
   await fav.click();
   await expect(fav).toHaveAttribute('aria-pressed', 'true');
   await expect(fav.locator('.num')).toHaveText('1');
@@ -238,11 +244,18 @@ test('private until made public; then listed, and read one deck at a time', asyn
   await expect(like).toHaveAttribute('aria-pressed', 'true');
   await expect(voter.locator('#library-comments .rb-cmt-text')).toHaveCount(1);
   await voter.goto(`/libraries/user?tags[]=e2etag${runId}`);
-  await expect(voter.locator('.rb-lib-cards .rb-votes .v-cheers')).toHaveText('1');
+  await expect(voter.locator('.rb-lib-cards .rb-votes .v-cheers')).toHaveText('2');
+  await expect(voter.locator('.rb-lib-cards .rb-votes .v-crown')).toHaveText('1');
   await expect(voter.locator('.rb-lib-cards .rb-lib-card-description')).toContainText('testing');
-  // its curator can't like their own
+  // its curator has their own Cheers, to take back; no fire or crown of their own, though
+  // others' show as counts
   await page.goto(publicUrl);
-  await expect(page.locator('#social-like')).toBeDisabled();
+  await expect(page.locator('#social-like')).toBeEnabled();
+  await expect(page.locator('#social-like')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#social-fire')).toBeDisabled();
+  await expect(page.locator('#social-crown')).toBeDisabled();
+  await expect(page.locator('#social-crown')).not.toHaveClass(/is-tucked/);
+  await expect(page.locator('#social-crown')).toHaveAttribute('title', 'Crowns (not for your own)');
   expect((await voter.goto(editUrl))?.status()).toBe(403);
 });
 

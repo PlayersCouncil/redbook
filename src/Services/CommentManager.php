@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Classes\CommentTree;
 use App\Entity\Comment;
-use App\Entity\CommentReaction;
 use App\Entity\CommentReport;
 use App\Entity\CommentRevision;
 use App\Entity\Library;
@@ -26,11 +25,12 @@ use Twig\Environment;
 
 /**
  * Comments on decklists and libraries (Ketura, 2026-11-11), whatever they're on: posting and
- * replying, editing (keeping each version), deleting, hiding, Cheers and fire, reports, and
+ * replying, editing (keeping each version), deleting, hiding, Cheers, fire and crown, reports, and
  * the threads as the pages draw them.
  *
  * Who may do what:
- * - anyone logged in who can see the subject: post, reply, Cheers (not their own), report
+ * - anyone logged in who can see the subject: post, reply, Cheers, fire and crown, report (on
+ *   their own, only the Cheers each starts with, to take back)
  * - the author: edit and delete their own
  * - a moderator (ROLE_MODERATOR; admins are): edit, delete and hide anyone's
  * - whoever owns the decklist or library: hide any on it (folded away, a click opens it)
@@ -53,6 +53,7 @@ class CommentManager
         private readonly Environment $twig,
         private readonly LoggerInterface $logger,
         private readonly ModerationLog $moderation,
+        private readonly Reactions $reactions,
         private readonly string $emailSenderAddress,
     ) {
     }
@@ -237,46 +238,16 @@ class CommentManager
     }
 
     /**
-     * Cheers, or takes it back (and the fire with it). Not on your own. As a decklist's: one
-     * to the author's reputation, and a fire PublishedDeck::FIRE_WEIGHT more.
-     * @return array{cheers: int, fires: int, cheered: bool, fired: bool}
+     * Cheers, fire and crown (Ketura, 2026-11-11): the user's level taken to $level, as
+     * App\Services\Reactions allows (the author has their own Cheers, and can only take it back)
+     * @return array{level: int, cheers: int, fires: int, crowns: int}
      */
-    public function cheer(Comment $comment, User $user): array
+    public function react(Comment $comment, User $user, int $level): array
     {
-        $this->reactable($comment, $user);
-        $reaction = $this->reaction($comment, $user);
-        $author = $comment->getUser();
-        if ($reaction) {
-            if ($reaction->isFire()) {
-                $comment->setNbFires($comment->getNbFires() - 1);
-                $author->setReputation($author->getReputation() - PublishedDeck::FIRE_WEIGHT);
-            }
-            $comment->setNbCheers($comment->getNbCheers() - 1);
-            $author->setReputation($author->getReputation() - 1);
-            $this->em->remove($reaction);
-            $reaction = null;
-        } else {
-            $reaction = new CommentReaction($comment, $user);
-            $this->em->persist($reaction);
-            $comment->setNbCheers($comment->getNbCheers() + 1);
-            $author->setReputation($author->getReputation() + 1);
+        if ($comment->isDeleted()) {
+            throw new BadRequestHttpException('That comment was deleted.');
         }
-        $this->em->flush();
-        return $this->reactions($comment, $reaction);
-    }
-
-    /** Sets it on fire, or puts the fire out; only over a Cheers */
-    public function fire(Comment $comment, User $user): array
-    {
-        $this->reactable($comment, $user);
-        $reaction = $this->reaction($comment, $user) ?? throw new BadRequestHttpException('Cheers it first.');
-        $on = !$reaction->isFire();
-        $reaction->setFire($on);
-        $comment->setNbFires($comment->getNbFires() + ($on ? 1 : -1));
-        $author = $comment->getUser();
-        $author->setReputation($author->getReputation() + ($on ? 1 : -1) * PublishedDeck::FIRE_WEIGHT);
-        $this->em->flush();
-        return $this->reactions($comment, $reaction);
+        return $this->reactions->set($comment, $user, $level);
     }
 
     /** To the moderators: a new report, or a new reason on the user's open one */
@@ -325,21 +296,14 @@ class CommentManager
 
     /**
      * What the viewer has done to and may do with the subject's comments, for the page's script
-     * @return array{user: int, moderator: bool, owner: bool, cheered: int[], fired: int[], reported: int[]}
+     * @return array{user: int, moderator: bool, owner: bool, levels: array<int, int>, reported: int[]}
      */
     public function state(PublishedDeck|Library $subject, User $user): array
     {
         $ids = array_map(fn (Comment $c) => $c->getId(), $subject->getComments()->toArray());
-        $cheered = $fired = $reported = [];
+        $levels = $reported = [];
         if ($ids) {
-            $rows = $this->em->createQuery('SELECT IDENTITY(r.comment) AS id, r.fire FROM ' . CommentReaction::class . ' r WHERE r.user = :user AND r.comment IN (:ids)')
-                ->setParameters(['user' => $user, 'ids' => $ids])->getArrayResult();
-            foreach ($rows as $row) {
-                $cheered[] = (int) $row['id'];
-                if ($row['fire']) {
-                    $fired[] = (int) $row['id'];
-                }
-            }
+            $levels = $this->reactions->levels(Comment::class, $ids, $user);
             $reported = array_map('intval', array_column($this->em->createQuery('SELECT IDENTITY(r.comment) AS id FROM ' . CommentReport::class . ' r WHERE r.user = :user AND r.comment IN (:ids) AND r.dateResolved IS NULL')
                 ->setParameters(['user' => $user, 'ids' => $ids])->getArrayResult(), 'id'));
         }
@@ -347,8 +311,8 @@ class CommentManager
             'user' => $user->getId(),
             'moderator' => $this->isModerator(),
             'owner' => $subject->getUser() === $user,
-            'cheered' => $cheered,
-            'fired' => $fired,
+            // how far up the viewer has taken each comment: 1 Cheers, 2 on fire, 3 crowned
+            'levels' => (object) $levels,
             'reported' => $reported,
         ];
     }
@@ -373,26 +337,6 @@ class CommentManager
         if (!$this->em->getRepository(CommentRevision::class)->count(['comment' => $comment])) {
             $this->em->persist(new CommentRevision($comment, $comment->getUser(), $comment->getTextMd(), (string) $comment->getText(), $comment->getDateCreation()));
         }
-    }
-
-    private function reactable(Comment $comment, User $user): void
-    {
-        if ($comment->isDeleted()) {
-            throw new BadRequestHttpException('That comment was deleted.');
-        }
-        if ($comment->getUser() === $user) {
-            throw new AccessDeniedHttpException("You can't cheer your own comment.");
-        }
-    }
-
-    private function reaction(Comment $comment, User $user): ?CommentReaction
-    {
-        return $this->em->getRepository(CommentReaction::class)->findOneBy(['comment' => $comment, 'user' => $user]);
-    }
-
-    private function reactions(Comment $comment, ?CommentReaction $mine): array
-    {
-        return ['cheers' => $comment->getNbCheers(), 'fires' => $comment->getNbFires(), 'cheered' => $mine !== null, 'fired' => $mine?->isFire() ?? false];
     }
 
     /**

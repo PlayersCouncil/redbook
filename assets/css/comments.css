@@ -35,18 +35,20 @@
 .rb-cmt.is-hidden:not(.is-open) > .rb-cmt-body .rb-cmt-actions { display: none; }
 .rb-cmt.is-hidden > .rb-cmt-body { opacity: .85; }
 
-/* the actions: Cheers and fire, Reply, Quote, then the rest in a menu */
+/* the actions: Cheers, fire and crown, Reply, Quote, then the rest in a menu */
 .rb-cmt-actions { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; margin-top: 6px; }
 .rb-cmt-react { display: inline-flex; align-items: center; }
 .rb-react.rb-react-sm { height: var(--rb-control-h-sm); gap: 4px; padding: 0 8px; font-size: 0.8125rem; }
 .rb-react.rb-react-sm .rb-ri { width: 15px; height: 15px; }
 .rb-react.rb-react-sm[disabled] { cursor: default; }
 .rb-react.rb-react-sm.r-cheers[disabled] .rb-ri { filter: grayscale(.4); }
-/* the fire waits behind Cheers until there's a cheers to set on fire, or some fire already */
-.rb-cmt-react .r-fire { max-width: 80px; margin-left: 4px; overflow: hidden; transition: max-width .35s ease, opacity .3s ease, margin .35s ease, padding .35s ease; }
-.rb-cmt-react .r-fire[disabled] .rb-ri { filter: grayscale(1); }
-.rb-cmt-react .r-fire[disabled] { opacity: var(--rb-disabled, .5); }
-.rb-cmt-react .r-fire.is-tucked { max-width: 0; margin-left: 0; padding-left: 0; padding-right: 0; border-width: 0; opacity: 0; pointer-events: none; }
+/* the fire and crown tucked away until they can be used, or have been (Ketura, 2026-11-11) */
+.rb-cmt-react .rb-reactions { display: inline-flex; }
+.rb-cmt-react .r-fire, .rb-cmt-react .r-crown { max-width: 80px; margin-left: 4px; overflow: hidden; transition: max-width .35s ease, opacity .3s ease, margin .35s ease, padding .35s ease; }
+.rb-cmt-react .r-fire[disabled] .rb-ri, .rb-cmt-react .r-crown[disabled] .rb-ri { filter: grayscale(1); }
+.rb-cmt-react .r-fire[disabled], .rb-cmt-react .r-crown[disabled] { opacity: var(--rb-disabled, .5); }
+.rb-cmt-react .is-tucked { max-width: 0; margin-left: 0; padding-left: 0; padding-right: 0; border-width: 0; opacity: 0; pointer-events: none; }
+.rb-cmt-react .rb-reactions.processing .rb-react { opacity: .6; }
 .rb-cmt-react .processing { opacity: .6; }
 .rb-cmt-act { display: inline-flex; align-items: center; gap: 5px; height: var(--rb-control-h-sm); padding: 0 8px; border: 0; border-radius: var(--rb-radius);
     background: none; color: var(--rb-ink-2); font-size: 0.8125rem; font-weight: 600; }

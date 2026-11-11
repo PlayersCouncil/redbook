@@ -120,15 +120,17 @@
             {% for decklist in decklists %}
                 {% set url = path('decklist_detail', {decklist_id: decklist.id, decklist_name: decklist.nameCanonical | e('url')}) %}
                 {% set kind = decklist.kind %}
-                {% set score = decklist.nbVotes + 2 * decklist.nbFires %}
-                {# fire instead of the thumbs up once fires are a tenth of the votes (Ketura, 2026-11-05) #}
+                {% set score = decklist.score %}
+                {# fire instead of the thumbs up once fires are a tenth of the votes (Ketura, 2026-11-05);
+                   a crown once crowns are (2026-11-11) #}
                 {% set fiery = decklist.nbVotes > 0 and decklist.nbFires * 10 >= decklist.nbVotes %}
+                {% set crowned = decklist.nbVotes > 0 and decklist.nbCrowns * 10 >= decklist.nbVotes %}
                 {% set tags = decklist.tags ? decklist.tags | split(' ') | filter(t => t) : [] %}
                 <tr data-href="{{ url }}" data-id="{{ decklist.id }}" class="rb-kind-{{ kind }}">
                     <td class="rb-col-pick"><input type="checkbox" aria-label="{{ 'decks.browse.pick' | trans({'%name%': decklist.name}) }}"></td>
                     <td class="rb-col-thumb">{% include 'Decklist/thumbnail.html.twig' %}</td>
                     <td class="rb-col-score">
-                        <span class="rb-score{% if not score %} is-zero{% endif %}{% if fiery %} is-fiery{% endif %}" title="{{ 'decklist.browse.score_title' | trans({'%likes%': decklist.nbVotes, '%fires%': decklist.nbFires}) }}"><svg class="rb-ri" aria-hidden="true"><use href="#ri-{{ fiery ? 'fire' : 'cheers' }}"/></svg> {{ score }}</span>
+                        <span class="rb-score{% if not score %} is-zero{% endif %}{% if fiery %} is-fiery{% endif %}{% if crowned %} is-crowned{% endif %}" title="{{ 'decklist.browse.score_title' | trans({'%likes%': decklist.nbVotes, '%fires%': decklist.nbFires, '%crowns%': decklist.nbCrowns}) }}"><svg class="rb-ri" aria-hidden="true"><use href="#ri-{{ crowned ? 'crown' : (fiery ? 'fire' : 'cheers') }}"/></svg> {{ score }}</span>
                         {% if decklist.nbComments %}<span class="rb-comments" title="{{ 'decklist.browse.comments_title' | trans({'%count%': decklist.nbComments}) }}"><span class="fas fa-comment"></span> {{ decklist.nbComments }}</span>{% endif %}
                     </td>
                     <td class="rb-col-size">
@@ -152,8 +154,8 @@
                        page stays cacheable; logged out, Favourite and Clone lead to the login page #}
                     <td class="rb-col-actions">
                         <button type="button" class="rb-icon-btn rb-fav-btn" data-favorite="{{ decklist.id }}" aria-pressed="false" data-tip="{{ 'decklist.view.social.favorite' | trans }}" aria-label="{{ 'decklist.view.social.favorite' | trans }}"><svg class="rb-ri" aria-hidden="true"><use href="#ri-fav"/></svg></button>
-                        <a class="rb-icon-btn" href="{{ path('deck_copy', {decklist_id: decklist.id}) }}" data-tip="{{ 'decklist.browse.do.clone' | trans }}" aria-label="{{ 'decklist.browse.do.clone' | trans }}"><span class="fas fa-clone fa-fw"></span></a>
-                        <a class="rb-icon-btn" href="{{ path('decklist_download', {decklist_id: decklist.id}) }}" data-tip="{{ 'decklist.browse.do.download' | trans }}" aria-label="{{ 'decklist.browse.do.download' | trans }}"><span class="fas fa-download fa-fw"></span></a>
+                        <a class="rb-icon-btn" href="{{ path('deck_copy', {decklist_id: decklist.id}) }}" data-tip="{{ 'decklist.browse.do.clone' | trans }}" aria-label="{{ 'decklist.browse.do.clone' | trans }}"><span class="fas fa-code-branch fa-fw"></span></a>
+                        <a class="rb-icon-btn" href="{{ path('decklist_download', {decklist_id: decklist.id}) }}" data-tip="{{ 'decklist.browse.do.download' | trans }}" aria-label="{{ 'decklist.browse.do.download' | trans }}"><span class="fas fa-file-download fa-fw"></span></a>
                         <button type="button" class="rb-icon-btn" data-library-add="{{ decklist.id }}" data-tip="{{ 'library.add.button' | trans }}" aria-label="{{ 'library.add.button' | trans }}" aria-haspopup="dialog"><span class="fas fa-folder-plus fa-fw"></span></button>
                     </td>
                 </tr>

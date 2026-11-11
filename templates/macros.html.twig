@@ -42,10 +42,15 @@
           title="{{ 'decklist.view.social.like' | trans }}">
         <svg class="rb-ri" aria-hidden="true"><use href="#ri-cheers"/></svg> <span class="num">{{ decklist.nbVotes }}</span>
     </span>
-    {# the reader's icons (Ketura, 2026-11-04), and its fires when it has any #}
+    {# the reader's icons (Ketura, 2026-11-04), and its fires and crowns when it has any #}
     {% if decklist.nbFires is defined and decklist.nbFires %}
     <span class="social-icon-fire" data-toggle="tooltip" data-placement="bottom" title="{{ 'decklist.view.social.fire' | trans }}">
         <svg class="rb-ri" aria-hidden="true"><use href="#ri-fire"/></svg> <span class="num">{{ decklist.nbFires }}</span>
+    </span>
+    {% endif %}
+    {% if decklist.nbCrowns is defined and decklist.nbCrowns %}
+    <span class="social-icon-crown" data-toggle="tooltip" data-placement="bottom" title="{{ 'decklist.view.social.crown' | trans }}">
+        <svg class="rb-ri" aria-hidden="true"><use href="#ri-crown"/></svg> <span class="num">{{ decklist.nbCrowns }}</span>
     </span>
     {% endif %}
     <span class="social-icon-favorite" data-toggle="tooltip" data-placement="bottom"

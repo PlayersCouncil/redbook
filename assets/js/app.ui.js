@@ -121,6 +121,20 @@
         }
     });
 
+    // a menu marked .rb-dropdown-fit (the top bar's Account, My Drafts and New Draft; Ketura,
+    // 2026-11-11) opens from its button's left edge, and from its right only when it would
+    // otherwise run off the window
+    $(document).on('shown.bs.dropdown', '.dropdown', function () {
+        var menu = $(this).children('.dropdown-menu.rb-dropdown-fit');
+        if(!menu.length) {
+            return;
+        }
+        menu.removeClass('dropdown-menu-right');
+        if(menu[0].getBoundingClientRect().right > document.documentElement.clientWidth - 4) {
+            menu.addClass('dropdown-menu-right');
+        }
+    });
+
     // tabs made of buttons (the design's .rb-tabs, Ketura 2026-11-09): each shows the panel it
     // controls and hides its siblings' panels
     $(document).on('click', '.rb-tabs[role=tablist] > button[aria-controls]', function () {

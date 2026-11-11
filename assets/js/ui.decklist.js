@@ -29,9 +29,11 @@
             $('#deleteModal .rb-delete-published').prop('hidden', !$(this).data('published'));
             $('#deleteModal').modal('show');
         });
-        $('#social-like').on('click', ui.send_like);
+        // Cheers, fire and crown (app.reactions; Ketura, 2026-11-11)
+        app.reactions.bind('.rb-social', function (group, level) {
+            return $.post(Routing.generate('decklist_react'), {id: app.deck.get_id(), level: level});
+        });
         $('#social-favorite').on('click', ui.send_favorite);
-        $('#social-fire').on('click', ui.send_fire);
         // the lineage line opens to its tables; either table's heading closes them (Ketura, 2026-11-08)
         $('#reader-tree').on('click', '.rb-tree-summary', function () {
             $('#reader-tree').removeClass('is-collapsed').find('.rb-tree-summary').attr('aria-expanded', 'true');
@@ -56,47 +58,6 @@
         app.social.toggle(button, Routing.generate(route), {id: app.deck.get_id()}, done);
     }
 
-    /**
-     * The fire button follows the like (Ketura, 2026-11-04): liking slides it out from behind
-     * Like, ready to use; unliking puts the user's fire out with it, and tucks the button away
-     * again when nobody's fire is left.
-     */
-    function set_fire(liked, fired, count)
-    {
-        var fire = $('#social-fire'),
-            num = count === undefined ? parseInt(fire.find('.num').text(), 10) || 0 : count;
-        fire.find('.num').text(num);
-        fire.prop('disabled', !liked).toggleClass('is-on', !!fired).attr('aria-pressed', !!fired)
-            .attr('title', !liked ? Translator.trans('decklist.reader.fire_locked') : fire.data(fired ? 'title-off' : 'title-on'))
-            .toggleClass('is-tucked', !liked && num === 0);
-    }
-
-    ui.send_like = function send_like(event)
-    {
-        event.preventDefault();
-        toggle($(this), 'decklist_like', function (liked) {
-            var fire = $('#social-fire'),
-                fired = fire.hasClass('is-on'),
-                num = parseInt(fire.find('.num').text(), 10) || 0;
-            // the server puts out this user's fire along with the like
-            set_fire(liked, liked && fired, !liked && fired ? num - 1 : num);
-        });
-    };
-
-    ui.send_fire = function send_fire(event)
-    {
-        event.preventDefault();
-        var fire = $(this);
-        if(fire.hasClass('processing') || fire.prop('disabled')) {
-            return;
-        }
-        fire.addClass('processing').data('touched', true);
-        $.post(Routing.generate('decklist_fire'), {id: app.deck.get_id()}, function (data)
-        {
-            set_fire(true, data.on, data.fires);
-        }).always(function () { fire.removeClass('processing'); });
-    };
-
     ui.send_favorite = function send_favorite(event)
     {
         event.preventDefault();
@@ -114,7 +75,7 @@
         return app.comments.setup({title: $.trim($('.decklist-name').text())});
     };
 
-    /** The buttons show what the user has done; an author can't like their own deck */
+    /** The buttons show what the user has done; an author's own Cheers is theirs to take back, and that's all */
     ui.setup_social_icons = function setup_social_icons()
     {
         var user = app.user.data;
@@ -123,20 +84,16 @@
         }
         // a button clicked before this arrived already shows what the server said
         var fresh = function (sel) { return !$(sel).data('touched'); },
-            liked = fresh('#social-like') ? !!user.is_liked : $('#social-like').hasClass('is-on');
-        fresh('#social-like') && set_pressed('#social-like', liked);
+            group = $('.rb-social .rb-reactions');
+        if(fresh(group)) {
+            // no animation for what was already so when the page opened
+            group.addClass('rb-no-anim');
+            app.reactions.render(group, {level: user.reaction || 0, own: !!user.is_author});
+            void group[0].offsetWidth;
+            group.removeClass('rb-no-anim');
+        }
         fresh('#social-favorite') && set_pressed('#social-favorite', !!user.is_favorite);
         set_pressed('#social-comment', _.contains(Commenters || [], user.name));
-        if(user.is_author) {
-            $('#social-like').prop('disabled', true).attr('title', Translator.trans('decklist.reader.own_deck'));
-        }
-        if(fresh('#social-fire') && fresh('#social-like')) {
-            // no animation for what was already so when the page opened
-            $('#social-fire').addClass('rb-no-anim');
-            set_fire(liked && !user.is_author, !!user.is_fired);
-            void $('#social-fire')[0].offsetWidth;
-            $('#social-fire').removeClass('rb-no-anim');
-        }
     };
 
     /**

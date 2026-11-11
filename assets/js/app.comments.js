@@ -4,7 +4,7 @@
  * Comments as threads (Ketura, 2026-11-11), on decklists and libraries alike
  * (templates/Comment/thread.html.twig): the actions each viewer may use, from /comment/state
  * (the page itself is the same for everyone); the comment form at the end and the reply and
- * edit forms in place; Cheers and fire; History and Report in a popup; Copy Link and Copy Text;
+ * edit forms in place; Cheers, fire and crown (app.reactions); History and Report in a popup; Copy Link and Copy Text;
  * folding a thread by its line; and going to the comment a link names (#comment-N).
  */
 (function app_comments(comments, $)
@@ -136,10 +136,13 @@
             }
             var id = id_of(node),
                 mine = logged && String(node.data('author')) === String(state.user),
-                cheered = logged && _.contains(state.cheered, id),
-                fired = logged && _.contains(state.fired, id),
                 reported = logged && _.contains(state.reported, id);
-            set_reactions(node, {cheered: cheered, fired: fired}, mine);
+            // the viewer's level (app.reactions)
+            app.reactions.render(body.find('.rb-reactions').first(), {
+                logged: logged,
+                own: mine,
+                level: logged ? state.levels[id] || 0 : 0
+            });
             body.find('[data-act="reply"], [data-act="quote"]').prop('hidden', !logged);
             body.find('.rb-cmt-own').prop('hidden', !(mine || (logged && state.moderator)));
             node.is('[data-legacy]') && body.find('.rb-cmt-editor').prop('hidden', true);
@@ -149,29 +152,6 @@
         });
         relative_times(root);
     }
-
-    /**
-     * Cheers and fire as a decklist has them: the fire tucked behind Cheers until there is a
-     * cheers to set on fire, or some fire already. counts: {cheers, fires} from the server.
-     */
-    function set_reactions(node, mine, own, counts)
-    {
-        var body = node.children('.rb-cmt-body'),
-            cheer = body.find('[data-act="cheer"]'),
-            fire = body.find('[data-act="fire"]');
-        if(counts) {
-            cheer.find('.num').text(counts.cheers);
-            fire.find('.num').text(counts.fires);
-        }
-        var fires = parseInt(fire.find('.num').text(), 10) || 0;
-        cheer.prop('disabled', !state || own).attr('aria-pressed', mine.cheered ? 'true' : 'false')
-            .attr('title', own ? t('comment.own') : t('comment.cheers'));
-        fire.prop('disabled', !state || own || !mine.cheered).attr('aria-pressed', mine.fired ? 'true' : 'false')
-            .attr('title', mine.cheered ? t(mine.fired ? 'comment.fire_out' : 'comment.fire') : t('comment.fire_locked'))
-            .toggleClass('is-tucked', !mine.cheered && fires === 0);
-    }
-
-    /* ---- forms ---- */
 
     /**
      * A markdown box (the deckbuilder's editor: Preview, symbols, # for cards, @ for the
@@ -227,6 +207,10 @@
     {
         var added = $($.parseHTML($.trim(html)));
         (parent ? parent.children('.rb-cmt-replies') : section.find('.rb-cmt-list')).append(added);
+        // it comes with its author's own Cheers (Ketura, 2026-11-11)
+        if(state) {
+            state.levels[id_of(added)] = 1;
+        }
         apply(added);
         return added;
     }
@@ -395,23 +379,6 @@
         }).fail(failed);
     }
 
-    function react(node, what)
-    {
-        var button = node.children('.rb-cmt-body').find('[data-act="' + what + '"]');
-        if(button.hasClass('processing') || button.prop('disabled')) {
-            return;
-        }
-        button.addClass('processing');
-        post(Routing.generate(what === 'cheer' ? 'comment_cheer' : 'comment_fire', {id: id_of(node)})).done(function (data) {
-            var id = id_of(node);
-            state.cheered = _.without(state.cheered, id);
-            state.fired = _.without(state.fired, id);
-            data.cheered && state.cheered.push(id);
-            data.fired && state.fired.push(id);
-            set_reactions(node, data, false, data);
-        }).fail(failed).always(function () { button.removeClass('processing'); });
-    }
-
     /* ---- the popup: History and Report ---- */
 
     function modal(title, content, footer)
@@ -493,7 +460,6 @@
         switch(what) {
             case 'reply': return reply(node, false);
             case 'quote': return reply(node, true);
-            case 'cheer': case 'fire': return react(node, what);
             case 'edit': return edit(node);
             case 'delete': return remove(node);
             case 'hide': return hide(node);
@@ -530,6 +496,13 @@
         section.on('click', '[data-act]', function (event) {
             event.preventDefault();
             act(this, $(this).data('act'));
+        });
+        // Cheers, fire and crown (app.reactions; Ketura, 2026-11-11)
+        app.reactions.bind(section, function (group, level) {
+            var id = id_of(node_of(group));
+            return post(Routing.generate('comment_react', {id: id}), {level: level}).done(function (data) {
+                state.levels[id] = data.level;
+            }).fail(failed);
         });
         section.on('click', '.rb-cmt-line', function () { fold(node_of(this), true); });
         section.on('click', '.rb-cmt-unfold-thread', function () { fold(node_of(this), false); });

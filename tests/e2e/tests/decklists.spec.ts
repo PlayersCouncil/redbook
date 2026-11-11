@@ -201,10 +201,25 @@ test('publish a deck as a decklist, with a play record', async ({ page }) => {
   decklistUrl = page.url();
   decklistId = decklistUrl.match(/\/decklist\/view\/(\d+)\//)![1];
 
-  // Authors can't like their own decklist, nor set it on fire
-  await expect(page.locator('#social-like')).toBeDisabled();
+  // It starts with the author's own Cheers (Ketura, 2026-11-11), theirs to take back; no fire
+  // or crown on their own
+  const own = page.locator('#social-like');
+  await expect(own).toBeEnabled();
+  await expect(own).toHaveAttribute('aria-pressed', 'true');
+  await expect(own.locator('.num')).toHaveText('1');
   await expect(page.locator('#social-fire')).toBeDisabled();
   await expect(page.locator('#social-fire')).toHaveClass(/is-tucked/);
+  await expect(page.locator('#social-crown')).toHaveClass(/is-tucked/);
+  await own.click();
+  await expect(own).toHaveAttribute('aria-pressed', 'false');
+  await expect(own.locator('.num')).toHaveText('0');
+  await expect(page.locator('#social-fire')).toHaveClass(/is-tucked/);
+  await own.click();
+  await expect(own.locator('.num')).toHaveText('1');
+  expect(appConsole(['dbal:run-sql', `SELECT level FROM vote WHERE published_deck_id = ${decklistId}`])).toMatch(/\b1\b/);
+  // the server refuses the author a fire however it's asked
+  const refused = await page.request.post('/user/react', { form: { id: decklistId, level: '2' } });
+  expect(refused.status()).toBe(403);
 });
 
 test('the author edits the decklist from its page; nobody else gets Edit', async ({ page, pageAs }) => {
@@ -267,24 +282,35 @@ test('another user likes, favourites and comments on it', async ({ pageAs }) => 
   const page = await pageAs('voter');
   await page.goto(decklistUrl);
 
-  // buttons that show what this user has done (Ketura, 2026-11-04)
+  // buttons that show what this user has done (Ketura, 2026-11-04): the author's own Cheers
+  // counted already (2026-11-11)
   const like = page.locator('#social-like');
   const fire = page.locator('#social-fire');
-  await expect(like.locator('.num')).toHaveText('0');
+  const crown = page.locator('#social-crown');
+  await expect(like.locator('.num')).toHaveText('1');
   await expect(like).toHaveAttribute('aria-pressed', 'false');
-  // the fire waits behind Like, its place kept so nothing moves when it comes out
+  // the fire and crown wait behind Cheers, their places kept so nothing moves when they come out
   await expect(fire).toHaveClass(/is-tucked/);
+  await expect(crown).toHaveClass(/is-tucked/);
   const likeBox = await like.boundingBox();
   await like.click();
-  await expect(like.locator('.num')).toHaveText('1');
+  await expect(like.locator('.num')).toHaveText('2');
   await expect(like).toHaveAttribute('aria-pressed', 'true');
-  // liked: the fire slides out to the left, ready; Like hasn't moved
+  // cheered: the fire slides out to the left, ready; the crown still waits; Cheers hasn't moved
   await expect(fire).not.toHaveClass(/is-tucked/);
   await expect(fire).toBeEnabled();
+  await expect(crown).toHaveClass(/is-tucked/);
   expect(await like.boundingBox()).toEqual(likeBox);
   await fire.click();
   await expect(fire.locator('.num')).toHaveText('1');
   await expect(fire).toHaveAttribute('aria-pressed', 'true');
+  // on fire: the crown comes out, "an all-time best"
+  await expect(crown).not.toHaveClass(/is-tucked/);
+  await expect(crown).toHaveAttribute('title', 'This is an all-time best');
+  await crown.click();
+  await expect(crown.locator('.num')).toHaveText('1');
+  await expect(crown).toHaveAttribute('aria-pressed', 'true');
+  expect(await like.boundingBox()).toEqual(likeBox);
 
   const favorite = page.locator('#social-favorite');
   await expect(favorite.locator('.num')).toHaveText('0');
@@ -311,7 +337,7 @@ test('another user likes, favourites and comments on it', async ({ pageAs }) => 
 
   // The counts are stored, not just updated in the page
   await page.reload();
-  await expect(page.locator('#social-like .num')).toHaveText('1');
+  await expect(page.locator('#social-like .num')).toHaveText('2');
   await expect(page.locator('#social-like')).toHaveClass(/is-on/);
   await expect(page.locator('#social-favorite .num')).toHaveText('1');
   await expect(page.locator('#social-favorite')).toHaveClass(/is-on/);
@@ -319,15 +345,27 @@ test('another user likes, favourites and comments on it', async ({ pageAs }) => 
   await expect(page.locator('#social-comment')).toHaveClass(/is-on/);
   await expect(page.locator('#social-fire')).toHaveClass(/is-on/);
   await expect(page.locator('#social-fire .num')).toHaveText('1');
-  // unliking puts the fire out with it, and the button goes back behind Like
-  await page.locator('#social-like').click();
-  await expect(page.locator('#social-like .num')).toHaveText('0');
-  await expect(page.locator('#social-fire .num')).toHaveText('0');
-  await expect(page.locator('#social-fire')).toHaveClass(/is-tucked/);
+  await expect(page.locator('#social-crown')).toHaveClass(/is-on/);
+  // putting the fire out takes the crown with it; the crown goes back behind
+  await page.locator('#social-fire').click();
+  await expect(page.locator('#social-fire')).not.toHaveClass(/is-on/);
+  await expect(page.locator('#social-crown .num')).toHaveText('0');
+  await expect(page.locator('#social-crown')).toHaveClass(/is-tucked/);
+  await page.locator('#social-fire').click();
+  await expect(page.locator('#social-crown')).not.toHaveClass(/is-tucked/);
+  // taking the Cheers back puts the fire out with it, and both go back behind Cheers
   await page.locator('#social-like').click();
   await expect(page.locator('#social-like .num')).toHaveText('1');
+  await expect(page.locator('#social-fire .num')).toHaveText('0');
+  await expect(page.locator('#social-fire')).toHaveClass(/is-tucked/);
+  await expect(page.locator('#social-crown')).toHaveClass(/is-tucked/);
+  await page.locator('#social-like').click();
+  await expect(page.locator('#social-like .num')).toHaveText('2');
   await expect(page.locator('#social-fire')).toBeEnabled();
   await expect(page.locator('#social-fire')).not.toHaveClass(/is-on/);
+  // and set on fire again, for the lists' counts: Cheers 1 each, a fire 2 more
+  await page.locator('#social-fire').click();
+  await expect(page.locator('#social-fire')).toHaveClass(/is-on/);
   await expect(page.locator('.rb-cmt-text').filter({ hasText: comment })).toBeVisible();
   await snap(page, 'after reload: counts and comment kept');
 });
@@ -588,16 +626,34 @@ test('comments thread: reply, quote, cheers, edit, history, report, link, delete
   await expect(reply.locator('> .rb-cmt-body .rb-avatar .rb-thumb-card img')).toBeVisible();
   await expect(page.locator('.rb-comments-count')).toHaveText('2 Comments');
 
-  // Cheers on the voter's comment, then the fire it unlocks; not on your own
-  const cheer = top.locator('> .rb-cmt-body [data-act="cheer"]'), fire = top.locator('> .rb-cmt-body [data-act="fire"]');
-  await expect(fire).toHaveClass(/is-tucked/);
-  await cheer.click();
+  // Cheers on the voter's comment (its author's own counted already), then the fire it unlocks,
+  // then the crown; on your own, only your own Cheers, to take back
+  const tier = (node: typeof top, n: number) => node.locator(`> .rb-cmt-body .rb-reactions [data-tier="${n}"]`);
+  const cheer = tier(top, 1), fire = tier(top, 2), crown = tier(top, 3);
   await expect(cheer.locator('.num')).toHaveText('1');
+  await expect(fire).toHaveClass(/is-tucked/);
+  await expect(crown).toHaveClass(/is-tucked/);
+  await cheer.click();
+  await expect(cheer.locator('.num')).toHaveText('2');
   await expect(fire).not.toHaveClass(/is-tucked/);
   await fire.click();
   await expect(fire.locator('.num')).toHaveText('1');
   await expect(fire).toHaveAttribute('aria-pressed', 'true');
-  await expect(reply.locator('> .rb-cmt-body [data-act="cheer"]')).toBeDisabled();
+  await crown.click();
+  await expect(crown.locator('.num')).toHaveText('1');
+  await expect(crown).toHaveAttribute('aria-pressed', 'true');
+  const ownCheer = tier(reply, 1);
+  await expect(ownCheer).toBeEnabled();
+  await expect(ownCheer).toHaveAttribute('aria-pressed', 'true');
+  await expect(ownCheer.locator('.num')).toHaveText('1');
+  await expect(tier(reply, 2)).toHaveClass(/is-tucked/);
+  await ownCheer.click();
+  await expect(ownCheer.locator('.num')).toHaveText('0');
+  await expect(ownCheer).toHaveAttribute('aria-pressed', 'false');
+  await expect(tier(reply, 2)).toHaveClass(/is-tucked/);
+  await page.reload();
+  await expect(ownCheer.locator('.num')).toHaveText('0');
+  await expect(ownCheer).toHaveAttribute('aria-pressed', 'false');
 
   // the author reports it; it waits in the table for the moderators
   await top.locator('> .rb-cmt-body .rb-cmt-more > button').click();
@@ -609,7 +665,7 @@ test('comments thread: reply, quote, cheers, edit, history, report, link, delete
   await expect(page.locator('#rb-cmt-modal')).toBeHidden();
   const topId = await top.getAttribute('data-id');
   expect(appConsole(['dbal:run-sql', `SELECT reason FROM comment_report WHERE comment_id = ${topId}`])).toContain('Testing reports');
-  await snap(page, 'a reply, cheers and fire');
+  await snap(page, 'a reply, cheers, fire and crown');
 
   // the voter quotes the reply: the quote starts the box, and the answer goes a level further in
   await voter.goto(decklistUrl);
@@ -732,8 +788,15 @@ test('comments: an old comment, and a page left open past its token', async ({ p
   expect(refused).toBe(true);
 
   // a moderator deleting someone else's comment must say why, kept with who did it (Ketura, 2026-11-11)
-  appConsole(['fos:user:promote', loadUsers().author.username, 'ROLE_MODERATOR']);
+  const authorUser = loadUsers().author;
+  appConsole(['fos:user:promote', authorUser.username, 'ROLE_MODERATOR']);
   const mod = await pageAs('author');
+  // the role is read at login (passed before only when archive.spec had made the author an admin first)
+  await mod.goto('/logout');
+  await mod.goto('/login');
+  await mod.fill('#username', authorUser.username);
+  await mod.fill('#password', authorUser.password);
+  await Promise.all([mod.waitForURL((u) => !u.pathname.startsWith('/login')), mod.click('#_submit')]);
   await mod.goto(decklistUrl);
   const theirs = mod.locator('.rb-cmt').filter({ has: mod.locator('> .rb-cmt-body .rb-cmt-text', { hasText: text }) });
   const theirId = await theirs.getAttribute('data-id');

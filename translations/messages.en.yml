@@ -358,6 +358,7 @@ decklist:
       like: Like
       favorite: Favorite
       fire: On fire
+      crown: Crowned
       comment: Comment
       version: Version
     derived:
@@ -829,7 +830,7 @@ decklist.browse.tags_hint: Type a tag, then Enter
 decklist.browse.tag_search: Search for decks with this tag
 decklist.browse.per_page: Per Page
 decklist.browse.archive: archive
-decklist.browse.score_title: "%likes% likes, %fires% fires"
+decklist.browse.score_title: "%likes% Cheers, %fires% fires, %crowns% crowns"
 decklist.browse.comments_title: "%count% comments"
 decklist.source.title: "Archived deck by %author%"
 decklist.source.from: "From %source%:"
@@ -1224,9 +1225,6 @@ decklist.reader.has_note: "The author has a note on this card"
 decklist.reader.loading: "Loading…"
 decklist.reader.archived: Archived
 decklist.reader.commentary: Author Commentary
-decklist.reader.fire: "Set this deck on fire: it counts as %count% more likes"
-decklist.reader.fire_out: "Put your fire out"
-decklist.reader.fire_locked: "Like this deck to set it on fire"
 decklist.reader.tags: Tags
 decklist.reader.social: "Like, favourite, comment"
 decklist.reader.copy_deck: Copy This Deck
@@ -1234,7 +1232,6 @@ decklist.reader.copy_deck_hint: "Make your own copy of this deck to change"
 decklist.reader.copy_list: Copy List
 decklist.reader.copy_list_hint: "Copy the deck as a list, which Gemp's import reads"
 decklist.reader.copied: "Copied to clipboard!"
-decklist.reader.own_deck: "Your own deck"
 decklist.reader.download: Download Text File
 decklist.reader.archive_comments: "{1} 1 Imported Archive Comment|]1,Inf] %count% Imported Archive Comments"
 decklist.form.title.create: Publish Deck
@@ -1468,7 +1465,6 @@ decklist.publish.gate.republish_blocked: "It can't be published again as it stan
 # Libraries (Ketura, 2026-11-08)
 library.view.social.like: "Cheers: a library worth reading"
 library.view.social.favorite: "Favourite: keep it in your favourites"
-library.view.social.own: "You made this library"
 library.view.back_to_top: "Back to Top"
 library.view.contents: "Decks"
 library.view.login_to_comment: "Log in to comment"
@@ -1700,10 +1696,6 @@ comment.removed: "Removed by a moderator"
 comment.hidden: "Hidden."
 comment.show: "Show"
 comment.cheers: "Cheers"
-comment.fire: "Set it on fire"
-comment.fire_out: "Put the fire out"
-comment.fire_locked: "Cheers it first to set it on fire"
-comment.own: "You can't cheer your own comment"
 comment.reply: "Reply"
 comment.quote: "Quote"
 comment.more: "More"
@@ -1756,3 +1748,16 @@ decklist.browse.do.download: "Download"
 decklist.browse.do.clear: "Clear"
 decklist.browse.do.unfavorite: "Remove from Favorites"
 decklist.browse.picked: "{1} 1 decklist selected | ]1,Inf] %count% decklists selected"
+
+# Cheers, fire and crown (Ketura, 2026-11-11), on decklists, libraries and comments
+reactions.cheers: "Cheers"
+reactions.cheers_off: "Take back your Cheers"
+reactions.cheers_own: "Your own Cheers: everything starts with its author's. Click to take it back"
+reactions.fire: "Set it on fire: it counts for %count% more"
+reactions.fire_off: "Put your fire out (and your crown with it)"
+reactions.fire_locked: "Cheers it first to set it on fire"
+reactions.fire_own: "Fires (not for your own)"
+reactions.crown: "This is an all-time best"
+reactions.crown_off: "Take back your crown"
+reactions.crown_locked: "Set it on fire first to crown it"
+reactions.crown_own: "Crowns (not for your own)"

@@ -1,18 +1,6 @@
-{# A decklist's like (Cheers), favourite and comment buttons (Ketura, 2026-11-04; the design's
-   reactions, 2026-11-09), in the reader's header. Variables: decklist #}
+{# A decklist's Cheers (with its fire and crown), favourite and comment buttons (Ketura,
+   2026-11-04; the design's reactions, 2026-11-09; the crown, 2026-11-11), in the reader's
+   header. Whose they are comes from the page's script (ui.decklist). Variables: decklist #}
 <div class="rb-social" role="group" aria-label="{{ 'decklist.reader.social' | trans }}">
-    {#
-       The fire (Ketura, 2026-11-04): a liker's super-upvote, worth FIRE_WEIGHT more
-       likes. Its slot left of Like is always kept, so nothing moves when it slides
-       out from behind Like; until then it is tucked away. A deck already on fire
-       shows its count to everyone, usable once you've liked it.
-    #}
-    {% set fire_weight = constant('App\\Entity\\PublishedDeck::FIRE_WEIGHT') %}
-    <span class="rb-fire-slot">
-        <button type="button" id="social-fire" class="rb-react r-fire rb-social-btn is-fire{{ decklist.nbFires ? '' : ' is-tucked' }}" aria-pressed="false" disabled
-                data-title-on="{{ 'decklist.reader.fire' | trans({'%count%': fire_weight}) }}" data-title-off="{{ 'decklist.reader.fire_out' | trans }}"
-                title="{{ 'decklist.reader.fire_locked' | trans }}">
-            <svg class="rb-ri" aria-hidden="true"><use href="#ri-fire"/></svg><span class="num">{{ decklist.nbFires }}</span></button>
-    </span>
     {% include 'Social/buttons.html.twig' with {subject: decklist, kind: 'decklist'} %}
 </div>

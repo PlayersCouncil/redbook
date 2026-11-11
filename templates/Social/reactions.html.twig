@@ -1,0 +1,40 @@
+{# Cheers, fire and crown (Ketura, 2026-11-11), one ladder shared by decklists, libraries and
+   comments: the fire and the crown wait tucked behind the Cheers until they can be used, or
+   someone has used them. app.reactions draws the viewer's level into it, and sends the clicks.
+   Variables:
+   - counts: [cheers, fires, crowns] (a Reactable's reactionCounts)
+   - level: the viewer's level (0 to 3), when the page knows it; else the script fills it in
+   - own: the viewer made it (their own Cheers to take back; no fire or crown)
+   - logged: whether anyone is logged in (false: login_url, if given, for the Cheers)
+   - size: 'social' (a page's header, ids social-crown/-fire/-like) or 'sm' (a comment)
+   - cheers_title: the Cheers' title (translation key) #}
+{% set level = level ?? null %}
+{% set points = constant('App\\Entity\\Reactable::POINTS') %}
+{% set big = (size ?? 'sm') == 'social' %}
+{% set btn = big ? 'rb-react rb-social-btn' : 'rb-react rb-react-sm' %}
+{% set tiers = [
+    {tier: 3, react: 'crown', id: 'social-crown', on: 'reactions.crown', off: 'reactions.crown_off', locked: 'reactions.crown_locked', own_title: 'reactions.crown_own'},
+    {tier: 2, react: 'fire', id: 'social-fire', on: 'reactions.fire', off: 'reactions.fire_off', locked: 'reactions.fire_locked', own_title: 'reactions.fire_own'},
+    {tier: 1, react: 'cheers', id: 'social-like', on: cheers_title ?? 'reactions.cheers', off: 'reactions.cheers_off', locked: cheers_title ?? 'reactions.cheers', own_title: 'reactions.cheers_own'},
+] %}
+{# in a header the steps up sit left of the Cheers; on a comment, right of it #}
+{% set tiers = big ? tiers : tiers | reverse %}
+<span class="rb-reactions{% if big %} is-big{% endif %}"{% if level is not null %} data-level="{{ level }}"{% endif %}{% if own ?? false %} data-own{% endif %}{% if logged ?? false %} data-logged{% endif %}>
+    {%- for t in tiers %}
+        {% set n = counts[t.tier - 1] %}
+        {% set lvl = level ?? 0 %}
+        {% set on = lvl >= t.tier %}
+        {% set usable = (logged ?? false) and level is not null and (t.tier == 1 or (not (own ?? false) and lvl >= t.tier - 1)) %}
+        {% set tucked = t.tier > 1 and not usable and n == 0 %}
+        {% set titles = 'data-title-on="' ~ (t.on | trans({'%count%': points[t.tier]}) | e('html_attr')) ~ '" data-title-off="' ~ (t.off | trans | e('html_attr')) ~ '" data-title-locked="' ~ (t.locked | trans | e('html_attr')) ~ '" data-title-own="' ~ (t.own_title | trans | e('html_attr')) ~ '"' %}
+        {% if t.tier == 1 and not (logged ?? false) and login_url is defined %}
+            <a href="{{ login_url }}" class="{{ btn }} r-cheers is-like" data-tier="1" title="{{ t.on | trans }}">
+                <svg class="rb-ri" aria-hidden="true"><use href="#ri-cheers"/></svg><span class="num">{{ n }}</span></a>
+        {%- else %}
+            <button type="button"{% if big %} id="{{ t.id }}"{% endif %} class="{{ btn }} r-{{ t.react }}{% if big %} is-{{ t.tier == 1 ? 'like' : t.react }}{% endif %}{% if on %} is-on{% endif %}{% if tucked %} is-tucked{% endif %}" data-tier="{{ t.tier }}"
+                    aria-pressed="{{ on ? 'true' : 'false' }}"{% if not usable %} disabled{% endif %} {{ titles | raw }}
+                    title="{{ (usable ? (on ? t.off : t.on) : ((own ?? false) and t.tier > 1 ? t.own_title : t.locked)) | trans({'%count%': points[t.tier]}) }}">
+                <svg class="rb-ri" aria-hidden="true"><use href="#ri-{{ t.react }}"/></svg><span class="num">{{ n }}</span></button>
+        {%- endif %}
+    {%- endfor %}
+</span>
