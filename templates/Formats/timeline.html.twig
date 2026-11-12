@@ -1,13 +1,30 @@
-{# The Formats page's Timeline tab (Ketura, 2026-11-11): every rule, ruling and release over the
-   years, and so when and how decks must have changed. Its data is still being put together. #}
+{# The Formats page's Timeline tab (Ketura, 2026-11-11): every set, card, list, rotation, rules
+   change, errata and ruling over the years, the formats they made, Gemp's best fit for each era
+   and the Redbook micro-formats, drawn by ui.format_timeline.js from the imported timeline
+   (App\Services\FormatTimeline). The timeline scrolls in its own pane, its details beside it.
+   Variables: tab, data_url (null until a timeline is imported), generated #}
 {% extends 'base.html.twig' %}
+{% block javascripts %}
+    {{ parent() }}
+    <script src="{{ asset('js/ui.format_timeline.js') }}"></script>
+{% endblock %}
+{% block wrapper_class %}rb-fill{% endblock %}
 {% block body %}
-<div class="main white container rb-formats">
+<div class="main white container rb-formats rb-tl-page">
     {% include 'alerts.html.twig' %}
     {% include 'Formats/_tabs.html.twig' %}
-    <div class="rb-fd-timeline">
-        <p>{{ 'formats.timeline.intro' | trans }}</p>
-        <p class="rb-muted">{{ 'formats.timeline.soon' | trans }}</p>
-    </div>
+    {% if data_url %}
+        <div class="rb-tl" id="format-timeline" data-url="{{ data_url }}">
+            <div class="rb-tl-main" id="tl-main" tabindex="0" aria-label="{{ 'formats.timeline.label' | trans }}">
+                <p class="rb-tl-empty">{{ 'formats.timeline.loading' | trans }}</p>
+            </div>
+            <aside class="rb-tl-panel" id="tl-panel" aria-live="polite"><div id="tl-panel-body"></div></aside>
+        </div>
+    {% else %}
+        <div class="rb-fd-timeline">
+            <p>{{ 'formats.timeline.intro' | trans }}</p>
+            <p class="rb-muted">{{ 'formats.timeline.soon' | trans }}</p>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}

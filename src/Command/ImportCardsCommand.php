@@ -14,6 +14,7 @@ use App\Entity\Type;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
+use App\Services\FormatTimeline;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -67,7 +68,7 @@ class ImportCardsCommand extends Command
     private array $rarities = [];
     private array $batches = [];
 
-    public function __construct(private EntityManagerInterface $em)
+    public function __construct(private EntityManagerInterface $em, private readonly FormatTimeline $timeline)
     {
         parent::__construct();
     }
@@ -146,6 +147,12 @@ class ImportCardsCommand extends Command
             $io->warning(sprintf('%d cards are no longer in the card data and were left in place: %s', count($missing), implode(', ', array_slice($missing, 0, 20))));
         }
         $io->success(sprintf('%d cards created, %d updated', $created, $updated));
+
+        // the format timeline, when the card data carries one (Ketura, 2026-11-11)
+        if (is_file("$dir/" . FormatTimeline::FILE)) {
+            $done = $this->timeline->import("$dir/" . FormatTimeline::FILE);
+            $io->writeln(sprintf('Format timeline %s: %d events, %d micro-formats', $done['generatedAt'] ?? '?', $done['events'], $done['microformats']));
+        }
         return Command::SUCCESS;
     }
 

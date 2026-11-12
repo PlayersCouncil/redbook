@@ -138,6 +138,7 @@ export function copyPageSpecificJs() {
       "assets/js/ui.library_edit.js",
       "assets/js/ui.library_view.js",
       "assets/js/ui.formats.js",
+      "assets/js/ui.format_timeline.js",
       "assets/js/panels.js",
     ],
     { base: "assets" },

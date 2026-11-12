@@ -122,10 +122,23 @@ test('the Formats page: Gemp\'s format definitions, and a Timeline tab', async (
   await expect(page.locator('#format-movie')).toHaveClass(/is-highlight/);
   await expect(page.locator('#format-movie')).toBeInViewport();
   await snap(page, 'formats');
-  // the Timeline tab, still to come
+  // the Timeline tab: the timeline once one is imported (app:import:timeline, or with the card
+  // data), else word that it's coming
   await page.locator('.rb-tab', { hasText: 'Timeline' }).click();
   await expect(page).toHaveURL(/\/formats\/timeline$/);
   await expect(page.locator('.rb-tab.is-active')).toHaveText('Timeline');
+  if (await page.locator('#format-timeline').count()) {
+    await expect(page.locator('#tl-panel-body h2')).toHaveText("The LOTR TCG's formats over time");
+    await page.locator('.rb-tl-lab').first().click();
+    await expect(page.locator('#tl-panel-body .rb-tl-back')).toBeVisible();
+    await page.locator('.rb-tl-rect.is-redbook').first().click();
+    await expect(page.locator('#tl-panel-body h2')).toHaveText(/^\w+-\d{4}-\d{2}/);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('#tl-panel-body h2')).toHaveText("The LOTR TCG's formats over time");
+    await snap(page, 'format timeline');
+  } else {
+    await expect(page.locator('.rb-fd-timeline')).toContainText('being put together');
+  }
   const formats = await (await request.get('/api/public/formats/')).json();
   expect(formats.length).toBeGreaterThan(10);
   expect(formats.map((f) => f.code)).not.toContain('debug');

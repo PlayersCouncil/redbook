@@ -696,6 +696,60 @@ formats:
     description: "The Lord of the Rings TCG's rules, rulings and releases over the years"
     intro: "Every rule, ruling and release over the game's life, and so when and how decks must have changed."
     soon: "The timeline is being put together, and will be here soon."
+    label: "The format timeline"
+    loading: "Loading the timeline…"
+    failed: "The timeline couldn't be loaded. Try again in a moment."
+    events: Events
+    columns: Columns
+    col:
+      gemp: "Gemp Format"
+      redbook: "Redbook Format"
+    overview:
+      title: "The LOTR TCG's formats over time"
+      intro: "Time runs down the page. Each event that changed what a deck could legally be is a marker on the line; click an event, a format or a micro-format for its details and sources."
+      gemp: "The Gemp format that best fits the main format of each era (dashed: close; dotted: approximate)."
+      redbook: "The micro-formats of the main format: the official format cut at every change to what a deck could be."
+      note: "A format's box ends when the next format of its column takes over, though it may still be played. A year with no events is a single row."
+      back: Overview
+    generated: "Made %date%: %events% events, %micro% micro-formats."
+    open_ended: "open-ended"
+    retroactive: retroactive
+    no_source: "No source recorded."
+    clause: "Rules document clause"
+    date: Date
+    kind: Kind
+    affects: Affects
+    changes: Changes
+    cards: Cards
+    sources: Sources
+    source: Source
+    from: From
+    to: To
+    drawn_until: "Drawn until"
+    drawn_until_text: "%date%, when the next format of its column takes over"
+    sets: Sets
+    lists: Lists
+    sites: Sites
+    gemp_code: "Gemp format"
+    era: Era
+    fit_label: Fit
+    fit:
+      exact: exact
+      close: close
+      approximate: approximate
+    micro_count: "Micro-formats (%count%)"
+    format: Format
+    decipher_errata: "Decipher errata"
+    pc_errata: "PC errata"
+    card_count: "{0} none|{1} 1 card|]1,Inf[ %count% cards"
+    list_count: "%count% cards (since %date%)"
+    also_legal: "Also legal"
+    rules: Rules
+    in_force: "in force"
+    not_yet: "not yet"
+    rulings: "Rules Council rulings"
+    since: "since %date%"
+    starts_with: "Starts with"
   none: "No formats yet: Red Book hasn't been able to reach Gemp."
   source: "Copied from Gemp, last updated %date% UTC."
   name: Format

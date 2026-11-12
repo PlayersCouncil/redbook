@@ -6,6 +6,7 @@ use App\Entity\Pack;
 use App\Repository\FormatRepository;
 use App\Services\CardsData;
 use App\Services\FormatDefinitions;
+use App\Services\FormatTimeline;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -40,13 +41,28 @@ class FormatsController extends AbstractController
     }
 
     #[Route(path: '/formats/timeline', name: 'formats_timeline', methods: ['GET'], priority: 1)]
-    public function timelineAction(int $cacheExpiration, TranslatorInterface $translator): Response
+    public function timelineAction(int $cacheExpiration, TranslatorInterface $translator, FormatTimeline $timeline): Response
     {
+        $dataset = $timeline->get();
         return $this->render('Formats/timeline.html.twig', [
             'pagetitle' => $translator->trans('formats.tabs.timeline'),
             'pagedescription' => $translator->trans('formats.timeline.description'),
             'tab' => 'timeline',
+            // the data's own address changes with each import, so it can be kept for long
+            'data_url' => $dataset ? $this->generateUrl('formats_timeline_data', ['v' => substr(md5((string) $dataset->getGeneratedAt() . $dataset->getDateImport()->format('c')), 0, 10)]) : null,
+            'generated' => $dataset?->getGeneratedAt(),
         ], $this->cached($cacheExpiration));
+    }
+
+    /** The timeline's data, as imported (FormatTimeline) */
+    #[Route(path: '/formats/timeline.json', name: 'formats_timeline_data', methods: ['GET'], priority: 2)]
+    public function timelineDataAction(FormatTimeline $timeline): Response
+    {
+        $dataset = $timeline->get() ?? throw new NotFoundHttpException('No format timeline has been imported.');
+        $response = new Response($dataset->getData(), Response::HTTP_OK, ['Content-Type' => 'application/json']);
+        $response->setPublic();
+        $response->setMaxAge(86400);
+        return $response;
     }
 
     #[Route(path: '/formats/{code}', name: 'format', methods: ['GET'], requirements: ['code' => '[\w-]+'])]
