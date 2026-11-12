@@ -516,9 +516,30 @@
         }).join('') + '</ul>';
     }
 
-    /** The errata in force for a micro-format's card pool on its first day: {decipher, pc} */
+    /**
+     * The errata in force for a micro-format's card pool on its first day: {decipher, pc}. The
+     * data lists them (format-timeline/2: errata.decipher, errata.pc, each {card, revision}); each
+     * is matched to its event for its title, where it was stated and why. Older data: worked out
+     * from the events.
+     */
     function errata_in_force(m)
     {
+        var by_title = function (c) { return String(c.title || '').replace(/^[•·]/, ''); },
+            stated = {};
+        S.data.events.forEach(function (e) {
+            if(e.kind === 'errata' || e.kind === 'pc-errata') {
+                e.cards.forEach(function (c) { stated[(c.gemp || c.card) + '.' + c.revision] = c; });
+            }
+        });
+        if(m.errata) {
+            var fill = function (list) {
+                return _.sortBy((list || []).map(function (c) {
+                    var known = stated[c.card + '.' + c.revision], card = app.data.cards && app.data.cards.findById(card_code(c.card));
+                    return $.extend({title: card ? card.label : c.card}, known || {}, {card: c.card, revision: c.revision});
+                }), by_title);
+            };
+            return {decipher: fill(m.errata.decipher), pc: fill(m.errata.pc)};
+        }
         var sets = {}, decipher = {}, pc = {};
         (m.sets || []).forEach(function (s) { sets[String(s)] = true; });
         S.data.events.forEach(function (e) {
@@ -526,18 +547,51 @@
                 return;
             }
             e.cards.forEach(function (c) {
-                if(!sets[String(c.set)]) {
-                    return;
-                }
-                if(e.kind === 'errata') {
-                    decipher[c.card + '.' + c.revision] = c;
-                } else {
-                    pc[c.gemp || c.card] = c;
+                if(sets[String(c.set)]) {
+                    (e.kind === 'errata' ? decipher : pc)[(c.gemp || c.card) + '.' + c.revision] = c;
                 }
             });
         });
-        var by_title = function (c) { return String(c.title || '').replace(/^[•·]/, ''); };
         return {decipher: _.sortBy(_.values(decipher), by_title), pc: _.sortBy(_.values(pc), by_title)};
+    }
+
+    /** How a card differs between a micro-format and its base: "Text: revision 0 here, 1 there" … */
+    function delta_text(c, base)
+    {
+        var parts = [], changes = [].concat(c.change || []), here = c.micro || {}, there = c.base || {};
+        changes.forEach(function (change) {
+            if(change === 'text') {
+                parts.push(t('delta.text', {here: here.revision, there: there.revision, base: base}));
+            } else if(change === 'legality') {
+                parts.push(t(here.legal ? 'delta.legal_here' : 'delta.legal_there', {base: base}));
+            } else if(change === 'list') {
+                parts.push(t('delta.list', {here: t('delta.lists.' + (here.list || 'none')), there: t('delta.lists.' + (there.list || 'none')), base: base}));
+            }
+        });
+        if(c.functional === false) {
+            parts.push(t('delta.not_functional'));
+        }
+        var text = parts.join('; ');
+        return text.charAt(0).toUpperCase() + text.slice(1);
+    }
+
+    /** A card that differs from the base: its hover the version here beside the base's, when its text differs */
+    function delta_link(c)
+    {
+        var code = card_code(c.card), info = S.revisions[code],
+            here = c.micro && c.micro.revision, there = c.base && c.base.revision;
+        if(info && here != null && there != null && here !== there && info.v[here] && info.v[there]) {
+            return '<a class="card-tip" data-code="' + esc(code) + '" href="' + esc(Routing.generate('cards_zoom', {card_code: code}) + '#v' + here) + '" data-hover-pair="'
+                + esc(info.v[here] + '|' + info.v[there]) + '">' + esc(c.title || code) + '</a>';
+        }
+        return card_link(c.card, c.title);
+    }
+
+    /** A rule's name, from the event that brought it in ("Rule: …"); else its id */
+    function rule_name(id)
+    {
+        var e = _.find(S.data.events, function (e) { return e.kind === 'rule' && e.rule === id; });
+        return e ? String(e.title).replace(/^Rule:\s*/, '') : id;
     }
 
     function event_link(e) { return '<a href="#" data-ev="' + esc(e.id) + '">' + esc(title_of(e)) + '</a>'; }
@@ -551,6 +605,32 @@
     function gemp_link(code)
     {
         return S.hall.indexOf(code) >= 0 ? '<a href="' + esc(Routing.generate('formats')) + '#format-' + esc(code) + '"><code>' + esc(code) + '</code></a>' : '<code>' + esc(code) + '</code>';
+    }
+
+    /**
+     * What sets a micro-format apart from its base, the hall format closest to it today
+     * (format-timeline/2): the base, the sets it has besides, the rules that differ and, to open,
+     * the cards that differ
+     */
+    function differences(m)
+    {
+        if(!m.base || !m.base.gemp) {
+            return '';
+        }
+        var base = m.base.name || m.base.gemp,
+            rules = Object.keys(m.ruleDelta || {}).map(function (id) {
+                var r = m.ruleDelta[id];
+                return '<li>' + esc(t('delta.rule', {rule: rule_name(id), here: t(r.micro ? 'delta.on' : 'delta.off'), there: t(r.base ? 'delta.on' : 'delta.off'), base: base})) + '</li>';
+            }).join(''),
+            cards = (m.delta || []).map(function (c) {
+                return '<li>' + delta_link(c) + ' — ' + esc(delta_text(c, base)) + '</li>';
+            }).join('');
+        return '<h3>' + esc(t('delta.title')) + '</h3><dl><dt>' + esc(t('delta.base')) + '</dt><dd>' + (S.hall.indexOf(m.base.gemp) >= 0 ? '<a href="' + esc(Routing.generate('formats')) + '#format-' + esc(m.base.gemp) + '">' + esc(base) + '</a>' : esc(base))
+            + (m.base.fit ? ' <span class="rb-muted">(' + esc(t('fit.' + m.base.fit)) + ')</span>' : '') + '</dd>'
+            + (m.base.extraSets && m.base.extraSets.length ? '<dt>' + esc(t('delta.extra_sets')) + '</dt><dd>' + esc(m.base.extraSets.join(', ')) + '</dd>' : '')
+            + '</dl>' + (m.base.note ? '<p class="rb-muted">' + esc(m.base.note) + '</p>' : '')
+            + (rules ? '<ul>' + rules + '</ul>' : '')
+            + (cards ? '<details class="rb-tl-more"><summary>' + esc(t('delta.cards')) + ' <span class="rb-tl-count">' + m.delta.length + '</span></summary><ul class="rb-tl-errata">' + cards + '</ul></details>' : '');
     }
 
     function detail(choice)
@@ -613,7 +693,8 @@
                 + '<dt>' + esc(t('sets')) + '</dt><dd>' + esc((x.sets || []).join(', ')) + '</dd><dt>' + esc(t('sites')) + '</dt><dd>' + esc(x.sites || '—') + '</dd></dl>'
                 + (starts ? '<h3>' + esc(t('starts_with')) + '</h3><ul>' + starts + '</ul>' : '')
                 + collapsible(t('decipher_errata'), errata.decipher, false)
-                + (x.pcErrata != null ? collapsible(t('pc_errata'), errata.pc, true) : '')
+                + (x.pc || x.pcErrata != null ? collapsible(t('pc_errata'), errata.pc, true) : '')
+                + differences(x)
                 + (x.extraCards && x.extraCards.length ? '<h3>' + esc(t('also_legal')) + '</h3>' + card_list(x.extraCards) : '')
                 + (lists ? '<h3>' + esc(t('lists')) + '</h3><ul>' + lists + '</ul>' : '')
                 + (rulings ? '<h3>' + esc(t('rulings')) + '</h3><ul>' + rulings + '</ul>' : '');
