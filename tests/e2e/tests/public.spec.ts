@@ -128,13 +128,21 @@ test('the Formats page: Gemp\'s format definitions, and a Timeline tab', async (
   await expect(page).toHaveURL(/\/formats\/timeline$/);
   await expect(page.locator('.rb-tab.is-active')).toHaveText('Timeline');
   if (await page.locator('#format-timeline').count()) {
-    await expect(page.locator('#tl-panel-body h2')).toHaveText("The LOTR TCG's formats over time");
+    await expect(page.locator('#tl-panel-body h2')).toHaveText("The LOTR TCG's Formats over Time");
+    // five groups of events, each its own shape
+    await expect(page.locator('#tl-panel-body .rb-tl-legend li')).toHaveCount(5);
     await page.locator('.rb-tl-lab').first().click();
     await expect(page.locator('#tl-panel-body .rb-tl-back')).toBeVisible();
-    await page.locator('.rb-tl-rect.is-redbook').first().click();
+    // a micro-format: its own address, which goes back to it
+    await page.locator('.rb-tl-rect.is-redbook').nth(3).click();
     await expect(page.locator('#tl-panel-body h2')).toHaveText(/^\w+-\d{4}-\d{2}/);
+    const micro = (await page.locator('#tl-panel-body h2').textContent())!.replace(/\s*#\s*$/, '');
+    await expect(page).toHaveURL(new RegExp(`#${micro}$`));
     await page.keyboard.press('Escape');
-    await expect(page.locator('#tl-panel-body h2')).toHaveText("The LOTR TCG's formats over time");
+    await expect(page.locator('#tl-panel-body h2')).toHaveText("The LOTR TCG's Formats over Time");
+    await page.goto(`/formats/timeline#${micro}`);
+    await expect(page.locator('#tl-panel-body h2')).toContainText(micro);
+    await expect(page.locator('.rb-tl-rect.is-sel')).toBeInViewport();
     await snap(page, 'format timeline');
   } else {
     await expect(page.locator('.rb-fd-timeline')).toContainText('being put together');

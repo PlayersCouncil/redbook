@@ -59,6 +59,32 @@ class FormatTimeline
         ];
     }
 
+    /**
+     * Every card with errata, for the timeline's before-and-after hovers: its revisions'
+     * pictures (0 the printed card), and the PC errata blueprint where there is one (a PC
+     * revision without a picture of its own shows that blueprint's)
+     * @return array<string, array{errata: ?string, v: array<int, ?string>}>
+     */
+    public function revisions(): array
+    {
+        $rows = $this->em->getConnection()->fetchAllAssociative(
+            'SELECT c.code, v.revision, v.issuer, v.image_url, e.code AS errata, e.image_url AS errata_image FROM card_version v
+             JOIN card c ON c.id = v.card_id LEFT JOIN card e ON e.errata_of_id = c.id
+             WHERE c.id IN (SELECT card_id FROM card_version WHERE revision > 0) ORDER BY c.code, v.revision'
+        );
+        $out = [];
+        foreach ($rows as $row) {
+            $code = $row['code'];
+            $out[$code] ??= ['errata' => $row['errata'], 'v' => []];
+            $image = $row['image_url'];
+            if ($image === null && $row['issuer'] === \App\Entity\CardVersion::ISSUER_PC) {
+                $image = $row['errata_image'];
+            }
+            $out[$code]['v'][(int) $row['revision']] = $image;
+        }
+        return $out;
+    }
+
     /** The timeline as imported, or null before one has been */
     public function get(): ?Dataset
     {

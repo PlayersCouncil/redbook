@@ -18,6 +18,8 @@
  *   two thumbnails doesn't flicker (1s since Ketura, 2026-11-03, so moves within a second
  *   never re-animate). Pressing the mouse button hides it.
  * - While the next image loads the hover is black, never the previous card.
+ * - data-hover-pair="<image>|<image>" shows two pictures side by side instead: an erratum's
+ *   card before and after (Ketura, 2026-11-11).
  */
 (function app_tip(tip, $)
 {
@@ -31,6 +33,7 @@
         HOVER_DELAY = 500,
         COOLDOWN = 1000,
         LEAVE_GRACE = 120,
+        PAIR_GAP = 10,
         hover_timer = null,
         hide_timer = null,
         cooldown_timer = null,
@@ -45,8 +48,9 @@
     function ensure_overlay()
     {
         if(!overlay) {
-            // the second picture is a generic card's other half (Ketura, 2026-11-08)
-            overlay = $('<div class="rb-hover" aria-hidden="true"><img alt=""><img class="rb-hover-half" alt=""></div>').appendTo('body');
+            // the second picture is a generic card's other half (Ketura, 2026-11-08); the third the
+            // right of a pair (2026-11-11)
+            overlay = $('<div class="rb-hover" aria-hidden="true"><img alt=""><img class="rb-hover-half" alt=""><img class="rb-hover-pair" alt=""></div>').appendTo('body');
             overlay.find('img').on('load', function () { $(this).addClass('is-loaded'); });
         }
         return overlay;
@@ -58,10 +62,10 @@
      * under it, which would cover the pointer (Ketura, 2026-11-09: a site, wide, beside the
      * last lines of a list); only with no room either side, above or below.
      */
-    function target_rect(el_rect, landscape)
+    function target_rect(el_rect, landscape, pair)
     {
         var edge = long_edge(),
-            w = landscape ? edge : edge / PORTRAIT,
+            w = (landscape ? edge : edge / PORTRAIT) * (pair ? 2 : 1) + (pair ? PAIR_GAP : 0),
             h = landscape ? edge / PORTRAIT : edge,
             vw = window.innerWidth,
             vh = window.innerHeight,
@@ -75,7 +79,10 @@
             w = room;
         }
         if(w > right_room && w > left_room) {
-            if(right_room >= MIN_SIDE) {
+            // a pair, two cards wide, shrinks on whichever side has more room
+            if(pair && left_room > right_room && left_room >= MIN_SIDE) {
+                shrink(left_room);
+            } else if(right_room >= MIN_SIDE) {
                 shrink(right_room);
             } else if(left_room >= MIN_SIDE) {
                 shrink(left_room);
@@ -102,16 +109,28 @@
 
     tip.show = function show(element, card)
     {
-        var image = $(element).data('image') || card.image_url;
+        var pair = String($(element).attr('data-hover-pair') || '').split('|'),
+            image = (pair.length === 2 && pair[0]) || $(element).data('image') || card.image_url;
         if(!image) {
             return show_text(element, card);
         }
         ensure_overlay();
+        pair = pair.length === 2 && pair[0] && pair[1] ? pair : null;
+        var right = overlay.find('.rb-hover-pair');
+        if(pair) {
+            if(right.attr('src') !== pair[1]) {
+                right.removeClass('is-loaded').attr('src', pair[1]);
+            }
+            if(right[0].complete && right[0].naturalWidth) {
+                right.addClass('is-loaded');
+            }
+        }
+        overlay.toggleClass('is-pair', !!pair);
         var switching = current !== null && overlay.hasClass('is-shown');
         current = element;
         var landscape = card.type_code === 'site',
             rect = element.getBoundingClientRect(),
-            target = target_rect(rect, landscape),
+            target = target_rect(rect, landscape, !!pair),
             // moving from one card to the next: no grow, just the new card in place
             grow = !switching && $(element).is('[data-hover-grow]'),
             img = overlay.find('img').first(),
@@ -120,7 +139,7 @@
             other = split.length === 2 && app.data.cards ? app.data.cards.findById(split[1]) : null,
             first = split.length === 2 && app.data.cards ? app.data.cards.findById(split[0]) : null,
             half = overlay.find('.rb-hover-half');
-        if(first && other && first.image_url && other.image_url) {
+        if(!pair && first && other && first.image_url && other.image_url) {
             image = first.image_url;
             if(half.attr('src') !== other.image_url) {
                 half.removeClass('is-loaded').attr('src', other.image_url);

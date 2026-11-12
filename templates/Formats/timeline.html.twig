@@ -2,7 +2,8 @@
    change, errata and ruling over the years, the formats they made, Gemp's best fit for each era
    and the Redbook micro-formats, drawn by ui.format_timeline.js from the imported timeline
    (App\Services\FormatTimeline). The timeline scrolls in its own pane, its details beside it.
-   Variables: tab, data_url (null until a timeline is imported), generated #}
+   Variables: tab, data_url (null until a timeline is imported), generated, hall (Gemp's hall
+   format codes), revisions (FormatTimeline::revisions) #}
 {% extends 'base.html.twig' %}
 {% block javascripts %}
     {{ parent() }}
@@ -14,7 +15,7 @@
     {% include 'alerts.html.twig' %}
     {% include 'Formats/_tabs.html.twig' %}
     {% if data_url %}
-        <div class="rb-tl" id="format-timeline" data-url="{{ data_url }}">
+        <div class="rb-tl" id="format-timeline" data-url="{{ data_url }}" data-hall="{{ hall | json_encode }}" data-revisions="{{ revisions | json_encode }}">
             <div class="rb-tl-main" id="tl-main" tabindex="0" aria-label="{{ 'formats.timeline.label' | trans }}">
                 <p class="rb-tl-empty">{{ 'formats.timeline.loading' | trans }}</p>
             </div>

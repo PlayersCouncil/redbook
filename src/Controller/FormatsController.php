@@ -51,6 +51,10 @@ class FormatsController extends AbstractController
             // the data's own address changes with each import, so it can be kept for long
             'data_url' => $dataset ? $this->generateUrl('formats_timeline_data', ['v' => substr(md5((string) $dataset->getGeneratedAt() . $dataset->getDateImport()->format('c')), 0, 10)]) : null,
             'generated' => $dataset?->getGeneratedAt(),
+            // for the page: Gemp's formats that are in its hall (the others aren't drawn), and the
+            // cards' revisions, for the errata's before-and-after
+            'hall' => array_map(fn ($f) => $f->getCode(), $this->formats->findSelectable()),
+            'revisions' => $dataset ? $timeline->revisions() : [],
         ], $this->cached($cacheExpiration));
     }
 

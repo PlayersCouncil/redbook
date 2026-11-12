@@ -650,7 +650,12 @@ body.rb-sorting, body.rb-sorting * { cursor: grabbing !important; }
 .rb-revision-banner.is-pulse { animation: rb-pulse .7s ease-out 1; }
 
 /* a generic card's hover, split between two versions as its tile is (Ketura, 2026-11-08) */
-.rb-hover .rb-hover-half { display: none; }
+.rb-hover .rb-hover-half, .rb-hover .rb-hover-pair { display: none; }
+/* a pair (app.tip's data-hover-pair): two cards side by side, an erratum's before and after */
+.rb-hover.is-pair { overflow: visible; background: none; box-shadow: none; border-radius: 0; }
+.rb-hover.is-pair img { position: absolute; top: 0; width: calc(50% - 5px); height: 100%; border-radius: 3.5% / 2.5%; background: #000; box-shadow: 0 10px 30px rgba(0, 0, 0, .45); }
+.rb-hover.is-pair img:first-child { left: 0; }
+.rb-hover.is-pair .rb-hover-pair { display: block; right: 0; }
 .rb-hover.is-split img:first-child { clip-path: inset(0 50% 0 0); }
 .rb-hover.is-split .rb-hover-half { display: block; position: absolute; inset: 0; clip-path: inset(0 0 0 50%); }
 .rb-hover.is-split::after { content: ''; position: absolute; top: 0; bottom: 0; left: calc(50% - 1px); width: 2px; background: var(--rb-leaf); box-shadow: 0 0 4px rgba(0, 0, 0, .6); }

@@ -9,10 +9,13 @@
     {{ parent() }}
     <script src="{{ asset('js/ui.formats.js') }}"></script>
 {% endblock %}
+{# the tabs stay put; what's under them scrolls (Ketura, 2026-11-11) #}
+{% block wrapper_class %}rb-fill{% endblock %}
 {% block body %}
-<div class="main white container rb-formats">
+<div class="main white container rb-formats rb-fd-page">
     {% include 'alerts.html.twig' %}
     {% include 'Formats/_tabs.html.twig' %}
+    <div class="rb-fd-scroll">
     <div class="rb-fd-intro">
         <p>{{ 'formats.intro' | trans }}
             <button type="button" class="rb-fd-info" aria-expanded="false" aria-controls="rb-fd-help" title="{{ 'formats.help_title' | trans }}"><span class="fas fa-info-circle" aria-hidden="true"></span><span class="sr-only">{{ 'formats.help_title' | trans }}</span></button></p>
@@ -113,5 +116,6 @@
         </div>
     </div>
     {% endif %}
+    </div>
 </div>
 {% endblock %}

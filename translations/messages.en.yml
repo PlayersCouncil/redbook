@@ -701,19 +701,33 @@ formats:
     failed: "The timeline couldn't be loaded. Try again in a moment."
     events: Events
     columns: Columns
+    group:
+      cards: "New Cards/Sets"
+      lists: "X-list, R-list, or Rotation"
+      news: "Format News"
+      errata: "New Errata"
+      rules: "Rules Change"
     col:
+      block: Block
+      competitive: Competitive
+      permissive: Permissive
       gemp: "Gemp Format"
-      redbook: "Redbook Format"
+      redbook: "Red Book Format"
+    col_desc:
+      block: "Individual block format."
+      competitive: "Official format used by DGMA or the PC as the main tournament format."
+      permissive: "Format that includes the widest card pool."
+      gemp: "Closest public format on Gemp that matches this era."
+      redbook: "Micro-format that matches the exact conditions of this point in time."
     overview:
-      title: "The LOTR TCG's formats over time"
+      title: "The LOTR TCG's Formats over Time"
       intro: "Time runs down the page. Each event that changed what a deck could legally be is a marker on the line; click an event, a format or a micro-format for its details and sources."
-      gemp: "The Gemp format that best fits the main format of each era (dashed: close; dotted: approximate)."
-      redbook: "The micro-formats of the main format: the official format cut at every change to what a deck could be."
-      note: "A format's box ends when the next format of its column takes over, though it may still be played. A year with no events is a single row."
+      note: "A format's box ends when the next format of its column takes over, though it may still be played. A year with no events is a single row, and a micro-format too short to hold its name is drawn taller, so those few days aren't to scale."
       back: Overview
     generated: "Made %date%: %events% events, %micro% micro-formats."
-    open_ended: "open-ended"
-    retroactive: retroactive
+    permalink: "Link to this micro-format"
+    open_ended: "Open-ended"
+    retroactive: Retroactive
     no_source: "No source recorded."
     clause: "Rules document clause"
     date: Date
@@ -734,22 +748,18 @@ formats:
     era: Era
     fit_label: Fit
     fit:
-      exact: exact
-      close: close
-      approximate: approximate
+      exact: Exact
+      close: Close
+      approximate: Approximate
     micro_count: "Micro-formats (%count%)"
     format: Format
-    decipher_errata: "Decipher errata"
-    pc_errata: "PC errata"
-    card_count: "{0} none|{1} 1 card|]1,Inf[ %count% cards"
+    decipher_errata: "Decipher Errata"
+    pc_errata: "PC Errata"
     list_count: "%count% cards (since %date%)"
-    also_legal: "Also legal"
-    rules: Rules
-    in_force: "in force"
-    not_yet: "not yet"
-    rulings: "Rules Council rulings"
+    also_legal: "Also Legal"
+    rulings: "Rules Council Rulings"
     since: "since %date%"
-    starts_with: "Starts with"
+    starts_with: "Now Includes"
   none: "No formats yet: Red Book hasn't been able to reach Gemp."
   source: "Copied from Gemp, last updated %date% UTC."
   name: Format
